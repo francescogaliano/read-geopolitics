@@ -13,10 +13,17 @@ jobs:
         env:
           T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: if [ -n "$T" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "Manca il segreto CLOUDFLARE_API_TOKEN"; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Deploy
         if: steps.chk.outputs.ok == '1'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          if ! npx -y wrangler@4 deploy 2>&1 | tee out.log; then
+            grep -v '^\s*$' out.log | tail -25 | sed 's/^/::error::/'
+            exit 1
+          fi
