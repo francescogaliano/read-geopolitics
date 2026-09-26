@@ -1,0 +1,6 @@
+{
+  // Sito statico di Read Geopolitics (test pubblico). Cloudflare Workers serve la cartella public/.
+  "name": "read-geopolitics",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./public" }
+}
