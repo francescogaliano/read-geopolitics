@@ -1,6 +1,6 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Read Geopolitics</title>
-<meta name="description" content="Il mondo in 15 minuti: le notizie che contano, con le fonti, le due tesi e gli scenari. Test pubblico.">
+<meta name="description" content="Il mondo in 15 minuti: le notizie che contano, con le fonti, le due tesi e gli scenari. Anteprima gratuita.">
 <meta property="og:title" content="Read Geopolitics"><meta property="og:description" content="Il mondo in 15 minuti. Ogni mattina.">
 <script>(function(){var t="dark";try{var v=localStorage.getItem("rg-theme");if(v==="light"||v==="dark")t=v}catch(e){}document.documentElement.setAttribute("data-theme",t)})();</script>
 <style>.themebtn{min-width:36px}</style>
@@ -1133,7 +1133,7 @@ nav.tabs button .ic{margin-right:.3em}
     </div>
   </section>
 </main>
-<p class="foot">Test pubblico · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
+<p class="foot">Anteprima gratuita · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
 <div id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
   <div class="prefs-box">
     <div class="ab-head"><h2 id="prefsTitle">⚙️ Preferenze</h2><button class="deep-x" id="prefsX" type="button" aria-label="Chiudi">×</button></div>
@@ -1239,7 +1239,7 @@ nav.tabs button .ic{margin-right:.3em}
         <li>È scritto da un'intelligenza artificiale: può sbagliare. Per le cose importanti apri la fonte.</li>
         <li>Si aggiorna una volta al giorno, la mattina: non è una diretta.</li>
         <li>Non è una consulenza finanziaria, legale o di viaggio.</li>
-        <li class="g-shared">Per leggere non serve nessun account. Per approfondire con Claude serve un account Claude, anche gratuito.</li><li class="g-shared">È un test pubblico a tempo: l'accesso libero ha una data di fine, indicata in alto.</li>
+        <li class="g-shared">Per leggere non serve nessun account. Per approfondire con Claude serve un account Claude, anche gratuito.</li><li class="g-shared">È un'anteprima gratuita a tempo: l'accesso libero ha una data di fine, indicata in alto.</li>
       </ul>
     </section>
     <div class="prefs-actions"><button type="button" class="askbtn" id="guideOk">Ho capito</button></div>
@@ -2662,12 +2662,12 @@ function setupPublic(P){
   const today=isoDay(new Date());const fino=P.aperta_fino||"";
   if(fino&&today>fino){closedScreen(P);return}
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
-  if(bar&&fino){const d=daysTo(fino,today);tx.innerHTML=`<strong>TEST PUBBLICO</strong> · accesso libero fino a ${esc(fmtDate(fino,true))}${d>=0?` · ${d===0?"ultimo giorno":d===1?"manca 1 giorno":"mancano "+d+" giorni"}`:""}${P.form_url?` · <a href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-barra">resta aggiornato</a>`:""}`;bar.hidden=false}
+  if(bar&&fino){const d=daysTo(fino,today);tx.innerHTML=`<strong>ANTEPRIMA GRATUITA</strong> · accesso libero fino a ${esc(fmtDate(fino,true))}${d>=0?` · ${d===0?"ultimo giorno":d===1?"manca 1 giorno":"mancano "+d+" giorni"}`:""}${P.form_url?` · <a href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-barra">resta aggiornato</a>`:""}`;bar.hidden=false}
 }
 function closedScreen(P){
   document.body.classList.add("closed");
   const o=document.createElement("div");o.id="closed";
-  o.innerHTML=`<div class="cl-box"><span class="label">Read Geopolitics · test concluso</span><h1>Grazie per aver letto.</h1><p>${esc(P.messaggio_chiusura||"Il test pubblico di Read Geopolitics è finito. Stiamo lavorando alla versione completa.")}</p>${P.form_url?`<p><a class="askbtn" href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-chiusura">Avvisami quando riapre</a></p>`:""}</div>`;
+  o.innerHTML=`<div class="cl-box"><span class="label">Read Geopolitics · anteprima conclusa</span><h1>Grazie per aver letto.</h1><p>${esc(P.messaggio_chiusura||"L'anteprima gratuita di Read Geopolitics è finita. Stiamo lavorando alla versione completa.")}</p>${P.form_url?`<p><a class="askbtn" href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-chiusura">Avvisami quando riapre</a></p>`:""}</div>`;
   document.body.appendChild(o);track("vista-chiusura");
 }
 document.addEventListener("click",e=>{
