@@ -2914,6 +2914,7 @@ function setupPublic(P){
   S.pub=P;captureAttrib();
   if(P.goatcounter){const sc=document.createElement("script");sc.async=true;sc.src="https://gc.zgo.at/count.js";sc.dataset.goatcounter="https://"+P.goatcounter+".goatcounter.com/count";document.head.appendChild(sc)}
   const today=isoDay(new Date());const fino=P.aperta_fino||"";
+  if(/[?&]gate=1(&|$)/.test(location.search)){earlyBar();showGate(P);return}
   if(fino&&today>fino){earlyAccess(P);return}
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
   if(bar&&fino){const d=daysTo(fino,today);tx.innerHTML=`<strong>ANTEPRIMA GRATUITA</strong> · accesso libero fino a ${esc(fmtDate(fino,true))}${d>=0?` · ${d===0?"ultimo giorno":d===1?"manca 1 giorno":"mancano "+d+" giorni"}`:""}${P.form_url?` · <a href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-barra">resta aggiornato</a>`:""}`;bar.hidden=false}
