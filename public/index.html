@@ -17,6 +17,20 @@ body.closed header.top,body.closed main,body.closed .foot{display:none}
 #closed{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--bg)}
 .cl-box{max-width:520px;text-align:center}.cl-box h1{font-size:34px;margin:10px 0}.cl-box p{font-size:16px;color:var(--muted)}
 .cl-box .askbtn{display:inline-block;text-decoration:none;padding:12px 22px;font-size:16px;margin-top:10px}
+body.gated{overflow:hidden}
+body.gated header.top,body.gated main,body.gated .foot{filter:blur(9px) saturate(.9);opacity:.85;pointer-events:none;user-select:none;-webkit-user-select:none}
+#gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px 16px;background:color-mix(in srgb,var(--bg) 45%,transparent);overflow:auto}
+.g-box{width:100%;max-width:392px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(10,20,30,.22)}
+.g-box h1{font-size:23px;line-height:1.2;margin:8px 0 6px}
+.g-box p{font-size:14.5px;color:var(--muted);margin:0 0 14px}
+.g-box input[type=email]{width:100%;font:16px var(--sans);padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+.g-nl{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--muted);margin:11px 0 14px;line-height:1.4;cursor:pointer}
+.g-nl input{margin-top:2px;width:16px;height:16px;flex:none}
+.g-box .askbtn{width:100%;padding:12px;font-size:15.5px}
+.g-err{color:#B3412F;font-size:13px;margin:0 0 10px!important}
+.g-fine{font-size:11.5px;color:var(--faint);margin:12px 0 0!important;line-height:1.45}
+.g-fine summary{cursor:pointer;display:inline;color:var(--accent);font-size:11.5px}
+.g-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 </style>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2895,14 +2909,73 @@ $("#prefsSave").addEventListener("click",async()=>{
 });
 
 /* ---------- test pubblico ---------- */
-function track(name){try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:"evento/"+name,title:name,event:true})}catch(e){}}
+function track(name,t){try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:"evento/"+name,title:name,event:true});else if(!t)setTimeout(()=>track(name,1),1500)}catch(e){}}
 function setupPublic(P){
-  S.pub=P;
+  S.pub=P;captureAttrib();
   if(P.goatcounter){const sc=document.createElement("script");sc.async=true;sc.src="https://gc.zgo.at/count.js";sc.dataset.goatcounter="https://"+P.goatcounter+".goatcounter.com/count";document.head.appendChild(sc)}
   const today=isoDay(new Date());const fino=P.aperta_fino||"";
-  if(fino&&today>fino){closedScreen(P);return}
+  if(fino&&today>fino){earlyAccess(P);return}
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
   if(bar&&fino){const d=daysTo(fino,today);tx.innerHTML=`<strong>ANTEPRIMA GRATUITA</strong> · accesso libero fino a ${esc(fmtDate(fino,true))}${d>=0?` · ${d===0?"ultimo giorno":d===1?"manca 1 giorno":"mancano "+d+" giorni"}`:""}${P.form_url?` · <a href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-barra">resta aggiornato</a>`:""}`;bar.hidden=false}
+}
+/* ---------- Early Access: accesso con email ---------- */
+const RG_API="https://rg-api.briefinghub.workers.dev";
+function gStore(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function captureAttrib(){
+  if(gStore("rg-attr"))return;
+  const q=new URLSearchParams(location.search);let ref="";
+  try{if(document.referrer){const h=new URL(document.referrer).hostname;if(h!==location.hostname)ref=h}}catch(e){}
+  gStore("rg-attr",JSON.stringify({source:q.get("utm_source")||ref||"diretto",campaign:q.get("utm_campaign")||"",content:q.get("utm_content")||"",referrer:ref}));
+}
+function getAttrib(){try{return JSON.parse(gStore("rg-attr")||"{}")||{}}catch(e){return{}}}
+function pingSeen(){
+  const id=gStore("rg-uid");if(!id)return;const d=isoDay(new Date());if(gStore("rg-seen")===d)return;gStore("rg-seen",d);
+  try{fetch(RG_API+"/api/seen",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id}),keepalive:true}).catch(()=>{})}catch(e){}
+}
+function earlyBar(){
+  const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
+  if(bar&&tx){tx.innerHTML="<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";bar.hidden=false}
+}
+function gateLock(on){document.body.classList.toggle("gated",on);document.querySelectorAll("header.top,main,.foot").forEach(e=>{e.inert=on})}
+function earlyAccess(P){
+  earlyBar();
+  if(gStore("rg-uid")){pingSeen();return}
+  showGate(P);
+}
+function showGate(P){
+  if(document.getElementById("gate"))return;
+  const o=document.createElement("div");o.id="gate";
+  const mod=P&&P.form_url?` Per accedere, correggere o cancellare i tuoi dati usa il <a href="${esc(P.form_url)}" target="_blank" rel="noopener">modulo di contatto</a>.`:"";
+  o.innerHTML=`<form class="g-box" role="dialog" aria-modal="true" aria-labelledby="gTit" novalidate>
+<span class="label">Read Geopolitics · Early Access</span>
+<h1 id="gTit">Continua con Read Geopolitics</h1>
+<p>La Public Preview è finita. Read Geopolitics prosegue in Early Access, gratuito: lascia la tua email per continuare.</p>
+<input type="email" id="gEmail" name="email" placeholder="Email" autocomplete="email" inputmode="email" aria-label="Email" required>
+<input class="g-hp" type="text" id="gHp" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true">
+<label class="g-nl"><input type="checkbox" id="gNl"><span>Voglio ricevere anche aggiornamenti e novità (facoltativo)</span></label>
+<p class="g-err" id="gErr" role="alert" hidden></p>
+<button type="submit" class="askbtn" id="gBtn">Continua</button>
+<p class="g-fine">Usiamo l'email per l'accesso e, se lo scegli, per gli aggiornamenti. <details style="display:inline"><summary>Informativa</summary> Titolare del trattamento: il responsabile del progetto Read Geopolitics. Dati raccolti: email, data e provenienza della prima visita, ultimo accesso. Finalità: consentire l'accesso all'Early Access e, solo con il tuo consenso, inviarti aggiornamenti (revocabile in ogni momento). Non vendiamo né cediamo i dati.${mod}</details></p>
+</form>`;
+  document.body.appendChild(o);gateLock(true);track("gate-vista");
+  const f=o.querySelector("form"),em=o.querySelector("#gEmail"),er=o.querySelector("#gErr"),bt=o.querySelector("#gBtn");
+  if(!(window.matchMedia&&matchMedia("(pointer:coarse)").matches))setTimeout(()=>{try{em.focus({preventScroll:true})}catch(e){}},50);
+  const msg=t=>{er.textContent=t;er.hidden=!t};
+  f.addEventListener("submit",async ev=>{
+    ev.preventDefault();msg("");
+    const email=em.value.trim();
+    if(!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)){msg("Controlla l'indirizzo email.");em.focus();return}
+    bt.disabled=true;bt.textContent="Un attimo…";
+    try{
+      const a=getAttrib();
+      const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:o.querySelector("#gNl").checked,sito:o.querySelector("#gHp").value,source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Continua";return}
+      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));
+      track(j.returning?"gate-ritorno":"gate-invio");
+      o.remove();gateLock(false);
+    }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Continua"}
+  });
 }
 function closedScreen(P){
   document.body.classList.add("closed");
