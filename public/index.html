@@ -2955,7 +2955,7 @@ function applyOwner(){
   if(!S.static)(async()=>{try{const u=await (window.claude&&window.claude.use?window.claude.use("user"):null);if(u){S.userKnown=true;S.owner=await u.isOwner();S.editor=await u.canEdit()}}catch(e){}
     applyOwner();schedule()})();
   let db=null;
-  try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
+  try{let r=null;try{r=await fetch("https://rg-api.briefinghub.workers.dev/api/data.json");if(!r.ok)r=null}catch(e){r=null}if(!r)r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
   if(!db){db=await (window.claude&&window.claude.use?window.claude.use("db"):null);if(db)setTimeout(maybeNovita,1500)}
   if(!db){$("#briefing").innerHTML='<div class="state">Il database della dashboard non è disponibile in questa vista. Apri la pagina da claude.ai con il tuo account.</div>';return}
   S.db=db;
