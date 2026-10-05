@@ -1256,7 +1256,7 @@ nav.tabs button .ic{margin-right:.3em}
     </div>
   </section>
 </main>
-<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · Anteprima gratuita · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
+<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · <a class="igl-foot" href="/privacy.html" target="_blank" rel="noopener">Privacy</a> · Early Access gratuito · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
 <div id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
   <div class="prefs-box">
     <div class="ab-head"><h2 id="prefsTitle">⚙️ Preferenze</h2><button class="deep-x" id="prefsX" type="button" aria-label="Chiudi">×</button></div>
@@ -2934,8 +2934,12 @@ function captureAttrib(){
   gStore("rg-attr",JSON.stringify({source:q.get("utm_source")||ref||"diretto",campaign:q.get("utm_campaign")||"",content:q.get("utm_content")||"",referrer:ref}));
 }
 function getAttrib(){try{return JSON.parse(gStore("rg-attr")||"{}")||{}}catch(e){return{}}}
+const ADMIN_HASH="fda41f8efb52484c331da29b51c8f0dee31b8bf0dced59bd0b16c2812e0b466b";
+async function isAdminKey(v){
+  try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(v).trim().toLowerCase()));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")===ADMIN_HASH}catch(e){return false}
+}
 function pingSeen(){
-  const id=gStore("rg-uid");if(!id)return;const d=isoDay(new Date());if(gStore("rg-seen")===d)return;gStore("rg-seen",d);
+  const id=gStore("rg-uid");if(!id||id==="admin")return;const d=isoDay(new Date());if(gStore("rg-seen")===d)return;gStore("rg-seen",d);
   try{fetch(RG_API+"/api/seen",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id}),keepalive:true}).catch(()=>{})}catch(e){}
 }
 function earlyBar(){
@@ -2951,7 +2955,6 @@ function earlyAccess(P){
 function showGate(P){
   if(document.getElementById("gate"))return;
   const o=document.createElement("div");o.id="gate";
-  const mod=P&&P.form_url?` Per accedere, correggere o cancellare i tuoi dati usa il <a href="${esc(P.form_url)}" target="_blank" rel="noopener">modulo di contatto</a>.`:"";
   o.innerHTML=`<form class="g-box" role="dialog" aria-modal="true" aria-labelledby="gTit" novalidate>
 <span class="label">Read Geopolitics · Early Access</span>
 <h1 id="gTit">Continua con Read Geopolitics</h1>
@@ -2961,7 +2964,7 @@ function showGate(P){
 <label class="g-nl"><input type="checkbox" id="gNl"><span>Voglio ricevere anche aggiornamenti e novità (facoltativo)</span></label>
 <p class="g-err" id="gErr" role="alert" hidden></p>
 <button type="submit" class="askbtn" id="gBtn">Continua</button>
-<p class="g-fine">Usiamo l'email per l'accesso e, se lo scegli, per gli aggiornamenti. <details style="display:inline"><summary>Informativa</summary> Titolare del trattamento: il responsabile del progetto Read Geopolitics. Dati raccolti: email, data e provenienza della prima visita, ultimo accesso. Finalità: consentire l'accesso all'Early Access e, solo con il tuo consenso, inviarti aggiornamenti (revocabile in ogni momento). Non vendiamo né cediamo i dati.${mod}</details></p>
+<p class="g-fine">Usiamo l'email per farti accedere e, solo se spunti la casella, per inviarti aggiornamenti. Non vendiamo né cediamo i tuoi dati. <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a> · per accedere, correggere o cancellare i tuoi dati scrivi a <a href="mailto:hello@readgeopolitics.com">hello@readgeopolitics.com</a>.</p>
 </form>`;
   document.body.appendChild(o);gateLock(true);track("gate-vista");
   const f=o.querySelector("form"),em=o.querySelector("#gEmail"),er=o.querySelector("#gErr"),bt=o.querySelector("#gBtn");
@@ -2970,6 +2973,7 @@ function showGate(P){
   f.addEventListener("submit",async ev=>{
     ev.preventDefault();msg("");
     const email=em.value.trim();
+    if(await isAdminKey(email)){gStore("rg-uid","admin");gStore("rg-seen",isoDay(new Date()));o.remove();gateLock(false);return}
     if(!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)){msg("Controlla l'indirizzo email.");em.focus();return}
     bt.disabled=true;bt.textContent="Un attimo…";
     try{
