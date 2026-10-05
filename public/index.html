@@ -90,6 +90,11 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .top-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-block:12px 6px}
 .brand{font-family:var(--serif);font-size:20px;font-weight:600}
 .brand small{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.06em;margin-left:6px;text-transform:uppercase}
+.igl{display:inline-flex;align-items:center;gap:6px;margin-left:4px;padding:4px 11px 4px 9px;border-radius:999px;border:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.igl svg{width:15px;height:15px;flex:none}
+.igl:hover{border-color:var(--ink)}
+.igl-foot{color:inherit;text-decoration:underline}
+@media(max-width:520px){.igl .igt{display:none}.igl{padding:5px 8px}}
 .stamp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
@@ -1111,7 +1116,7 @@ nav.tabs button .ic{margin-right:.3em}
   <div class="wrap">
     <div class="top-row">
       <span class="brand">Read Geopolitics<small>Il mondo in 15 minuti</small></span>
-      <span class="stamp" id="stamp"></span><button class="prefbtn idee-pill" id="ideePill" type="button" hidden>✨ Idee</button><button class="prefbtn dos-pill" id="dosPill" type="button" hidden>🧭 Dossier</button><button class="prefbtn themebtn" id="themeBtn" type="button" aria-label="Cambia tema">☀️</button><button class="prefbtn" id="guideBtn" type="button" aria-label="Guida">📘 Guida</button><button class="prefbtn" id="prefBtn" type="button">⚙️ Preferenze</button>
+      <a class="igl" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener" aria-label="Seguici su Instagram @read.geopolitics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg><span class="igt">@read.geopolitics</span></a><span class="stamp" id="stamp"></span><button class="prefbtn idee-pill" id="ideePill" type="button" hidden>✨ Idee</button><button class="prefbtn dos-pill" id="dosPill" type="button" hidden>🧭 Dossier</button><button class="prefbtn themebtn" id="themeBtn" type="button" aria-label="Cambia tema">☀️</button><button class="prefbtn" id="guideBtn" type="button" aria-label="Guida">📘 Guida</button><button class="prefbtn" id="prefBtn" type="button">⚙️ Preferenze</button>
     </div>
     <nav class="tabs" role="tablist" aria-label="Viste">
       <button role="tab" id="tab-briefing" data-view="briefing" aria-selected="true"><span class="ic" aria-hidden="true">📰</span>Briefing</button>
@@ -1251,7 +1256,7 @@ nav.tabs button .ic{margin-right:.3em}
     </div>
   </section>
 </main>
-<p class="foot">Anteprima gratuita · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
+<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · Anteprima gratuita · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
 <div id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
   <div class="prefs-box">
     <div class="ab-head"><h2 id="prefsTitle">⚙️ Preferenze</h2><button class="deep-x" id="prefsX" type="button" aria-label="Chiudi">×</button></div>
