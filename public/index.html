@@ -231,6 +231,17 @@ details.log ul{margin:0;padding-left:18px}
 .arc-key{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px}
 .arc-key span{display:inline-flex;align-items:center;gap:5px}
 .arc-key i{width:16px;height:2px;border-radius:2px;display:inline-block}
+.arc-key{align-items:center}
+.arc-key button.arc-btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;line-height:1.3}
+.arc-key button.arc-btn i{width:18px;height:3px}
+.arc-key button.arc-btn small{color:var(--muted);font-size:11px}
+.arc-key button.arc-btn[aria-pressed="false"]{opacity:.5;background:transparent;text-decoration:line-through;text-decoration-color:var(--faint)}
+.arc-key button.arc-btn[aria-pressed="false"] i{opacity:.35}
+.arc-key button.arc-btn:hover{border-color:var(--accent)}
+.arc-key .arc-sep{width:1px;height:18px;background:var(--line);margin:0 2px}
+.arc-key button.arc-ctl{font:inherit;font-size:12px;color:var(--accent);background:none;border:0;padding:4px 4px;cursor:pointer;text-decoration:underline}
+.arc-key button.arc-ctl[aria-pressed="true"]{font-weight:600}
+.arc-hint{font-size:12px;color:var(--faint);margin:6px 0 0}
 .criteria{font-size:12.5px;color:var(--muted);margin-top:8px;max-width:70ch}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:sticky;top:120px}
 .panel h2{font-size:22px}
@@ -1159,6 +1170,7 @@ nav.tabs button .ic{margin-right:.3em}
           </div>
           <div><span class="label"><span class="ic" aria-hidden="true">🔀</span>Dinamiche attive</span>
             <div class="arc-key" id="arcKey"></div>
+            <p class="arc-hint">Tocca un tipo per accenderlo o spegnerlo. Con "Solo il paese selezionato" vedi solo le linee che partono o arrivano al paese che hai toccato.</p>
           </div>
         </div>
         <p class="criteria"><strong>Criterio.</strong> 1 stabile · 2 attrito politico o economico senza effetti fuori dai confini · 3 crisi con ricadute regionali (sanzioni, blocchi, proteste di massa) · 4 violenza armata o crisi istituzionale grave · 5 guerra aperta o collasso statale. Il livello misura rilevanza e rischio per i prossimi 30 giorni, non un giudizio sul governo.</p>
@@ -2001,7 +2013,32 @@ function openStory(id){
 const LV=[1,2,3,4,5];
 function lvColor(l){return l?`var(--l${l})`:"var(--l0)"}
 $("#scale").innerHTML=LV.map(l=>`<span><i style="background:var(--l${l})"></i>${l}</span>`).join("");
-$("#arcKey").innerHTML=Object.entries(TYPES).map(([k,v])=>`<span><i style="background:var(--arc-${k})"></i>${v}</span>`).join("");
+/* dinamiche accendibili: S.arcOn = tipi visibili, S.arcSel = solo quelle del paese selezionato */
+S.arcOn=new Set(Object.keys(TYPES));S.arcSel=false;
+try{const sv=JSON.parse(localStorage.getItem("rg-arc-on")||"null");if(Array.isArray(sv))S.arcOn=new Set(sv.filter(k=>TYPES[k]))}catch(e){}
+function saveArc(){try{localStorage.setItem("rg-arc-on",JSON.stringify([...S.arcOn]))}catch(e){}}
+function renderArcKey(){
+  const cnt={};document.querySelectorAll("#mapBox path.arc").forEach(p=>{cnt[p.dataset.t]=(cnt[p.dataset.t]||0)+1});
+  $("#arcKey").innerHTML=Object.entries(TYPES).map(([k,v])=>`<button type="button" class="arc-btn" data-arc="${k}" aria-pressed="${S.arcOn.has(k)}"><i style="background:var(--arc-${k})"></i>${v}${cnt[k]!=null?` <small>${cnt[k]}</small>`:""}</button>`).join("")
+   +`<span class="arc-sep" aria-hidden="true"></span><button type="button" class="arc-ctl" data-arc-all="1">Tutte</button><button type="button" class="arc-ctl" data-arc-all="0">Nessuna</button>`
+   +`<span class="arc-sep" aria-hidden="true"></span><button type="button" class="arc-ctl" id="arcSelBtn" aria-pressed="${S.arcSel}">Solo il paese selezionato</button>`;
+}
+function applyArcs(){
+  document.querySelectorAll("#mapBox path.arc").forEach(p=>{
+    const on=S.arcOn.has(p.dataset.t)&&(!S.arcSel||!S.selCountry||p.dataset.i===S.selCountry||p.dataset.j===S.selCountry);
+    p.style.display=on?"":"none";
+  });
+  document.querySelectorAll("#arcKey [data-arc]").forEach(b=>b.setAttribute("aria-pressed",S.arcOn.has(b.dataset.arc)));
+  const sb=document.getElementById("arcSelBtn");if(sb)sb.setAttribute("aria-pressed",S.arcSel);
+}
+$("#arcKey").addEventListener("click",e=>{
+  const b=e.target.closest("[data-arc]");
+  if(b){const k=b.dataset.arc;if(S.arcOn.has(k))S.arcOn.delete(k);else S.arcOn.add(k);saveArc();applyArcs();return}
+  const a=e.target.closest("[data-arc-all]");
+  if(a){S.arcOn=a.dataset.arcAll==="1"?new Set(Object.keys(TYPES)):new Set();saveArc();applyArcs();return}
+  if(e.target.closest("#arcSelBtn")){S.arcSel=!S.arcSel;applyArcs()}
+});
+renderArcKey();
 let mapState=null;
 async function loadGeo(){
   if(S.geo)return S.geo;
@@ -2029,15 +2066,15 @@ async function drawMap(){
     .append("title").text(f=>{const c=S.countries[f.id];const l=levelAt(f.id);return (c&&c.nome||cname(f.id)||f.properties.n)+(l?` · livello ${l}`:"")});
   const cent={};geo.features.forEach(f=>{if(f.id)cent[f.id]=f.id==="USA"?proj([-98,39]):f.id==="RUS"?proj([45,56]):f.id==="FRA"?proj([2.5,46.6]):path.centroid(f)});
   const seen=new Set();const arcs=[];
-  Object.entries(S.countries).forEach(([iso,c])=>(c.dinamiche||[]).forEach(d=>{if(!d.con||!cent[iso]||!cent[d.con])return;const k=[iso,d.con].sort().join("-")+d.tipo;if(seen.has(k))return;seen.add(k);arcs.push({a:cent[iso],b:cent[d.con],t:d.tipo})}));
-  g.append("g").attr("class","arcs").attr("display",S.mapDate?"none":null).selectAll("path").data(arcs).join("path").attr("class","arc").attr("stroke",d=>`var(--arc-${d.t})`)
+  Object.entries(S.countries).forEach(([iso,c])=>(c.dinamiche||[]).forEach(d=>{if(!d.con||!cent[iso]||!cent[d.con])return;const k=[iso,d.con].sort().join("-")+d.tipo;if(seen.has(k))return;seen.add(k);arcs.push({a:cent[iso],b:cent[d.con],t:d.tipo,i:iso,j:d.con})}));
+  g.append("g").attr("class","arcs").attr("display",S.mapDate?"none":null).selectAll("path").data(arcs).join("path").attr("class","arc").attr("data-t",d=>d.t).attr("data-i",d=>d.i).attr("data-j",d=>d.j).attr("stroke",d=>`var(--arc-${d.t})`)
     .attr("d",d=>{const[x1,y1]=d.a,[x2,y2]=d.b;const mx=(x1+x2)/2,my=(y1+y2)/2;const dx=x2-x1,dy=y2-y1;const k=.22;return `M${x1},${y1} Q${mx-dy*k},${my+dx*k} ${x2},${y2}`});
   const zoom=d3.zoom().scaleExtent([1,20]).translateExtent([[0,0],[W,H]]).on("zoom",e=>g.attr("transform",e.transform));
   svg.call(zoom);
   box.insertAdjacentHTML("beforeend",'<div class="zctl"><button type="button" id="zIn" aria-label="Ingrandisci">+</button><button type="button" id="zOut" aria-label="Rimpicciolisci">−</button></div>');
   $("#zIn").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,1.7);
   $("#zOut").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,1/1.7);
-  mapState={svg};highlightSel();
+  mapState={svg};renderArcKey();applyArcs();highlightSel();
 }
 /* ---------- macchina del tempo ---------- */
 function tmDates(){const set=new Set();Object.values(S.countries).forEach(c=>(c.storico||[]).forEach(p=>{if(p&&p.d)set.add(p.d)}));S.briefings.forEach(b=>{if(b.data)set.add(b.data)});return [...set].sort()}
@@ -2057,7 +2094,7 @@ function applyTM(){
   if(S.selCountry)renderPanel();
 }
 function focusPanel(){if(window.innerWidth>860)return;setTimeout(()=>{const p=$("#panel");const y=p.getBoundingClientRect().top+window.scrollY-(document.querySelector("header.top").offsetHeight+10);window.scrollTo({top:y,behavior:"smooth"})},80)}
-function highlightSel(){document.querySelectorAll(".country").forEach(p=>p.classList.toggle("sel",p.dataset.iso===S.selCountry))}
+function highlightSel(){document.querySelectorAll(".country").forEach(p=>p.classList.toggle("sel",p.dataset.iso===S.selCountry));if(S.arcSel)applyArcs()}
 
 /* ---------- glossary ---------- */
 let GLRE=null,GLMAP={};
