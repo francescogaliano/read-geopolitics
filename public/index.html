@@ -3205,9 +3205,9 @@ function bindGateForm(f,done){
       const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:f.querySelector("[name=nl]").checked,consent_text:NL_TXT,sito:f.querySelector("[name=sito]").value,source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →";return}
-      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));gStore("rg-nl-wait",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
+      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
       track(j.returning?"gate-ritorno":"gate-invio");
-      done();
+      done();nlPrompt(true);
     }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →"}
   });
 }
@@ -3221,8 +3221,8 @@ function nlOpen(auto){
     :'<h3>L\'anteprima del briefing, ogni mattina</h3><p>Un\'email breve con il titolo del giorno, il fatto centrale con le due tesi a confronto e cosa osservare. Il resto sta sul sito. Gratis, ti disiscrivi con un click.</p>'
       +(known?'':'<input type="email" class="nl-em" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email">')
       +'<p class="nl-err" role="alert" hidden></p><div class="nl-b"><button class="nl-p" data-s>Sì, iscrivimi</button>'
-      +(auto?'<button class="nl-g" data-n>Non mostrare più</button>':'<button class="nl-g" data-c>Annulla</button>')
-      +'</div><p class="nl-f">'+esc(NL_TXT)+' · <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>';
+      +'<button class="nl-g" data-n>Non mostrare più</button>'
+      +'</div><p class="nl-f"><a href="'+RG_API+'/api/newsletter/esempio" target="_blank" rel="noopener" data-ex>Guarda un\'email d\'esempio</a></p><p class="nl-f">'+esc(NL_TXT)+' · <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>';
   o.innerHTML='<div class="nl-c"><button class="nl-x" data-z aria-label="Chiudi">×</button>'+body+'</div>';
   document.body.appendChild(o);
   const close=sn=>{o.remove();if(sn)sSet("rg-nl-snz","1")};
@@ -3256,14 +3256,14 @@ function nlOpen(auto){
     }catch(x){msg("Non riesco a iscriverti in questo momento. Riprova.");b.disabled=false}
   });
 }
-function nlPrompt(){
+function nlPrompt(fresh){
   const id=gStore("rg-uid");if(!id||id==="admin")return;
-  if(gStore("rg-nl")||sGet("rg-nl-snz")||gStore("rg-nl-wait")===isoDay(new Date()))return;
+  if(gStore("rg-nl")||sGet("rg-nl-snz"))return;
   fetch(RG_API+"/api/me",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id})}).then(r=>r.json()).then(j=>{
     if(!j||!j.ok)return;
     if(j.newsletter){gStore("rg-nl","1");return}
     if(!j.known)return;
-    setTimeout(()=>{if(!gStore("rg-nl")&&!sGet("rg-nl-snz")&&!document.getElementById("gate"))nlOpen(true)},6000);
+    setTimeout(()=>{if(!gStore("rg-nl")&&!sGet("rg-nl-snz")&&!document.getElementById("gate"))nlOpen(true)},fresh?12000:6000);
   }).catch(()=>{});
 }
 document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("[data-nl]");if(a){e.preventDefault();nlOpen(false)}});
