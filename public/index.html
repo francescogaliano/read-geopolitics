@@ -10,7 +10,7 @@
 .nl-p:disabled{opacity:.6;cursor:default}
 .nl-g{background:none;border:0;color:var(--muted);font-size:14px;text-decoration:underline;cursor:pointer}
 .nl-c p.nl-f{font-size:12px;color:var(--faint);margin:0}
-.nl-c p.nl-cap{margin:-4px 0 12px}
+.nl-pb{display:block;margin:0 0 12px;padding:0}
 .nl-pv{height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;margin:2px 0 12px;background:#0a1020}
 .nl-pvi{overflow:hidden;position:relative}
 .nl-pvi iframe{width:620px;height:1700px;border:0;transform-origin:0 0;pointer-events:none;display:block}
@@ -3226,16 +3226,22 @@ function nlOpen(auto){
       +(known?'':'<input type="email" class="nl-em" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email">')
       +'<p class="nl-err" role="alert" hidden></p><div class="nl-b"><button class="nl-p" data-s>Sì, iscrivimi</button>'
       +'<button class="nl-g" data-n>Non mostrare più</button>'
-      +'</div><div class="nl-pv" aria-label="Esempio dell\'email"><div class="nl-pvi"><iframe src="'+RG_API+'/api/newsletter/esempio" title="Esempio dell\'email del mattino" sandbox="" loading="lazy" tabindex="-1"></iframe></div></div><p class="nl-f nl-cap">Un\'email d\'esempio, scorri per vederla tutta.</p><p class="nl-f">'+esc(NL_TXT)+' · <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>';
+      +'</div><button class="nl-g nl-pb" data-pv>Mostra anteprima dell\'email</button><div class="nl-pv" aria-label="Esempio dell\'email" hidden><div class="nl-pvi"></div></div><p class="nl-f">'+esc(NL_TXT)+' · <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>';
   o.innerHTML='<div class="nl-c"><button class="nl-x" data-z aria-label="Chiudi">×</button>'+body+'</div>';
   document.body.appendChild(o);
-  const pv=o.querySelector(".nl-pv");
-  if(pv){const s=Math.min(1,(pv.clientWidth||320)/620),f=pv.querySelector("iframe"),w=pv.querySelector(".nl-pvi");f.style.transform="scale("+s+")";w.style.height=Math.round(1700*s)+"px"}
   const close=sn=>{o.remove();if(sn)sSet("rg-nl-snz","1")};
   o.addEventListener("click",async e=>{
     if(e.target===o){close(true);return}
     const b=e.target.closest("button");if(!b)return;
     if(b.hasAttribute("data-z")){close(true);return}
+    if(b.hasAttribute("data-pv")){
+      const pv=o.querySelector(".nl-pv"),w=pv.querySelector(".nl-pvi");
+      if(pv.hidden){
+        pv.hidden=false;
+        if(!w.firstChild){const s=Math.min(1,(pv.clientWidth||320)/620),f=document.createElement("iframe");f.src=RG_API+"/api/newsletter/esempio";f.title="Esempio dell'email del mattino";f.setAttribute("sandbox","");f.tabIndex=-1;f.style.transform="scale("+s+")";w.style.height=Math.round(1700*s)+"px";w.appendChild(f)}
+        b.textContent="Nascondi anteprima";track("nl-anteprima");
+      }else{pv.hidden=true;b.textContent="Mostra anteprima dell'email"}
+      return}
     if(b.hasAttribute("data-c")){close(false);return}
     if(b.hasAttribute("data-n")){gStore("rg-nl","0");track("nl-mai-piu");close(false);return}
     if(!b.hasAttribute("data-s"))return;
