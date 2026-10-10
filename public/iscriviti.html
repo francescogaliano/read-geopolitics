@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Read Geopolitics · Il mondo in 15 minuti</title>
+<meta name="description" content="Il briefing quotidiano, gratuito: fatti verificati, due tesi a confronto, fonti diverse. Tu leggi, tu decidi.">
+<meta name="theme-color" content="#0a0f1c">
+<style>
+:root{--bg:#0a0f1c;--bg2:#121c36;--ink:#EEF2F8;--mut:#A9B4C8;--faint:#7E8AA3;--amb:#E8A33D;--line:rgba(150,175,225,.18);--card:rgba(20,32,62,.55)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:radial-gradient(900px 640px at 50% 260px,#16254a 0%,rgba(10,15,28,0) 70%) no-repeat,var(--bg);color:var(--ink);font:17px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh}
+.ser{font-family:"IBM Plex Serif",Georgia,"Times New Roman",serif;font-weight:600}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--amb)}
+a{color:var(--amb)}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px}
+header{padding:22px 0 0}
+.brand{font-size:19px;letter-spacing:.02em}
+.hero{position:relative;text-align:center;padding:12px 0 8px}
+#gl{display:block;margin:0 auto;width:min(86vw,380px);height:min(86vw,380px)}
+h1{font-size:clamp(34px,8.4vw,52px);line-height:1.12;margin:6px 0 14px}
+h1 b{color:var(--amb);font-weight:600}
+.lead{color:var(--mut);font-size:19px;max-width:520px;margin:0 auto 22px}
+form{max-width:480px;margin:0 auto;text-align:left}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.em{flex:1 1 220px;min-width:0;height:54px;border-radius:12px;border:1px solid var(--line);background:rgba(8,13,26,.8);color:var(--ink);padding:0 16px;font:inherit;font-size:17px}
+.em:focus{outline:2px solid var(--amb);outline-offset:1px}
+.cta{height:54px;padding:0 24px;border:0;border-radius:12px;background:var(--amb);color:#1A1204;font:600 17px "IBM Plex Sans",system-ui,sans-serif;cursor:pointer;flex:1 1 170px;box-shadow:0 0 28px rgba(232,163,61,.28)}
+.cta:disabled{opacity:.6;cursor:default}
+.nl{display:flex;gap:10px;align-items:flex-start;margin:14px 2px 0;font-size:14.5px;line-height:1.45;color:var(--mut)}
+.nl input{margin-top:3px;width:18px;height:18px;accent-color:var(--amb);flex:none}
+.fine{font-size:13px;color:var(--faint);margin:12px 2px 0}
+.err{color:#F4A39B;font-size:14.5px;margin:10px 2px 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.ok{max-width:480px;margin:0 auto;text-align:center;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:26px 22px}
+.ok h2{font-size:26px;margin-bottom:8px}
+.ok p{color:var(--mut);margin-bottom:18px}
+.ok a.cta{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;max-width:320px}
+section{padding:46px 0 0}
+h2.t{font-size:clamp(26px,6vw,34px);line-height:1.2;margin:8px 0 22px}
+.grid{display:grid;gap:14px}
+@media(min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+.f{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:20px 20px 18px}
+.f .n{font-size:12px}
+.f h3{font-size:25px;margin:8px 0 6px}
+.f p{color:var(--mut);font-size:16px}
+.mock{margin-top:14px;display:grid;gap:8px}
+.bar{height:8px;border-radius:5px;background:rgba(150,175,225,.22)}
+.bar.a{background:rgba(232,163,61,.55)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two>div{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:6px}
+.two .k{font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+.src{display:flex;gap:6px;flex-wrap:wrap}
+.src i{font-style:normal;font:500 11px "IBM Plex Mono",monospace;border:1px solid var(--line);border-radius:20px;padding:4px 9px;color:var(--faint)}
+.map{position:relative;height:84px;border-radius:10px;border:1px solid var(--line);overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(60,100,190,.28),rgba(10,15,28,0) 70%)}
+.map s{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--amb);box-shadow:0 0 12px var(--amb)}
+.neu{margin-top:46px;border:1px solid rgba(232,163,61,.4);border-radius:18px;padding:26px 22px;text-align:center;background:linear-gradient(180deg,rgba(232,163,61,.07),rgba(232,163,61,0))}
+.neu h2{font-size:clamp(26px,6vw,34px);line-height:1.2;margin-bottom:10px}
+.neu h2 b{color:var(--amb);font-weight:600}
+.neu p{color:var(--mut);max-width:520px;margin:0 auto}
+.steps{display:grid;gap:12px;counter-reset:s}
+.steps li{list-style:none;display:flex;gap:14px;align-items:flex-start;color:var(--mut)}
+.steps li b{color:var(--ink);font-weight:600}
+.steps li:before{counter-increment:s;content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--amb);color:var(--amb);display:grid;place-items:center;font:500 14px "IBM Plex Mono",monospace}
+.faq details{border-top:1px solid var(--line);padding:14px 0}
+.faq summary{cursor:pointer;font-weight:600}
+.faq p{color:var(--mut);margin-top:8px;font-size:16px}
+.last{text-align:center;padding:50px 0 28px}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:13px;color:var(--faint);text-align:center}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand ser">READ GEOPOLITICS</div></header>
+
+<div class="hero">
+  <canvas id="gl" width="760" height="760" aria-hidden="true"></canvas>
+  <h1 class="ser">Il mondo in <b>15 minuti.</b></h1>
+  <p class="lead">Ogni mattina un briefing gratuito: i fatti verificati, le due tesi più forti a confronto e le fonti. Tu leggi, tu decidi.</p>
+  <div id="fw"></div>
+</div>
+
+<section>
+  <div class="mono">Cosa trovi</div>
+  <h2 class="t ser">Quattro cose, pensate per capire.</h2>
+  <div class="grid">
+    <div class="f"><div class="mono n">01</div><h3 class="ser">Capisci</h3><p>I fatti verificati, tenuti separati dalle interpretazioni, e il motivo per cui contano.</p>
+      <div class="mock"><div class="bar a" style="width:38%"></div><div class="bar" style="width:92%"></div><div class="bar" style="width:76%"></div></div></div>
+    <div class="f"><div class="mono n">02</div><h3 class="ser">Confronta</h3><p>La versione più forte di chi sostiene e di chi si oppone, poi una sintesi critica di dove reggono e dove cedono.</p>
+      <div class="mock"><div class="two"><div><span class="k">Chi sostiene</span><div class="bar a"></div><div class="bar"></div></div><div><span class="k">Chi si oppone</span><div class="bar a"></div><div class="bar"></div></div></div></div></div>
+    <div class="f"><div class="mono n">03</div><h3 class="ser">Verifica</h3><p>Fonti diverse, anche non occidentali, sempre linkate. Se divergono sui fatti, te lo mostriamo.</p>
+      <div class="mock"><div class="src"><i>agenzie</i><i>testate</i><i>analisi</i><i>fonti ufficiali</i></div></div></div>
+    <div class="f"><div class="mono n">04</div><h3 class="ser">Esplora</h3><p>Una mappa da toccare e una timeline che collega gli eventi, per vedere i nessi e non solo i titoli.</p>
+      <div class="mock"><div class="map"><s style="left:18%;top:30%"></s><s style="left:44%;top:62%"></s><s style="left:63%;top:28%"></s><s style="left:82%;top:58%"></s></div></div></div>
+  </div>
+</section>
+
+<div class="neu">
+  <div class="mono" style="margin-bottom:10px">Il nostro metodo</div>
+  <h2 class="ser">Nessuna opinione da seguire. <b>Decidi tu.</b></h2>
+  <p>Fatti, interpretazioni e opinioni sono sempre separati e riconoscibili. Mostriamo le posizioni migliori di ciascuna parte, non caricature, e ti diciamo cosa manca e quali fatti deciderebbero la questione. La conclusione è tua.</p>
+</div>
+
+<section>
+  <div class="mono">Come funziona</div>
+  <h2 class="t ser">Tre passaggi, nessuna password.</h2>
+  <ol class="steps">
+    <li><span><b>Inserisci la tua email.</b> Serve per farti entrare, non chiediamo né password né carta.</span></li>
+    <li><span><b>Scegli se ricevere l'anteprima ogni mattina.</b> Una breve email con i punti principali del giorno, facoltativa.</span></li>
+    <li><span><b>Leggi in 15 minuti.</b> Il briefing completo è sul sito, pronto ogni mattina.</span></li>
+  </ol>
+</section>
+
+<section class="faq">
+  <div class="mono" style="margin-bottom:6px">Domande frequenti</div>
+  <details><summary>È davvero gratis?</summary><p>Sì. L'accesso è gratuito e non serve alcuna carta di pagamento.</p></details>
+  <details><summary>Posso disiscrivermi dall'email del mattino?</summary><p>Sempre, con un clic dal link in fondo a ogni email. Puoi continuare a usare il sito come prima.</p></details>
+  <details><summary>Cosa fate con la mia email?</summary><p>La usiamo per farti entrare e, solo se lo scegli, per inviarti l'anteprima del mattino. Trovi tutti i dettagli nell'<a href="/privacy.html">informativa privacy</a>.</p></details>
+  <details><summary>Chi c'è dietro le posizioni a confronto?</summary><p>Ogni posizione è attribuita ad attori e fonti verificabili. Non scriviamo opinioni nostre da farti condividere.</p></details>
+</section>
+
+<div class="last">
+  <h2 class="t ser" style="margin-bottom:18px">Pronto a leggere il mondo a modo tuo?</h2>
+  <div id="fw2"></div>
+</div>
+
+<footer>© Read Geopolitics · <a href="/privacy.html">Informativa privacy</a> · <a href="mailto:hello@readgeopolitics.com">hello@readgeopolitics.com</a></footer>
+</div>
+
+<script>
+const RG_API="https://rg-api.briefinghub.workers.dev";
+const NL_TXT="Voglio ricevere ogni mattina via email l'anteprima del briefing (facoltativo, ti puoi disiscrivere quando vuoi)";
+function gStore(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function isoDay(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function attrib(){
+  const q=new URLSearchParams(location.search);let ref="";
+  try{if(document.referrer){const h=new URL(document.referrer).hostname;if(h!==location.hostname)ref=h}}catch(e){}
+  const a={source:q.get("utm_source")||ref||"diretto",campaign:q.get("utm_campaign")||"",content:q.get("utm_content")||"",referrer:ref};
+  if(!gStore("rg-attr"))gStore("rg-attr",JSON.stringify(a));
+  try{return JSON.parse(gStore("rg-attr"))||a}catch(e){return a}
+}
+const ATTR=attrib();
+function formHTML(id){return '<form data-f novalidate><div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta">Iscriviti gratis</button></div><input class="hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="nl"><input type="checkbox" name="nl"><span>'+NL_TXT+'</span></label><p class="err" role="alert" hidden></p><p class="fine">Nessuna password, nessuna carta. L\'email serve a farti entrare. <a href="/privacy.html">Informativa privacy</a></p></form>'}
+function okHTML(nl){return '<div class="ok"><h2 class="ser">Sei dentro.</h2><p>'+(nl?"Da domani mattina ti arriva l'anteprima del briefing via email. ":"")+'Il briefing di oggi è pronto, ti bastano 15 minuti.</p><a class="cta" href="/?utm_source=landing">Apri il briefing di oggi →</a></div>'}
+function wire(host){
+  host.innerHTML=formHTML();const f=host.querySelector("[data-f]");
+  const em=f.querySelector(".em"),bt=f.querySelector(".cta"),er=f.querySelector(".err");
+  const msg=t=>{er.textContent=t;er.hidden=!t};
+  f.addEventListener("submit",async ev=>{
+    ev.preventDefault();msg("");const email=em.value.trim();
+    if(!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)){msg("Controlla l'indirizzo email.");em.focus();return}
+    bt.disabled=true;bt.textContent="Un attimo…";
+    try{
+      const nl=f.querySelector("[name=nl]").checked;
+      const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:nl,consent_text:NL_TXT,sito:f.querySelector("[name=sito]").value,source:ATTR.source,campaign:ATTR.campaign,content:ATTR.content,referrer:ATTR.referrer})});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Iscriviti gratis";return}
+      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
+      document.querySelectorAll("#fw,#fw2").forEach(h=>{h.innerHTML=okHTML(!!j.newsletter)});
+    }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Iscriviti gratis"}
+  });
+}
+if(gStore("rg-uid")&&gStore("rg-uid")!=="admin"){document.querySelectorAll("#fw,#fw2").forEach(h=>{h.innerHTML='<div class="ok"><h2 class="ser">Sei già dentro.</h2><p>Il briefing di oggi ti aspetta.</p><a class="cta" href="/">Apri il briefing →</a></div>'})}
+else{wire(document.getElementById("fw"));wire(document.getElementById("fw2"))}
+
+/* globo astratto a puntini (nessuna costa, nessun luogo reale) */
+(function(){
+  const c=document.getElementById("gl"),x=c.getContext("2d"),W=c.width,cx=W/2,R=W*0.36;
+  const P=[],N=2600,ga=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<N;i++){const y=1-2*(i+.5)/N,r=Math.sqrt(1-y*y),th=ga*i,px=Math.cos(th)*r,pz=Math.sin(th)*r;const la=Math.asin(y),lo=Math.atan2(px,pz);P.push([px,y,pz,Math.max(.15,Math.min(1,.5+.5*Math.sin(la*3.1+1.3)*Math.cos(lo*2.3+.7)+.25*Math.sin(lo*5.1-la*2.2)))])}
+  const NODES=[[48,-30],[22,10],[-8,34],[35,70],[-30,-5],[10,-60],[55,40],[-15,95],[28,120],[-40,60],[62,-80],[5,150]];
+  const LINKS=[[0,1],[1,2],[1,3],[3,8],[6,3],[2,9],[5,0],[4,1],[8,11],[10,0],[7,3]];
+  const rad=d=>d*Math.PI/180,vec=(la,lo)=>{la=rad(la);lo=rad(lo);return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]};
+  const tl=rad(-22),ct=Math.cos(tl),st=Math.sin(tl);
+  function rot(v,r){const a=rad(r),c=Math.cos(a),s=Math.sin(a);const X1=v[0]*c+v[2]*s,Z=-v[0]*s+v[2]*c,Y=v[1];return[X1,Y*ct-Z*st,Y*st+Z*ct]}
+  const still=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function draw(t){
+    const r0=t*14+10;x.clearRect(0,0,W,W);
+    let g=x.createRadialGradient(cx,cx,R*.82,cx,cx,R*1.3);g.addColorStop(0,"rgba(70,120,220,.38)");g.addColorStop(1,"rgba(70,120,220,0)");x.fillStyle=g;x.beginPath();x.arc(cx,cx,R*1.3,0,7);x.fill();
+    g=x.createRadialGradient(cx-R*.3,cx-R*.35,R*.1,cx,cx,R);g.addColorStop(0,"rgba(28,48,92,.92)");g.addColorStop(1,"rgba(8,14,32,.96)");x.fillStyle=g;x.beginPath();x.arc(cx,cx,R,0,7);x.fill();
+    x.globalCompositeOperation="lighter";
+    for(const p of P){const q=rot(p,r0);if(q[2]<-.02)continue;const z=Math.max(0,q[2]),a=.22+.9*p[3]*(.3+.7*z),s=2+2.8*p[3]*z;x.fillStyle="rgba("+(120+60*p[3]|0)+","+(170+50*p[3]|0)+",255,"+a.toFixed(2)+")";x.fillRect(cx+q[0]*R-s/2,cx-q[1]*R-s/2,s,s)}
+    x.strokeStyle="rgba(130,175,255,.55)";x.lineWidth=3;x.beginPath();x.arc(cx,cx,R,0,7);x.stroke();
+    LINKS.forEach(([i,j],n)=>{const A=vec(...NODES[i]),B=vec(...NODES[j]),om=Math.acos(Math.max(-1,Math.min(1,A[0]*B[0]+A[1]*B[1]+A[2]*B[2]))),S=40,pts=[];
+      for(let s=0;s<=S;s++){const f=s/S,k1=Math.sin((1-f)*om)/Math.sin(om),k2=Math.sin(f*om)/Math.sin(om),l=1+.2*Math.sin(Math.PI*f);pts.push(rot([(k1*A[0]+k2*B[0])*l,(k1*A[1]+k2*B[1])*l,(k1*A[2]+k2*B[2])*l],r0))}
+      x.lineWidth=3;for(let s=1;s<=S;s++){const a=pts[s-1],b=pts[s];if(a[2]<-.08||b[2]<-.08)continue;x.strokeStyle="rgba(255,170,60,.5)";x.beginPath();x.moveTo(cx+a[0]*R,cx-a[1]*R);x.lineTo(cx+b[0]*R,cx-b[1]*R);x.stroke()}
+      const h=Math.floor(((t*.45+n*.17)%1)*S);for(let k=0;k<10;k++){const s=h-k;if(s<1)continue;const a=pts[s-1],b=pts[s];if(a[2]<-.08||b[2]<-.08)continue;x.strokeStyle="rgba(255,225,150,"+((1-k/10)*.95).toFixed(2)+")";x.lineWidth=6-k*.45;x.beginPath();x.moveTo(cx+a[0]*R,cx-a[1]*R);x.lineTo(cx+b[0]*R,cx-b[1]*R);x.stroke()}});
+    NODES.forEach(([la,lo],i)=>{const q=rot(vec(la,lo),r0);if(q[2]<.02)return;const X1=cx+q[0]*R,Y1=cx-q[1]*R;x.fillStyle="rgba(255,190,80,.95)";x.beginPath();x.arc(X1,Y1,8,0,7);x.fill();x.fillStyle="rgba(255,170,60,.25)";x.beginPath();x.arc(X1,Y1,22,0,7);x.fill();const ph=((t*.7+i*.31)%1.6)/1.6;x.strokeStyle="rgba(255,190,80,"+((1-ph)*.6).toFixed(2)+")";x.lineWidth=2.5;x.beginPath();x.arc(X1,Y1,10+54*ph,0,7);x.stroke()});
+    x.globalCompositeOperation="source-over";
+  }
+  if(still){draw(3)}else{let t0=performance.now();(function f(n){draw((n-t0)/1000+3);requestAnimationFrame(f)})(t0)}
+})();
+</script>
+</body>
+</html>
