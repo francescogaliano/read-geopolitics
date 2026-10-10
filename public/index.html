@@ -1,4 +1,18 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style>
+#nlm{position:fixed;inset:0;z-index:9999;background:rgba(10,16,32,.62);display:flex;align-items:center;justify-content:center;padding:16px}
+.nl-c{position:relative;max-width:440px;width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.nl-c h3{margin:0 28px 8px 0;font-size:19px;line-height:1.25}
+.nl-c p{margin:0 0 12px;font-size:14.5px;line-height:1.5;color:var(--muted)}
+.nl-x{position:absolute;top:8px;right:10px;background:none;border:0;font-size:24px;line-height:1;color:var(--muted);cursor:pointer}
+.nl-em{width:100%;box-sizing:border-box;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:16px;background:var(--bg);color:var(--ink);margin-bottom:10px}
+.nl-b{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}
+.nl-p{font:600 15px var(--sans);color:#1A1204;background:#E8B04B;border:0;border-radius:10px;height:46px;padding:0 20px;cursor:pointer}
+.nl-p:disabled{opacity:.6;cursor:default}
+.nl-g{background:none;border:0;color:var(--muted);font-size:14px;text-decoration:underline;cursor:pointer}
+.nl-c p.nl-f{font-size:12px;color:var(--faint);margin:0}
+.nl-c p.nl-err{color:#C0392B}
+</style>
+</head><body>
 <title>Read Geopolitics</title>
 <meta name="description" content="Il mondo in 15 minuti: le notizie che contano, con le fonti, le due tesi e gli scenari. Anteprima gratuita.">
 <meta property="og:title" content="Read Geopolitics"><meta property="og:description" content="Il mondo in 15 minuti. Ogni mattina.">
@@ -1381,7 +1395,7 @@ nav.tabs button .ic{margin-right:.3em}
     </div>
   </section>
 </main>
-<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · <a class="igl-foot" href="/privacy.html" target="_blank" rel="noopener">Privacy</a> · Early Access gratuito · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
+<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · <a class="igl-foot" href="#" data-nl>Newsletter</a> · <a class="igl-foot" href="/privacy.html" target="_blank" rel="noopener">Privacy</a> · Early Access gratuito · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
 <div id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
   <div class="prefs-box">
     <div class="ab-head"><h2 id="prefsTitle">⚙️ Preferenze</h2><button class="deep-x" id="prefsX" type="button" aria-label="Chiudi">×</button></div>
@@ -3086,6 +3100,7 @@ function setupPublic(P){
 }
 /* ---------- Early Access: accesso con email ---------- */
 const RG_API="https://rg-api.briefinghub.workers.dev";
+const NL_TXT="Voglio ricevere ogni mattina via email l'anteprima del briefing (facoltativo, ti puoi disiscrivere quando vuoi)";
 function gStore(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 function captureAttrib(){
   if(gStore("rg-attr"))return;
@@ -3109,14 +3124,14 @@ function earlyBar(){
 function gateLock(on){document.body.classList.toggle("gated",on);document.querySelectorAll("header.top,main,.foot").forEach(e=>{e.inert=on})}
 function earlyAccess(P){
   earlyBar();
-  if(gStore("rg-uid")){pingSeen();return}
+  if(gStore("rg-uid")){pingSeen();nlPrompt();return}
   if(sGet("rg-guest")){setGuest(true);if(LOCK_VIEWS[S.view])show("briefing",false);schedule();return}
   showGate(P);
 }
 function gateForm(inModal){return `<form class="lp-form" data-gf novalidate>
 <div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta">Entra gratis →</button></div>
 <input class="g-hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true">
-<label class="lp-nl"><input type="checkbox" name="nl"><span>Voglio ricevere anche aggiornamenti e novità (facoltativo)</span></label>
+<label class="lp-nl"><input type="checkbox" name="nl"><span>${NL_TXT}</span></label>
 <p class="lp-err" role="alert" hidden></p>
 <p class="lp-fine">Nessuna password, nessuna carta. L'email serve a farti entrare. <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>
 </form>${inModal?"":`<button type="button" class="lp-guest" data-guest>Guarda prima il briefing di oggi →</button>`}`}
@@ -3187,15 +3202,71 @@ function bindGateForm(f,done){
     bt.disabled=true;bt.textContent="Un attimo…";
     try{
       const a=getAttrib();
-      const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:f.querySelector("[name=nl]").checked,sito:f.querySelector("[name=sito]").value,source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
+      const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:f.querySelector("[name=nl]").checked,consent_text:NL_TXT,sito:f.querySelector("[name=sito]").value,source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →";return}
-      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));
+      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));gStore("rg-nl-wait",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
       track(j.returning?"gate-ritorno":"gate-invio");
       done();
     }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →"}
   });
 }
+/* ---------- newsletter: iscrizione dal sito e invito una tantum ---------- */
+function nlOpen(auto){
+  if(document.getElementById("nlm"))return;
+  const uid=gStore("rg-uid"),known=!!uid&&uid!=="admin",already=gStore("rg-nl")==="1";
+  const o=document.createElement("div");o.id="nlm";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");
+  const body=already
+    ?'<h3>Sei già iscritto</h3><p>Ricevi l\'anteprima del briefing ogni mattina. Per disiscriverti usa il link in fondo a ogni email.</p><div class="nl-b"><button class="nl-p" data-c>Chiudi</button></div>'
+    :'<h3>L\'anteprima del briefing, ogni mattina</h3><p>Un\'email breve con il titolo del giorno, il fatto centrale con le due tesi a confronto e cosa osservare. Il resto sta sul sito. Gratis, ti disiscrivi con un click.</p>'
+      +(known?'':'<input type="email" class="nl-em" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email">')
+      +'<p class="nl-err" role="alert" hidden></p><div class="nl-b"><button class="nl-p" data-s>Sì, iscrivimi</button>'
+      +(auto?'<button class="nl-g" data-n>Non mostrare più</button>':'<button class="nl-g" data-c>Annulla</button>')
+      +'</div><p class="nl-f">'+esc(NL_TXT)+' · <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>';
+  o.innerHTML='<div class="nl-c"><button class="nl-x" data-z aria-label="Chiudi">×</button>'+body+'</div>';
+  document.body.appendChild(o);
+  const close=sn=>{o.remove();if(sn)sSet("rg-nl-snz","1")};
+  o.addEventListener("click",async e=>{
+    if(e.target===o){close(true);return}
+    const b=e.target.closest("button");if(!b)return;
+    if(b.hasAttribute("data-z")){close(true);return}
+    if(b.hasAttribute("data-c")){close(false);return}
+    if(b.hasAttribute("data-n")){gStore("rg-nl","0");track("nl-mai-piu");close(false);return}
+    if(!b.hasAttribute("data-s"))return;
+    const er=o.querySelector(".nl-err"),em=o.querySelector(".nl-em"),msg=t=>{er.textContent=t;er.hidden=!t};
+    msg("");b.disabled=true;
+    try{
+      let ok=false;
+      if(known){
+        const r=await fetch(RG_API+"/api/newsletter",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:uid,consent_text:NL_TXT})});
+        const j=await r.json().catch(()=>({}));ok=r.ok&&j.ok;
+      }else{
+        const email=(em.value||"").trim();
+        if(!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)){msg("Controlla l'indirizzo email.");em.focus();b.disabled=false;return}
+        const a=getAttrib();
+        const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:true,consent_text:NL_TXT,sito:"",source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
+        const j=await r.json().catch(()=>({}));ok=r.ok&&j.ok&&j.newsletter;
+        if(ok){gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()))}
+      }
+      if(ok){
+        gStore("rg-nl","1");track("nl-iscritto");
+        o.querySelector(".nl-c").innerHTML='<button class="nl-x" data-z aria-label="Chiudi">×</button><h3>Fatto, sei iscritto</h3><p>Riceverai la prima anteprima domani mattina. In ogni email trovi il link per disiscriverti con un click.</p><div class="nl-b"><button class="nl-p" data-c>Chiudi</button></div>';
+        if(S.guest){try{leaveGuest()}catch(x){}}
+      }else{msg("Non riesco a iscriverti in questo momento. Riprova.");b.disabled=false}
+    }catch(x){msg("Non riesco a iscriverti in questo momento. Riprova.");b.disabled=false}
+  });
+}
+function nlPrompt(){
+  const id=gStore("rg-uid");if(!id||id==="admin")return;
+  if(gStore("rg-nl")||sGet("rg-nl-snz")||gStore("rg-nl-wait")===isoDay(new Date()))return;
+  fetch(RG_API+"/api/me",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id})}).then(r=>r.json()).then(j=>{
+    if(!j||!j.ok)return;
+    if(j.newsletter){gStore("rg-nl","1");return}
+    if(!j.known)return;
+    setTimeout(()=>{if(!gStore("rg-nl")&&!sGet("rg-nl-snz")&&!document.getElementById("gate"))nlOpen(true)},6000);
+  }).catch(()=>{});
+}
+document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("[data-nl]");if(a){e.preventDefault();nlOpen(false)}});
 /* ---------- modalità ospite: si prova il briefing, la profondità chiede l'email ---------- */
 function sGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
 function sSet(k,v){try{if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,v)}catch(e){}}
