@@ -101,6 +101,33 @@ css.textContent=`
 .xp-gall{display:block;font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;border-top:1px solid var(--line);width:100%;text-align:left;padding:10px 0 4px;margin-top:4px;cursor:pointer}
 .xp-brv{--gc:var(--muted)}
 .xp-mapbtn{cursor:pointer;font-weight:600;color:var(--accent)}
+.xp-card{border:1px solid var(--line);border-left:5px solid var(--gc,var(--line));border-radius:12px;margin:0 0 10px;background:var(--surface)}
+.xp-cn .xp-star{font-family:var(--sans,system-ui);font-size:12.5px;font-weight:600;vertical-align:3px;margin-left:4px}
+.xp-card.open{box-shadow:0 2px 14px rgba(0,0,0,.18)}
+.xp-ch{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:12px 14px;cursor:pointer}
+.xp-cn{font-family:var(--serif);font-size:19px;font-weight:600;line-height:1.25}
+.xp-cm{grid-column:1;color:var(--muted);font-size:13.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.xp-car{grid-column:2;grid-row:1/span 2;align-self:center;color:var(--accent);font-size:18px}
+.xp-cl{grid-column:1/-1;font-size:14.5px;line-height:1.4;margin-top:4px}
+.xp-mins{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.xp-min{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.xp-min b{color:var(--ink);font-weight:600}
+.xp-cb{padding:0 14px}
+.xp-cf{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:10px 14px 12px}
+.xp-sub{border-top:1px solid var(--line);padding:10px 0 6px}
+.xp-sh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.xp-shn{font-weight:600;font-size:15.5px}
+.xp-shn>span{color:var(--muted);font-weight:400;font-size:13px;margin-left:4px}
+.xp-sub .xp-item{border-top:0}
+.xp-sl{display:block;margin:2px 0 4px;font-size:14px}
+.xp-xr{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:4px 0}
+.xp-xl{flex:1;display:flex;flex-direction:column;gap:2px;text-align:left;font:inherit;color:inherit;background:none;border:0;padding:8px 0;cursor:pointer;min-width:0}
+.xp-xl:hover .xp-shn{color:var(--accent)}
+.xp-xt{color:var(--muted);font-size:14px;line-height:1.35}
+.xp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0}
+.xp-fs{font-size:13px!important;padding:5px 10px!important;white-space:nowrap}
+.xp-inc{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.xp-by{margin:0 0 14px}
 .xp-pt{background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:6px 0 14px}
 .xp-pt p{margin:0 0 10px;line-height:1.5}
 .xp-cta{font:inherit;font-weight:600;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:9px 16px;cursor:pointer;margin-top:4px}
@@ -207,7 +234,7 @@ if(main&&!document.getElementById("v-esplora")){
   sec.innerHTML='<div class="read" id="esplora"></div>';
   main.insertBefore(sec,document.getElementById("v-mappa"));
 }
-const X={mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
+const X={exp:new Set(),ptBy:(()=>{try{return localStorage.getItem("rg-pt-by")==="tema"?"tema":"area"}catch(e){return"area"}})(),mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
 function pathOf(p){if(p&&p.k==="lista")return p.id==="tema"?"esplora/temi":"esplora/aree";return p?`esplora/${p.k}/${encodeURIComponent(p.id)}`:"esplora"}
 function parse(h){h=(h||"").replace(/^#/,"");if(!h.startsWith("esplora"))return undefined;const m=h.split("/");if(m.length===2&&(m[1]==="aree"||m[1]==="temi"))return {k:"lista",id:m[1]==="temi"?"tema":"area"};return m.length>=3?{k:m[1],id:decodeURIComponent(m[2])}:null}
 function labelOf(p){if(!p)return"Per te";if(p.k==="lista")return p.id==="tema"?"Temi":"Aree";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
@@ -281,6 +308,23 @@ function tabs(){
 }
 function itemHTML(s){const open=X.open===s.id;
   return `<div class="xp-item${open?" on":""}" id="xpi-${esc(s.id)}"><button type="button" class="xp-sv" data-xs="${esc(s.id)}" aria-expanded="${open}"><span class="xp-sd">${esc(fmtDate(s.data))}<span class="xp-tog">${open?"Chiudi ▴":"Leggi ▾"}</span></span><span class="xp-stt">${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</span>${!open&&s.perche_conta?`<span class="xp-sp">${esc(sentence(s.perche_conta))}</span>`:""}</button>${open?`<div class="xp-open">${storyHTML(s,0).replace(/id="st-/g,'id="xst-')}<div class="xp-open-f"><button type="button" class="xp-lnk" data-xs="${esc(s.id)}">Chiudi la storia</button>${S.briefings.some(b=>(b.storie_mondo||[]).concat(b.storie_italia||[]).includes(s.id))?`<button type="button" class="xp-lnk" data-story="${esc(s.id)}">Vedi nel briefing del ${esc(fmtDate(s.data))}</button>`:""}</div></div>`:""}</div>`}
+/* ---------- schede espandibili: area → temi, tema → aree (gli incroci) ---------- */
+function tN(id){return AMBN[id]||(typeof AMBITI!=="undefined"&&AMBITI[id]&&AMBITI[id].n)||"Altro"}
+function primTema(s){const t=topics(s).a;const a=storyArea(s);return t.find(x=>F.temi.includes(x)||F.incroci.includes(a+"~"+x))||t[0]||"altro"}
+function covered(a,t){return F.aree.includes(a)||F.temi.includes(t)}
+function xFollow(a,t){if(!AREABY[a]||!AMBN[t])return "";if(covered(a,t))return `<span class="xp-inc">★ già in «Per te»</span>`;const id=a+"~"+t,on=follows("incroci",id);return `<button type="button" class="xp-follow xp-fs" data-follow="incroci|${esc(id)}" aria-pressed="${on}">${on?"★ Segui":"☆ Segui"}</button>`}
+function groupBy(list,fn){const m={};list.forEach(s=>{const k=fn(s);if(!k)return;(m[k]=m[k]||[]).push(s)});return m}
+function card(o){/* o:{key,col,ic,n,meta,badge,subs:[[id,label,n]],latest,body,foot} */
+  const open=X.exp.has(o.key);
+  return `<section class="xp-card${open?" open":""}" style="--gc:${o.col}"><button type="button" class="xp-ch" data-exp="${esc(o.key)}" aria-expanded="${open}">
+    <span class="xp-cn">${o.ic?o.ic+" ":""}${esc(o.n)}${o.star?` <span class="xp-star">★ segui</span>`:""}</span>
+    <span class="xp-cm">${o.badge||""}${esc(o.meta)}</span>
+    ${o.latest&&!open?`<span class="xp-cl">${esc(o.latest)}</span>`:""}
+    ${o.subs.length&&!open?`<span class="xp-mins">${o.subs.slice(0,5).map(([id,l,n])=>`<span class="xp-min">${esc(l)} <b>${n}</b></span>`).join("")}${o.subs.length>5?`<span class="xp-min">+${o.subs.length-5}</span>`:""}</span>`:""}
+    <span class="xp-car" aria-hidden="true">${open?"▴":"▾"}</span></button>
+    ${open?`<div class="xp-cb">${o.body}</div>${o.foot?`<div class="xp-cf">${o.foot}</div>`:""}`:""}</section>`;
+}
+function ptToggle(){return `<div class="xp-seg xp-by" role="group" aria-label="Raggruppa per"><button type="button" data-ptby="area" aria-pressed="${X.ptBy==="area"}">🌍 Per geografia</button><button type="button" data-ptby="tema" aria-pressed="${X.ptBy==="tema"}">🏷️ Per tema</button></div>`}
 function perTeView(){
   if(!anyF()){
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
@@ -289,43 +333,57 @@ function perTeView(){
     <button type="button" class="xp-cta" data-int-open="1">Scegli aree e temi</button>
     <p class="xp-hs" style="margin:12px 0 0">Vuoi solo curiosare? Apri <b>Aree</b> o <b>Temi</b> qui sopra.</p></div>`;
   }
-  const st7=storiesWhere(s=>s.data>=ago(7));const seen=new Set();
-  const groups=[];
-  F.aree.forEach(id=>{const A=AREABY[id];if(!A)return;groups.push({n:A.n,col:LVC(lvArea(A)),ic:"",go:`area|${id}`,k:"aree",id,all:st7.filter(s=>storyArea(s)===id)})});
-  F.incroci.forEach(id=>{const [xa,xt]=splitX(id);const A=AREABY[xa];if(!A)return;groups.push({n:fName("incroci",id),col:LVC(lvArea(A)),ic:AIC(xt),go:`areachip|${id}`,k:"incroci",id,all:st7.filter(s=>storyArea(s)===xa&&topics(s).a.includes(xt))})});
-  F.temi.forEach(id=>{if(!AMBN[id])return;groups.push({n:AMBN[id],col:"var(--accent)",ic:AIC(id),go:`tema|${id}`,k:"temi",id,tema:1,all:st7.filter(s=>topics(s).a.includes(id))})});
-  const html=groups.map(g=>{const list=g.all.filter(s=>!seen.has(s.id)).slice(0,3);list.forEach(s=>seen.add(s.id));
-    return `<section class="xp-grp" style="--gc:${g.col}"><div class="xp-gh"><button type="button" class="xp-gn" data-go="${esc(g.go)}">${g.ic?g.ic+" ":""}${esc(g.n)}</button><span class="xp-gc">${g.all.length} ${g.all.length===1?"storia":"storie"} in 7 giorni</span></div>
-    ${list.length?list.map(itemHTML).join(""):`<p class="xp-empty">${g.all.length?"Le storie di questo gruppo sono già sopra.":"Niente negli ultimi 7 giorni."}</p>`}
-    <button type="button" class="xp-gall" data-go="${esc(g.go)}">Apri ${esc(g.n)}: punto della settimana e partite aperte ›</button></section>`}).join("");
+  const st=storiesWhere(s=>s.data>=ago(7)&&matchF(s));
+  const byA=X.ptBy==="area";
+  const k1=s=>byA?storyArea(s):primTema(s),k2=s=>byA?primTema(s):storyArea(s);
+  const g=groupBy(st,k1);
+  const keys=Object.keys(g).filter(k=>byA?AREABY[k]:true).sort((x,y)=>byA?(lvArea(AREABY[y])-lvArea(AREABY[x])||g[y].length-g[x].length):g[y].length-g[x].length);
+  const cards=keys.map(k=>{const list=g[k];const sub=groupBy(list,k2);
+    const subs=Object.keys(sub).filter(x=>byA?true:AREABY[x]).sort((x,y)=>sub[y].length-sub[x].length);
+    const lab=x=>byA?`${AIC(x)} ${tN(x)}`.trim():AREABY[x].n;
+    const body=subs.map(x=>{const a=byA?k:x,t=byA?x:k;const ls=sub[x];
+      return `<div class="xp-sub"><div class="xp-sh"><span class="xp-shn">${esc(lab(x))} <span>${ls.length}</span></span>${xFollow(a,t)}</div>
+      ${ls.slice(0,3).map(itemHTML).join("")}
+      ${AREABY[a]&&AMBN[t]?`<button type="button" class="xp-lnk xp-sl" data-go="${byA?`areachip|${esc(a+"~"+t)}`:`temachip|${esc(t+"~"+a)}`}">${ls.length>3?`Tutte le ${ls.length} · `:""}Apri ${esc(tN(t))} in ${esc(AREABY[a].n)} ›</button>`:""}</div>`}).join("");
+    return card({key:"pt:"+X.ptBy+":"+k,col:byA?LVC(lvArea(AREABY[k])):"var(--accent)",ic:byA?"":AIC(k),n:byA?AREABY[k].n:tN(k),
+      star:byA?follows("aree",k):follows("temi",k),meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,
+      badge:byA&&lvArea(AREABY[k])?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lvArea(AREABY[k]))} 40%,transparent)">${LVT[lvArea(AREABY[k])]}</span> `:"",
+      latest:list[0].titolo,subs:subs.map(x=>[x,lab(x),sub[x].length]),body,
+      foot:byA?`<button type="button" class="xp-lnk" data-go="area|${esc(k)}">Apri ${esc(AREABY[k].n)}: punto della settimana e paesi ›</button>`:(AMBN[k]?`<button type="button" class="xp-lnk" data-go="tema|${esc(k)}">Apri ${esc(tN(k))}: partite aperte e ultimi sviluppi ›</button>`:"")})}).join("");
   const b=typeof currentBrief==="function"?currentBrief():null;
   const br=b?(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x)):[];
-  return `<div class="xp-pthd"><p>Ultimi 7 giorni, raggruppati per quello che segui.</p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>
-  ${html}
+  return `<div class="xp-pthd"><p>Ultimi 7 giorni su quello che segui. Tocca una scheda per aprirla.</p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>
+  ${ptToggle()}
+  ${cards||`<p class="xp-empty">Negli ultimi 7 giorni niente su quello che segui.</p>`}
   ${br.length?`<section class="xp-grp xp-brv"><div class="xp-gh"><span class="xp-gn">In breve, oggi</span></div>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}</section>`:""}
-  <p class="xp-note">Il colore a sinistra di ogni area è il suo livello di tensione, come sulla mappa. I temi hanno il colore del sito.</p>`;
+  <p class="xp-note">${byA?"Il bordo di ogni area ha il colore del suo livello di tensione, come sulla mappa. Dentro, le storie sono divise per tema.":"Dentro ogni tema, le storie sono divise per area. Il bordo delle aree, nelle altre viste, è il livello di tensione."}</p>`;
+}
+function listView(){
+  const st7=storiesWhere(s=>s.data>=ago(7)),st14=storiesWhere(s=>s.data>=ago(14));
+  if(X.mode==="area"){
+    return AREE.map(A=>({A,lv:lvArea(A),list:st7.filter(s=>storyArea(s)===A.id)})).sort((x,y)=>y.lv-x.lv||y.list.length-x.list.length).map(({A,lv,list})=>{
+      const sub=groupBy(list,s=>topics(s).a[0]||null);const subs=Object.keys(sub).sort((x,y)=>sub[y].length-sub[x].length);
+      const top=rankThreads(st14.filter(s=>storyArea(s)===A.id)).slice(0,2).map(([id])=>tName(id)).join(" · ");
+      const body=subs.length?subs.map(t=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="areachip|${esc(A.id+"~"+t)}"><span class="xp-shn">${AIC(t)} ${esc(tN(t))} <span>${sub[t].length}</span></span><span class="xp-xt">${esc(sub[t][0].titolo)}</span></button>${xFollow(A.id,t)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`;
+      return card({key:"aree:"+A.id,col:LVC(lv),n:A.n,star:follows("aree",A.id),badge:lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lv)} 40%,transparent)">${LVT[lv]}</span> `:"",
+        meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,latest:top?`Partite aperte: ${top}`:"",subs:subs.map(t=>[t,`${AIC(t)} ${tN(t)}`.trim(),sub[t].length]),body,
+        foot:`<button type="button" class="xp-lnk" data-go="area|${esc(A.id)}">Apri ${esc(A.n)}: punto della settimana, partite aperte e paesi ›</button>${followBtn("aree",A.id,"l’area")}`})}).join("");
+  }
+  return TAX.map(T=>({T,list:st7.filter(s=>topics(s).a.includes(T.id))})).sort((x,y)=>y.list.length-x.list.length).map(({T,list})=>{
+    const sub=groupBy(list,storyArea);const subs=Object.keys(sub).filter(a=>AREABY[a]).sort((x,y)=>sub[y].length-sub[x].length);
+    const top=rankThreads(st14.filter(s=>topics(s).a.includes(T.id))).slice(0,2).map(([id])=>tName(id)).join(" · ");
+    const body=subs.length?subs.map(a=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="temachip|${esc(T.id+"~"+a)}"><span class="xp-shn"><i class="xp-dot" style="background:${LVC(lvArea(AREABY[a]))}"></i>${esc(AREABY[a].n)} <span>${sub[a].length}</span></span><span class="xp-xt">${esc(sub[a][0].titolo)}</span></button>${xFollow(a,T.id)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`;
+    return card({key:"temi:"+T.id,col:"var(--accent)",ic:AIC(T.id),n:T.n,star:follows("temi",T.id),meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,
+      latest:top?`Partite aperte: ${top}`:"",subs:subs.map(a=>[a,AREABY[a].n,sub[a].length]),body,
+      foot:`<button type="button" class="xp-lnk" data-go="tema|${esc(T.id)}">Apri ${esc(T.n)}: partite aperte e ultimi sviluppi ›</button>${followBtn("temi",T.id,"il tema")}`})}).join("");
 }
 function landing(){
   const head=`<h1 class="xp-h1" style="margin-top:12px">Esplora</h1>${tabs()}`;
   if(X.mode==="perte")return head+perTeView();
-  const st14=storiesWhere(s=>s.data>=ago(14)),st7=st14.filter(s=>s.data>=ago(7));
-  let rows;
-  if(X.mode==="area"){
-    rows=AREE.map(a=>{const mine=st14.filter(s=>storyArea(s)===a.id);const top=rankThreads(mine).slice(0,2).map(([id])=>tName(id));
-      return {k:"area",id:a.id,n:a.n,lv:lvArea(a),now:top.join(" · ")||"Nessun tema aperto nelle ultime due settimane",c:st7.filter(s=>storyArea(s)===a.id).length,f:follows("aree",a.id)}})
-      .sort((x,y)=>y.lv-x.lv||y.c-x.c);
-  }else{
-    rows=TAX.map(a=>{const mine=st14.filter(s=>topics(s).a.includes(a.id));const top=rankThreads(mine).slice(0,2).map(([id])=>tName(id));
-      return {k:"tema",id:a.id,n:a.n,lv:0,now:top.join(" · ")||"Nessun tema aperto nelle ultime due settimane",c:st7.filter(s=>topics(s).a.includes(a.id)).length,f:follows("temi",a.id),ic:AIC(a.id)}})
-      .sort((x,y)=>y.c-x.c);
-  }
-  const mx=Math.max(1,...rows.map(r=>r.c));
   return `${head}
-  <p class="xp-lead">${X.mode==="area"?"Le aree del mondo, dalla più tesa. Tocca un’area per il punto della settimana, le partite aperte e i paesi.":"I grandi temi, dal più presente nell’ultima settimana. Tocca un tema per le partite aperte e gli ultimi sviluppi."}</p>
-  ${rows.map(r=>`<button type="button" class="xp-row" data-go="${r.k}|${esc(r.id)}"><span class="xp-bar" style="${r.k==="area"?`background:${LVC(r.lv)}`:`background:var(--accent);opacity:${(0.25+0.75*r.c/mx).toFixed(2)}`}"></span>
-    <span class="xp-body"><span class="xp-n">${r.ic?r.ic+" ":""}${esc(r.n)}</span><span class="xp-now">${esc(r.now)}</span></span>
-    <span class="xp-meta">${r.k==="area"&&r.lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(r.lv)} 40%,transparent)">${LVT[r.lv]}</span>`:""}<span class="xp-c">${r.c} ${r.c===1?"storia":"storie"} in 7 giorni</span>${r.f?`<span class="xp-star">★ segui</span>`:""}</span></button>`).join("")}
-  <p class="xp-note">${X.mode==="area"?"La barra a sinistra ha il colore del paese più teso dell’area, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"La barra è più intensa per i temi con più storie negli ultimi 7 giorni."}</p>`;
+  <p class="xp-lead">${X.mode==="area"?"Le aree del mondo, dalla più tesa. Tocca un’area per vedere i suoi temi; tocca un tema per aprire solo quelle storie.":"I grandi temi, dal più presente nell’ultima settimana. Tocca un tema per vedere in quali aree si muove."}</p>
+  ${listView()}
+  <p class="xp-note">${X.mode==="area"?"Il bordo di ogni area ha il colore del paese più teso, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"Il pallino accanto a ogni area ha il colore del suo livello di tensione, come sulla mappa."} Con «☆ Segui» accanto a un tema dentro un’area segui solo quell’incrocio.</p>`;
 }
 function areaPage(A){
   const all=storiesWhere(s=>storyArea(s)===A.id),st30=all.filter(s=>s.data>=ago(30));
@@ -398,9 +456,12 @@ function renderEx(){
 document.addEventListener("click",e=>{
   const root=e.target.closest("#esplora");if(!root)return;
   const f=e.target.closest("[data-follow]");if(f){const [k,id]=f.dataset.follow.split("|");toggleF(k,id);renderEx();try{perTe()}catch(_){}return}
+  const ex=e.target.closest("[data-exp]");if(ex){const k=ex.dataset.exp;if(X.exp.has(k))X.exp.delete(k);else X.exp.add(k);X.open=null;renderEx();return}
+  const pb=e.target.closest("[data-ptby]");if(pb){X.ptBy=pb.dataset.ptby;try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}renderEx();return}
   const m=e.target.closest("[data-mode]");if(m){X.mode=m.dataset.mode;renderEx();return}
   const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");const k=v.slice(0,i),id=v.slice(i+1);
     if(k==="areachip"){const [a,t]=splitX(id);go({k:"area",id:a});X.chip=t;renderEx();return}
+    if(k==="temachip"){const [t,a]=splitX(id);go({k:"tema",id:t});X.chip="a:"+a;renderEx();return}
     go({k,id});return}
   const xs=e.target.closest("[data-xs]");if(xs){const id=xs.dataset.xs;
     if(S.guest&&X.open!==id){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){if(typeof showLock==="function")showLock({what:"storie"});return}}
