@@ -38,13 +38,14 @@ const LVC=l=>`var(--l${l||1})`;
 
 /* ---------- seguiti (prova: in questo browser) ---------- */
 const KEY="rg-segui";
-let F=(()=>{try{const p=JSON.parse(localStorage.getItem(KEY)||"null");if(p&&Array.isArray(p.aree)&&Array.isArray(p.temi))return p}catch(e){}return {aree:[],temi:[]}})();
+let F=(()=>{try{const p=JSON.parse(localStorage.getItem(KEY)||"null");if(p&&Array.isArray(p.aree)&&Array.isArray(p.temi)){if(!Array.isArray(p.incroci))p.incroci=[];return p}}catch(e){}return {aree:[],temi:[],incroci:[]}})();
 function saveF(){try{localStorage.setItem(KEY,JSON.stringify(F))}catch(e){}}
 function follows(k,id){return F[k].includes(id)}
-function toggleF(k,id){const i=F[k].indexOf(id);if(i>=0)F[k].splice(i,1);else F[k].push(id);saveF()}
-function anyF(){return F.aree.length+F.temi.length>0}
-function matchF(s){return F.aree.includes(storyArea(s))||topics(s).a.some(a=>F.temi.includes(a))}
-function fName(k,id){return k==="aree"?(AREABY[id]&&AREABY[id].n):AMBN[id]}
+function toggleF(k,id){if(!F[k])F[k]=[];const i=F[k].indexOf(id);if(i>=0)F[k].splice(i,1);else F[k].push(id);saveF()}
+function anyF(){return F.aree.length+F.temi.length+F.incroci.length>0}
+function splitX(id){const i=id.indexOf("~");return [id.slice(0,i),id.slice(i+1)]}
+function matchF(s){const a=storyArea(s),t=topics(s).a;return F.aree.includes(a)||t.some(x=>F.temi.includes(x))||F.incroci.some(id=>{const [xa,xt]=splitX(id);return xa===a&&t.includes(xt)})}
+function fName(k,id){if(k==="aree")return AREABY[id]&&AREABY[id].n;if(k==="temi")return AMBN[id];const [a,t]=splitX(id);return AREABY[a]&&AMBN[t]?`${AMBN[t]} in ${AREABY[a].n}`:null}
 function followBtn(k,id,label){const on=follows(k,id);return `<button type="button" class="xp-follow" data-follow="${k}|${esc(id)}" aria-pressed="${on}">${on?"★ Segui":"☆ Segui"}${label?` ${esc(label)}`:""}</button>`}
 
 /* ---------- stile ---------- */
@@ -134,6 +135,28 @@ css.textContent=`
 .pt-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .pt-sug button{border:1px solid var(--accent);border-radius:999px;padding:5px 12px}
 .pt-n{font-size:14px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+#intPanel{position:fixed;inset:0;z-index:210;background:rgba(7,12,17,.55);display:flex;align-items:flex-end;justify-content:center}
+#intPanel[hidden]{display:none}
+.ip-box{background:var(--bg);color:var(--ink);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px;box-shadow:0 -8px 30px rgba(0,0,0,.3)}
+@media (min-width:700px){#intPanel{align-items:center}.ip-box{border-radius:18px}}
+.ip-top{display:flex;justify-content:space-between;align-items:center;gap:10px;position:sticky;top:-16px;background:var(--bg);padding:6px 0 8px;z-index:1}
+.ip-top h2{font-family:var(--serif);font-size:22px;margin:0}
+.ip-hint{font-size:14px;color:var(--muted);line-height:1.45;margin:2px 0 6px}
+.ip-box h3{font-family:var(--serif);font-size:17px;margin:20px 0 4px;font-weight:600}
+.ip-row{display:flex;align-items:center;gap:10px;width:100%;font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:11px 0;cursor:pointer;text-align:left}
+.ip-l{flex:1;font-size:15.5px}
+.ip-sw{width:42px;height:24px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;flex:none;transition:background .15s}
+.ip-sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.ip-row[aria-pressed="true"] .ip-sw{background:var(--accent);border-color:var(--accent)}
+.ip-row[aria-pressed="true"] .ip-sw i{transform:translateX(18px);background:var(--bg)}
+.ip-x{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:9px 0;font-size:15px}
+.ip-x button{font:inherit;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 8px}
+.ip-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:8px}
+.ip-add label{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
+.ip-add select{font:inherit;font-size:14px;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+@media (max-width:420px){.ip-add{grid-template-columns:1fr 1fr}.ip-add .xp-follow{grid-column:1/-1}}
+.ip-sum{margin:18px 0 0;font-size:14px;color:var(--muted);background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+@media (prefers-reduced-motion:reduce){.ip-sw,.ip-sw i{transition:none}}
 #xpBack{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:160;font:inherit;font-size:14.5px;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:10px 18px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #xpBack[hidden]{display:none}
 `;
@@ -213,8 +236,9 @@ function storyList(list){
    +(list.length>shown.length?`<button type="button" class="xp-more" data-more="1">${X.lim<=4?`Tutte le ${list.length} storie`:`Altre ${Math.min(20,list.length-shown.length)}`}</button>`:"");
 }
 function myInterests(){
-  const tags=F.aree.map(id=>["aree",id]).concat(F.temi.map(id=>["temi",id])).filter(([k,id])=>fName(k,id));
-  return `<div class="xp-mine"><b>Quello che segui</b>${tags.length?`<div class="xp-tags">${tags.map(([k,id])=>`<span class="xp-tag"><button type="button" data-go="${k==="aree"?"area":"tema"}|${esc(id)}">${k==="temi"?AIC(id)+" ":""}${esc(fName(k,id))}</button><button type="button" class="x" data-follow="${k}|${esc(id)}" aria-label="Smetti di seguire ${esc(fName(k,id))}">✕</button></span>`).join("")}</div><p>Le storie del giorno su questi temi e aree compaiono in «Per te oggi», in cima al briefing.</p>`:`<p>Ancora niente. Apri un’area o un tema e tocca «Segui»: ogni mattina le storie che ti riguardano compaiono in cima al briefing.</p>`}</div>`;
+  const tags=F.aree.map(id=>["aree",id]).concat(F.temi.map(id=>["temi",id]),F.incroci.map(id=>["incroci",id])).filter(([k,id])=>fName(k,id));
+  const goOf=(k,id)=>k==="aree"?`area|${id}`:k==="temi"?`tema|${id}`:`areachip|${id}`;
+  return `<div class="xp-mine"><div class="pt-h"><b>Quello che segui</b><button type="button" data-int-open="1">Modifica</button></div>${tags.length?`<div class="xp-tags">${tags.map(([k,id])=>`<span class="xp-tag"><button type="button" data-go="${esc(goOf(k,id))}">${k==="temi"?AIC(id)+" ":""}${esc(fName(k,id))}</button><button type="button" class="x" data-follow="${k}|${esc(id)}" aria-label="Smetti di seguire ${esc(fName(k,id))}">✕</button></span>`).join("")}</div><p>Le storie del giorno su questi temi e aree compaiono in «Per te oggi», in cima al briefing.</p>`:`<p>Ancora niente. Apri un’area o un tema e tocca «Segui», oppure scegli tutto in un colpo da «Modifica».</p>`}</div>`;
 }
 
 /* ---------- pagine ---------- */
@@ -256,7 +280,7 @@ function areaPage(A){
   ${ranked.length?`<h2 class="xp-h2">Le partite aperte</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>
   ${chips.length>1?`<div class="xp-filt"><div class="xp-chips" role="group" aria-label="Restringi per tema"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutti i temi</button>${chips.map(([k,c])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${AIC(k)} ${esc(AMBN[k])}<span>${c}</span></button>`).join("")}</div></div>`:""}
-  ${X.chip?`<div class="xp-also"><span>Ti interessa ${esc(AMBN[X.chip])} anche nelle altre aree?</span>${followBtn("temi",X.chip,"il tema")}<button type="button" class="xp-lnk" data-go="tema|${esc(X.chip)}">Apri il tema</button></div>`:""}
+  ${X.chip?`<div class="xp-also"><span>Vuoi ritrovare ${esc(AMBN[X.chip])} ogni mattina in «Per te»?</span>${followBtn("incroci",A.id+"~"+X.chip,"solo in quest’area")}${followBtn("temi",X.chip,"in tutte le aree")}<button type="button" class="xp-lnk" data-go="tema|${esc(X.chip)}">Apri il tema</button></div>`:""}
   ${storyList(list)}`;
 }
 
@@ -276,7 +300,7 @@ function temaPage(T){
   ${ranked.length?`<h2 class="xp-h2">Le partite aperte</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>
   <div class="xp-filt"><div class="xp-chips" role="group" aria-label="Restringi"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutto</button>${areas.map(([a,n])=>`<button type="button" class="xp-chip" data-chip="a:${esc(a)}" aria-pressed="${X.chip==="a:"+a}">${esc(AREABY[a].n)}<span>${n}</span></button>`).join("")}${Object.entries(subc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${esc(SUBN[k])}<span>${n}</span></button>`).join("")}</div></div>
-  ${ach?`<div class="xp-also"><span>Vuoi seguire tutto quello che succede in ${esc(AREABY[ach].n)}?</span>${followBtn("aree",ach,"l’area")}<button type="button" class="xp-lnk" data-go="area|${esc(ach)}">Apri l’area</button></div>`:""}
+  ${ach?`<div class="xp-also"><span>Vuoi ritrovare ${esc(T.n)} in ${esc(AREABY[ach].n)} ogni mattina in «Per te»?</span>${followBtn("incroci",ach+"~"+T.id,"solo quest’incrocio")}${followBtn("aree",ach,"tutta l’area")}<button type="button" class="xp-lnk" data-go="area|${esc(ach)}">Apri l’area</button></div>`:""}
   ${storyList(list)}`;
 }
 
@@ -310,7 +334,9 @@ document.addEventListener("click",e=>{
   const root=e.target.closest("#esplora");if(!root)return;
   const f=e.target.closest("[data-follow]");if(f){const [k,id]=f.dataset.follow.split("|");toggleF(k,id);renderEx();try{perTe()}catch(_){}return}
   const m=e.target.closest("[data-mode]");if(m){X.mode=m.dataset.mode;renderEx();return}
-  const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");go({k:v.slice(0,i),id:v.slice(i+1)});return}
+  const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");const k=v.slice(0,i),id=v.slice(i+1);
+    if(k==="areachip"){const [a,t]=splitX(id);go({k:"area",id:a});X.chip=t;renderEx();return}
+    go({k,id});return}
   const xs=e.target.closest("[data-xs]");if(xs){const id=xs.dataset.xs;
     if(S.guest&&X.open!==id){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){if(typeof showLock==="function")showLock({what:"storie"});return}}
     X.open=X.open===id?null:id;renderEx();
@@ -319,6 +345,38 @@ document.addEventListener("click",e=>{
   const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;X.open=null;renderEx();return}
   if(e.target.closest("[data-more]")){X.lim=X.lim<=4?20:X.lim+20;renderEx();return}
 });
+
+/* ---------- pannello «I tuoi interessi» ---------- */
+const panel=document.createElement("div");panel.id="intPanel";panel.hidden=true;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","intPTitle");
+document.body.appendChild(panel);
+const PX={a:"",t:""};
+function sw(k,id,label,extra){const on=follows(k,id);return `<button type="button" class="ip-row" data-pf="${k}|${esc(id)}" aria-pressed="${on}"><span class="ip-l">${label}</span>${extra||""}<span class="ip-sw" aria-hidden="true"><i></i></span></button>`}
+function todayCount(){const b=S.briefings&&S.briefings[0];if(!b)return 0;return (b.storie_mondo||[]).concat(b.storie_italia||[]).map(id=>S.stories[id]).filter(Boolean).filter(matchF).length}
+function renderPanel2(){
+  const areas=AREE.map(a=>({a,lv:lvArea(a)}));
+  const n=todayCount();
+  panel.innerHTML=`<div class="ip-box">
+   <div class="ip-top"><h2 id="intPTitle">I tuoi interessi</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>
+   <p class="ip-hint">Scegli cosa ritrovare ogni mattina in «Per te oggi». Il briefing resta completo: cambia solo cosa vedi per primo.</p>
+   <h3>Aree</h3>${areas.map(({a,lv})=>sw("aree",a.id,esc(a.n),lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lv)} 40%,transparent)">${LVT[lv]}</span>`:"")).join("")}
+   <h3>Temi</h3>${TAX.map(t=>sw("temi",t.id,`${AIC(t.id)} ${esc(t.n)}`)).join("")}
+   <h3>Incroci</h3><p class="ip-hint" style="margin-top:0">Un tema solo in un’area, per esempio Società e demografia in Africa subsahariana.</p>
+   ${F.incroci.length?F.incroci.map(id=>`<div class="ip-x"><span>${esc(fName("incroci",id)||id)}</span><button type="button" data-pf="incroci|${esc(id)}" aria-label="Togli ${esc(fName("incroci",id)||id)}">✕</button></div>`).join(""):""}
+   <div class="ip-add"><label>Tema<select id="ipT"><option value="">Scegli…</option>${TAX.map(t=>`<option value="${t.id}"${PX.t===t.id?" selected":""}>${esc(t.n)}</option>`).join("")}</select></label><label>Area<select id="ipA"><option value="">Scegli…</option>${AREE.map(a=>`<option value="${a.id}"${PX.a===a.id?" selected":""}>${esc(a.n)}</option>`).join("")}</select></label><button type="button" class="xp-follow" data-padd="1">Aggiungi</button></div>
+   <p class="ip-sum">${anyF()?(n?`Oggi «Per te» ti mostrerebbe <b>${n}</b> ${n===1?"storia":"storie"} del briefing.`:"Oggi nessuna storia del briefing tocca queste scelte."):"Non segui ancora niente."}</p>
+  </div>`;
+}
+function openPanel(){renderPanel2();panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
+function closePanel(){panel.hidden=true;document.body.style.overflow="";try{perTe()}catch(_){}if(S.view==="esplora")renderEx()}
+panel.addEventListener("click",e=>{
+  if(e.target===panel||e.target.closest("[data-pclose]")){closePanel();return}
+  const r=e.target.closest("[data-pf]");if(r){const v=r.dataset.pf;const i=v.indexOf("|");toggleF(v.slice(0,i),v.slice(i+1));renderPanel2();return}
+  if(e.target.closest("[data-padd]")){const t=panel.querySelector("#ipT").value,a=panel.querySelector("#ipA").value;PX.t=t;PX.a=a;if(!t||!a){renderPanel2();return}const id=a+"~"+t;if(!follows("incroci",id)){F.incroci.push(id);saveF()}PX.t="";PX.a="";renderPanel2();return}
+});
+panel.addEventListener("change",e=>{if(e.target.id==="ipT")PX.t=e.target.value;if(e.target.id==="ipA")PX.a=e.target.value});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden)closePanel()});
+document.addEventListener("click",e=>{if(e.target.closest("[data-int-open]")){e.preventDefault();openPanel()}});
+{const g=document.getElementById("guideBtn");if(g&&!document.getElementById("intBtn")){const b=document.createElement("button");b.className="prefbtn";b.id="intBtn";b.type="button";b.setAttribute("data-int-open","1");b.textContent="★ Interessi";g.parentNode.insertBefore(b,g)}}
 
 /* ---------- "Per te oggi" nel briefing ---------- */
 function perTe(){
@@ -329,7 +387,7 @@ function perTe(){
   if(anyF()){
     const ids=(b.storie_mondo||[]).concat(b.storie_italia||[]);
     const st=ids.map(id=>S.stories[id]).filter(Boolean).filter(matchF);
-    const names=F.aree.map(a=>fName("aree",a)).concat(F.temi.map(t=>fName("temi",t))).filter(Boolean);
+    const names=F.aree.map(a=>fName("aree",a)).concat(F.temi.map(t=>fName("temi",t)),F.incroci.map(x=>fName("incroci",x))).filter(Boolean);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b><button type="button" data-pt-manage="1">Gestisci</button></div>
       <p class="pt-seg">Segui ${esc(names.join(", "))}</p>
       ${st.length?st.map(s=>`<button type="button" class="pt-st" data-story="${esc(s.id)}"><span class="pt-f">${(s.paesi||[]).slice(0,3).map(flag).join("")}</span><span>${esc(s.titolo)}</span></button>`).join(""):`<p class="pt-n">Oggi nessuna storia del briefing tocca quello che segui.</p>`}`;
@@ -337,13 +395,13 @@ function perTe(){
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b></div>
       <p class="pt-n">Segui un’area o un tema e qui trovi ogni mattina le storie che ti riguardano. Per esempio:</p>
-      <div class="pt-sug">${sug.map(x=>`<button type="button" data-pt-follow="${esc(x.a.id)}">☆ ${esc(x.a.n)}</button>`).join("")}<button type="button" data-pt-manage="1" style="border:0">Altre aree e temi</button></div>`;
+      <div class="pt-sug">${sug.map(x=>`<button type="button" data-pt-follow="${esc(x.a.id)}">☆ ${esc(x.a.n)}</button>`).join("")}<button type="button" data-pt-manage="1" style="border:0">Scegli aree e temi</button></div>`;
   }
   const in60=el.querySelector(".in60");
   if(in60&&in60.parentNode)in60.parentNode.insertBefore(box,in60.nextSibling);else{const sub=el.querySelector("#subtabs");if(sub)sub.parentNode.insertBefore(box,sub);else el.prepend(box)}
 }
 document.addEventListener("click",e=>{
-  if(e.target.closest("[data-pt-manage]")){X.ret=null;go(null);return}
+  if(e.target.closest("[data-pt-manage]")){openPanel();return}
   const f=e.target.closest("[data-pt-follow]");if(f){toggleF("aree",f.dataset.ptFollow);perTe();return}
 });
 const _rb=renderBriefing;
