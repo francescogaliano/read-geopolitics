@@ -3690,7 +3690,7 @@ if(main&&!document.getElementById("v-esplora")){
   sec.innerHTML='<div class="read" id="esplora"></div>';
   main.insertBefore(sec,document.getElementById("v-mappa"));
 }
-const X={exp:new Set(),ptBy:(()=>{try{return localStorage.getItem("rg-pt-by")==="tema"?"tema":"area"}catch(e){return"area"}})(),mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
+const X={fa:[],fs:[],exp:new Set(),ptBy:(()=>{try{return localStorage.getItem("rg-pt-by")==="tema"?"tema":"area"}catch(e){return"area"}})(),mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
 function pathOf(p){if(p&&p.k==="lista")return p.id==="tema"?"esplora/argomenti":"esplora/aree";return p?`esplora/${p.k}/${encodeURIComponent(p.id)}`:"esplora"}
 function parse(h){h=(h||"").replace(/^#/,"");if(!h.startsWith("esplora"))return undefined;const m=h.split("/");if(m.length===2&&["aree","temi","argomenti"].includes(m[1]))return {k:"lista",id:m[1]==="aree"?"area":"tema"};return m.length>=3?{k:m[1],id:decodeURIComponent(m[2])}:null}
 function labelOf(p){if(!p)return"Per te";if(p.k==="lista")return p.id==="tema"?"Argomenti":"Aree";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
@@ -3700,7 +3700,7 @@ show=function(v,push){
   const r=_show(v,push);updBack();return r;
 };
 function go(p,push){
-  X.page=p;X.chip="";X.sub="";X.lim=4;X.open=null;
+  X.page=p;X.fa=[];X.fs=[];X.lim=4;X.open=null;
   const h="#"+pathOf(p);
   try{if(push===false)history.replaceState(null,"",h);else if(location.hash!==h)history.pushState(null,"",h)}catch(e){}
   show("esplora");window.scrollTo({top:0});
@@ -3709,7 +3709,7 @@ const tabBtn=document.getElementById("tab-esplora");if(tabBtn)tabBtn.addEventLis
 if(nav)nav.addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(b&&b.dataset.view!=="esplora"){X.ret=null;updBack()}});
 window.addEventListener("popstate",()=>{
   const p=parse(location.hash);
-  if(p!==undefined){X.page=p;X.chip="";X.sub="";X.lim=4;X.open=null;_show("esplora",false);renderEx();X.ret=null;updBack();return}
+  if(p!==undefined){X.page=p;X.fa=[];X.fs=[];X.lim=4;X.open=null;_show("esplora",false);renderEx();X.ret=null;updBack();return}
   const v=(location.hash||"").slice(1);
   if(["briefing","mappa","protagonisti","radar","dossier","timeline","archivio"].includes(v))_show(v,false);
   updBack();
@@ -3848,44 +3848,52 @@ function areaPage(A){
   const pb=(S.briefings||[]).find(b=>b.punto_aree&&b.punto_aree.aree&&b.punto_aree.aree[A.id]);
   const pa=pb?pb.punto_aree.aree[A.id]:null;
   const inb=pa?"":ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
-  const tc={};st30.forEach(s=>topics(s).a.forEach(a=>{if(AMBN[a])tc[a]=(tc[a]||0)+1}));
-  const chips=Object.entries(tc).sort((x,y)=>y[1]-x[1]);
-  const list=X.chip?all.filter(s=>topics(s).a.includes(X.chip)):all;
+  /* filtri: Di cosa (argomenti) e Dove (paesi dell'area), a scelta multipla; «o» dentro una riga, «e» tra le righe */
+  const inS=s=>!X.fs.length||topics(s).a.some(a=>X.fs.includes(a)),inP=s=>!X.fa.length||(s.paesi||[]).some(c=>X.fa.includes(c));
+  const tc={};all.filter(inP).forEach(s=>topics(s).a.forEach(a=>{if(AMBN[a])tc[a]=(tc[a]||0)+1}));
+  const pc={};all.filter(inS).forEach(s=>(s.paesi||[]).forEach(c=>{if(A.codes.includes(c))pc[c]=(pc[c]||0)+1}));
+  X.fs.forEach(k=>{if(!(k in tc))tc[k]=0});X.fa.forEach(k=>{if(!(k in pc))pc[k]=0});
+  const list=all.filter(s=>inS(s)&&inP(s));
+  const one=X.fs.length===1?X.fs[0]:"";
   return `${crumb([{l:"Aree",p:{k:"lista",id:"area"}},{l:A.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${esc(A.n)}</h1>${followBtn("aree",A.id)}</div>
   ${hot.length?`<p class="xp-hs" style="margin:2px 0 4px">I paesi dell’area · livello di tensione</p><div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
   ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
-  <h2 class="xp-h2">Ultimi sviluppi</h2>
-  ${chips.length>1?`<div class="xp-filt"><span class="xp-fl">Di cosa</span><div class="xp-chips" role="group" aria-label="Restringi per argomento"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutto</button>${chips.map(([k,c])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${AIC(k)} ${esc(AMBN[k])}<span>${c}</span></button>`).join("")}</div></div>`:""}
-  ${X.chip?`<div class="xp-also"><span>Vuoi ritrovare ${esc(AMBN[X.chip])} ogni mattina in «Per te»?</span>${followBtn("incroci",A.id+"~"+X.chip,"solo in quest’area")}${followBtn("temi",X.chip,"in tutte le aree")}<button type="button" class="xp-lnk" data-go="tema|${esc(X.chip)}">Apri l’argomento</button></div>`:""}
+  <h2 class="xp-h2" id="xpDev">Ultimi sviluppi</h2>
+  ${filtRow("Di cosa","fs",Object.entries(tc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,`${AIC(k)} ${AMBN[k]}`.trim(),n]),X.fs,"Tutto")}
+  ${filtRow("Dove","fa",Object.entries(pc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,`${flag(k)} ${cName(k)}`,n]),X.fa,"Tutta l’area")}
+  ${one?`<div class="xp-also"><span>Vuoi ritrovare ${esc(AMBN[one])} ogni mattina in «Per te»?</span>${followBtn("incroci",A.id+"~"+one,"solo in quest’area")}${followBtn("temi",one,"in tutte le aree")}<button type="button" class="xp-lnk" data-go="tema|${esc(one)}">Apri l’argomento</button></div>`:""}
   ${storyList(list)}`;
 }
 
 function temaPage(T){
   const all=storiesWhere(s=>topics(s).a.includes(T.id)),st30=all.filter(s=>s.data>=ago(30));
-  const ac={};st30.forEach(s=>{const a=storyArea(s);if(a)ac[a]=(ac[a]||0)+1});
-  const areas=Object.entries(ac).sort((x,y)=>y[1]-x[1]);
   const ranked=rankThreads(st30).slice(0,3);
   const inb=ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
-  /* due filtri separati e combinabili: Dove (area) e Di cosa (sotto-argomento); i numeri di ciascuno tengono conto dell'altro */
-  const ach=X.chip&&X.chip.startsWith("a:")?X.chip.slice(2):"";
-  const sub=X.sub&&T.sotto.some(([x])=>x===X.sub)?X.sub:"";
-  const inA=s=>!ach||storyArea(s)===ach,inS=s=>!sub||topics(s).s.includes(sub);
-  const fa={};all.filter(inS).forEach(s=>{const a=storyArea(s);if(a&&AREABY[a])fa[a]=(fa[a]||0)+1});
-  const fs={};all.filter(inA).forEach(s=>topics(s).s.forEach(k=>{if(T.sotto.some(([x])=>x===k))fs[k]=(fs[k]||0)+1}));
-  if(ach&&!fa[ach])fa[ach]=0;if(sub&&!fs[sub])fs[sub]=0;
-  const list=all.filter(s=>inA(s)&&inS(s));
+  /* filtri: Di cosa (sotto-argomenti) e Dove (aree), a scelta multipla; «o» dentro una riga, «e» tra le righe */
+  const fs=X.fs.filter(k=>T.sotto.some(([x])=>x===k));
+  const inS=s=>!fs.length||topics(s).s.some(k=>fs.includes(k)),inA=s=>!X.fa.length||X.fa.includes(storyArea(s));
+  const sc={};all.filter(inA).forEach(s=>topics(s).s.forEach(k=>{if(T.sotto.some(([x])=>x===k))sc[k]=(sc[k]||0)+1}));
+  const ac={};all.filter(inS).forEach(s=>{const a=storyArea(s);if(a&&AREABY[a])ac[a]=(ac[a]||0)+1});
+  fs.forEach(k=>{if(!(k in sc))sc[k]=0});X.fa.forEach(k=>{if(!(k in ac))ac[k]=0});
+  const list=all.filter(s=>inS(s)&&inA(s));
+  const one=X.fa.length===1?X.fa[0]:"";
   return `${crumb([{l:"Argomenti",p:{k:"lista",id:"tema"}},{l:T.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${AIC(T.id)} ${esc(T.n)}</h1>${followBtn("temi",T.id)}</div>
   <p class="xp-hs" style="margin:2px 0 4px">Dentro ${esc(T.n)} · storie nell’ultimo mese</p><div class="xp-pills">${T.sotto.map(([k,nm])=>{const n=st30.filter(s=>topics(s).s.includes(k)).length;return `<button type="button" class="xp-pill${n?"":" xp-off"}" data-sub-go="${esc(k)}"${n?"":" disabled"}>${esc(nm)}<i style="background:${n?"var(--accent)":"var(--line)"};color:var(--bg)">${n}</i></button>`}).join("")}</div>
   ${inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
-  <h2 class="xp-h2">Ultimi sviluppi</h2>
-  ${Object.keys(fs).length?`<div class="xp-filt"><span class="xp-fl">Di cosa</span><div class="xp-chips" role="group" aria-label="Restringi per sotto-argomento"><button type="button" class="xp-chip" data-xsub="" aria-pressed="${!sub}">Tutto</button>${Object.entries(fs).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<button type="button" class="xp-chip" data-xsub="${esc(k)}" aria-pressed="${sub===k}">${esc(SUBN[k])}<span>${n}</span></button>`).join("")}</div></div>`:""}
-  <div class="xp-filt"><span class="xp-fl">Dove</span><div class="xp-chips" role="group" aria-label="Restringi per area"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!ach}">Ovunque</button>${Object.entries(fa).sort((x,y)=>y[1]-x[1]).map(([a,n])=>`<button type="button" class="xp-chip" data-chip="a:${esc(a)}" aria-pressed="${ach===a}">${esc(AREABY[a].n)}<span>${n}</span></button>`).join("")}</div></div>
-  ${ach?`<div class="xp-also"><span>Vuoi ritrovare ${esc(T.n)} in ${esc(AREABY[ach].n)} ogni mattina in «Per te»?</span>${followBtn("incroci",ach+"~"+T.id,"solo quest’incrocio")}${followBtn("aree",ach,"tutta l’area")}<button type="button" class="xp-lnk" data-go="area|${esc(ach)}">Apri l’area</button></div>`:""}
+  <h2 class="xp-h2" id="xpDev">Ultimi sviluppi</h2>
+  ${filtRow("Di cosa","fs",Object.entries(sc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,SUBN[k],n]),fs,"Tutto")}
+  ${filtRow("Dove","fa",Object.entries(ac).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,AREABY[k].n,n]),X.fa,"Ovunque")}
+  ${one?`<div class="xp-also"><span>Vuoi ritrovare ${esc(T.n)} in ${esc(AREABY[one].n)} ogni mattina in «Per te»?</span>${followBtn("incroci",one+"~"+T.id,"solo quest’incrocio")}${followBtn("aree",one,"tutta l’area")}<button type="button" class="xp-lnk" data-go="area|${esc(one)}">Apri l’area</button></div>`:""}
   ${storyList(list)}`;
+}
+/* una riga di filtri a scelta multipla: tocca per aggiungere o togliere; il primo bottone azzera la riga */
+function filtRow(label,key,items,sel,allLabel){
+  if(!items.length)return "";
+  return `<div class="xp-filt"><span class="xp-fl">${esc(label)}${sel.length>1?` · ${sel.length} scelte`:""}</span><div class="xp-chips" role="group" aria-label="${esc(label)}"><button type="button" class="xp-chip" data-f="${key}|" aria-pressed="${!sel.length}">${esc(allLabel)}</button>${items.map(([k,l,n])=>`<button type="button" class="xp-chip" data-f="${key}|${esc(k)}" aria-pressed="${sel.includes(k)}">${sel.includes(k)?"✓ ":""}${esc(l)}<span>${n}</span></button>`).join("")}</div></div>`;
 }
 
 function paesePage(iso){
@@ -3922,17 +3930,16 @@ document.addEventListener("click",e=>{
   const pb=e.target.closest("[data-ptby]");if(pb){X.ptBy=pb.dataset.ptby;try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}renderEx();return}
   const m=e.target.closest("[data-mode]");if(m){X.mode=m.dataset.mode;renderEx();return}
   const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");const k=v.slice(0,i),id=v.slice(i+1);
-    if(k==="areachip"){const [a,t]=splitX(id);go({k:"area",id:a});X.chip=t;renderEx();return}
-    if(k==="temachip"){const [t,a]=splitX(id);go({k:"tema",id:t});X.chip="a:"+a;renderEx();return}
+    if(k==="areachip"){const [a,t]=splitX(id);go({k:"area",id:a});X.fs=[t];renderEx();return}
+    if(k==="temachip"){const [t,a]=splitX(id);go({k:"tema",id:t});X.fa=[a];renderEx();return}
     go({k,id});return}
   const xs=e.target.closest("[data-xs]");if(xs){const id=xs.dataset.xs;
     if(S.guest&&X.open!==id){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){if(typeof showLock==="function")showLock({what:"storie"});return}}
     X.open=X.open===id?null:id;renderEx();
     const it=document.getElementById("xpi-"+id);if(it){const off=document.querySelector("header.top").offsetHeight+8;window.scrollTo({top:it.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
     return}
-  const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;X.open=null;X.lim=4;renderEx();return}
-  const sg=e.target.closest("[data-sub-go]");if(sg){X.sub=sg.dataset.subGo;X.open=null;X.lim=4;renderEx();const f=document.querySelector("#esplora .xp-filt");if(f){const off=document.querySelector("header.top").offsetHeight+70;window.scrollTo({top:f.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
-  const sb=e.target.closest("[data-xsub]");if(sb){X.sub=sb.dataset.xsub;X.open=null;X.lim=4;renderEx();return}
+  const c=e.target.closest("[data-f]");if(c){const v=c.dataset.f,i=v.indexOf("|"),k=v.slice(0,i),id=v.slice(i+1);if(!id)X[k]=[];else{const a=X[k],j=a.indexOf(id);if(j>=0)a.splice(j,1);else a.push(id)}X.open=null;X.lim=4;renderEx();return}
+  const sg=e.target.closest("[data-sub-go]");if(sg){X.fs=[sg.dataset.subGo];X.open=null;X.lim=4;renderEx();const f=document.getElementById("xpDev");if(f){const off=document.querySelector("header.top").offsetHeight+70;window.scrollTo({top:f.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
   if(e.target.closest("[data-more]")){X.lim=X.lim<=4?20:X.lim+20;renderEx();return}
 });
 
