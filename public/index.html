@@ -4479,6 +4479,97 @@ body.has-bottombar .foot{margin-bottom:8px}`;document.head.appendChild(st)}
     else if(!down&&nav.parentNode===document.body){home.parentNode.insertBefore(nav,home.nextSibling);nav.classList.remove("bottombar");document.body.classList.remove("has-bottombar")}};
   apply();if(mq.addEventListener)mq.addEventListener("change",apply);else mq.addListener(apply);
 })();
+/* ===== Ritratto della storia: mini mappa con i paesi coinvolti ===== */
+(function(){
+const PT_TN={conflitto:"conflitto",sanzioni:"sanzioni",accordo:"mediazione/accordo",energia:"energia",migrazione:"migrazioni",commercio:"commercio"};
+const PT_BIG=["RUS","CAN","USA","CHN","BRA","AUS","IND","KAZ","ARG","DZA"];
+const _storyHTML=storyHTML;
+storyHTML=function(s,rank){const h=_storyHTML(s,rank);if(!s||!(s.paesi||[]).length)return h;const id=esc(s.id);return h.replace(/\s*<\/div>\s*<div class="sto-b">/,`<button type="button" class="pt-th" data-pt="${id}" aria-expanded="false" aria-controls="pt-${id}" title="Apri la mappa dei paesi coinvolti" hidden></button></div><div class="portrait" id="pt-${id}" hidden></div><div class="sto-b">`)};
+const W=780,H=330;
+function ptBuild(s,geo){
+  const byId={};geo.features.forEach(f=>{if(f.id)byId[f.id]=f});
+  const P=(s.paesi||[]).filter(p=>byId[p]);if(!P.length)return null;
+  const cen=p=>d3.geoCentroid(byId[p]);const c0=cen(P[0]);
+  const focus=P.filter((p,i)=>i===0||(d3.geoDistance(cen(p),c0)<0.75&&!PT_BIG.includes(p)));
+  const FC={type:"FeatureCollection",features:focus.map(p=>byId[p])};
+  const proj=d3.geoMercator().fitExtent([[40,30],[W-40,H-30]],FC);
+  proj.scale(Math.min(proj.scale()*0.72,1100));
+  const t=proj.translate(),cc=proj(d3.geoCentroid(FC));proj.translate([t[0]+W/2-cc[0],t[1]+H/2-cc[1]]);
+  const path=d3.geoPath(proj);
+  const clipP=d3.geoPath(d3.geoMercator().scale(proj.scale()).translate(proj.translate()).clipExtent([[24,22],[W-24,H-22]]));
+  // punto etichetta: centroide della parte visibile; se poco visibile, pill sul bordo
+  const pos={},far=[];
+  for(const p of P){const q=proj(cen(p));const inF=q&&q[0]>40&&q[0]<W-40&&q[1]>30&&q[1]<H-30;
+    if(inF){pos[p]=q;continue}
+    const a=clipP.area(byId[p]);if(a>2500){const c=clipP.centroid(byId[p]);if(c&&isFinite(c[0])){pos[p]=c;continue}}
+    far.push(p)}
+  const nm=p=>cname(p);
+  const lvl=p=>{const c=S.countries[p];return (c&&+c.livello)||0};
+  let g="";
+  for(const f of geo.features){const d=path(f);if(!d)continue;const on=P.includes(f.id);
+    g+=on?`<path d="${d}" fill="var(--l${Math.max(lvl(f.id),1)})" stroke="var(--ink)" stroke-width="1.6" stroke-opacity=".75" data-country="${esc(f.id)}" style="cursor:pointer"/>`:`<path d="${d}" fill="var(--surface-2)" stroke="var(--sea)" stroke-width=".8"/>`}
+  // pill sul bordo per i paesi lontani
+  const A0=pos[P[0]]||[W/2,H/2];
+  const edge=p=>{const B=proj(cen(p));let dx=B[0]-A0[0],dy=B[1]-A0[1];if(!isFinite(dx)||!isFinite(dy)){dx=1;dy=0}
+    const k=Math.min((W/2-70)/Math.abs(dx||1e-6),(H/2-30)/Math.abs(dy||1e-6));return [W/2+dx*k,H/2+dy*k]};
+  far.forEach(p=>{const e=edge(p),n=cname(p),w=((n.length>11?p:n).length+2)*11+28;e[0]=Math.max(w/2+8,Math.min(W-w/2-8,e[0]));e[1]=Math.max(24,Math.min(H-24,e[1]));pos[p]=e});
+  // evita pill sovrapposte
+  for(let i=0;i<far.length;i++)for(let j=0;j<i;j++){const a=pos[far[i]],b=pos[far[j]];if(Math.abs(a[0]-b[0])<120&&Math.abs(a[1]-b[1])<40){a[1]=b[1]+(a[1]>H/2?-42:42)}}
+  // archi dalle dinamiche fra i paesi della storia
+  const seen=new Set(),used=new Set();let arcs="";
+  for(const a of P)for(const dn of ((S.countries[a]||{}).dinamiche||[])){const b=dn.con;if(!P.includes(b)||a===b)continue;const key=[a,b].sort().join("-")+dn.tipo;if(seen.has(key))continue;seen.add(key);
+    const A=pos[a],B=pos[b];if(!A||!B)continue;used.add(dn.tipo);const L=Math.hypot(B[0]-A[0],B[1]-A[1]);const mx=(A[0]+B[0])/2,my=(A[1]+B[1])/2-L*0.22;
+    arcs+=`<path d="M${A[0].toFixed(1)},${A[1].toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${B[0].toFixed(1)},${B[1].toFixed(1)}" fill="none" stroke="var(--arc-${dn.tipo},var(--muted))" stroke-width="4" stroke-linecap="round"${dn.tipo==="accordo"?' stroke-dasharray="2 9"':""}/>`}
+  // etichette con anti-sovrapposizione semplice
+  const boxes=[];let labels="";
+  const near=P.filter(p=>!far.includes(p)).sort((a,b)=>pos[a][1]-pos[b][1]);
+  for(const p of near){const q=pos[p];const n=nm(p);const w=n.length*12.5+8;
+    let x=q[0]+9,y=q[1]-8,anc="start";if(x+w>W-8){x=q[0]-9;anc="end"}
+    const bx=()=>anc==="start"?[x,y-20,x+w,y+4]:[x-w,y-20,x,y+4];
+    for(let k=0;k<6;k++){const b=bx();if(!boxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))break;y+=24}
+    y=Math.max(24,Math.min(H-6,y));boxes.push(bx());
+    labels+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5" fill="var(--ink)" stroke="var(--bg)" stroke-width="2"/><text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anc}" font-family="var(--sans)" font-size="22" font-weight="600" fill="var(--ink)" stroke="var(--bg)" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${esc(n)}</text>`}
+  for(const p of far){const e=pos[p];const n=nm(p);const lab=(n.length>11?p:n)+" ↗";const w=lab.length*11+28;e[0]=Math.max(w/2+8,Math.min(W-w/2-8,e[0]));e[1]=Math.max(24,Math.min(H-24,e[1]));
+    labels+=`<g data-country="${esc(p)}" style="cursor:pointer"><rect x="${(e[0]-w/2).toFixed(1)}" y="${(e[1]-17).toFixed(1)}" width="${w}" height="34" rx="17" fill="var(--l${Math.max(lvl(p),1)})" stroke="var(--ink)" stroke-opacity=".6" stroke-width="1.5"/><text x="${e[0].toFixed(1)}" y="${(e[1]+7).toFixed(1)}" text-anchor="middle" font-family="var(--sans)" font-size="19" font-weight="700" fill="var(--ink)">${esc(lab)}</text></g>`}
+  // miniatura: ritaglio intorno ai paesi vicini, senza testi
+  const nx=P.filter(p=>!far.includes(p)).map(p=>pos[p]);const mx0=nx.reduce((a,q)=>a+q[0],0)/nx.length,my0=nx.reduce((a,q)=>a+q[1],0)/nx.length;
+  const TW=400,TH=330,vx=Math.max(0,Math.min(W-TW,mx0-TW/2)),vy=Math.max(0,Math.min(H-TH,my0-TH/2));
+  const dots=nx.map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="7" fill="var(--ink)" stroke="var(--bg)" stroke-width="3"/>`).join("");
+  const thumb=`<svg viewBox="${vx.toFixed(0)} ${vy.toFixed(0)} ${TW} ${TH}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect x="0" y="0" width="${W}" height="${H}" fill="var(--sea)"/>${g.replace(/ data-country="[^"]*" style="cursor:pointer"/g,"")}${arcs}${dots}</svg><span class="pt-zoom" aria-hidden="true"><b class="pt-o">⤢ Mappa</b><b class="pt-c">✕ Chiudi</b></span>`;
+  const leg=[...used].map(t=>`<span><i style="background:var(--arc-${t})"></i>${PT_TN[t]||t}</span>`).join("");
+  return {thumb,full:`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mappa dei paesi coinvolti: ${esc(P.map(nm).join(", "))}"><rect width="${W}" height="${H}" fill="var(--sea)"/>${g}${arcs}${labels}</svg><div class="pt-leg">${leg}<span class="pt-n">colore = livello di tensione</span></div>`};
+}
+let ptBusy=false;
+async function ptFill(){
+  if(ptBusy)return;const els=[...document.querySelectorAll(".pt-th[data-pt]:not([data-done])")];if(!els.length)return;
+  if(typeof d3==="undefined"||typeof topojson==="undefined")return;
+  ptBusy=true;try{const geo=await loadGeo();
+    for(const el of els){el.dataset.done="1";const s=S.stories[el.dataset.pt];let r=null;try{r=s?ptBuild(s,geo):null}catch(_){r=null}
+      const full=el.closest(".story")&&el.closest(".story").querySelector(".portrait");
+      if(r&&full){el.innerHTML=r.thumb;el.hidden=false;el.parentNode.classList.add("has-pt");full.innerHTML=r.full}else{el.remove();if(full)full.remove()}}
+  }catch(_){}finally{ptBusy=false}
+  if(document.querySelector(".pt-th[data-pt]:not([data-done])"))setTimeout(ptFill,50);
+}
+document.addEventListener("click",e=>{const b=e.target.closest(".pt-th");if(!b)return;const f=document.getElementById("pt-"+b.dataset.pt);if(!f)return;const open=f.hidden;f.hidden=!open;b.setAttribute("aria-expanded",String(open));b.title=open?"Chiudi la mappa":"Apri la mappa dei paesi coinvolti"});
+const st=document.createElement("style");st.textContent=`.sto-h.has-pt{grid-template-columns:28px minmax(0,1fr) 116px}
+.pt-th{grid-column:3;grid-row:1 / span 3;align-self:start;position:relative;width:116px;height:96px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sea);cursor:pointer}
+.pt-th svg{display:block;width:100%;height:100%}
+.pt-th{border-color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s}
+.pt-th:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.pt-th .pt-zoom{position:absolute;left:0;right:0;bottom:0;font:600 11px/1 var(--sans);padding:5px 0;text-align:center;background:var(--accent);color:var(--bg);letter-spacing:.02em}
+.pt-th .pt-zoom b{font-weight:700}.pt-th .pt-c{display:none}
+.pt-th[aria-expanded="true"] .pt-o{display:none}.pt-th[aria-expanded="true"] .pt-c{display:inline}
+.pt-th:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:560px){.sto-h.has-pt{grid-template-columns:22px minmax(0,1fr) 92px}.pt-th{width:92px;height:80px}}
+.portrait{border-bottom:1px solid var(--line);background:var(--sea)}
+.portrait svg{display:block;width:100%;height:auto;max-height:340px}
+.pt-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--muted);padding:6px 14px 8px;background:var(--surface)}
+.pt-leg span{display:inline-flex;align-items:center;gap:5px}.pt-leg i{display:inline-block;width:16px;height:3px;border-radius:2px}
+.pt-leg .pt-n{color:var(--faint)}
+.xp-open .story .portrait{display:none}`;document.head.appendChild(st);
+let ptT=null;new MutationObserver(()=>{clearTimeout(ptT);ptT=setTimeout(ptFill,60)}).observe(document.body,{childList:true,subtree:true});
+setTimeout(ptFill,200);
+})();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
