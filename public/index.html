@@ -3878,7 +3878,7 @@ function myInterests(){
 
 /* ---------- pagine ---------- */
 function tabs(){
-  const t=[["perte","★ Per te",""],["area","Aree","lista|area"],["tema","Argomenti","lista|tema"]];
+  const t=[["perte","★ Per te",""],["area","🌍 Aree","lista|area"],["tema","🏷️ Argomenti","lista|tema"]];
   return `<div class="xp-tabs" role="tablist" aria-label="Esplora">${t.map(([k,l,g])=>`<button type="button" role="tab" aria-selected="${X.mode===k}" data-go="${g}">${l}</button>`).join("")}</div>`;
 }
 function itemHTML(s){const open=X.open===s.id;
@@ -4238,8 +4238,8 @@ renderAll=function(){const r=_ra.apply(this,arguments);try{if(S.view==="esplora"
 /* ---------- navigazione a 4 linguette: Oggi · Esplora · Temi · Archivio, con una seconda riga che dice dove sei ---------- */
 const NAVG={
   oggi:{tab:"tab-briefing",items:[]},
-  esplora:{tab:"tab-esplora",items:[["x:perte","★ Per te"],["x:area","Aree"],["x:tema","Argomenti"],["protagonisti","👤 Protagonisti"]]},
-  temi:{tab:"tab-timeline",items:[["timeline","🧵 Temi"],["osservazione","👁️ In osservazione"],["dossier","🧭 Dossier"]]},
+  esplora:{tab:"tab-esplora",items:[["x:perte","★ Per te"],["x:area","🌍 Aree"],["x:tema","🏷️ Argomenti"],["protagonisti","👤 Protagonisti"]]},
+  temi:{tab:"tab-timeline",items:[["timeline","🧵 Temi"],["osservazione","👁️ In osservazione"],["dossier","📁 Dossier"]]},
   mappa:{tab:"tab-mappa",items:[]},
   calendario:{tab:"tab-calendario",items:[]},
   archivio:{tab:"srchBtn",items:[]}
