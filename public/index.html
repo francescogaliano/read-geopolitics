@@ -1435,7 +1435,7 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-nav"><h3><span class="ic" aria-hidden="true">🧭</span>2. Come muoversi</h3>
-      <p>In alto ci sono cinque linguette: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti, nella seconda riga), <b>Mappa</b> (il mondo per livello di tensione, con i termometri), <b>Temi</b> (le storie che continuano nel tempo, i dossier e i temi in osservazione) e <b>Archivio</b> (la ricerca e tutti i giorni passati).</p>
+      <p>In alto ci sono sei linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti) e <b>Temi</b> (Temi, In osservazione e Dossier). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri), <b>Calendario</b> (le scadenze in arrivo) e <b>Archivio</b> (la ricerca e tutti i giorni passati). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
       <p>Tutto ciò che riguarda te (interessi, newsletter, aspetto, guida) sta nel pulsante <b>★ Il mio Read</b>.</p>
     </section>
 
@@ -1493,11 +1493,11 @@ nav.tabs button .ic{margin-right:.3em}
         <li><b>🌡️ Termometri</b>: quanti paesi sono in guerra o in crisi grave, quanti temi si sono mossi, quali regioni si scaldano. Sono calcolati dalle schede della pagina, non stimati.</li>
         <li><b>👁️ In osservazione</b> (prima «Sotto il radar»): segnali ancora piccoli che l'agente tiene d'occhio, con cosa li farebbe diventare una storia. In fondo, quanto spesso le stime dell'agente si avverano.</li>
       </ul>
-      <p>Le scadenze stanno nella Timeline, sotto «🗓️ Calendario».</p>
+      <p>Le scadenze stanno nella linguetta <b>Calendario</b>.</p>
     </section>
 
     <section id="g-time"><h3><span class="ic" aria-hidden="true">🕰️</span>10. Timeline</h3>
-      <p>In alto scegli tra <b>🧵 Temi</b> e <b>🗓️ Calendario</b>.</p>
+      <p>Nella linguetta <b>Temi</b> la seconda riga porta a <b>🧵 Temi</b>, <b>👁️ In osservazione</b> e <b>🧭 Dossier</b>; le scadenze sono nella linguetta <b>Calendario</b>.</p>
       <p><b>Temi</b>: le storie che continuano nel tempo (per esempio 🇺🇦 Ucraina), divise tra Mondo e Italia. Ogni scheda dice l'ultimo fatto e la prossima scadenza: toccala, o tocca il bottone con la bandiera, e il tema si apre lì sotto (un tema alla volta; «▲ Chiudi» per richiuderlo). Dentro trovi una riga per fatto, da «Da dove nasce» fino al segno <b>OGGI</b>, poi come può andare (stime, non fatti) e le prossime date con il conto alla rovescia. Tocca una riga per vedere paesi, collegamenti tra eventi e storia completa. Sotto «🔎 Filtra» restringi per regione, tema e ambito.</p>
       <p><b>Calendario</b>: tutte le scadenze in arrivo (elezioni, banche centrali, vertici, scadenze italiane), questa settimana e poi mese per mese, con i bottoni per filtrare. In grassetto quelle che possono cambiare il quadro. Tocca una riga per la fonte; il nome del tema porta alla sua storia.</p>
     </section>
@@ -1749,12 +1749,12 @@ function sinceHTML(b){
   </div>`;
   const sgP=`<div class="since-p">
     ${ver.length?`<ul class="vlist">${ver.map(x=>{const s=S.stories[x.storia_id];const cls=(x.esito||"").replace(" ","-");const g=Object.values(S.segnali).find(z=>z.storia_id===x.storia_id&&z.testo===x.segnale);return `<li><span class="esito ${esc(cls)}">${esc(ESITI[x.esito]||x.esito)}</span><span>${esc(x.segnale)}${g&&g.attesa?` <span class="att at-${esc(g.attesa)}" title="Stima iniziale">${esc(g.attesa)}</span>`:""}</span><span class="nota">${esc(x.nota||"")}${x.fonte&&x.fonte.url?` · <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}${s?` · <button class="linkbtn" data-story="${esc(s.id)}">storia</button>`:""}</span></li>`}).join("")}</ul>`:`<p class="hint" style="margin:0">Oggi nessun segnale da verificare.</p>`}
-    <p class="hint" style="margin:12px 0 0">🎯 Quanto spesso le stime si avverano: nel Radar, in fondo. <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>
+    <p class="hint" style="margin:12px 0 0">🎯 Quanto spesso le stime si avverano: in Temi › In osservazione, in fondo. <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>
   </div>`;
   const nOpen=Object.values(S.segnali).filter(g=>(g.stato||"aperto")==="aperto").length;
   const rows=[];
   const c=b.cruscotto;const notes=(c&&prefs().cruscotto)?(c.note||[]).slice(0,2):[];
-  if(notes.length)rows.push({k:"numeri",i:"📈",t:"Numeri",sum:esc(clip(notes[0].testo,90)),body:`<div class="numeri-b">${notes.map(n=>`<p>${(n.voci||[]).length?`<button class="numlink" data-ind="${esc(n.voci[0])}" title="Apri il dettaglio nel Radar">${esc(n.testo)}</button>`:esc(n.testo)}${n.fonte&&n.fonte.url?` <a class="src-inline" href="${esc(n.fonte.url)}" target="_blank" rel="noopener">${esc(n.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}<p><button class="linkbtn" data-goto="radar">Tutti i numeri nel Radar →</button></p></div>`});
+  if(notes.length)rows.push({k:"numeri",i:"📈",t:"Numeri",sum:esc(clip(notes[0].testo,90)),body:`<div class="numeri-b">${notes.map(n=>`<p>${(n.voci||[]).length?`<button class="numlink" data-ind="${esc(n.voci[0])}" title="Apri il dettaglio nei Numeri">${esc(n.testo)}</button>`:esc(n.testo)}${n.fonte&&n.fonte.url?` <a class="src-inline" href="${esc(n.fonte.url)}" target="_blank" rel="noopener">${esc(n.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}<p><button class="linkbtn" data-goto="radar">Tutti i numeri ↓</button></p></div>`});
   if(!S.static){const P=prefs();const al=[];const cb=latestCrusc();
     if(cb)P.soglie.forEach(g=>{const v=(cb.cruscotto.voci||[]).find(x=>x.id===g.id);const ts=v&&thrState(v,g);if(ts&&ts.hit)al.push(`<li>🔔 <button class="numlink" data-ind="${esc(v.id)}">${esc(v.nome)} ${fmtN(v.valore,v.decimali)} ${esc(v.unita||"")}</button>: oltre la tua soglia (${g.dir} ${esc(fmtN(g.val,Number.isInteger(g.val)?0:2))})</li>`)});
     if(P.avvisi.livello5&&pb)levelMoves(b).filter(m=>m.a===5&&m.da<5).forEach(m=>al.push(`<li>🌡️ <button class="linkbtn" data-country="${esc(m.iso)}">${flag(m.iso)} ${esc(cname(m.iso))}</button> sale a livello 5 (era ${m.da})</li>`));
@@ -1933,7 +1933,7 @@ function numeriHTML(b){
   const c=b.cruscotto;if(!c||!prefs().cruscotto)return"";
   const notes=(c.note||[]).slice(0,2);
   if(!notes.length)return"";
-  return `<div class="numeri"><span class="label"><span class="ic" aria-hidden="true">📈</span>Numeri</span> ${notes.map(n=>`<span>${(n.voci||[]).length?`<button class="numlink" data-ind="${esc(n.voci[0])}" title="Apri il dettaglio nel Radar">${esc(n.testo)}</button>`:esc(n.testo)}${n.fonte&&n.fonte.url?` <a class="src-inline" href="${esc(n.fonte.url)}" target="_blank" rel="noopener">${esc(n.fonte.nome||"fonte")}</a>`:""}</span>`).join(" ")} <button class="linkbtn" data-goto="radar">Tutti i numeri nel Radar →</button></div>`;
+  return `<div class="numeri"><span class="label"><span class="ic" aria-hidden="true">📈</span>Numeri</span> ${notes.map(n=>`<span>${(n.voci||[]).length?`<button class="numlink" data-ind="${esc(n.voci[0])}" title="Apri il dettaglio nei Numeri">${esc(n.testo)}</button>`:esc(n.testo)}${n.fonte&&n.fonte.url?` <a class="src-inline" href="${esc(n.fonte.url)}" target="_blank" rel="noopener">${esc(n.fonte.nome||"fonte")}</a>`:""}</span>`).join(" ")} <button class="linkbtn" data-goto="radar">Tutti i numeri ↓</button></div>`;
 }
 function upcomingFrom(day){return S.agenda.filter(a=>(a.data_fine||a.data)>=day).sort((x,y)=>x.data.localeCompare(y.data))}
 function storyAgendaHTML(s){
@@ -2133,7 +2133,7 @@ function renderBriefing(){
   ${panel("italia",`<div class="section-h first"><span class="label">${ita.length} storie</span><span class="tools"><button class="linkbtn" data-expand="1">Apri tutte</button></span></div>${GUEST?lockI:ita.map((s,i)=>storyHTML(s,i+1)).join("")}${nHid?`<p class="hidden-note">${nHid===1?"1 storia nascosta":nHid+" storie nascoste"} perché il suo ambito è spento nelle Preferenze.</p>`:""}`)}
   ${tabs.some(t=>t[0]==="brevi")?panel("brevi",`<p class="hint" style="margin:10px 0 4px">Notizie verificate rimaste fuori dal briefing: pesano meno, ma restano nelle schede dei paesi.</p>${b.esclusioni?`<p class="excl" style="margin:4px 0 0"><strong>Criterio di oggi:</strong> ${esc(b.esclusioni)}</p>`:""}
   ${brevi.length?`<ul class="brevi">${brevi.map(x=>breveHTML(x)).join("")}</ul>`:""}
-  ${oss.length?`<p class="hint" style="margin:14px 0 0">👁️ ${oss.length} ${plur(oss.length,"tema","temi")} in osservazione: li trovi nel Radar, sotto «Sotto il radar». <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>`:""}`):""}
+  ${oss.length?`<p class="hint" style="margin:14px 0 0">👁️ ${oss.length} ${plur(oss.length,"tema","temi")} in osservazione: li trovi in Temi › In osservazione. <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>`:""}`):""}
   ${slow?panel("slow",slowHTML(slow,true)):""}
   ${scop.length?panel("scoperte",scoperteHTML(scop)):""}
   ${lensHTML?panel("lenti",lensHTML+ideeLineHTML(b)):""}
@@ -2949,7 +2949,7 @@ function renderPrefs(){
     h+=`<div class="psum">In sintesi: ${pr.length?`<b>${esc(pr.join(", "))}</b> in priorità`:"nessun ambito in priorità"}${sp.length?`, <b>${esc(sp.join(", "))}</b> ${plur(sp.length,"spento","spenti")}`:""}, il resto normale.</div>`;
   }else if(PTAB==="briefing"){
     h=`<div class="pgrp">Sezioni</div>
-    <div class="prow"><span class="pn"><span class="ic" aria-hidden="true">📈</span>Numeri</span>${swHTML("cruscotto",PD.cruscotto,"Numeri")}<span class="pd">Mercati in «Oggi in breve» e nel Radar.</span></div>
+    <div class="prow"><span class="pn"><span class="ic" aria-hidden="true">📈</span>Numeri</span>${swHTML("cruscotto",PD.cruscotto,"Numeri")}<span class="pd">Mercati in «Oggi in breve» e nella sezione Numeri del briefing.</span></div>
     <div class="prow"><span class="pn"><span class="ic" aria-hidden="true">🔬</span>Scoperte</span>${swHTML("scoperte",PD.scoperte,"Scoperte")}<span class="pd">2-3 scoperte scientifiche al giorno, con l'avviso quando uno studio non è ancora revisionato.</span></div>
     <div class="prow"><span class="pn"><span class="ic" aria-hidden="true">🐢</span>Tendenza lenta</span>${swHTML("settimanale",PD.settimanale,"Tendenza lenta")}<span class="pd">La domenica, un fenomeno di lungo periodo con dati e fonti.</span></div>
     <div class="pgrp">Lenti</div><p class="muted" style="margin:0 0 2px;font-size:12.5px">Più lenti attive vuol dire righe più corte, non un briefing più lungo.</p>
@@ -2961,7 +2961,7 @@ function renderPrefs(){
       <div class="rule"><select data-sg-dir="${i}" aria-label="Direzione"><option value="sopra"${g.dir!=="sotto"?" selected":""}>sopra</option><option value="sotto"${g.dir==="sotto"?" selected":""}>sotto</option></select><input type="number" step="any" inputmode="decimal" data-sg-val="${i}" value="${esc(g.val)}" aria-label="Valore"><span class="muted">${esc(v&&v.unita||"")}</span></div>
       ${ts?`<div class="rthr" style="margin-top:6px"><span class="bar"><i style="width:${Math.round(ts.frac*88)}%"></i><u style="left:88%"></u></span></div><div class="now">Oggi ${fmtN(v.valore,v.decimali)} · ${ts.hit?"soglia già superata":ts.txt}</div>`:`<div class="now">Valore di oggi non ancora disponibile: arriva con il prossimo aggiornamento.</div>`}</div>`};
     const free=opts.filter(o=>!PD.soglie.some(g=>g.id===o.id));const sel=byId(PNEW.id);
-    h=`<p class="muted" style="margin:0;font-size:13px">Le soglie si confrontano con i numeri aggiornati ogni mattina alle 06:45. Se una viene superata, il numero si accende nel Radar e compare negli avvisi in cima al briefing.</p>
+    h=`<p class="muted" style="margin:0;font-size:13px">Le soglie si confrontano con i numeri aggiornati ogni mattina alle 06:45. Se una viene superata, il numero si accende nella sezione Numeri e compare negli avvisi in cima al briefing.</p>
     ${PD.soglie.map(card).join("")}
     ${free.length?`<div class="sgc new"><div class="top"><b>Nuovo avviso</b></div><div class="pick">${free.map(o=>`<button type="button" data-sg-pick="${esc(o.id)}" aria-pressed="${PNEW.id===o.id}">${esc(o.nome)}</button>`).join("")}</div>
     ${sel?`<div class="rule"><select id="sgNewDir" aria-label="Direzione"><option value="sopra"${PNEW.dir!=="sotto"?" selected":""}>sopra</option><option value="sotto"${PNEW.dir==="sotto"?" selected":""}>sotto</option></select><input type="number" step="any" inputmode="decimal" id="sgNewVal" value="${esc(PNEW.val)}" placeholder="${sel.v?esc(fmtN(sel.v.valore,sel.v.decimali)):"valore"}" aria-label="Valore"><span class="muted">${esc(sel.v&&sel.v.unita||"")}</span><button type="button" class="askbtn" id="sgAdd" style="margin-left:auto">Aggiungi</button></div>${sel.v?`<div class="now">Oggi ${fmtN(sel.v.valore,sel.v.decimali)} ${esc(sel.v.unita||"")}</div>`:""}`:`<div class="now">Scegli un indicatore.</div>`}</div>`:""}
@@ -3624,8 +3624,9 @@ css.textContent=`
 .ip-link{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:12px 14px;text-align:left;cursor:pointer;text-decoration:none}
 .ip-link:last-child{border-bottom:0}.ip-link span{color:var(--muted)}
 nav.tabs > .navx{display:none!important}
-@media (max-width:520px){nav.tabs > button .ic{display:none}nav.tabs > button{padding-left:7px;padding-right:7px}}
-.rd-moved .radar-h{margin-top:0}
+@media (max-width:520px){header.top nav.tabs > button .ic{display:none}header.top nav.tabs{justify-content:space-between;gap:0}header.top nav.tabs > button{padding-left:4px!important;padding-right:4px!important;font-size:13.5px!important;letter-spacing:-.1px}}
+.rd-moved .radar-h{margin-top:0;flex-wrap:wrap;row-gap:2px}
+#v-calendario .radar-h,#v-osservazione .radar-h{flex-wrap:wrap;row-gap:2px}
 .rd-in-map{max-width:1100px;margin:0 auto 14px}
 .rd-in-temi{margin-top:30px;padding-top:12px;border-top:1px solid var(--line)}
 .subpanel[data-panel="numeri"]{padding-top:6px}
@@ -3633,6 +3634,14 @@ nav.tabs > .navx{display:none!important}
 .tm-dos em{font-style:normal;color:var(--accent);font-weight:600}
 .tm-dos:hover{border-color:var(--accent)}
 .tm-weak{margin-top:-6px}
+.hscroll{position:relative}
+.hscroll>button.hs-arr{display:none;}
+.hs-arr{display:none;position:sticky;flex:none;z-index:4;align-self:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 18px/1 system-ui;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);padding:0}
+.hs-arr.l{left:2px;margin-right:-30px}.hs-arr.r{right:2px;margin-left:-30px}
+.hs-arr:hover{border-color:var(--accent);color:var(--accent)}
+@media (hover:hover) and (pointer:fine){.hscroll.can-l>button.hs-arr.l,.hscroll.can-r>button.hs-arr.r{display:flex;align-items:center;justify-content:center;padding:0;border-bottom:1px solid var(--line)}}
+.hscroll.drag{cursor:grabbing;user-select:none}
+
 .arch2{max-width:1100px;margin:0 auto}
 .arch2 + .arch-grid{display:none}
 .a2-lab{display:block;font:600 20px/1.25 var(--serif);margin:6px 0 8px}
@@ -4214,17 +4223,26 @@ renderAll=function(){const r=_ra.apply(this,arguments);try{if(S.view==="esplora"
 const NAVG={
   oggi:{tab:"tab-briefing",items:[]},
   esplora:{tab:"tab-esplora",items:[["x:perte","★ Per te"],["x:area","Aree"],["x:tema","Argomenti"],["protagonisti","👤 Protagonisti"]]},
+  temi:{tab:"tab-timeline",items:[["timeline","🧵 Temi"],["osservazione","👁️ In osservazione"],["dossier","🧭 Dossier"]]},
   mappa:{tab:"tab-mappa",items:[]},
-  temi:{tab:"tab-timeline",items:[]},
+  calendario:{tab:"tab-calendario",items:[]},
   archivio:{tab:"tab-archivio",items:[]}
 };
-const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplora",mappa:"mappa",timeline:"temi",dossier:"temi",archivio:"archivio"};
+const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplora",mappa:"mappa",timeline:"temi",osservazione:"temi",dossier:"temi",calendario:"calendario",archivio:"archivio"};
 (function setupNav(){
   const nav=document.querySelector("nav.tabs");if(!nav||document.getElementById("subnav"))return;
   [["radar"],["protagonisti"]].forEach(([v])=>{const b=document.getElementById("tab-"+v);if(b){b.id="navx-"+v;b.classList.add("navx")}});
   const d=document.getElementById("tab-dossier");if(d)d.classList.add("navx");
   const lab=(id,ic,t)=>{const b=document.getElementById(id);if(!b)return;const i=b.querySelector(".ic");if(i)i.textContent=ic;const l=b.querySelector(".tlab");if(l)l.textContent=t;else{[...b.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});b.appendChild(document.createTextNode(t))}};
   lab("tab-briefing","📰","Oggi");lab("tab-timeline","🧵","Temi");
+  /* ordine: prima i contenuti (Oggi, Esplora, Temi), poi gli strumenti (Mappa, Calendario, Archivio) */
+  const tt=document.getElementById("tab-timeline"),tm=document.getElementById("tab-mappa");if(tt&&tm)nav.insertBefore(tt,tm);
+  if(tm&&!document.getElementById("tab-calendario")){const c=document.createElement("button");c.setAttribute("role","tab");c.id="tab-calendario";c.dataset.view="calendario";c.setAttribute("aria-selected","false");c.innerHTML='<span class="ic" aria-hidden="true">🗓️</span>Calendario';tm.insertAdjacentElement("afterend",c);c.addEventListener("click",()=>show("calendario"))}
+  const mk=(id,html)=>{if(document.getElementById(id))return document.getElementById(id);const sc=document.createElement("section");sc.id=id;sc.className="view";sc.hidden=true;sc.innerHTML=html;const ma=document.querySelector("main.wrap")||document.querySelector("main");const ar=document.getElementById("v-archivio");if(ar)ar.parentNode.insertBefore(sc,ar);else ma.appendChild(sc);return sc};
+  mk("v-osservazione",'<div class="read" id="ossBox"></div>');
+  mk("v-calendario",'<div class="read"><div class="radar-h"><h2><span class="ic" aria-hidden="true">🗓️</span>Calendario</h2><span class="label">le scadenze in arrivo</span></div><div id="calBox"></div></div>');
+  const cal=document.getElementById("tlCal"),cb=document.getElementById("calBox");if(cal&&cb){cb.appendChild(cal);cal.hidden=false}
+  const seg=document.querySelector("#v-timeline .tl-seg");if(seg)seg.hidden=true;
   const sn=document.createElement("nav");sn.id="subnav";sn.className="subnav";sn.setAttribute("aria-label","Sezione");nav.parentNode.insertBefore(sn,nav.nextSibling);
   sn.addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(!b)return;const v=b.dataset.sv;X.ret=null;
     if(v==="x:perte")go(null);else if(v==="x:area")go({k:"lista",id:"area"});else if(v==="x:tema")go({k:"lista",id:"tema"});else show(v)});
@@ -4240,17 +4258,22 @@ function updNav(){
   sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${v==="protagonisti"?` id="tab-protagonisti"`:""} aria-current="${cur===v?"page":"false"}">${v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l}</button>`).join("")}</div></div>`;
   /* la riga resta dov'era e la voce scelta è sempre visibile */
   const row=sn.querySelector(".subnav-row"),on=sn.querySelector('[aria-current="page"]');
+  try{scrollify(row)}catch(_){}
   if(row){row.scrollLeft=keep;if(on){const r=row.getBoundingClientRect(),o=on.getBoundingClientRect();if(o.left<r.left+8)row.scrollLeft-=r.left+8-o.left;else if(o.right>r.right-8)row.scrollLeft+=o.right-(r.right-8)}}
 }
-{const _sh=show;show=function(v,push){if(v==="radar"){if(S.guest&&typeof showLock==="function"){showLock({view:"radar"});return}const r=_sh("briefing",push);try{setSub("numeri",false);if(push!==false)history.replaceState(null,"","#briefing")}catch(_){}try{updNav()}catch(_){}return r}const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
+{const _sh=show;show=function(v,push){if((v==="calendario"||v==="osservazione")&&S.guest&&typeof showLock==="function"){showLock({view:"timeline"});return}
+  if(v==="calendario"||v==="osservazione"){const r=_sh(v,push);try{if(v==="calendario"){S.tlMode="cal";if(typeof renderCal==="function")renderCal();const c=document.getElementById("tlCal");if(c)c.hidden=false;S.tlMode="temi";scrollifyAll()}}catch(e){console.warn(v,e)}try{updNav()}catch(_){}return r}
+  if(v==="timeline")S.tlMode="temi";
+  if(v==="radar"){if(S.guest&&typeof showLock==="function"){showLock({view:"radar"});return}const r=_sh("briefing",push);try{setSub("numeri",true);if(push!==false)history.replaceState(null,"","#briefing")}catch(_){}try{updNav()}catch(_){}return r}const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
 /* il Radar si distribuisce: Numeri nel briefing, Termometri sopra la mappa, Sotto il radar in Temi */
+{const _rt=renderTimeline;renderTimeline=function(){if(S.tlMode==="cal")S.tlMode="temi";const r=_rt.apply(this,arguments);const c=document.getElementById("tlCal");if(c&&c.closest("#v-calendario"))c.hidden=false;return r}}
 const RD={num:document.getElementById("rd-num"),term:document.getElementById("rd-term"),weak:document.getElementById("rd-weak")};
 (function moveRadar(){
   const idx=document.getElementById("rdIdx");if(idx)idx.remove();
   const ml=document.querySelector("#v-mappa .map-layout");
   if(RD.term&&ml){RD.term.classList.add("rd-moved","rd-in-map");ml.insertAdjacentElement("afterend",RD.term);const pl=document.createElement("div");pl.id="mapPulse";pl.className="map-pulse";ml.parentNode.insertBefore(pl,ml)}
   const tl=document.querySelector("#v-timeline .read");
-  if(RD.weak&&tl){RD.weak.classList.add("rd-moved","rd-in-temi");tl.appendChild(RD.weak);const h=RD.weak.querySelector(".radar-h h2");if(h)h.innerHTML='<span class="ic" aria-hidden="true">👁️</span>In osservazione';const l=RD.weak.querySelector(".radar-h .label");if(l)l.textContent="temi che potrebbero diventare storie"}
+  const ob=document.getElementById("ossBox");if(RD.weak&&ob){RD.weak.classList.add("rd-moved");ob.appendChild(RD.weak);const h=RD.weak.querySelector(".radar-h h2");if(h)h.innerHTML='<span class="ic" aria-hidden="true">👁️</span>In osservazione';const l=RD.weak.querySelector(".radar-h .label");if(l)l.textContent="temi che potrebbero diventare storie"}
   if(RD.num)RD.num.classList.add("rd-moved","rd-in-brief");
   [RD.num,RD.term,RD.weak].forEach(x=>{if(x)x.hidden=false});
   if(typeof rdTab==="function")rdTab=function(id){S.rdTab=id;[RD.num,RD.term,RD.weak].forEach(x=>{if(x)x.hidden=false})};
@@ -4284,6 +4307,7 @@ function renderPulse(){
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-mp-more]")&&RD.term){const off=document.querySelector("header.top").offsetHeight+10;window.scrollTo({top:RD.term.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
   if(e.target.closest("[data-weak-go]")&&RD.weak){const off=document.querySelector("header.top").offsetHeight+10;window.scrollTo({top:RD.weak.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}});
+document.addEventListener("click",e=>{const r=e.target.closest("[data-goto-rd]");if(!r)return;e.preventDefault();e.stopImmediatePropagation();const k=r.dataset.gotoRd;if(k==="rd-weak")show("osservazione");else if(k==="rd-term")show("mappa");else show("radar")},true);
 /* in Temi: accesso ai dossier, il livello più profondo di un tema */
 function hookDossierLink(){
   const tl=document.querySelector("#v-timeline .read");if(!tl)return;let a=document.getElementById("tmDos");
@@ -4293,12 +4317,13 @@ function hookDossierLink(){
   if(!a){a=document.createElement("button");a.type="button";a.id="tmDos";a.className="tm-dos";a.addEventListener("click",()=>show("dossier"));tl.insertBefore(a,tl.firstChild)}
   a.innerHTML=`<span>🧭 <b>I dossier</b> · i temi più grandi spiegati per intero${lab?` <em>${esc(lab.replace(/^·\s*/,""))}</em>`:""}</span><span aria-hidden="true">›</span>`;
 }
-{const _ra2=renderAll;renderAll=function(){const r=_ra2.apply(this,arguments);try{hookDossierLink();hookNumeri();renderPulse();hookWeakLink()}catch(e){console.warn("temi",e)}return r}}
+{const _ra2=renderAll;renderAll=function(){const r=_ra2.apply(this,arguments);try{hookNumeri();renderPulse();if(S.view==="calendario"&&typeof renderCal==="function"){S.tlMode="cal";renderCal();S.tlMode="temi";const c=document.getElementById("tlCal");if(c)c.hidden=false}updNav()}catch(e){console.warn("temi",e)}return r}}
 function hookWeakLink(){const tl=document.querySelector("#v-timeline .read");if(!tl||!RD.weak)return;let a=document.getElementById("tmWeak");const n=RD.weak.querySelectorAll(".wk,.weak,[class*=wk-]").length;
   if(!a){a=document.createElement("button");a.type="button";a.id="tmWeak";a.className="tm-dos tm-weak";a.dataset.weakGo="1";const d=document.getElementById("tmDos");if(d)d.insertAdjacentElement("afterend",a);else tl.insertBefore(a,tl.firstChild)}
   a.innerHTML=`<span>👁️ <b>In osservazione</b> · fatti piccoli che potrebbero diventare temi</span><span aria-hidden="true">↓</span>`}
-setTimeout(()=>{try{hookDossierLink();renderPulse();hookWeakLink()}catch(_){}},0);
-window.addEventListener("popstate",()=>setTimeout(()=>{try{updNav()}catch(_){}},0));
+setTimeout(()=>{try{renderPulse()}catch(_){}},0);
+{const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
+window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
 setTimeout(()=>{try{updNav()}catch(_){}},0);
 /* ---------- Archivio ridisegnato: prima la ricerca, poi i giorni con dentro le notizie, poi «Da rileggere» ---------- */
 const GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
@@ -4347,6 +4372,27 @@ renderArchDates=function(){
       ${th.length?`<span class="a2-th">${th.slice(0,4).map(t=>`<span>${esc(t)}</span>`).join("")}</span>`:""}</button>`}).join("");
 };
 setTimeout(()=>{try{renderArchDates()}catch(_){}},0);
+/* righe orizzontali (sezioni del briefing, seconda riga, temi): da PC frecce ‹ › ferme ai bordi, rotella e trascinamento */
+function scrollify(row){
+  if(!row||row._sc)return;row._sc=1;row.classList.add("hscroll");
+  const L=document.createElement("button"),R=document.createElement("button");
+  L.type=R.type="button";L.className="hs-arr l";R.className="hs-arr r";L.setAttribute("aria-label","Scorri a sinistra");R.setAttribute("aria-label","Scorri a destra");L.textContent="‹";R.textContent="›";
+  row.insertBefore(L,row.firstChild);row.appendChild(R);
+  const upd=()=>{const max=row.scrollWidth-row.clientWidth;row.classList.toggle("can-l",row.scrollLeft>4);row.classList.toggle("can-r",row.scrollLeft<max-4)};
+  row.addEventListener("scroll",upd,{passive:true});
+  L.addEventListener("click",e=>{e.stopPropagation();row.scrollBy({left:-Math.max(160,row.clientWidth*.6),behavior:"smooth"})});
+  R.addEventListener("click",e=>{e.stopPropagation();row.scrollBy({left:Math.max(160,row.clientWidth*.6),behavior:"smooth"})});
+  row.addEventListener("wheel",e=>{if(Math.abs(e.deltaY)<=Math.abs(e.deltaX))return;const b=row.scrollLeft;row.scrollLeft+=e.deltaY;if(row.scrollLeft!==b)e.preventDefault()},{passive:false});
+  row.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||e.button!==0||e.target.closest(".hs-arr"))return;DRAG={r:row,x:e.clientX,s:row.scrollLeft,moved:false}});
+  row.addEventListener("click",e=>{if(row._moved){e.preventDefault();e.stopPropagation();row._moved=false}},true);
+  if(window.ResizeObserver)new ResizeObserver(upd).observe(row);
+  upd();requestAnimationFrame(upd);
+}
+function scrollifyAll(){["#subtabs",".subnav-row","#tlChips",".cal-chips"].forEach(q=>document.querySelectorAll(q).forEach(scrollify))}
+{const _rb3=renderBriefing;renderBriefing=function(){const r=_rb3.apply(this,arguments);try{scrollifyAll()}catch(_){}return r}}
+{const _rc=renderCal;renderCal=function(){const r=_rc.apply(this,arguments);try{scrollifyAll()}catch(_){}return r}}
+{const _rt2=renderTimeline;renderTimeline=function(){const r=_rt2.apply(this,arguments);try{scrollifyAll()}catch(_){}return r}}
+setTimeout(()=>{try{scrollifyAll()}catch(_){}},50);
 setTimeout(pullF,300);
 {const p=parse(location.hash);if(p!==undefined){X.page=p;_show("esplora",false);renderEx();const top0=()=>window.scrollTo(0,0);setTimeout(top0,0);window.addEventListener("load",()=>setTimeout(top0,50),{once:true})}}
 })();
