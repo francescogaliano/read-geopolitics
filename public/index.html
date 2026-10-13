@@ -3471,9 +3471,22 @@ function uidOK(){if(typeof RG_API==="undefined")return null;const u=gStore("rg-u
 function anon(){return typeof RG_API!=="undefined"&&!uidOK()&&gStore("rg-uid")!=="admin"}
 function normF(x){x=x||{};const a=v=>Array.isArray(v)?v.filter(e=>typeof e==="string"):[];return {aree:a(x.aree),temi:a(x.temi),incroci:a(x.incroci),filoni:a(x.filoni)}}
 let pushT=null;
-function pushF(){const u=uidOK();if(!u)return;clearTimeout(pushT);pushT=setTimeout(async()=>{
+function pushF(){if(typeof RG_API==="undefined"){dbPush();return}const u=uidOK();if(!u)return;clearTimeout(pushT);pushT=setTimeout(async()=>{
   try{const r=await fetch(RG_API+"/api/segui",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:u,segui:F})});const j=await r.json().catch(()=>null);
     if(j&&j.ok){gStore(DIRTY,"");gStore(SUID,u)}}catch(e){}},600)}
+/* artifact (senza Worker): preferenze nel suo database, documento preferenze/segui, così valgono su ogni dispositivo */
+let dbT=null,dbOn=false;
+function dbPush(){if(!S.db)return;clearTimeout(dbT);dbT=setTimeout(()=>{S.db.collection("preferenze").doc("segui").set({...normF(F),aggiornato:new Date().toISOString()}).then(()=>gStore(DIRTY,"")).catch(e=>console.warn("preferenze",e))},500)}
+function dbHook(){if(dbOn||typeof RG_API!=="undefined"||!S.db)return;dbOn=true;let first=true;
+  S.db.collection("preferenze").doc("segui").onSnapshot(d=>{
+    const ini=first;first=false;
+    if(!d||!d.exists){if(ini&&(anyF()||F.filoni.length))dbPush();return}
+    const x=normF(d.data());
+    if(ini&&gStore(DIRTY)==="1"){dbPush();return}
+    if(JSON.stringify(x)===JSON.stringify(normF(F)))return;
+    F=x;saveLocal();try{perTe()}catch(_){}if(S.view==="esplora")renderEx();if(!panel.hidden)renderPanel2();
+  },e=>console.warn("preferenze",e));}
+setInterval(dbHook,1000);
 let pulling=false,lastPull=0;
 async function pullF(){const u=uidOK();if(!u||pulling)return;pulling=true;lastPull=Date.now();
   try{const r=await fetch(RG_API+"/api/me",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:u})});const j=await r.json().catch(()=>null);
