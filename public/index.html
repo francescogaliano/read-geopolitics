@@ -3582,6 +3582,8 @@ css.textContent=`
 .xp-inc{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .xp-by{margin:0 0 14px}
 .xp-nudge{font-size:14px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;margin:0 0 14px}
+.xp-pill.xp-off{opacity:.5;cursor:default}
+.xp-fl{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 4px}
 .xp-pt{background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:6px 0 14px}
 .xp-pt p{margin:0 0 10px;line-height:1.5}
 .xp-cta{font:inherit;font-weight:600;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:9px 16px;cursor:pointer;margin-top:4px}
@@ -3698,7 +3700,7 @@ show=function(v,push){
   const r=_show(v,push);updBack();return r;
 };
 function go(p,push){
-  X.page=p;X.chip="";X.lim=4;X.open=null;
+  X.page=p;X.chip="";X.sub="";X.lim=4;X.open=null;
   const h="#"+pathOf(p);
   try{if(push===false)history.replaceState(null,"",h);else if(location.hash!==h)history.pushState(null,"",h)}catch(e){}
   show("esplora");window.scrollTo({top:0});
@@ -3707,7 +3709,7 @@ const tabBtn=document.getElementById("tab-esplora");if(tabBtn)tabBtn.addEventLis
 if(nav)nav.addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(b&&b.dataset.view!=="esplora"){X.ret=null;updBack()}});
 window.addEventListener("popstate",()=>{
   const p=parse(location.hash);
-  if(p!==undefined){X.page=p;X.chip="";X.lim=4;X.open=null;_show("esplora",false);renderEx();X.ret=null;updBack();return}
+  if(p!==undefined){X.page=p;X.chip="";X.sub="";X.lim=4;X.open=null;_show("esplora",false);renderEx();X.ret=null;updBack();return}
   const v=(location.hash||"").slice(1);
   if(["briefing","mappa","protagonisti","radar","dossier","timeline","archivio"].includes(v))_show(v,false);
   updBack();
@@ -3851,11 +3853,11 @@ function areaPage(A){
   const list=X.chip?all.filter(s=>topics(s).a.includes(X.chip)):all;
   return `${crumb([{l:"Aree",p:{k:"lista",id:"area"}},{l:A.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${esc(A.n)}</h1>${followBtn("aree",A.id)}</div>
-  ${hot.length?`<div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
+  ${hot.length?`<p class="xp-hs" style="margin:2px 0 4px">I paesi dell’area · livello di tensione</p><div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
   ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>
-  ${chips.length>1?`<div class="xp-filt"><div class="xp-chips" role="group" aria-label="Restringi per argomento"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutti gli argomenti</button>${chips.map(([k,c])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${AIC(k)} ${esc(AMBN[k])}<span>${c}</span></button>`).join("")}</div></div>`:""}
+  ${chips.length>1?`<div class="xp-filt"><span class="xp-fl">Di cosa</span><div class="xp-chips" role="group" aria-label="Restringi per argomento"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutto</button>${chips.map(([k,c])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${AIC(k)} ${esc(AMBN[k])}<span>${c}</span></button>`).join("")}</div></div>`:""}
   ${X.chip?`<div class="xp-also"><span>Vuoi ritrovare ${esc(AMBN[X.chip])} ogni mattina in «Per te»?</span>${followBtn("incroci",A.id+"~"+X.chip,"solo in quest’area")}${followBtn("temi",X.chip,"in tutte le aree")}<button type="button" class="xp-lnk" data-go="tema|${esc(X.chip)}">Apri l’argomento</button></div>`:""}
   ${storyList(list)}`;
 }
@@ -3866,16 +3868,22 @@ function temaPage(T){
   const areas=Object.entries(ac).sort((x,y)=>y[1]-x[1]);
   const ranked=rankThreads(st30).slice(0,3);
   const inb=ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
-  const subc={};all.forEach(s=>topics(s).s.forEach(k=>{if(T.sotto.some(([x])=>x===k))subc[k]=(subc[k]||0)+1}));
-  const list=X.chip?all.filter(s=>X.chip.startsWith("a:")?storyArea(s)===X.chip.slice(2):topics(s).s.includes(X.chip)):all;
+  /* due filtri separati e combinabili: Dove (area) e Di cosa (sotto-argomento); i numeri di ciascuno tengono conto dell'altro */
   const ach=X.chip&&X.chip.startsWith("a:")?X.chip.slice(2):"";
+  const sub=X.sub&&T.sotto.some(([x])=>x===X.sub)?X.sub:"";
+  const inA=s=>!ach||storyArea(s)===ach,inS=s=>!sub||topics(s).s.includes(sub);
+  const fa={};all.filter(inS).forEach(s=>{const a=storyArea(s);if(a&&AREABY[a])fa[a]=(fa[a]||0)+1});
+  const fs={};all.filter(inA).forEach(s=>topics(s).s.forEach(k=>{if(T.sotto.some(([x])=>x===k))fs[k]=(fs[k]||0)+1}));
+  if(ach&&!fa[ach])fa[ach]=0;if(sub&&!fs[sub])fs[sub]=0;
+  const list=all.filter(s=>inA(s)&&inS(s));
   return `${crumb([{l:"Argomenti",p:{k:"lista",id:"tema"}},{l:T.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${AIC(T.id)} ${esc(T.n)}</h1>${followBtn("temi",T.id)}</div>
-  ${areas.length?`<p class="xp-hs" style="margin:2px 0 4px">Dove se ne parla di più nell’ultimo mese</p><div class="xp-pills">${areas.map(([a,n])=>`<button type="button" class="xp-pill" data-go="area|${esc(a)}">${esc(AREABY[a].n)}<i style="background:var(--accent);color:var(--bg)">${n}</i></button>`).join("")}</div>`:""}
+  <p class="xp-hs" style="margin:2px 0 4px">Dentro ${esc(T.n)} · storie nell’ultimo mese</p><div class="xp-pills">${T.sotto.map(([k,nm])=>{const n=st30.filter(s=>topics(s).s.includes(k)).length;return `<button type="button" class="xp-pill${n?"":" xp-off"}" data-sub-go="${esc(k)}"${n?"":" disabled"}>${esc(nm)}<i style="background:${n?"var(--accent)":"var(--line)"};color:var(--bg)">${n}</i></button>`}).join("")}</div>
   ${inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>
-  <div class="xp-filt"><div class="xp-chips" role="group" aria-label="Restringi"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutto</button>${areas.map(([a,n])=>`<button type="button" class="xp-chip" data-chip="a:${esc(a)}" aria-pressed="${X.chip==="a:"+a}">${esc(AREABY[a].n)}<span>${n}</span></button>`).join("")}${Object.entries(subc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${esc(SUBN[k])}<span>${n}</span></button>`).join("")}</div></div>
+  ${Object.keys(fs).length?`<div class="xp-filt"><span class="xp-fl">Di cosa</span><div class="xp-chips" role="group" aria-label="Restringi per sotto-argomento"><button type="button" class="xp-chip" data-xsub="" aria-pressed="${!sub}">Tutto</button>${Object.entries(fs).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<button type="button" class="xp-chip" data-xsub="${esc(k)}" aria-pressed="${sub===k}">${esc(SUBN[k])}<span>${n}</span></button>`).join("")}</div></div>`:""}
+  <div class="xp-filt"><span class="xp-fl">Dove</span><div class="xp-chips" role="group" aria-label="Restringi per area"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!ach}">Ovunque</button>${Object.entries(fa).sort((x,y)=>y[1]-x[1]).map(([a,n])=>`<button type="button" class="xp-chip" data-chip="a:${esc(a)}" aria-pressed="${ach===a}">${esc(AREABY[a].n)}<span>${n}</span></button>`).join("")}</div></div>
   ${ach?`<div class="xp-also"><span>Vuoi ritrovare ${esc(T.n)} in ${esc(AREABY[ach].n)} ogni mattina in «Per te»?</span>${followBtn("incroci",ach+"~"+T.id,"solo quest’incrocio")}${followBtn("aree",ach,"tutta l’area")}<button type="button" class="xp-lnk" data-go="area|${esc(ach)}">Apri l’area</button></div>`:""}
   ${storyList(list)}`;
 }
@@ -3922,7 +3930,9 @@ document.addEventListener("click",e=>{
     X.open=X.open===id?null:id;renderEx();
     const it=document.getElementById("xpi-"+id);if(it){const off=document.querySelector("header.top").offsetHeight+8;window.scrollTo({top:it.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
     return}
-  const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;X.open=null;renderEx();return}
+  const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;X.open=null;X.lim=4;renderEx();return}
+  const sg=e.target.closest("[data-sub-go]");if(sg){X.sub=sg.dataset.subGo;X.open=null;X.lim=4;renderEx();const f=document.querySelector("#esplora .xp-filt");if(f){const off=document.querySelector("header.top").offsetHeight+70;window.scrollTo({top:f.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
+  const sb=e.target.closest("[data-xsub]");if(sb){X.sub=sb.dataset.xsub;X.open=null;X.lim=4;renderEx();return}
   if(e.target.closest("[data-more]")){X.lim=X.lim<=4?20:X.lim+20;renderEx();return}
 });
 
