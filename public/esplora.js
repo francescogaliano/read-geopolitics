@@ -134,6 +134,9 @@ css.textContent=`
 .pt-f{white-space:nowrap}
 .pt-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .pt-sug button{border:1px solid var(--accent);border-radius:999px;padding:5px 12px}
+.pt-sub{font-size:12.5px;color:var(--muted);margin:12px 0 2px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.pt-br{font-size:14px;line-height:1.45;margin:6px 0 0;color:var(--ink)}
+.pt-br a{color:var(--accent);font-size:12.5px}
 .pt-n{font-size:14px;color:var(--muted);margin:6px 0 0;line-height:1.45}
 #intPanel{position:fixed;inset:0;z-index:210;background:rgba(7,12,17,.55);display:flex;align-items:flex-end;justify-content:center}
 #intPanel[hidden]{display:none}
@@ -143,20 +146,22 @@ css.textContent=`
 .ip-top h2{font-family:var(--serif);font-size:22px;margin:0}
 .ip-hint{font-size:14px;color:var(--muted);line-height:1.45;margin:2px 0 6px}
 .ip-box h3{font-family:var(--serif);font-size:17px;margin:20px 0 4px;font-weight:600}
-.ip-row{display:flex;align-items:center;gap:10px;width:100%;font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--line);padding:11px 0;cursor:pointer;text-align:left}
-.ip-l{flex:1;font-size:15.5px}
-.ip-sw{width:42px;height:24px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;flex:none;transition:background .15s}
-.ip-sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
-.ip-row[aria-pressed="true"] .ip-sw{background:var(--accent);border-color:var(--accent)}
-.ip-row[aria-pressed="true"] .ip-sw i{transform:translateX(18px);background:var(--bg)}
-.ip-x{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:9px 0;font-size:15px}
-.ip-x button{font:inherit;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 8px}
-.ip-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:8px}
-.ip-add label{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
-.ip-add select{font:inherit;font-size:14px;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
-@media (max-width:420px){.ip-add{grid-template-columns:1fr 1fr}.ip-add .xp-follow{grid-column:1/-1}}
+.ia{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:var(--surface)}
+.ia.on{border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
+.ia-h{display:grid;grid-template-columns:5px 1fr auto;gap:10px;align-items:center;width:100%;font:inherit;color:var(--ink);background:none;border:0;padding:11px 12px;cursor:pointer;text-align:left}
+.ia-bar{align-self:stretch;border-radius:3px}
+.ia-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ia-n{font-family:var(--serif);font-size:16.5px;font-weight:600}
+.ia-now{font-size:13px;color:var(--muted)}
+.ia-s{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;text-align:right;max-width:40vw}
+.ia.on .ia-s{color:var(--accent);font-weight:600}
+.ia-b{padding:0 12px 12px}
+.ia-b .xp-seg{max-width:none}
+.ia-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+.ip-prev{list-style:none;margin:6px 0 0;padding:0}
+.ip-prev li{font-size:14.5px;line-height:1.35;padding:7px 0;border-top:1px solid var(--line)}
+.ip-prev li.m{color:var(--muted);font-size:13.5px}
 .ip-sum{margin:18px 0 0;font-size:14px;color:var(--muted);background:var(--accent-soft);border-radius:10px;padding:10px 12px}
-@media (prefers-reduced-motion:reduce){.ip-sw,.ip-sw i{transition:none}}
 #xpBack{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:160;font:inherit;font-size:14.5px;background:var(--ink);color:var(--bg);border:0;border-radius:999px;padding:10px 18px;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #xpBack[hidden]{display:none}
 `;
@@ -269,14 +274,16 @@ function areaPage(A){
   const all=storiesWhere(s=>storyArea(s)===A.id),st30=all.filter(s=>s.data>=ago(30));
   const hot=A.codes.filter(c=>S.countries[c]).sort((x,y)=>(+S.countries[y].livello||0)-(+S.countries[x].livello||0)).slice(0,6);
   const ranked=rankThreads(st30).slice(0,3);
-  const inb=ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
+  const pb=(S.briefings||[]).find(b=>b.punto_aree&&b.punto_aree.aree&&b.punto_aree.aree[A.id]);
+  const pa=pb?pb.punto_aree.aree[A.id]:null;
+  const inb=pa?"":ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
   const tc={};st30.forEach(s=>topics(s).a.forEach(a=>{if(AMBN[a])tc[a]=(tc[a]||0)+1}));
   const chips=Object.entries(tc).sort((x,y)=>y[1]-x[1]);
   const list=X.chip?all.filter(s=>topics(s).a.includes(X.chip)):all;
   return `${crumb([{l:"Esplora",p:null},{l:A.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${esc(A.n)}</h1>${followBtn("aree",A.id)}</div>
   ${hot.length?`<div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
-  ${inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
+  ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">Le partite aperte</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>
   ${chips.length>1?`<div class="xp-filt"><div class="xp-chips" role="group" aria-label="Restringi per tema"><button type="button" class="xp-chip" data-chip="" aria-pressed="${!X.chip}">Tutti i temi</button>${chips.map(([k,c])=>`<button type="button" class="xp-chip" data-chip="${esc(k)}" aria-pressed="${X.chip===k}">${AIC(k)} ${esc(AMBN[k])}<span>${c}</span></button>`).join("")}</div></div>`:""}
@@ -349,31 +356,54 @@ document.addEventListener("click",e=>{
 /* ---------- pannello «I tuoi interessi» ---------- */
 const panel=document.createElement("div");panel.id="intPanel";panel.hidden=true;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","intPTitle");
 document.body.appendChild(panel);
-const PX={a:"",t:""};
-function sw(k,id,label,extra){const on=follows(k,id);return `<button type="button" class="ip-row" data-pf="${k}|${esc(id)}" aria-pressed="${on}"><span class="ip-l">${label}</span>${extra||""}<span class="ip-sw" aria-hidden="true"><i></i></span></button>`}
-function todayCount(){const b=S.briefings&&S.briefings[0];if(!b)return 0;return (b.storie_mondo||[]).concat(b.storie_italia||[]).map(id=>S.stories[id]).filter(Boolean).filter(matchF).length}
+const PE={open:null,some:{}};
+function areaMode(id){if(F.aree.includes(id))return "tutto";if(F.incroci.some(x=>splitX(x)[0]===id)||PE.some[id])return "alcuni";return "no"}
+function areaTemi(id){return F.incroci.filter(x=>splitX(x)[0]===id).map(x=>splitX(x)[1])}
+function setMode(id,m){
+  F.aree=F.aree.filter(x=>x!==id);
+  if(m!=="alcuni"){F.incroci=F.incroci.filter(x=>splitX(x)[0]!==id);delete PE.some[id]}else PE.some[id]=true;
+  if(m==="tutto")F.aree.push(id);
+  saveF();
+}
+function nowOf(a){const st=storiesWhere(s=>s.data>=ago(14)&&storyArea(s)===a.id);return rankThreads(st).slice(0,2).map(([id])=>tName(id)).join(" · ")}
+function todayMatches(){
+  const b=S.briefings&&S.briefings[0];if(!b)return {st:[],br:[]};
+  const st=(b.storie_mondo||[]).concat(b.storie_italia||[]).map(id=>S.stories[id]).filter(Boolean).filter(matchF);
+  const br=(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x));
+  return {st,br};
+}
 function renderPanel2(){
-  const areas=AREE.map(a=>({a,lv:lvArea(a)}));
-  const n=todayCount();
+  const rows=AREE.map(a=>{const m=areaMode(a.id),lv=lvArea(a),open=PE.open===a.id,ts=areaTemi(a.id);
+    const state=m==="tutto"?"Tutto":m==="alcuni"?(ts.length?ts.map(t=>AMBN[t]).join(", "):"Scegli i temi"):"Non segui";
+    return `<div class="ia${open?" open":""}${m!=="no"?" on":""}">
+      <button type="button" class="ia-h" data-pa="${esc(a.id)}" aria-expanded="${open}">
+        <span class="ia-bar" style="background:${LVC(lv)}"></span>
+        <span class="ia-t"><span class="ia-n">${esc(a.n)}</span><span class="ia-now">${esc(nowOf(a)||"Poche novità nelle ultime due settimane")}</span></span>
+        <span class="ia-s">${esc(state)}<span aria-hidden="true">${open?"▴":"▾"}</span></span></button>
+      ${open?`<div class="ia-b"><div class="xp-seg" role="group" aria-label="Cosa seguire in ${esc(a.n)}">${[["no","Niente"],["tutto","Tutto"],["alcuni","Solo alcuni temi"]].map(([k,l])=>`<button type="button" data-pm="${esc(a.id)}|${k}" aria-pressed="${m===k}">${l}</button>`).join("")}</div>
+        ${m==="alcuni"?`<div class="ia-chips">${TAX.map(t=>`<button type="button" class="xp-chip" data-pt2="${esc(a.id)}|${t.id}" aria-pressed="${ts.includes(t.id)}">${AIC(t.id)} ${esc(t.n)}</button>`).join("")}</div>`:""}
+        ${m==="tutto"?`<p class="ip-hint">Ogni storia e ogni breve di quest’area compare in «Per te».</p>`:""}</div>`:""}
+    </div>`}).join("");
+  const {st,br}=todayMatches();
   panel.innerHTML=`<div class="ip-box">
    <div class="ip-top"><h2 id="intPTitle">I tuoi interessi</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>
-   <p class="ip-hint">Scegli cosa ritrovare ogni mattina in «Per te oggi». Il briefing resta completo: cambia solo cosa vedi per primo.</p>
-   <h3>Aree</h3>${areas.map(({a,lv})=>sw("aree",a.id,esc(a.n),lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lv)} 40%,transparent)">${LVT[lv]}</span>`:"")).join("")}
-   <h3>Temi</h3>${TAX.map(t=>sw("temi",t.id,`${AIC(t.id)} ${esc(t.n)}`)).join("")}
-   <h3>Incroci</h3><p class="ip-hint" style="margin-top:0">Un tema solo in un’area, per esempio Società e demografia in Africa subsahariana.</p>
-   ${F.incroci.length?F.incroci.map(id=>`<div class="ip-x"><span>${esc(fName("incroci",id)||id)}</span><button type="button" data-pf="incroci|${esc(id)}" aria-label="Togli ${esc(fName("incroci",id)||id)}">✕</button></div>`).join(""):""}
-   <div class="ip-add"><label>Tema<select id="ipT"><option value="">Scegli…</option>${TAX.map(t=>`<option value="${t.id}"${PX.t===t.id?" selected":""}>${esc(t.n)}</option>`).join("")}</select></label><label>Area<select id="ipA"><option value="">Scegli…</option>${AREE.map(a=>`<option value="${a.id}"${PX.a===a.id?" selected":""}>${esc(a.n)}</option>`).join("")}</select></label><button type="button" class="xp-follow" data-padd="1">Aggiungi</button></div>
-   <p class="ip-sum">${anyF()?(n?`Oggi «Per te» ti mostrerebbe <b>${n}</b> ${n===1?"storia":"storie"} del briefing.`:"Oggi nessuna storia del briefing tocca queste scelte."):"Non segui ancora niente."}</p>
+   <p class="ip-hint">Scegli cosa vuoi trovare ogni mattina in «Per te oggi», in cima al briefing. Il briefing resta completo per tutti.</p>
+   <h3>Le aree del mondo</h3><p class="ip-hint" style="margin-top:0">Tocca un’area: puoi seguirla tutta o solo per alcuni temi.</p>${rows}
+   <h3>Temi da seguire ovunque</h3><p class="ip-hint" style="margin-top:0">Questi li ritrovi qualunque sia l’area.</p>
+   <div class="ia-chips">${TAX.map(t=>`<button type="button" class="xp-chip" data-pf="temi|${t.id}" aria-pressed="${follows("temi",t.id)}">${AIC(t.id)} ${esc(t.n)}</button>`).join("")}</div>
+   <h3>Con queste scelte, oggi vedresti</h3>
+   ${anyF()?(st.length||br.length?`<ul class="ip-prev">${st.slice(0,5).map(s=>`<li>${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</li>`).join("")}${st.length>5?`<li class="m">e altre ${st.length-5} storie</li>`:""}${br.length?`<li class="m">più ${br.length} ${br.length===1?"breve":"brevi"} dalle tue aree e dai tuoi temi</li>`:""}</ul>`:`<p class="ip-hint">Oggi niente su queste scelte. Lo trovi in «Per te» quando succede.</p>`):`<p class="ip-hint">Non segui ancora niente.</p>`}
   </div>`;
 }
 function openPanel(){renderPanel2();panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
-function closePanel(){panel.hidden=true;document.body.style.overflow="";try{perTe()}catch(_){}if(S.view==="esplora")renderEx()}
+function closePanel(){panel.hidden=true;document.body.style.overflow="";Object.keys(PE.some).forEach(id=>{if(!areaTemi(id).length)delete PE.some[id]});try{perTe()}catch(_){}if(S.view==="esplora")renderEx()}
 panel.addEventListener("click",e=>{
   if(e.target===panel||e.target.closest("[data-pclose]")){closePanel();return}
+  const h=e.target.closest("[data-pa]");if(h){PE.open=PE.open===h.dataset.pa?null:h.dataset.pa;renderPanel2();return}
+  const m=e.target.closest("[data-pm]");if(m){const [id,k]=m.dataset.pm.split("|");setMode(id,k);renderPanel2();return}
+  const c=e.target.closest("[data-pt2]");if(c){const [id,t]=c.dataset.pt2.split("|");toggleF("incroci",id+"~"+t);if(areaTemi(id).length)delete PE.some[id];else PE.some[id]=true;renderPanel2();return}
   const r=e.target.closest("[data-pf]");if(r){const v=r.dataset.pf;const i=v.indexOf("|");toggleF(v.slice(0,i),v.slice(i+1));renderPanel2();return}
-  if(e.target.closest("[data-padd]")){const t=panel.querySelector("#ipT").value,a=panel.querySelector("#ipA").value;PX.t=t;PX.a=a;if(!t||!a){renderPanel2();return}const id=a+"~"+t;if(!follows("incroci",id)){F.incroci.push(id);saveF()}PX.t="";PX.a="";renderPanel2();return}
 });
-panel.addEventListener("change",e=>{if(e.target.id==="ipT")PX.t=e.target.value;if(e.target.id==="ipA")PX.a=e.target.value});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden)closePanel()});
 document.addEventListener("click",e=>{if(e.target.closest("[data-int-open]")){e.preventDefault();openPanel()}});
 {const g=document.getElementById("guideBtn");if(g&&!document.getElementById("intBtn")){const b=document.createElement("button");b.className="prefbtn";b.id="intBtn";b.type="button";b.setAttribute("data-int-open","1");b.textContent="★ Interessi";g.parentNode.insertBefore(b,g)}}
@@ -387,10 +417,13 @@ function perTe(){
   if(anyF()){
     const ids=(b.storie_mondo||[]).concat(b.storie_italia||[]);
     const st=ids.map(id=>S.stories[id]).filter(Boolean).filter(matchF);
+    const br=(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x));
     const names=F.aree.map(a=>fName("aree",a)).concat(F.temi.map(t=>fName("temi",t)),F.incroci.map(x=>fName("incroci",x))).filter(Boolean);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b><button type="button" data-pt-manage="1">Gestisci</button></div>
       <p class="pt-seg">Segui ${esc(names.join(", "))}</p>
-      ${st.length?st.map(s=>`<button type="button" class="pt-st" data-story="${esc(s.id)}"><span class="pt-f">${(s.paesi||[]).slice(0,3).map(flag).join("")}</span><span>${esc(s.titolo)}</span></button>`).join(""):`<p class="pt-n">Oggi nessuna storia del briefing tocca quello che segui.</p>`}`;
+      ${st.map(s=>`<button type="button" class="pt-st" data-story="${esc(s.id)}"><span class="pt-f">${(s.paesi||[]).slice(0,3).map(flag).join("")}</span><span>${esc(s.titolo)}</span></button>`).join("")}
+      ${br.length?`<p class="pt-sub">In breve</p>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}`:""}
+      ${!st.length&&!br.length?`<p class="pt-n">Oggi niente su quello che segui, né tra le storie né tra le brevi.</p>`:""}`;
   }else{
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b></div>
