@@ -1584,7 +1584,7 @@ const AMBITI={
   geopolitica:{n:"Geopolitica",d:"Conflitti, diplomazia, alleanze, sanzioni. È il cuore della dashboard: sempre attivo.",lock:true},
   politica:{n:"Politica e istituzioni",d:"Governi, elezioni, riforme, UE come istituzione."},
   economia:{n:"Economia e mercati",d:"Commercio, tassi, debito, crescita. Alimenta anche il cruscotto numerico."},
-  tecnologia:{n:"Tecnologia, IA e cyber",d:"Chip e controlli sulle esportazioni, regole sull'IA, attacchi informatici statali."},
+  tecnologia:{n:"Tecnologia, IA e cyber",d:"IA, chip e controlli sulle esportazioni, attacchi informatici e spionaggio, regole sulle piattaforme, spazio."},
   energia:{n:"Energia e clima",d:"Prezzi, forniture, materie prime critiche, transizione, negoziati sul clima."},
   societa:{n:"Società e demografia",d:"Migrazioni, demografia, lavoro, scuola, diritti."},
   sport:{n:"Sport",d:"Solo quando incrocia la geopolitica: grandi eventi, boicottaggi, fondi sovrani, esclusioni."}
@@ -3443,7 +3443,7 @@ const TAX=[
  {id:"politica",n:"Politica e istituzioni",sotto:[["elezioni","Elezioni"],["governi","Governi e riforme"],["ue","Unione europea"],["diritti","Diritti e giustizia"]]},
  {id:"economia",n:"Economia e mercati",sotto:[["commercio","Commercio e dazi"],["conti-pubblici","Debito e conti pubblici"],["mercati","Banche centrali e mercati"],["imprese","Imprese e investimenti"]]},
  {id:"energia",n:"Energia e ambiente",sotto:[["petrolio-gas","Petrolio e gas"],["transizione","Rinnovabili e transizione"],["materie-prime","Materie prime critiche"],["clima","Clima"],["ambiente","Ambiente e risorse"]]},
- {id:"tecnologia",n:"Tecnologia, IA e cyber",sotto:[["ia","Intelligenza artificiale"],["chip","Chip e semiconduttori"],["cyber","Cyber"],["spazio","Spazio"]]},
+ {id:"tecnologia",n:"Tecnologia, IA e cyber",sotto:[["ia","Intelligenza artificiale"],["chip","Chip e semiconduttori"],["cyber","Cyber e spionaggio digitale"],["digitale","Piattaforme e regole digitali"],["spazio","Spazio e satelliti"]]},
  {id:"societa",n:"Società e demografia",sotto:[["migrazioni","Migrazioni"],["lavoro","Demografia e lavoro"],["salute","Salute"],["umanitario","Crisi umanitarie"]]}
 ];
 const SUBN={};TAX.forEach(a=>a.sotto.forEach(([id,n])=>SUBN[id]=n));
