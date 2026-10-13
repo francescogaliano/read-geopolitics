@@ -3494,6 +3494,19 @@ css.textContent=`
 .xp-pill{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 9px;display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .xp-pill:hover{border-color:var(--accent)}
 .xp-pill i{font-style:normal;font-size:11px;min-width:18px;text-align:center;border-radius:4px;padding:1px 4px;color:#fff}
+.xp-pt{background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:6px 0 14px}
+.xp-pt p{margin:0 0 10px;line-height:1.5}
+.xp-cta{font:inherit;font-weight:600;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:9px 16px;cursor:pointer;margin-top:4px}
+.xp-ptsub{margin:0 0 2px;font-size:15px;color:var(--muted)}
+.xp-ptsub .xp-lnk{font-size:15px}
+.xp-jump{display:flex;flex-direction:column;gap:10px;margin:18px 0 6px}
+.xp-jump>a{font-weight:600;color:var(--accent);text-decoration:none;font-size:15px}
+.xp-map{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.xp-map:hover{border-color:var(--accent)}
+.xp-map-i{font-size:24px}
+.xp-map>span:nth-child(2){flex:1;display:flex;flex-direction:column}
+.xp-map>span:nth-child(2) span{color:var(--muted);font-size:14px}
+.pt-open{display:block;margin-top:10px;font:inherit;font-weight:600;color:var(--accent);background:none;border:0;padding:0;cursor:pointer}
 #esplora h2.xp-h2{font-family:var(--serif);font-size:20px;margin:26px 0 4px;font-weight:600}
 .xp-hs{font-size:13.5px;color:var(--muted);margin:0 0 10px}
 .xp-ib{font-size:15.5px;line-height:1.55;margin:0;max-width:65ch}
@@ -3590,7 +3603,7 @@ if(main&&!document.getElementById("v-esplora")){
 const X={mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
 function pathOf(p){return p?`esplora/${p.k}/${encodeURIComponent(p.id)}`:"esplora"}
 function parse(h){h=(h||"").replace(/^#/,"");if(!h.startsWith("esplora"))return undefined;const m=h.split("/");return m.length>=3?{k:m[1],id:decodeURIComponent(m[2])}:null}
-function labelOf(p){if(!p)return"Esplora";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
+function labelOf(p){if(!p)return"Per te";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
 const _show=show;
 show=function(v,push){
   if(v==="esplora"){_show("esplora",false);renderEx();updBack();return}
@@ -3619,6 +3632,11 @@ document.addEventListener("click",e=>{
   X.ret={page:X.page,label:labelOf(X.page)};
   try{history.pushState(null,"",location.hash)}catch(_){}
 },true);
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-xjump]")){e.preventDefault();const t=document.getElementById("xpExplore");if(t)t.scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(e.target.closest("[data-xmap]")){X.ret={page:X.page,label:labelOf(X.page)};try{history.pushState(null,"",location.hash)}catch(_){}show("mappa");window.scrollTo({top:0});updBack();return}
+  if(e.target.closest("[data-pt-open]")){X.ret=null;go(null);return}
+});
 const backBtn=document.createElement("button");backBtn.id="xpBack";backBtn.type="button";backBtn.hidden=true;document.body.appendChild(backBtn);
 backBtn.addEventListener("click",()=>{const r=X.ret;X.ret=null;go(r?r.page:null)});
 function updBack(){const on=!!X.ret&&S.view!=="esplora";backBtn.hidden=!on;if(on)backBtn.textContent=`‹ Torna a ${X.ret.label}`}
@@ -3654,6 +3672,27 @@ function myInterests(){
 }
 
 /* ---------- pagine ---------- */
+function mapCard(){return `<button type="button" class="xp-map" data-xmap="1"><span class="xp-map-i" aria-hidden="true">🗺</span><span><b>Vedi la mappa del mondo</b><span>I paesi colorati per livello di tensione, con le dinamiche tra loro</span></span><span aria-hidden="true">›</span></button>`}
+function forYou(){
+  const b=typeof currentBrief==="function"?currentBrief():null;
+  const nav=`<div class="xp-jump"><a href="#xpExplore" data-xjump="1">Esplora per area o tema ↓</a>${mapCard()}</div>`;
+  if(!anyF()){
+    const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
+    return `<h1 class="xp-h1" style="margin-top:12px">Per te</h1>
+    <div class="xp-pt"><p>Scegli le aree e i temi che ti interessano: qui trovi ogni giorno le storie che li riguardano, anche quelle dei giorni passati.</p>
+    <div class="pt-sug">${sug.map(x=>`<button type="button" data-follow="aree|${esc(x.a.id)}">☆ ${esc(x.a.n)}</button>`).join("")}</div>
+    <button type="button" class="xp-cta" data-int-open="1">Scegli aree e temi</button></div><div class="xp-jump">${mapCard()}</div>`;
+  }
+  const names=F.aree.map(a=>fName("aree",a)).concat(F.temi.map(t=>fName("temi",t)),F.incroci.map(x=>fName("incroci",x))).filter(Boolean);
+  const list=storiesWhere(s=>s.data>=ago(7)&&matchF(s));
+  const br=b?(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x)):[];
+  return `<h1 class="xp-h1" style="margin-top:12px">Per te</h1>
+  <p class="xp-ptsub">Segui ${esc(names.join(", "))} · <button type="button" class="xp-lnk" data-int-open="1">Modifica i tuoi interessi</button></p>
+  <p class="xp-hs">Le storie degli ultimi 7 giorni su quello che segui, dalla più recente.</p>
+  ${list.length?storyList(list):`<p class="xp-empty">Negli ultimi 7 giorni niente su quello che segui. Puoi aggiungere aree o temi da «Modifica i tuoi interessi».</p>`}
+  ${br.length?`<p class="pt-sub">In breve, oggi</p>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}`:""}
+  ${nav}`;
+}
 function landing(){
   const st14=storiesWhere(s=>s.data>=ago(14)),st7=st14.filter(s=>s.data>=ago(7));
   let rows;
@@ -3667,14 +3706,16 @@ function landing(){
       .sort((x,y)=>y.c-x.c);
   }
   const mx=Math.max(1,...rows.map(r=>r.c));
-  return `<h1 class="xp-h1" style="margin-top:12px">Da dove vuoi partire?</h1>
-  <p class="xp-lead">Scegli un’area o un tema: trovi le partite aperte e gli ultimi sviluppi, dal quadro generale alla singola storia.</p>
-  ${myInterests()}
+  return `${forYou()}
+  <h2 class="xp-h2" id="xpExplore">Esplora per area o per tema</h2>
+  <p class="xp-lead">Scegli un’area o un tema: trovi il punto della settimana, le partite aperte e gli ultimi sviluppi, dal quadro generale alla singola storia.</p>
   <div class="xp-seg" role="group" aria-label="Esplora per"><button type="button" data-mode="area" aria-pressed="${X.mode==="area"}">Per area</button><button type="button" data-mode="tema" aria-pressed="${X.mode==="tema"}">Per tema</button></div>
   ${rows.map(r=>`<button type="button" class="xp-row" data-go="${r.k}|${esc(r.id)}"><span class="xp-bar" style="${r.k==="area"?`background:${LVC(r.lv)}`:`background:var(--accent);opacity:${(0.25+0.75*r.c/mx).toFixed(2)}`}"></span>
     <span class="xp-body"><span class="xp-n">${r.ic?r.ic+" ":""}${esc(r.n)}</span><span class="xp-now">${esc(r.now)}</span></span>
     <span class="xp-meta">${r.k==="area"&&r.lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(r.lv)} 40%,transparent)">${LVT[r.lv]}</span>`:""}<span class="xp-c">${r.c} ${r.c===1?"storia":"storie"} in 7 giorni</span>${r.f?`<span class="xp-star">★ segui</span>`:""}</span></button>`).join("")}
-  <p class="xp-note">${X.mode==="area"?"La barra a sinistra ha il colore del paese più teso dell’area, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"La barra è più intensa per i temi con più storie negli ultimi 7 giorni."}</p>`;
+  <p class="xp-note">${X.mode==="area"?"La barra a sinistra ha il colore del paese più teso dell’area, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"La barra è più intensa per i temi con più storie negli ultimi 7 giorni."}</p>
+  <h2 class="xp-h2">Le tue preferenze</h2>
+  ${myInterests()}`;
 }
 
 function areaPage(A){
@@ -3830,12 +3871,14 @@ function perTe(){
       <p class="pt-seg">Segui ${esc(names.join(", "))}</p>
       ${st.map(s=>`<button type="button" class="pt-st" data-story="${esc(s.id)}"><span class="pt-f">${(s.paesi||[]).slice(0,3).map(flag).join("")}</span><span>${esc(s.titolo)}</span></button>`).join("")}
       ${br.length?`<p class="pt-sub">In breve</p>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}`:""}
-      ${!st.length&&!br.length?`<p class="pt-n">Oggi niente su quello che segui, né tra le storie né tra le brevi.</p>`:""}`;
+      ${!st.length&&!br.length?`<p class="pt-n">Oggi niente su quello che segui, né tra le storie né tra le brevi.</p>`:""}
+      <button type="button" class="pt-open" data-pt-open="1">Apri «Per te» in Esplora: anche i giorni passati ›</button>`;
   }else{
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b></div>
       <p class="pt-n">Segui un’area o un tema e qui trovi ogni mattina le storie che ti riguardano. Per esempio:</p>
-      <div class="pt-sug">${sug.map(x=>`<button type="button" data-pt-follow="${esc(x.a.id)}">☆ ${esc(x.a.n)}</button>`).join("")}<button type="button" data-pt-manage="1" style="border:0">Scegli aree e temi</button></div>`;
+      <div class="pt-sug">${sug.map(x=>`<button type="button" data-pt-follow="${esc(x.a.id)}">☆ ${esc(x.a.n)}</button>`).join("")}<button type="button" data-pt-manage="1" style="border:0">Scegli aree e temi</button></div>
+      <button type="button" class="pt-open" data-pt-open="1">Oppure esplora per area o per tema ›</button>`;
   }
   const in60=el.querySelector(".in60");
   if(in60&&in60.parentNode)in60.parentNode.insertBefore(box,in60.nextSibling);else{const sub=el.querySelector("#subtabs");if(sub)sub.parentNode.insertBefore(box,sub);else el.prepend(box)}
@@ -3848,7 +3891,7 @@ const _rb=renderBriefing;
 renderBriefing=function(){const r=_rb.apply(this,arguments);try{perTe()}catch(e){console.warn("per te",e)}return r};
 const _ra=renderAll;
 renderAll=function(){const r=_ra.apply(this,arguments);try{if(S.view==="esplora")renderEx()}catch(e){console.warn("esplora",e)}return r};
-{const p=parse(location.hash);if(p!==undefined){X.page=p;if(p&&p.k==="tema")X.mode="tema";_show("esplora",false);renderEx()}}
+{const p=parse(location.hash);if(p!==undefined){X.page=p;if(p&&p.k==="tema")X.mode="tema";_show("esplora",false);renderEx();const top0=()=>window.scrollTo(0,0);setTimeout(top0,0);window.addEventListener("load",()=>setTimeout(top0,50),{once:true})}}
 })();
 
 })();
