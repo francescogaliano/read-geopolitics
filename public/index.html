@@ -4461,6 +4461,24 @@ setTimeout(()=>{try{in60Kick();briefAside()}catch(_){}},0);
     msg.hidden=true;inp.value=cname(hit);inp.blur();S.selCountry=hit;try{renderPanel();highlightSel();focusPanel()}catch(e){console.warn("cerca paese",e)}};
   inp.addEventListener("change",go);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});
 })();
+/* ---------- telefono: le cinque voci in basso, dove arriva il pollice ---------- */
+{const st=document.createElement("style");st.textContent=`
+nav.tabs.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:space-around;gap:0;margin:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.18)}
+nav.tabs.bottombar > button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);background:transparent;border:0;border-radius:12px;padding:6px 2px 5px;margin:0;box-shadow:none}
+nav.tabs.bottombar > button .ic{font-size:22px;line-height:1;transition:transform .15s}
+nav.tabs.bottombar > button[aria-selected="true"]{color:var(--ink);background:var(--accent-soft)}
+nav.tabs.bottombar > button[aria-selected="true"] .ic{transform:scale(1.1)}
+nav.tabs.bottombar > .navx,nav.tabs.bottombar > .tab-sep{display:none!important}
+body.has-bottombar{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+body.has-bottombar .foot{margin-bottom:8px}`;document.head.appendChild(st)}
+(function bottomBar(){const nav=document.querySelector("header.top nav.tabs");if(!nav)return;
+  const home=document.createComment("tabs");nav.parentNode.insertBefore(home,nav);
+  const mq=window.matchMedia("(max-width:520px)");
+  const apply=()=>{const down=mq.matches;
+    if(down&&nav.parentNode!==document.body){document.body.appendChild(nav);nav.classList.add("bottombar");document.body.classList.add("has-bottombar")}
+    else if(!down&&nav.parentNode===document.body){home.parentNode.insertBefore(nav,home.nextSibling);nav.classList.remove("bottombar");document.body.classList.remove("has-bottombar")}};
+  apply();if(mq.addEventListener)mq.addEventListener("change",apply);else mq.addListener(apply);
+})();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
