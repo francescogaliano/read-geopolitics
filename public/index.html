@@ -4416,6 +4416,48 @@ document.addEventListener("click",e=>{
   const c=e.target.closest("#tmOwn [data-dos]");if(c){const d=S.dossier[c.dataset.dos];if(d&&d.stato==="pronto"){e.preventDefault();e.stopImmediatePropagation();openDossier(d.id)}}
 },true);
 {const vd=document.getElementById("v-dossier");if(vd){const go3=()=>{if(!vd.hidden)setTimeout(()=>{if(!vd.hidden){const d=S.dosOpen&&S.dossier[S.dosOpen];if(d)openDossier(d.id);else show("timeline")}},0)};new MutationObserver(go3).observe(vd,{attributes:true,attributeFilter:["hidden"]});go3()}}
+/* ---------- dal Redesign: briefing su due colonne da computer, paese davanti alle righe dei 60 secondi, ricerca nella mappa ---------- */
+{const st=document.createElement("style");st.textContent=`
+.in60-k{display:block;font-size:12.5px;font-weight:700;letter-spacing:.2px;color:var(--accent);margin-bottom:1px}
+.in60-k .fl{margin-right:4px}
+.b-aside>*:last-child{margin-bottom:0}
+.b-aside>*:first-child{margin-top:0}
+@media (min-width:1100px){
+  #briefing.read{max-width:1128px;display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:28px;align-items:start}
+  #briefing.read>*{grid-column:1;min-width:0}
+  #briefing.read>.b-aside{grid-column:2;grid-row:3 / span 40;position:sticky;top:calc(var(--hdr,120px) + 14px);max-height:calc(100vh - var(--hdr,120px) - 28px);overflow:auto;scrollbar-width:thin}
+  #briefing.read>.b-aside .pt-box,#briefing.read>.b-aside .today{margin-bottom:16px}
+}
+.map-q{position:relative;margin:0 0 10px}
+.map-q input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 36px}
+.map-q input:focus{outline:none;border-color:var(--accent)}
+.map-q::before{content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7;pointer-events:none}
+.map-q .mq-msg{font-size:13px;color:var(--muted);margin-top:4px;display:block}`;document.head.appendChild(st)}
+function in60Kick(){const el=document.getElementById("briefing");if(!el)return;
+  el.querySelectorAll(".in60 li").forEach(li=>{if(li.querySelector(".in60-k"))return;const r=li.querySelector(".in60-ref[data-story]");const s=r&&S.stories[r.dataset.story];const iso=s&&(s.paesi||[]).find(p=>/^[A-Z]{3}$/.test(p));if(!iso)return;
+    const k=document.createElement("span");k.className="in60-k";k.innerHTML=`${flag(iso)?`<span class="fl" aria-hidden="true">${flag(iso)}</span>`:""}${esc(cname(iso))}`;const sp=li.querySelector(":scope>span");(sp||li).insertBefore(k,(sp||li).firstChild)})}
+function briefAside(){const el=document.getElementById("briefing");if(!el)return;const pt=el.querySelector(":scope>.pt-box"),td=el.querySelector(":scope>.today");if(!pt&&!td)return;
+  let a=el.querySelector(":scope>.b-aside");if(!a){a=document.createElement("div");a.className="b-aside"}
+  const in60=el.querySelector(":scope>.in60");if(a.parentNode!==el||(in60&&a.previousElementSibling!==in60)){if(in60)in60.insertAdjacentElement("afterend",a);else el.prepend(a)}
+  if(pt)a.appendChild(pt);if(td)a.appendChild(td);
+  [...a.querySelectorAll(":scope>.pt-box")].slice(0,-1).forEach(x=>x.remove())}
+{const _rb3=renderBriefing;renderBriefing=function(){const r=_rb3.apply(this,arguments);try{in60Kick();briefAside()}catch(e){console.warn("briefing 2 colonne",e)}return r}}
+{const bb=document.getElementById("briefing");if(bb&&window.MutationObserver){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;try{in60Kick();briefAside()}catch(_){}busy=false}).observe(bb,{childList:true})}}
+setTimeout(()=>{try{in60Kick();briefAside()}catch(_){}},0);
+(function mapSearch(){const tm=document.getElementById("tmach");if(!tm||document.getElementById("mapQ"))return;
+  const w=document.createElement("div");w.className="map-q";w.innerHTML=`<label for="mapQ" class="sr">Cerca un paese</label><input id="mapQ" list="mapQl" autocomplete="off" placeholder="Cerca un paese… es. Sudan, Taiwan, Venezuela"><datalist id="mapQl"></datalist><span class="mq-msg" hidden></span>`;
+  tm.parentNode.insertBefore(w,tm);
+  const inp=w.querySelector("input"),dl=w.querySelector("datalist"),msg=w.querySelector(".mq-msg");
+  const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+  const ids=()=>[...new Set([...Object.keys(S.geoNames||{}),...Object.keys(S.countries||{})])].filter(x=>/^[A-Z]{3}$/.test(x));
+  const fill=()=>{const L=ids().map(i=>[i,cname(i)]).filter(([i,n])=>n&&n!==i).sort((a,b)=>a[1].localeCompare(b[1],"it"));dl.innerHTML=L.map(([,n])=>`<option value="${esc(n)}">`).join("")};
+  inp.addEventListener("focus",fill);
+  const go=()=>{const q=norm(inp.value);if(!q)return;const L=ids().map(i=>[i,norm(cname(i))]);
+    const hit=(L.find(([i,n])=>n===q||i.toLowerCase()===q)||L.find(([,n])=>n.startsWith(q))||L.find(([,n])=>n.includes(q))||[])[0];
+    if(!hit){msg.hidden=false;msg.textContent="Nessun paese con questo nome.";return}
+    msg.hidden=true;inp.value=cname(hit);inp.blur();S.selCountry=hit;try{renderPanel();highlightSel();focusPanel()}catch(e){console.warn("cerca paese",e)}};
+  inp.addEventListener("change",go);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});
+})();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
