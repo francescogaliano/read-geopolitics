@@ -3945,7 +3945,8 @@ function todayMatches(){
   const br=(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x));
   return {st,br};
 }
-function renderPanel2(){
+function renderPanel2(){const _ob=panel.querySelector(".ip-box"),_st=_ob?_ob.scrollTop:0;try{renderPanel2_()}finally{const nb=panel.querySelector(".ip-box");if(nb)nb.scrollTop=_st}}
+function renderPanel2_(){
   const rows=AREE.map(a=>{const m=areaMode(a.id),lv=lvArea(a),open=PE.open===a.id,ts=areaTemi(a.id);
     const state=m==="tutto"?"Tutto":m==="alcuni"?(ts.length?ts.map(t=>AMBN[t]).join(", "):"Scegli gli argomenti"):"Non segui";
     return `<div class="ia${open?" open":""}${m!=="no"?" on":""}">
@@ -3968,7 +3969,7 @@ function renderPanel2(){
    ${anyF()?(st.length||br.length?`<ul class="ip-prev">${st.slice(0,5).map(s=>`<li>${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</li>`).join("")}${st.length>5?`<li class="m">e altre ${st.length-5} storie</li>`:""}${br.length?`<li class="m">più ${br.length} ${br.length===1?"breve":"brevi"} dalle tue aree e dai tuoi argomenti</li>`:""}</ul>`:`<p class="ip-hint">Oggi niente su queste scelte. Lo trovi in «Per te» quando succede.</p>`):`<p class="ip-hint">Non segui ancora niente.</p>`}
   </div>`;
 }
-function openPanel(){renderPanel2();panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
+function openPanel(){renderPanel2();{const nb=panel.querySelector(".ip-box");if(nb)nb.scrollTop=0}panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
 function closePanel(){panel.hidden=true;document.body.style.overflow="";Object.keys(PE.some).forEach(id=>{if(!areaTemi(id).length)delete PE.some[id]});try{perTe()}catch(_){}if(S.view==="esplora")renderEx()}
 panel.addEventListener("click",e=>{
   if(e.target===panel||e.target.closest("[data-pclose]")){closePanel();return}
