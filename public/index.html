@@ -3467,8 +3467,8 @@ function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(F))}catch(e){}}
 function saveF(){saveLocal();gStore(DIRTY,"1");pushF()}
 /* ---------- preferenze legate all'email (Worker: /api/me, /api/segui); il browser fa da scorta ---------- */
 const DIRTY="rg-segui-dirty",SUID="rg-segui-uid";
-function uidOK(){const u=gStore("rg-uid");return u&&u!=="admin"&&!S.guest?u:null}
-function anon(){return !uidOK()&&gStore("rg-uid")!=="admin"}
+function uidOK(){if(typeof RG_API==="undefined")return null;const u=gStore("rg-uid");return u&&u!=="admin"&&!S.guest?u:null}
+function anon(){return typeof RG_API!=="undefined"&&!uidOK()&&gStore("rg-uid")!=="admin"}
 function normF(x){x=x||{};const a=v=>Array.isArray(v)?v.filter(e=>typeof e==="string"):[];return {aree:a(x.aree),temi:a(x.temi),incroci:a(x.incroci),filoni:a(x.filoni)}}
 let pushT=null;
 function pushF(){const u=uidOK();if(!u)return;clearTimeout(pushT);pushT=setTimeout(async()=>{
