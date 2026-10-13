@@ -4416,7 +4416,7 @@ document.addEventListener("click",e=>{
   const c=e.target.closest("#tmOwn [data-dos]");if(c){const d=S.dossier[c.dataset.dos];if(d&&d.stato==="pronto"){e.preventDefault();e.stopImmediatePropagation();openDossier(d.id)}}
 },true);
 {const vd=document.getElementById("v-dossier");if(vd){const go3=()=>{if(!vd.hidden)setTimeout(()=>{if(!vd.hidden){const d=S.dosOpen&&S.dossier[S.dosOpen];if(d)openDossier(d.id);else show("timeline")}},0)};new MutationObserver(go3).observe(vd,{attributes:true,attributeFilter:["hidden"]});go3()}}
-/* ---------- dal Redesign: briefing su due colonne da computer, paese davanti alle righe dei 60 secondi, ricerca nella mappa ---------- */
+/* ---------- dal Redesign: da computer «Oggi in breve» in una colonna a destra, paese davanti alle righe dei 60 secondi, ricerca nella mappa ---------- */
 {const st=document.createElement("style");st.textContent=`
 .in60-k{display:block;font-size:12.5px;font-weight:700;letter-spacing:.2px;color:var(--accent);margin-bottom:1px}
 .in60-k .fl{margin-right:4px}
@@ -4436,11 +4436,14 @@ document.addEventListener("click",e=>{
 function in60Kick(){const el=document.getElementById("briefing");if(!el)return;
   el.querySelectorAll(".in60 li").forEach(li=>{if(li.querySelector(".in60-k"))return;const r=li.querySelector(".in60-ref[data-story]");const s=r&&S.stories[r.dataset.story];const iso=s&&(s.paesi||[]).find(p=>/^[A-Z]{3}$/.test(p));if(!iso)return;
     const k=document.createElement("span");k.className="in60-k";k.innerHTML=`${flag(iso)?`<span class="fl" aria-hidden="true">${flag(iso)}</span>`:""}${esc(cname(iso))}`;const sp=li.querySelector(":scope>span");(sp||li).insertBefore(k,(sp||li).firstChild)})}
-function briefAside(){const el=document.getElementById("briefing");if(!el)return;const pt=el.querySelector(":scope>.pt-box"),td=el.querySelector(":scope>.today");if(!pt&&!td)return;
+function briefAside(){const el=document.getElementById("briefing");if(!el)return;const td=el.querySelector(":scope>.today");
+  /* «Per te» resta nella colonna principale, subito sotto i 60 secondi; a destra va solo «Oggi in breve» */
+  const ptIn=el.querySelector(":scope>.b-aside>.pt-box"),in60=el.querySelector(":scope>.in60");if(ptIn&&in60)in60.insertAdjacentElement("afterend",ptIn);
+  if(!td)return;
   let a=el.querySelector(":scope>.b-aside");if(!a){a=document.createElement("div");a.className="b-aside"}
-  const in60=el.querySelector(":scope>.in60");if(a.parentNode!==el||(in60&&a.previousElementSibling!==in60)){if(in60)in60.insertAdjacentElement("afterend",a);else el.prepend(a)}
-  if(pt)a.appendChild(pt);if(td)a.appendChild(td);
-  [...a.querySelectorAll(":scope>.pt-box")].slice(0,-1).forEach(x=>x.remove())}
+  const pt=el.querySelector(":scope>.pt-box"),after=pt||in60;
+  if(a.parentNode!==el||(after&&a.previousElementSibling!==after)){if(after)after.insertAdjacentElement("afterend",a);else el.prepend(a)}
+  a.appendChild(td)}
 {const _rb3=renderBriefing;renderBriefing=function(){const r=_rb3.apply(this,arguments);try{in60Kick();briefAside()}catch(e){console.warn("briefing 2 colonne",e)}return r}}
 {const bb=document.getElementById("briefing");if(bb&&window.MutationObserver){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;try{in60Kick();briefAside()}catch(_){}busy=false}).observe(bb,{childList:true})}}
 setTimeout(()=>{try{in60Kick();briefAside()}catch(_){}},0);
