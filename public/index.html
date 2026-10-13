@@ -1435,7 +1435,8 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-nav"><h3><span class="ic" aria-hidden="true">🧭</span>2. Come muoversi</h3>
-      <p>In alto ci sono sei linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti) e <b>Temi</b> (Temi, In osservazione e Dossier). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri), <b>Calendario</b> (le scadenze in arrivo) e <b>Archivio</b> (la ricerca e tutti i giorni passati). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
+      <p>In alto ci sono cinque linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti) e <b>Temi</b> (Temi, In osservazione e Dossier). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri) e <b>Calendario</b> (le scadenze in arrivo). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
+      <p>L’<b>Archivio</b> si apre con la <b>🔍</b> in alto (la ricerca in tutto quello che è uscito) o con «📅 Giorni precedenti» accanto al titolo del briefing.</p>
       <p>Tutto ciò che riguarda te (interessi, newsletter, aspetto, guida) sta nel pulsante <b>★ Il mio Read</b>.</p>
     </section>
 
@@ -3624,7 +3625,22 @@ css.textContent=`
 .ip-link{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:12px 14px;text-align:left;cursor:pointer;text-decoration:none}
 .ip-link:last-child{border-bottom:0}.ip-link span{color:var(--muted)}
 nav.tabs > .navx{display:none!important}
-@media (max-width:520px){header.top nav.tabs > button .ic{display:none}header.top nav.tabs{justify-content:space-between;gap:0}header.top nav.tabs > button{padding-left:4px!important;padding-right:4px!important;font-size:13.5px!important;letter-spacing:-.1px}}
+header.top nav.tabs{gap:6px;padding:4px 0 6px}
+header.top nav.tabs > button{font-size:15.5px;font-weight:600;color:var(--muted);border:0;border-radius:12px;padding:8px 14px;display:inline-flex;align-items:center;gap:7px}
+header.top nav.tabs > button .ic{font-size:18px;line-height:1;filter:grayscale(.6);opacity:.85}
+header.top nav.tabs > button:hover{color:var(--ink);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+header.top nav.tabs > button[aria-selected="true"]{color:var(--ink);background:var(--accent-soft);box-shadow:inset 0 -3px 0 var(--accent)}
+header.top nav.tabs > button[aria-selected="true"] .ic{filter:none;opacity:1}
+.srch-btn.on{border-color:var(--accent);color:var(--accent)}
+.prev-days{margin-left:10px;font-size:14px}
+@media (max-width:520px){
+  header.top nav.tabs{justify-content:space-between;gap:2px;padding:2px 0 4px}
+  header.top nav.tabs > button{flex:1 1 0;flex-direction:column;gap:3px;padding:7px 2px 6px;font-size:12px;font-weight:600;letter-spacing:.1px;border-radius:12px}
+  header.top nav.tabs > button .ic{font-size:21px}
+  header.top nav.tabs > button[aria-selected="true"]{box-shadow:inset 0 -3px 0 var(--accent)}
+  .srch-t{display:none}
+  header.top nav.tabs .tab-sep{display:none}
+}
 .rd-moved .radar-h{margin-top:0;flex-wrap:wrap;row-gap:2px}
 #v-calendario .radar-h,#v-osservazione .radar-h{flex-wrap:wrap;row-gap:2px}
 .rd-in-map{max-width:1100px;margin:0 auto 14px}
@@ -4226,13 +4242,17 @@ const NAVG={
   temi:{tab:"tab-timeline",items:[["timeline","🧵 Temi"],["osservazione","👁️ In osservazione"],["dossier","🧭 Dossier"]]},
   mappa:{tab:"tab-mappa",items:[]},
   calendario:{tab:"tab-calendario",items:[]},
-  archivio:{tab:"tab-archivio",items:[]}
+  archivio:{tab:"srchBtn",items:[]}
 };
 const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplora",mappa:"mappa",timeline:"temi",osservazione:"temi",dossier:"temi",calendario:"calendario",archivio:"archivio"};
 (function setupNav(){
   const nav=document.querySelector("nav.tabs");if(!nav||document.getElementById("subnav"))return;
   [["radar"],["protagonisti"]].forEach(([v])=>{const b=document.getElementById("tab-"+v);if(b){b.id="navx-"+v;b.classList.add("navx")}});
   const d=document.getElementById("tab-dossier");if(d)d.classList.add("navx");
+  const ta=document.getElementById("tab-archivio");if(ta)ta.classList.add("navx");
+  const ib=document.getElementById("intBtn")||document.getElementById("guideBtn");
+  if(ib&&!document.getElementById("srchBtn")){const sb=document.createElement("button");sb.className="prefbtn srch-btn";sb.id="srchBtn";sb.type="button";sb.setAttribute("aria-label","Cerca nell’archivio");sb.innerHTML='🔍<span class="srch-t"> Cerca</span>';ib.parentNode.insertBefore(sb,ib);
+    sb.addEventListener("click",()=>{show("archivio");setTimeout(()=>{const q=document.getElementById("q");if(q){q.focus({preventScroll:true})}},60)})}
   const lab=(id,ic,t)=>{const b=document.getElementById(id);if(!b)return;const i=b.querySelector(".ic");if(i)i.textContent=ic;const l=b.querySelector(".tlab");if(l)l.textContent=t;else{[...b.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});b.appendChild(document.createTextNode(t))}};
   lab("tab-briefing","📰","Oggi");lab("tab-timeline","🧵","Temi");
   /* ordine: prima i contenuti (Oggi, Esplora, Temi), poi gli strumenti (Mappa, Calendario, Archivio) */
@@ -4251,6 +4271,7 @@ function curSub(){const v=S.view;if(v!=="esplora")return v;const p=X.page;if(!p)
 function updNav(){
   const g=VGROUP[S.view];const sn=document.getElementById("subnav");if(!sn)return;
   document.querySelectorAll("nav.tabs > button").forEach(b=>{if(!b.classList.contains("navx"))b.setAttribute("aria-selected",String(!!g&&b.id===NAVG[g].tab))});
+  {const sb=document.getElementById("srchBtn");if(sb)sb.classList.toggle("on",g==="archivio")}
   const items=g?NAVG[g].items.filter(([v])=>v!=="dossier"||!(document.getElementById("tab-dossier")||{}).hidden):[];
   if(items.length<2){sn.hidden=true;sn.innerHTML="";return}
   const cur=curSub();const dl=(document.querySelector("#tab-dossier .tlab")||{}).textContent;
@@ -4281,6 +4302,7 @@ const RD={num:document.getElementById("rd-num"),term:document.getElementById("rd
 /* le righe fisse (sezioni del briefing) si fermano esattamente sotto la barra in alto, qualunque sia la sua altezza */
 {const hd=document.querySelector("header.top");if(hd){const setH=()=>document.documentElement.style.setProperty("--hdr",hd.offsetHeight+"px");setH();if(window.ResizeObserver)new ResizeObserver(setH).observe(hd);window.addEventListener("resize",setH)}}
 function numCount(){const b=(S.briefings||[]).find(x=>x.cruscotto&&(x.cruscotto.voci||[]).length);return b?b.cruscotto.voci.filter(v=>v.mosso).length:0}
+function hookPrev(){const h=document.querySelector("#briefing .brief-head");if(!h||h.querySelector(".prev-days"))return;const b=document.createElement("button");b.type="button";b.className="linkbtn prev-days";b.textContent="📅 Giorni precedenti";b.addEventListener("click",()=>show("archivio"));const m=h.querySelector(".meta");if(m)m.insertAdjacentElement("afterend",b);else h.appendChild(b)}
 function hookNumeri(){
   const st=document.getElementById("subtabs"),br=document.getElementById("briefing");if(!st||!br||!RD.num)return;
   if(!st.querySelector('[data-sub="numeri"]')){
@@ -4293,8 +4315,8 @@ function hookNumeri(){
   if(!pn){pn=document.createElement("div");pn.className="subpanel";pn.dataset.panel="numeri";const last=[...br.querySelectorAll(".subpanel")].pop();if(last)last.insertAdjacentElement("afterend",pn);else br.appendChild(pn)}
   pn.hidden=S.sub!=="numeri";if(RD.num.parentNode!==pn)pn.appendChild(RD.num);
 }
-{const _rb2=renderBriefing;renderBriefing=function(){const r=_rb2.apply(this,arguments);try{hookNumeri()}catch(e){console.warn("numeri",e)}return r}}
-setTimeout(()=>{try{hookNumeri()}catch(_){}},0);
+{const _rb2=renderBriefing;renderBriefing=function(){const r=_rb2.apply(this,arguments);try{hookNumeri();hookPrev()}catch(e){console.warn("numeri",e)}return r}}
+setTimeout(()=>{try{hookNumeri();hookPrev()}catch(_){}},0);
 {const vr=document.getElementById("v-radar");if(vr){const go2=()=>{if(!vr.hidden)setTimeout(()=>{if(!vr.hidden)show("radar")},0)};new MutationObserver(go2).observe(vr,{attributes:true,attributeFilter:["hidden"]});go2()}}
 /* sopra la mappa: il polso del mondo in una riga; i dettagli dei Termometri restano sotto la mappa */
 function renderPulse(){
