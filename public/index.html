@@ -4186,7 +4186,11 @@ function updNav(){
   const items=g?NAVG[g].items.filter(([v])=>v!=="dossier"||!(document.getElementById("tab-dossier")||{}).hidden):[];
   if(items.length<2){sn.hidden=true;sn.innerHTML="";return}
   const cur=curSub();const dl=(document.querySelector("#tab-dossier .tlab")||{}).textContent;
+  const oldRow=sn.querySelector(".subnav-row"),keep=oldRow&&sn.dataset.g===g?oldRow.scrollLeft:0;sn.dataset.g=g;
   sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${["radar","mappa","protagonisti"].includes(v)?` id="tab-${v}"`:""} aria-current="${cur===v?"page":"false"}">${v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l}</button>`).join("")}</div></div>`;
+  /* la riga resta dov'era e la voce scelta è sempre visibile */
+  const row=sn.querySelector(".subnav-row"),on=sn.querySelector('[aria-current="page"]');
+  if(row){row.scrollLeft=keep;if(on){const r=row.getBoundingClientRect(),o=on.getBoundingClientRect();if(o.left<r.left+8)row.scrollLeft-=r.left+8-o.left;else if(o.right>r.right-8)row.scrollLeft+=o.right-(r.right-8)}}
 }
 {const _sh=show;show=function(v,push){const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
 window.addEventListener("popstate",()=>setTimeout(()=>{try{updNav()}catch(_){}},0));
