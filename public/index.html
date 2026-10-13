@@ -4250,6 +4250,7 @@ const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplo
   [["radar"],["protagonisti"]].forEach(([v])=>{const b=document.getElementById("tab-"+v);if(b){b.id="navx-"+v;b.classList.add("navx")}});
   const d=document.getElementById("tab-dossier");if(d)d.classList.add("navx");
   const ta=document.getElementById("tab-archivio");if(ta)ta.classList.add("navx");
+  ["tab-idee"].forEach(id=>{const x=document.getElementById(id);if(x)x.classList.add("navx")});const sep=document.querySelector("nav.tabs .tab-sep");if(sep)sep.classList.add("navx");
   const ib=document.getElementById("intBtn")||document.getElementById("guideBtn");
   if(ib&&!document.getElementById("srchBtn")){const sb=document.createElement("button");sb.className="prefbtn srch-btn";sb.id="srchBtn";sb.type="button";sb.setAttribute("aria-label","Cerca nell’archivio");sb.innerHTML='🔍<span class="srch-t"> Cerca</span>';ib.parentNode.insertBefore(sb,ib);
     sb.addEventListener("click",()=>{show("archivio");setTimeout(()=>{const q=document.getElementById("q");if(q){q.focus({preventScroll:true})}},60)})}
