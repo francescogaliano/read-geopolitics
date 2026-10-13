@@ -1435,7 +1435,7 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-nav"><h3><span class="ic" aria-hidden="true">🧭</span>2. Come muoversi</h3>
-      <p>In alto ci sono cinque linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti) e <b>Temi</b> (Temi, In osservazione e Dossier). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri) e <b>Calendario</b> (le scadenze in arrivo). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
+      <p>In alto ci sono cinque linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti) e <b>Temi</b> (Temi e In osservazione; un tema con dossier si legge in due modi: «Giorno per giorno» e «Il quadro»). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri) e <b>Calendario</b> (le scadenze in arrivo). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
       <p>L’<b>Archivio</b> si apre con la <b>🔍</b> in alto (la ricerca in tutto quello che è uscito) o con «📅 Giorni precedenti» accanto al titolo del briefing.</p>
       <p>Tutto ciò che riguarda te (interessi, newsletter, aspetto, guida) sta nel pulsante <b>★ Il mio Read</b>.</p>
     </section>
@@ -4344,6 +4344,78 @@ function hookDossierLink(){
 function hookWeakLink(){const tl=document.querySelector("#v-timeline .read");if(!tl||!RD.weak)return;let a=document.getElementById("tmWeak");const n=RD.weak.querySelectorAll(".wk,.weak,[class*=wk-]").length;
   if(!a){a=document.createElement("button");a.type="button";a.id="tmWeak";a.className="tm-dos tm-weak";a.dataset.weakGo="1";const d=document.getElementById("tmDos");if(d)d.insertAdjacentElement("afterend",a);else tl.insertBefore(a,tl.firstChild)}
   a.innerHTML=`<span>👁️ <b>In osservazione</b> · fatti piccoli che potrebbero diventare temi</span><span aria-hidden="true">↓</span>`}
+/* ---------- Temi e Dossier uniti: il dossier diventa «Il quadro» del suo tema ---------- */
+S.tlLayer=S.tlLayer||{};S.tlDosOnly=false;
+{const st=document.createElement("style");st.textContent=`
+.lay2{display:flex;margin:4px 0 12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.lay2 button{flex:1 1 0;font:inherit;font-size:14.5px;font-weight:600;color:var(--muted);background:transparent;border:0;padding:9px 6px;cursor:pointer;line-height:1.25}
+.lay2 button small{display:block;font-weight:500;font-size:11.5px;opacity:.85;margin-top:2px}
+.lay2 button+button{border-left:1px solid var(--line)}
+.lay2 button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.lay2 button:not([aria-pressed="true"]):hover{color:var(--ink);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.lay-q .dos-doc{margin-top:0;border:0;padding:0;background:transparent}
+.lay-q .dos-doc h2{font-size:20px}
+.tl-dosf{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;margin:2px 0 10px;cursor:pointer}
+.tl-dosf[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
+.tm-own{border:1px solid var(--line);border-radius:12px;margin:0 0 14px;background:var(--surface)}
+.tm-own>summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.tm-own>summary::-webkit-details-marker{display:none}
+.tm-own>summary em{font-style:normal;color:var(--accent);font-size:13px}
+.tm-own .tm-own-b{padding:0 14px 12px}
+.acc.dos-only .stt{display:none}
+#tmOwn .dcard:has(.dst.ok),#tmOwn #dosListLab{display:none}
+#tmOwn .dos-top{justify-content:flex-end}
+.hscroll>.hs-arr.l{box-shadow:12px 0 12px 2px var(--bg),0 2px 8px rgba(0,0,0,.3)}
+.hscroll>.hs-arr.r{box-shadow:-12px 0 12px 2px var(--bg),0 2px 8px rgba(0,0,0,.3)}
+.subnav .hscroll>.hs-arr.l,.subnav .hscroll>.hs-arr.r{background:var(--bg)}`;document.head.appendChild(st)}
+NAVG.temi.items=NAVG.temi.items.filter(([v])=>v!=="dossier");
+function dosHome(d){return (d.filoni||[]).find(id=>S.threads[id])||null}
+function dosOrphans(){return dosReady().filter(d=>!dosHome(d))}
+function dosOfTheme(tid){const p=S.tlDosPick&&S.tlDosPick[tid],d=p&&S.dossier[p];return d&&d.stato==="pronto"&&(d.filoni||[]).includes(tid)?d:dosForThread(tid)}
+function layHTML(key,L){return `<div class="lay2" role="group" aria-label="Come leggere il tema"><button type="button" data-lay="g" data-lay-t="${esc(key)}" aria-pressed="${L!=="q"}">📅 Giorno per giorno<small>cosa è successo</small></button><button type="button" data-lay="q" data-lay-t="${esc(key)}" aria-pressed="${L==="q"}">🧭 Il quadro<small>il dossier: da dove nasce, chi, scenari</small></button></div>`}
+{const _ta=themeArc;themeArc=function(t,evOk,nf){const dz=dosOfTheme(t.id);if(!dz)return _ta.apply(this,arguments);
+  const L=S.tlLayer[t.id]||"g";
+  if(L==="q")return layHTML(t.id,L)+`<div class="lay-q">${dossierHTML(dz)}</div><button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`;
+  return layHTML(t.id,L)+_ta.apply(this,arguments).replace(dosStripHTML(dz,"Questo tema ha un dossier a 360°"),"")}}
+function orphanCard(d){const key="dos:"+d.id,sel=S.flt.f===key;
+  return `<div class="acc dos-only${sel?" sel":""}" id="acc-${esc(key)}"><button class="thc" data-tl-theme="${sel?"":esc(key)}" aria-expanded="${sel}"><span class="f" aria-hidden="true">${dosFlags(d)}</span><span class="nm">${esc(d.titolo)}<span class="dos-badge">🧭 dossier</span></span><span class="go" aria-hidden="true">›</span><span class="l">${esc(dosLead(d,110))}</span><span class="n no">aggiornato ${esc(fmtDate(d.aggiornato||d.richiesto_il))}</span></button>${sel?`<div class="acc-b"><div class="lay-q">${dossierHTML(d)}</div><button class="acc-close" data-tl-theme="">▲ Chiudi</button></div>`:""}</div>`}
+function ownBox(){const tl=document.querySelector("#v-timeline .read");if(!tl)return;let b=document.getElementById("tmOwn");
+  if(!dosOwn()){if(b)b.hidden=true;return}
+  if(!b){b=document.createElement("details");b.id="tmOwn";b.className="tm-own";b.innerHTML=`<summary></summary><div class="tm-own-b"></div>`;tl.insertBefore(b,tl.firstChild);
+    const body=b.querySelector(".tm-own-b");["dosCand"].forEach(id=>{const n=document.getElementById(id);if(n)body.appendChild(n)});
+    const top=document.querySelector("#v-dossier .dos-top");if(top)body.appendChild(top);["dosForm","dosList","dosDoc"].forEach(id=>{const n=document.getElementById(id);if(n)body.appendChild(n)})}
+  b.hidden=false;
+  const all=Object.values(S.dossier||{}),cand=all.filter(d=>d.stato==="candidato").length,wip=all.filter(d=>d.stato==="richiesto").length;
+  b.querySelector("summary").innerHTML=`<span>🧭 <b>I tuoi dossier</b> · chiedine uno nuovo</span><em>${cand?cand+" da decidere":wip?wip+" in arrivo":"＋"}</em>`}
+function dosFilterBtn(){const tf=document.getElementById("tlFilt");if(!tf)return;let b=document.getElementById("tlDosF");
+  const n=Object.values(S.threads).filter(t=>dosForThread(t.id)).length+dosOrphans().length;
+  if(!n){if(b)b.remove();return}
+  if(!b){b=document.createElement("button");b.type="button";b.id="tlDosF";b.className="tl-dosf";tf.parentNode.insertBefore(b,tf)}
+  b.setAttribute("aria-pressed",String(!!S.tlDosOnly));b.innerHTML=`🧭 Solo i temi con dossier · ${n}`}
+{const _rt3=renderTimeline;renderTimeline=function(){
+  const keep=S.threads;{let e=Object.entries(keep);if(S.tlDosOnly)e=e.filter(([id])=>dosForThread(id)||id===S.flt.f);S.threads=Object.fromEntries(e.map(([id,t])=>[id,t&&t.stato==="chiuso"&&dosForThread(id)?{...t,stato:"chiuso "}:t]))}
+  let r;try{r=_rt3.apply(this,arguments)}finally{S.threads=keep}
+  try{const tv=document.getElementById("threadView"),f=S.flt,nf=[f.r,f.t,f.a].filter(Boolean).length;
+    if(tv&&!nf){const orph=dosOrphans();if(orph.length){const w=document.createElement("div");w.innerHTML=orph.map(orphanCard).join("");
+      const ita=[...tv.querySelectorAll(".tl-grp")].find(g=>/Italia/.test(g.textContent)),cl=tv.querySelector(".tl-closed");const ref=ita||cl;
+      const st=tv.querySelector(".state");if(st&&S.tlDosOnly)st.remove();
+      [...w.children].forEach(c=>ref?tv.insertBefore(c,ref):tv.appendChild(c))}}
+    if(S.tlDosOnly&&tv){const cl=tv.querySelector(".tl-closed");if(cl)cl.open=true}
+    tv&&tv.querySelectorAll(".lay-q .dsec-b,.lay-q .lead").forEach(x=>{try{glossify(x)}catch(_){}});
+    dosFilterBtn();ownBox()}catch(e){console.warn("temi+dossier",e)}
+  return r}}
+openDossier=function(id,sec){const d=S.dossier[id];if(!d)return;try{closeGloss()}catch(_){}try{if(!$("#actorDlg").hidden)closeActor()}catch(_){}
+  if(d.stato!=="pronto"){S.dosOpen=id;if(S.view!=="timeline")show("timeline");try{renderDossier()}catch(_){}const b=document.getElementById("tmOwn");if(b){b.open=true;b.scrollIntoView({behavior:"smooth",block:"start"})}return}
+  const tid=S.flt.f&&(d.filoni||[]).includes(S.flt.f)&&S.threads[S.flt.f]?S.flt.f:dosHome(d);
+  const key=tid||"dos:"+id;if(tid){S.tlLayer[tid]="q";S.tlDosPick=S.tlDosPick||{};S.tlDosPick[tid]=id}
+  if(S.view!=="timeline")show("timeline");S.flt.f=key;S.tlMode="temi";renderTimeline();
+  setTimeout(()=>{const el=sec&&document.getElementById("dsec-"+sec)||document.getElementById("acc-"+key);if(!el)return;if(sec&&el.tagName==="DETAILS")el.open=true;const y=el.getBoundingClientRect().top+window.scrollY-(document.querySelector("header.top").offsetHeight+(document.getElementById("subnav")||{offsetHeight:0}).offsetHeight+10);window.scrollTo({top:Math.max(0,y),behavior:"smooth"})},60)};
+document.addEventListener("click",e=>{
+  const l=e.target.closest("[data-lay]");if(l){const k=l.dataset.layT;S.tlLayer[k]=l.dataset.lay;renderTimeline();const c=document.getElementById("acc-"+k);if(c){const off=document.querySelector("header.top").offsetHeight+(document.getElementById("subnav")||{offsetHeight:0}).offsetHeight+10;const y=c.getBoundingClientRect().top+window.scrollY-off;if(c.getBoundingClientRect().top<off)window.scrollTo({top:y})}return}
+  const f=e.target.closest("#tlDosF");if(f){S.tlDosOnly=!S.tlDosOnly;renderTimeline();return}
+  const c=e.target.closest("#tmOwn [data-dos]");if(c){const d=S.dossier[c.dataset.dos];if(d&&d.stato==="pronto"){e.preventDefault();e.stopImmediatePropagation();openDossier(d.id)}}
+},true);
+{const vd=document.getElementById("v-dossier");if(vd){const go3=()=>{if(!vd.hidden)setTimeout(()=>{if(!vd.hidden){const d=S.dosOpen&&S.dossier[S.dosOpen];if(d)openDossier(d.id);else show("timeline")}},0)};new MutationObserver(go3).observe(vd,{attributes:true,attributeFilter:["hidden"]});go3()}}
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
