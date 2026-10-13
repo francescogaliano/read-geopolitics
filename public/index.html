@@ -1449,7 +1449,7 @@ nav.tabs button .ic{margin-right:.3em}
         <li><b>Aree</b>: le sette aree del mondo, dalla più tesa. Il colore del bordo è il livello di tensione, come sulla mappa. Un’area aperta mostra i suoi argomenti; tocca un argomento per vedere solo quelle storie. La pagina dell’area ha il punto della settimana, i temi aperti e i paesi.</li>
         <li><b>Argomenti</b>: geopolitica, politica, economia, energia e ambiente, tecnologia, società. Un argomento aperto mostra in quali aree si muove.</li>
       </ul>
-      <p><b>Cosa puoi seguire.</b> Un’area intera, un argomento ovunque, oppure un <b>incrocio</b> (per esempio Società e demografia in Africa subsahariana) con «☆ Segui». Tutto si gestisce anche dal pulsante <b>★ Interessi</b> in alto.</p>
+      <p><b>Cosa puoi seguire.</b> Un’area intera, un argomento ovunque, oppure un <b>incrocio</b> (per esempio Società e demografia in Africa subsahariana) con «☆ Segui». Tutto si gestisce anche dal pulsante <b>★ Il mio Read</b> in alto, che raccoglie anche newsletter, aspetto e guida.</p>
       <p>Le tue scelte non cambiano il briefing, che resta completo per tutti: ogni mattina, sotto «In 60 secondi», il riquadro <b>«Per te oggi»</b> ti indica le storie e le brevi che ti riguardano. Con la tua email le scelte ti seguono su telefono e computer.</p>
       <p><b>Parole.</b> Un <b>argomento</b> è il cassetto (Economia, Energia…); un <b>tema</b> è una storia che continua nel tempo (Hormuz, la Manovra…), quella che trovi nella Timeline e nei Dossier.</p>
     </section>
@@ -3008,7 +3008,7 @@ const VERSIONE=29;
 const NOVITA=[
  {v:29,data:"2026-10-13",voci:[
   {i:"🧭",t:"Esplora e «Per te»",d:"Una nuova linguetta per seguire il mondo a modo tuo: scegli aree, argomenti o incroci (per esempio Economia in Asia) e trovi le loro storie della settimana, raggruppate. Il briefing resta completo per tutti."},
-  {i:"★",t:"«Per te oggi» nel briefing",d:"Sotto «In 60 secondi» un riquadro ti indica le storie e le brevi del giorno su quello che segui. Le scelte si gestiscono dal pulsante ★ Interessi e, con la tua email, ti seguono su ogni dispositivo."}
+  {i:"★",t:"«Per te oggi» nel briefing",d:"Sotto «In 60 secondi» un riquadro ti indica le storie e le brevi del giorno su quello che segui. Le scelte si gestiscono dal pulsante ★ Il mio Read e, con la tua email, ti seguono su ogni dispositivo."}
  ]},
  {v:28,data:"2026-09-27",voci:[
   {i:"🧭",t:"Dossier a 360°",d:"Una nuova linguetta con i temi spiegati per intero: da dove nascono, chi vuole cosa, i nodi, le narrazioni a confronto, i numeri e gli scenari. Li ritrovi anche sotto le storie, nella mappa, nella timeline e nelle schede dei protagonisti.",solo:"condivisa"},
@@ -3230,7 +3230,7 @@ function bindGateForm(f,done){
       const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:f.querySelector("[name=nl]").checked,consent_text:NL_TXT,sito:f.querySelector("[name=sito]").value,source:a.source,campaign:a.campaign,content:a.content,referrer:a.referrer})});
       const j=await r.json().catch(()=>({}));
       if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →";return}
-      gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
+      gStore("rg-uid",j.id);gStore("rg-email",email.trim().toLowerCase());gStore("rg-seen",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
       track(j.returning?"gate-ritorno":"gate-invio");
       done();nlPrompt(true);
     }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra gratis →"}
@@ -3478,6 +3478,7 @@ let pulling=false,lastPull=0;
 async function pullF(){const u=uidOK();if(!u||pulling)return;pulling=true;lastPull=Date.now();
   try{const r=await fetch(RG_API+"/api/me",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:u})});const j=await r.json().catch(()=>null);
     if(!j||!j.ok||!j.known)return;
+    if(j.email){ACC.email=j.email;gStore("rg-email",j.email)}ACC.newsletter=!!j.newsletter;if(!panel.hidden)renderPanel2();
     const sv=j.segui?normF(j.segui):null,first=gStore(SUID)!==u;
     if(!sv){if(anyF()||F.filoni.length)pushF();else gStore(SUID,u);return}
     if(first){/* nuovo dispositivo o nuovo accesso: unisco quello che c'era qui con quello salvato */
@@ -3492,7 +3493,7 @@ setInterval(()=>{const u=uidOK();if(u&&u!==lastU){lastU=u;pullF()}},1500);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastPull>60000)pullF()});
 if(typeof LOCK_TXT!=="undefined"&&!LOCK_TXT.interessi)LOCK_TXT.interessi=["I tuoi interessi, ovunque","Con la tua email le aree e gli argomenti che segui ti ritrovano su telefono e computer. È gratis."];
 function mailNudge(){return anon()?`<p class="xp-nudge">Le tue scelte restano solo su questo dispositivo. <button type="button" class="xp-lnk" data-xp-mail="1">Lascia l’email per ritrovarle ovunque</button></p>`:""}
-document.addEventListener("click",e=>{if(e.target.closest("[data-xp-mail]")){e.preventDefault();if(typeof showLock==="function")showLock({what:"interessi"})}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-xp-mail]")){e.preventDefault();const ip=document.getElementById("intPanel");if(ip&&!ip.hidden)closePanel();if(typeof showLock==="function")showLock({what:"interessi"})}});
 function follows(k,id){return F[k].includes(id)}
 function toggleF(k,id){if(!F[k])F[k]=[];const i=F[k].indexOf(id);if(i>=0)F[k].splice(i,1);else F[k].push(id);saveF()}
 function anyF(){return F.aree.length+(F.paesi||[]).length+F.temi.length+F.incroci.length>0}
@@ -3590,6 +3591,31 @@ css.textContent=`
 .xp-fl{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 4px}
 .xp-mode{display:inline-block;font-size:12.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:0 0 10px}
 .xp-mode.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);margin:0 6px 6px 0}
+#esplora .xp-filt.xp-rowwrap{display:block}
+.xp-rowbox{position:relative;min-width:0}
+.xp-rowbox .xp-chips{scroll-behavior:auto}
+.xp-rowbox .xp-chips.drag{cursor:grabbing;user-select:none}
+.xp-arr{display:none;position:absolute;top:50%;transform:translateY(-55%);z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 20px/1 system-ui;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25);padding:0}
+.xp-arr.l{left:-6px}.xp-arr.r{right:-6px}
+.xp-arr:hover{border-color:var(--accent);color:var(--accent)}
+@media (hover:hover) and (pointer:fine){
+  .xp-rowbox.can-l .xp-arr.l,.xp-rowbox.can-r .xp-arr.r{display:block}
+  .xp-rowbox.can-r .xp-chips{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent)}
+  .xp-rowbox.can-l .xp-chips{-webkit-mask-image:linear-gradient(90deg,transparent,#000 60px);mask-image:linear-gradient(90deg,transparent,#000 60px)}
+  .xp-rowbox.can-l.can-r .xp-chips{-webkit-mask-image:linear-gradient(90deg,transparent,#000 60px,#000 calc(100% - 60px),transparent);mask-image:linear-gradient(90deg,transparent,#000 60px,#000 calc(100% - 60px),transparent)}
+}
+#themeBtn,#guideBtn,#prefBtn{display:none!important}
+#intBtn{font-weight:600;color:var(--accent);border-color:var(--accent)}
+.ip-acct{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;font-size:14px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0 12px}
+.ip-acct b{color:var(--ink);word-break:break-all}
+.ip-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:0 0 12px;overflow-x:auto;scrollbar-width:none}
+.ip-tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 10px 7px;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.ip-tabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.ip-state{font-weight:600;margin:4px 0}.ip-state.on{color:var(--accent)}
+.ip-err{color:#e06c6c;font-size:14px}
+.ip-links{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ip-link{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:12px 14px;text-align:left;cursor:pointer;text-decoration:none}
+.ip-link:last-child{border-bottom:0}.ip-link span{color:var(--muted)}
 .xp-pt{background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:6px 0 14px}
 .xp-pt p{margin:0 0 10px;line-height:1.5}
 .xp-cta{font:inherit;font-weight:600;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:9px 16px;cursor:pointer;margin-top:4px}
@@ -3929,6 +3955,28 @@ function paesePage(iso){
 `;
 }
 
+/* righe di chip su una linea: da PC frecce ‹ ›, rotella e trascinamento; la posizione resta dopo ogni tocco */
+const ROWX={};let DRAG=null;
+window.addEventListener("pointermove",e=>{if(!DRAG)return;const dx=e.clientX-DRAG.x;if(Math.abs(dx)>5){DRAG.moved=true;DRAG.r.classList.add("drag")}if(DRAG.moved)DRAG.r.scrollLeft=DRAG.s-dx});
+window.addEventListener("pointerup",()=>{if(!DRAG)return;const d=DRAG;DRAG=null;d.r._moved=d.moved;setTimeout(()=>{d.r.classList.remove("drag");d.r._moved=false},0)});
+function rowKey(r){const f=r.closest(".xp-filt");const l=f&&f.querySelector(".xp-fl");return (X.page?X.page.k+X.page.id:"")+"|"+(l?l.textContent.split(" ·")[0]:"")}
+function enhanceRows(root){
+  root.querySelectorAll(".xp-chips").forEach(r=>{
+    const f=r.closest(".xp-filt");if(!f||f.dataset.enh)return;f.dataset.enh="1";f.classList.add("xp-rowwrap");
+    const k=rowKey(r),keep=ROWX[k]||0;
+    const L=document.createElement("button"),R=document.createElement("button");
+    L.type=R.type="button";L.className="xp-arr l";R.className="xp-arr r";L.setAttribute("aria-label","Scorri a sinistra");R.setAttribute("aria-label","Scorri a destra");L.textContent="‹";R.textContent="›";
+    const host=document.createElement("div");host.className="xp-rowbox";r.parentNode.insertBefore(host,r);host.appendChild(L);host.appendChild(r);host.appendChild(R);
+    const upd=()=>{const max=r.scrollWidth-r.clientWidth;host.classList.toggle("can-l",r.scrollLeft>4);host.classList.toggle("can-r",r.scrollLeft<max-4);ROWX[k]=r.scrollLeft};
+    r.addEventListener("scroll",upd,{passive:true});
+    L.addEventListener("click",()=>r.scrollBy({left:-Math.max(160,r.clientWidth*.7),behavior:"smooth"}));
+    R.addEventListener("click",()=>r.scrollBy({left:Math.max(160,r.clientWidth*.7),behavior:"smooth"}));
+    r.addEventListener("wheel",e=>{if(Math.abs(e.deltaY)<=Math.abs(e.deltaX))return;const b=r.scrollLeft;r.scrollLeft+=e.deltaY;if(r.scrollLeft!==b)e.preventDefault()},{passive:false});
+    r.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||e.button!==0)return;DRAG={r,x:e.clientX,s:r.scrollLeft,moved:false}});
+    r.addEventListener("click",e=>{if(r._moved){e.preventDefault();e.stopPropagation();r._moved=false}},true);
+    r.scrollLeft=keep;upd();requestAnimationFrame(()=>{if(keep&&!r.scrollLeft)r.scrollLeft=keep;upd()});
+  });
+}
 function renderEx(){
   const el=document.getElementById("esplora");if(!el)return;
   const p=X.page;let h="";
@@ -3938,6 +3986,7 @@ function renderEx(){
   else if(p&&p.k==="lista"){X.mode=p.id==="tema"?"tema":"area";h=landing()}
   else{X.page=null;X.mode="perte";h=landing()}
   el.innerHTML=h;
+  try{enhanceRows(el)}catch(e){console.warn("righe",e)}
 }
 
 document.addEventListener("click",e=>{
@@ -3965,9 +4014,46 @@ document.addEventListener("click",e=>{
 });
 
 /* ---------- pannello «I tuoi interessi» ---------- */
+/* ---------- «Il mio Read»: un solo pannello per tutto ciò che riguarda il lettore ---------- */
+const ACC={email:null,newsletter:null};
+function hasNL(){return typeof RG_API!=="undefined"}
+function hasRed(){return !S.static&&typeof openPrefs==="function"}
+function acctLine(){
+  if(typeof RG_API==="undefined")return `<div class="ip-acct"><span>La tua dashboard personale</span></div>`;
+  const u=gStore("rg-uid");
+  if(u==="admin")return `<div class="ip-acct"><span>Sei entrato come <b>amministratore</b></span><button type="button" class="xp-lnk" data-logout="1">Esci</button></div>`;
+  if(uidOK()){const em=ACC.email||gStore("rg-email");return `<div class="ip-acct"><span>Sei entrato come <b>${em?esc(em):"…"}</b></span><button type="button" class="xp-lnk" data-logout="1">Non sei tu? Esci</button></div>`}
+  return `<div class="ip-acct"><span>Non sei entrato</span><button type="button" class="xp-lnk" data-xp-mail="1">Entra con la tua email</button></div>`;
+}
+function otherTab(t){
+  if(t==="nl"){
+    if(!uidOK())return `<p class="ip-hint">Ogni mattina alle 8 l’anteprima del briefing nella tua casella: le notizie del giorno in 2 minuti, con il link al briefing completo.</p>${gStore("rg-uid")==="admin"?`<p class="ip-hint">Non disponibile per l’account amministratore.</p>`:`<button type="button" class="xp-cta" data-xp-mail="1">Entra con la tua email</button>`}`;
+    const on=ACC.newsletter;
+    if(on===null)return `<p class="ip-hint">Controllo la tua iscrizione…</p>`;
+    return on?`<p class="ip-state on">✓ Sei iscritto alla newsletter</p><p class="ip-hint">Ricevi ogni mattina alle 8 l’anteprima del briefing a <b>${esc(ACC.email||gStore("rg-email")||"")}</b>.</p><button type="button" class="xp-follow" data-nl-set="off">Disiscriviti</button><p class="ip-err" hidden></p>`
+      :`<p class="ip-state">Non sei iscritto alla newsletter</p><p class="ip-hint">Ogni mattina alle 8 l’anteprima del briefing nella tua casella: le notizie del giorno in 2 minuti, con il link al briefing completo. Ti puoi disiscrivere quando vuoi.</p><button type="button" class="xp-cta" data-nl-set="on">Iscrivimi</button><p class="ip-err" hidden></p>`;
+  }
+  if(t==="asp"){
+    const dark=document.documentElement.getAttribute("data-theme")!=="light";
+    return `<h3>Aspetto</h3><div class="xp-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark" aria-pressed="${dark}">🌙 Scuro</button><button type="button" data-theme-set="light" aria-pressed="${!dark}">☀️ Chiaro</button></div>
+    <h3>Aiuto</h3><div class="ip-links"><button type="button" class="ip-link" data-help="guida">📘 Guida: come funziona Read Geopolitics<span>›</span></button><button type="button" class="ip-link" data-help="novita">✨ Cosa c’è di nuovo<span>›</span></button>${S.static?`<a class="ip-link" href="/metodo.html">🔎 Fonti e metodo<span>›</span></a>`:""}</div>`;
+  }
+  if(t==="red")return `<p class="ip-hint"><b>Attenzione:</b> queste scelte cambiano il briefing per tutti i lettori, non solo per te. Priorità degli ambiti, sezioni, lenti e soglie degli avvisi.</p><button type="button" class="xp-cta" data-help="red">Apri la redazione</button>`;
+  return "";
+}
+document.addEventListener("click",async e=>{
+  if(!e.target.closest("#intPanel"))return;
+  const tb=e.target.closest("[data-ptab]");if(tb){PE.tab=tb.dataset.ptab;renderPanel2();const b=panel.querySelector(".ip-box");if(b)b.scrollTop=0;if(PE.tab==="nl"&&ACC.newsletter===null)pullF();return}
+  const th=e.target.closest("[data-theme-set]");if(th){const want=th.dataset.themeSet,dark=document.documentElement.getAttribute("data-theme")!=="light";if((want==="dark")!==dark){const b=document.getElementById("themeBtn");if(b)b.click()}renderPanel2();return}
+  const hp=e.target.closest("[data-help]");if(hp){const k=hp.dataset.help;closePanel();if(k==="guida"&&typeof openGuide==="function")openGuide();else if(k==="novita"&&typeof openNovita==="function"){if(!openNovita(VERSIONE-1))openGuide()}else if(k==="red"&&typeof openPrefs==="function")openPrefs();return}
+  if(e.target.closest("[data-logout]")){if(!confirm("Vuoi uscire? Su questo dispositivo dovrai rientrare con la tua email."))return;["rg-uid","rg-email","rg-seen","rg-nl","rg-segui","rg-segui-uid","rg-segui-dirty"].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.hash="";location.reload();return}
+  const ns=e.target.closest("[data-nl-set]");if(ns){const u=uidOK();if(!u)return;const off=ns.dataset.nlSet==="off";if(off&&!confirm("Vuoi smettere di ricevere la newsletter?"))return;ns.disabled=true;
+    try{const r=await fetch(RG_API+"/api/newsletter",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(off?{id:u,off:true}:{id:u,consent_text:typeof NL_TXT!=="undefined"?NL_TXT:""})});const j=await r.json();if(!j||!j.ok)throw 0;ACC.newsletter=!!j.newsletter;gStore("rg-nl",ACC.newsletter?"1":"0");renderPanel2()}
+    catch(_){ns.disabled=false;const er=panel.querySelector(".ip-err");if(er){er.textContent="Non riesco a salvare in questo momento. Riprova.";er.hidden=false}}return}
+});
 const panel=document.createElement("div");panel.id="intPanel";panel.hidden=true;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","intPTitle");
 document.body.appendChild(panel);
-const PE={open:null,some:{}};
+const PE={open:null,some:{},tab:"int"};
 function areaMode(id){if(F.aree.includes(id))return "tutto";if(areaTemi(id).length||PE.some[id])return "alcuni";return "no"}
 function areaTemi(id){return F.incroci.filter(x=>splitX(x)[0]===id).map(x=>splitX(x)[1]).filter(t=>AMBN[t])}
 function setMode(id,m){
@@ -3997,19 +4083,23 @@ function renderPanel2_(){
         ${m==="tutto"?`<p class="ip-hint">Ogni storia e ogni breve di quest’area compare in «Per te».</p>`:""}</div>`:""}
     </div>`}).join("");
   const {st,br}=todayMatches();
+  const tabs=[["int","★ Interessi"]].concat(hasNL()?[["nl","✉️ Newsletter"]]:[],[["asp","☀️ Aspetto e aiuto"]],hasRed()?[["red","⚙️ Redazione"]]:[]);
+  if(!tabs.some(t=>t[0]===PE.tab))PE.tab="int";
   panel.innerHTML=`<div class="ip-box">
-   <div class="ip-top"><h2 id="intPTitle">I tuoi interessi</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>
-   <p class="ip-hint">Scegli cosa vuoi trovare ogni mattina in «Per te oggi», in cima al briefing. Il briefing resta completo per tutti.${uidOK()?" Le scelte sono salvate con la tua email e le ritrovi su ogni dispositivo.":""}</p>${mailNudge()}
+   <div class="ip-top"><h2 id="intPTitle">Il mio Read</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>
+   ${acctLine()}
+   <div class="ip-tabs" role="tablist" aria-label="Il mio Read">${tabs.map(([k,l])=>`<button type="button" role="tab" data-ptab="${k}" aria-selected="${PE.tab===k}">${l}</button>`).join("")}</div>
+   ${PE.tab!=="int"?otherTab(PE.tab):`<p class="ip-hint">Scegli cosa vuoi trovare ogni mattina in «Per te oggi», in cima al briefing. Il briefing resta completo per tutti.${uidOK()?" Le scelte sono salvate con la tua email e le ritrovi su ogni dispositivo.":""}</p>${mailNudge()}
    <h3>Le aree del mondo</h3><p class="ip-hint" style="margin-top:0">Tocca un’area: puoi seguirla tutta o solo per alcuni argomenti.</p>${rows}
    ${(()=>{const o=(F.paesi||[]).map(c=>["paesi",c]).concat(F.temi.filter(t=>!AMBN[t]).map(t=>["temi",t]),F.incroci.filter(x=>{const [g,t]=splitX(x);return isISO(g)||!AMBN[t]}).map(x=>["incroci",x])).filter(([k,id])=>fName(k,id));
      return o.length?`<h3>Paesi e scelte più precise</h3><p class="ip-hint" style="margin-top:0">Quelle che hai scelto dalle pagine di Esplora. Tocca ✕ per toglierle.</p><div class="ia-chips">${o.map(([k,id])=>`<button type="button" class="xp-chip" data-pf="${k}|${esc(id)}" aria-pressed="true">${k==="paesi"?flag(id)+" ":""}${esc(fName(k,id))} ✕</button>`).join("")}</div>`:""})()}
    <h3>Argomenti da seguire ovunque</h3><p class="ip-hint" style="margin-top:0">Questi li ritrovi qualunque sia l’area.</p>
    <div class="ia-chips">${TAX.map(t=>`<button type="button" class="xp-chip" data-pf="temi|${t.id}" aria-pressed="${follows("temi",t.id)}">${AIC(t.id)} ${esc(t.n)}</button>`).join("")}</div>
    <h3>Con queste scelte, oggi vedresti</h3>
-   ${anyF()?(st.length||br.length?`<ul class="ip-prev">${st.slice(0,5).map(s=>`<li>${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</li>`).join("")}${st.length>5?`<li class="m">e altre ${st.length-5} storie</li>`:""}${br.length?`<li class="m">più ${br.length} ${br.length===1?"breve":"brevi"} dalle tue aree e dai tuoi argomenti</li>`:""}</ul>`:`<p class="ip-hint">Oggi niente su queste scelte. Lo trovi in «Per te» quando succede.</p>`):`<p class="ip-hint">Non segui ancora niente.</p>`}
+   ${anyF()?(st.length||br.length?`<ul class="ip-prev">${st.slice(0,5).map(s=>`<li>${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</li>`).join("")}${st.length>5?`<li class="m">e altre ${st.length-5} storie</li>`:""}${br.length?`<li class="m">più ${br.length} ${br.length===1?"breve":"brevi"} dalle tue aree e dai tuoi argomenti</li>`:""}</ul>`:`<p class="ip-hint">Oggi niente su queste scelte. Lo trovi in «Per te» quando succede.</p>`):`<p class="ip-hint">Non segui ancora niente.</p>`}`}
   </div>`;
 }
-function openPanel(){renderPanel2();{const nb=panel.querySelector(".ip-box");if(nb)nb.scrollTop=0}panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
+function openPanel(tab){PE.tab=typeof tab==="string"?tab:"int";renderPanel2();{const nb=panel.querySelector(".ip-box");if(nb)nb.scrollTop=0}panel.hidden=false;document.body.style.overflow="hidden";const f=panel.querySelector("[data-pclose]");if(f)f.focus()}
 function closePanel(){panel.hidden=true;document.body.style.overflow="";Object.keys(PE.some).forEach(id=>{if(!areaTemi(id).length)delete PE.some[id]});try{perTe()}catch(_){}if(S.view==="esplora")renderEx()}
 panel.addEventListener("click",e=>{
   if(e.target===panel||e.target.closest("[data-pclose]")){closePanel();return}
@@ -4020,7 +4110,7 @@ panel.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden)closePanel()});
 document.addEventListener("click",e=>{if(e.target.closest("[data-int-open]")){e.preventDefault();openPanel()}});
-{const g=document.getElementById("guideBtn");if(g&&!document.getElementById("intBtn")){const b=document.createElement("button");b.className="prefbtn";b.id="intBtn";b.type="button";b.setAttribute("data-int-open","1");b.textContent="★ Interessi";g.parentNode.insertBefore(b,g)}}
+{const g=document.getElementById("guideBtn");if(g&&!document.getElementById("intBtn")){const b=document.createElement("button");b.className="prefbtn";b.id="intBtn";b.type="button";b.setAttribute("data-int-open","1");b.textContent="★ Il mio Read";g.parentNode.insertBefore(b,g)}}
 
 /* ---------- "Per te oggi" nel briefing ---------- */
 function perTe(){
