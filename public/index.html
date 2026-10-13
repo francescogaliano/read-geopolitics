@@ -1435,7 +1435,7 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-nav"><h3><span class="ic" aria-hidden="true">🧭</span>2. Come muoversi</h3>
-      <p>In alto ci sono quattro linguette, una per ogni cosa che puoi voler fare: <b>Oggi</b> (il briefing del giorno e il Radar dei numeri), <b>Esplora</b> (Per te, aree, argomenti, mappa e protagonisti), <b>Temi</b> (le storie che continuano nel tempo e i dossier) e <b>Archivio</b> (i briefing passati e la ricerca). Sotto, una seconda riga ti mostra dove sei e le altre parti della stessa sezione.</p>
+      <p>In alto ci sono cinque linguette: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Protagonisti, nella seconda riga), <b>Mappa</b> (il mondo per livello di tensione, con i termometri), <b>Temi</b> (le storie che continuano nel tempo, i dossier e i temi in osservazione) e <b>Archivio</b> (la ricerca e tutti i giorni passati).</p>
       <p>Tutto ciò che riguarda te (interessi, newsletter, aspetto, guida) sta nel pulsante <b>★ Il mio Read</b>.</p>
     </section>
 
@@ -1486,12 +1486,12 @@ nav.tabs button .ic{margin-right:.3em}
       <p>Le persone e le organizzazioni che muovono le notizie. In alto chi ha preso posizione negli ultimi 7 giorni; sotto tutti gli altri. Ogni scheda raccoglie <b>cosa ha detto o fatto, con data e fonte</b>, e nulla viene mai cancellato: la ricerca trova anche frasi di mesi fa (prova «Rubio G20»).</p>
     </section>
 
-    <section id="g-radar"><h3><span class="ic" aria-hidden="true">📡</span>9. Radar</h3>
-      <p>Cosa si muove sotto la superficie, in tre parti (i bottoni in alto portano a ciascuna).</p>
+    <section id="g-radar"><h3><span class="ic" aria-hidden="true">📡</span>9. Numeri, termometri, temi in osservazione</h3>
+      <p>Cosa si muove sotto la superficie. Le tre parti stanno dove servono: i <b>Numeri</b> sono una sezione del briefing di Oggi, i <b>Termometri</b> stanno nella Mappa (una riga in cima e il dettaglio sotto la mappa), i temi <b>In osservazione</b> stanno in Temi.</p>
       <ul>
         <li><b>📈 Numeri</b>: spread, BTP, petrolio, gas, euro/dollaro, oro, tasso BCE, noli dei container, grano e yuan. Quando un numero si muove compare «Perché si è mosso», con il tema che lo spiega. Tocca una riga per grafico, variazioni a un mese e a un anno e spiegazione.</li>
         <li><b>🌡️ Termometri</b>: quanti paesi sono in guerra o in crisi grave, quanti temi si sono mossi, quali regioni si scaldano. Sono calcolati dalle schede della pagina, non stimati.</li>
-        <li><b>👁️ Sotto il radar</b>: segnali ancora piccoli che l'agente tiene d'occhio, con cosa li farebbe diventare una storia. In fondo, quanto spesso le stime dell'agente si avverano.</li>
+        <li><b>👁️ In osservazione</b> (prima «Sotto il radar»): segnali ancora piccoli che l'agente tiene d'occhio, con cosa li farebbe diventare una storia. In fondo, quanto spesso le stime dell'agente si avverano.</li>
       </ul>
       <p>Le scadenze stanno nella Timeline, sotto «🗓️ Calendario».</p>
     </section>
@@ -1503,7 +1503,7 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-arch"><h3><span class="ic" aria-hidden="true">🗂️</span>11. Archivio</h3>
-      <p>I briefing passati si scelgono per mese; gli approfondimenti sono raggruppati per filone, con «Vedi altri» e una ricerca invece di un elenco che si allunga sempre. C'è anche la coda del prossimo briefing, le tendenze lente, e una ricerca per paese, tema o persona.</p>
+      <p>In cima la <b>ricerca</b>: scrivi un paese, un tema o una persona (le parole valgono in qualunque ordine) oppure tocca uno dei temi suggeriti. Sotto, i <b>giorni</b> del mese scelto: ogni scheda mostra i titoli principali e i temi di quella giornata, toccala per aprire il briefing. In fondo, <b>Da rileggere</b>: approfondimenti e tendenze lente.</p>
       <p>Quando apri un briefing che non è l'ultimo, un banner colorato in cima alla pagina lo segnala, con un bottone per tornare a oggi.</p>
     </section>
 
@@ -2546,20 +2546,22 @@ function openSlow(id){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-open-slow]");if(b){e.preventDefault();openSlow(b.dataset.openSlow)}});
 function norm(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")}
 function renderResults(){
-  const q=norm($("#q").value.trim());const el=$("#results");
+  const q=norm($("#q").value.trim());
+  /* tutte le parole, in qualunque ordine: «USA-Iran» trova anche «Iran-USA» e «Teheran … USA» */
+  const qt=q.split(/[\s\-–—,;:\/]+/).filter(Boolean);const hasQ=h=>{h=String(h||"");return qt.length?qt.every(t=>h.includes(t)):h.includes(q)};const el=$("#results");
   if(!q){el.innerHTML=`<p class="muted" style="font-size:14px">Scrivi un paese, un tema o un nome. La ricerca copre i dossier, le schede dei paesi, le persone e le organizzazioni, e titoli, fatti, attori e paesi di tutte le storie.</p>`;return}
   const names={};Object.assign(names,S.geoNames||{},NAME_FIX);Object.entries(S.countries).forEach(([k,c])=>names[k]=c.nome||names[k]);
-  const cHits=Object.entries(names).filter(([k,n])=>norm(n).includes(q)||(S.countries[k]&&norm(S.countries[k].sintesi).includes(q))).slice(0,8);
+  const cHits=Object.entries(names).filter(([k,n])=>hasQ(norm(n))||(S.countries[k]&&hasQ(norm(S.countries[k].sintesi)))).slice(0,8);
   const cHTML=cHits.length?`<span class="label">Paesi</span>${cHits.map(([k,n])=>{const c=S.countries[k];return `<div class="res"><button class="t" data-country="${esc(k)}">${esc(n)}</button><p>${c?`Livello ${c.livello} · ${esc((c.sintesi||"").slice(0,140))}${(c.sintesi||"").length>140?"…":""}`:(S.richieste[k]?"Scheda richiesta: arriva con il prossimo briefing":"Nessuna scheda · aprila per richiederla")}</p></div>`}).join("")}<span class="label" style="margin-top:10px">Storie</span>`:"";
-  const hits=Object.values(S.stories).filter(s=>{const hay=norm([s.titolo,s.fatti,s.tema,storyAmb(s).map(a=>AMBITI[a]?AMBITI[a].n:a).join(" "),s.pro&&s.pro.attori,s.contro&&s.contro.attori,(s.paesi||[]).map(cname).join(" "),(S.threads[s.filone_id]||{}).titolo].join(" "));return hay.includes(q)}).sort((a,b)=>b.data.localeCompare(a.data));
+  const hits=Object.values(S.stories).filter(s=>{const hay=norm([s.titolo,s.fatti,s.tema,storyAmb(s).map(a=>AMBITI[a]?AMBITI[a].n:a).join(" "),s.pro&&s.pro.attori,s.contro&&s.contro.attori,(s.paesi||[]).map(cname).join(" "),(S.threads[s.filone_id]||{}).titolo].join(" "));return hasQ(hay)}).sort((a,b)=>b.data.localeCompare(a.data));
   const hl=t=>{const T=esc(t);const i=norm(T).indexOf(q);return i<0?T:T.slice(0,i)+"<mark>"+T.slice(i,i+q.length)+"</mark>"+T.slice(i+q.length)};
-  const bHits=S.brevi.filter(x=>norm([x.testo,(x.paesi||[]).map(cname).join(" "),AMBITI[x.ambito]&&AMBITI[x.ambito].n].join(" ")).includes(q)).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,10);
+  const bHits=S.brevi.filter(x=>hasQ(norm([x.testo,(x.paesi||[]).map(cname).join(" "),AMBITI[x.ambito]&&AMBITI[x.ambito].n].join(" ")))).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,10);
   const bHTML=bHits.length?`<span class="label" style="margin-top:10px">Brevi</span><ul class="brevi">${bHits.map(x=>breveHTML(x,{date:true})).join("")}</ul>`:"";
-  const wHits=S.settimanali.filter(w=>norm([w.titolo,w.sommario,w.testo,(w.paesi||[]).map(cname).join(" ")].join(" ")).includes(q));
+  const wHits=S.settimanali.filter(w=>hasQ(norm([w.titolo,w.sommario,w.testo,(w.paesi||[]).map(cname).join(" ")].join(" "))));
   const wHTML=wHits.length?`<span class="label" style="margin-top:10px">Tendenze lente</span>${wHits.map(w=>`<div class="res"><button class="t" data-open-slow="${esc(w.id)}">${hl(w.titolo)}</button><p><span style="font-family:var(--mono);font-size:12px">${fmtDate(w.data)}</span></p></div>`).join("")}`:"";
-  const aHits=Object.values(S.attori).filter(a=>norm([a.nome,(a.alias||[]).join(" "),a.ruolo,cname(a.paese||"")].join(" ")).includes(q)).slice(0,8);
+  const aHits=Object.values(S.attori).filter(a=>hasQ(norm([a.nome,(a.alias||[]).join(" "),a.ruolo,cname(a.paese||"")].join(" ")))).slice(0,8);
   const aHTML=aHits.length?`<span class="label" style="margin-top:10px">Persone e organizzazioni</span>${aHits.map(a=>`<div class="res"><button class="t" data-actor="${esc(a.id)}">${hl(a.nome)}</button><p>${esc(a.ruolo||"")}</p></div>`).join("")}`:"";
-  const dHits=dosReady().filter(d=>norm([d.titolo,d.in_breve,(d.paesi||[]).map(cname).join(" "),(d.attori||[]).map(x=>x.nome).join(" ")].join(" ")).includes(q));
+  const dHits=dosReady().filter(d=>hasQ(norm([d.titolo,d.in_breve,(d.paesi||[]).map(cname).join(" "),(d.attori||[]).map(x=>x.nome).join(" ")].join(" "))));
   const dHTML=dHits.length?`<span class="label">Dossier</span>${dHits.map(d=>`<div class="res"><button class="t" data-open-dos="${esc(d.id)}">${dosFlags(d)} ${hl(d.titolo)}</button><p>${esc(dosLead(d,140))}</p></div>`).join("")}`:"";
   el.innerHTML=dHTML+aHTML+wHTML+bHTML+cHTML+(hits.length?hits.map(s=>`<div class="res"><button class="t" data-story="${esc(s.id)}">${hl(s.titolo)}</button><p><span style="font-family:var(--mono);font-size:12px">${fmtDate(s.data)}</span> · ${(s.paesi||[]).map(cname).join(", ")}</p></div>`).join(""):`<p class="muted">Nessuna storia trovata.</p>`);
 }
@@ -3622,6 +3624,53 @@ css.textContent=`
 .ip-link{display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:0;border-bottom:1px solid var(--line);padding:12px 14px;text-align:left;cursor:pointer;text-decoration:none}
 .ip-link:last-child{border-bottom:0}.ip-link span{color:var(--muted)}
 nav.tabs > .navx{display:none!important}
+@media (max-width:520px){nav.tabs > button .ic{display:none}nav.tabs > button{padding-left:7px;padding-right:7px}}
+.rd-moved .radar-h{margin-top:0}
+.rd-in-map{max-width:1100px;margin:0 auto 14px}
+.rd-in-temi{margin-top:30px;padding-top:12px;border-top:1px solid var(--line)}
+.subpanel[data-panel="numeri"]{padding-top:6px}
+.tm-dos{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;cursor:pointer}
+.tm-dos em{font-style:normal;color:var(--accent);font-weight:600}
+.tm-dos:hover{border-color:var(--accent)}
+.tm-weak{margin-top:-6px}
+.arch2{max-width:1100px;margin:0 auto}
+.arch2 + .arch-grid{display:none}
+.a2-lab{display:block;font:600 20px/1.25 var(--serif);margin:6px 0 8px}
+.a2-q input{width:100%;font-size:17px;padding:13px 16px;border-radius:12px;border:1px solid var(--accent)}
+.a2-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 14px}
+.a2-try{color:var(--muted);font-size:13.5px}
+.a2-chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.a2-chip:hover{border-color:var(--accent)}.a2-chip.clr{color:var(--accent);border-color:var(--accent)}
+.arch2:not(.searching) #a2res{display:none}
+.arch2.searching #a2days{display:none}
+.a2-mon{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.a2-mon button{font:inherit;font-size:14px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 13px;cursor:pointer}
+.a2-mon button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+.a2-m1{font-weight:600}
+.a2-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:860px){.a2-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.a2-day.big{grid-column:1/-1}}
+.a2-day{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.a2-day:hover{border-color:var(--accent)}.a2-day.big{border-color:var(--accent)}
+.a2-dh{display:flex;align-items:baseline;gap:8px}
+.a2-dg{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.a2-dd{font:600 19px var(--serif)}
+.a2-dn{margin-left:auto;color:var(--muted);font-size:12.5px}
+.a2-day ol{margin:8px 0 6px;padding-left:20px;font-size:14px;line-height:1.4}
+.a2-day li{margin:3px 0}
+@media (max-width:859px){.a2-day:not(.big) li:nth-child(3){display:none}}
+.a2-th{display:flex;flex-wrap:wrap;gap:5px}
+.a2-th span{font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 9px}
+.a2-h{font:600 18px var(--serif);margin:28px 0 10px}
+.a2-shelf{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:860px){.a2-shelf{grid-template-columns:1fr 1fr}}
+.a2-k{display:block;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 6px}
+#a2queue:not(:empty){margin-top:24px}
+
+.map-pulse{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;max-width:1100px;margin:0 auto 12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14.5px;color:var(--muted)}
+.map-pulse b{color:var(--ink);font-size:16px}
+.map-pulse .mp-more{margin-left:auto;font-size:14px}
+.rd-in-map{margin-top:26px!important}
+@media (max-width:520px){.map-pulse{font-size:13.5px;gap:2px 12px;padding:8px 12px}.map-pulse b{font-size:15px}.map-pulse .mp-i:nth-child(4){display:none}.map-pulse .mp-more{margin-left:0;font-size:13.5px}}
 #dosPill{display:none!important}
 .subnav{border-bottom:1px solid var(--line)}
 .subnav[hidden]{display:none}
@@ -4163,15 +4212,16 @@ const _ra=renderAll;
 renderAll=function(){const r=_ra.apply(this,arguments);try{if(S.view==="esplora")renderEx()}catch(e){console.warn("esplora",e)}return r};
 /* ---------- navigazione a 4 linguette: Oggi · Esplora · Temi · Archivio, con una seconda riga che dice dove sei ---------- */
 const NAVG={
-  oggi:{tab:"tab-briefing",items:[["briefing","📰 Briefing"],["radar","📡 Radar"]]},
-  esplora:{tab:"tab-esplora",items:[["x:perte","★ Per te"],["x:area","Aree"],["x:tema","Argomenti"],["mappa","🗺️ Mappa"],["protagonisti","👤 Protagonisti"]]},
-  temi:{tab:"tab-timeline",items:[["timeline","🧵 Temi nel tempo"],["dossier","🧭 Dossier"]]},
+  oggi:{tab:"tab-briefing",items:[]},
+  esplora:{tab:"tab-esplora",items:[["x:perte","★ Per te"],["x:area","Aree"],["x:tema","Argomenti"],["protagonisti","👤 Protagonisti"]]},
+  mappa:{tab:"tab-mappa",items:[]},
+  temi:{tab:"tab-timeline",items:[]},
   archivio:{tab:"tab-archivio",items:[]}
 };
-const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",mappa:"esplora",protagonisti:"esplora",timeline:"temi",dossier:"temi",archivio:"archivio"};
+const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplora",mappa:"mappa",timeline:"temi",dossier:"temi",archivio:"archivio"};
 (function setupNav(){
   const nav=document.querySelector("nav.tabs");if(!nav||document.getElementById("subnav"))return;
-  [["radar"],["mappa"],["protagonisti"]].forEach(([v])=>{const b=document.getElementById("tab-"+v);if(b){b.id="navx-"+v;b.classList.add("navx")}});
+  [["radar"],["protagonisti"]].forEach(([v])=>{const b=document.getElementById("tab-"+v);if(b){b.id="navx-"+v;b.classList.add("navx")}});
   const d=document.getElementById("tab-dossier");if(d)d.classList.add("navx");
   const lab=(id,ic,t)=>{const b=document.getElementById(id);if(!b)return;const i=b.querySelector(".ic");if(i)i.textContent=ic;const l=b.querySelector(".tlab");if(l)l.textContent=t;else{[...b.childNodes].forEach(n=>{if(n.nodeType===3)n.remove()});b.appendChild(document.createTextNode(t))}};
   lab("tab-briefing","📰","Oggi");lab("tab-timeline","🧵","Temi");
@@ -4187,14 +4237,116 @@ function updNav(){
   if(items.length<2){sn.hidden=true;sn.innerHTML="";return}
   const cur=curSub();const dl=(document.querySelector("#tab-dossier .tlab")||{}).textContent;
   const oldRow=sn.querySelector(".subnav-row"),keep=oldRow&&sn.dataset.g===g?oldRow.scrollLeft:0;sn.dataset.g=g;
-  sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${["radar","mappa","protagonisti"].includes(v)?` id="tab-${v}"`:""} aria-current="${cur===v?"page":"false"}">${v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l}</button>`).join("")}</div></div>`;
+  sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${v==="protagonisti"?` id="tab-protagonisti"`:""} aria-current="${cur===v?"page":"false"}">${v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l}</button>`).join("")}</div></div>`;
   /* la riga resta dov'era e la voce scelta è sempre visibile */
   const row=sn.querySelector(".subnav-row"),on=sn.querySelector('[aria-current="page"]');
   if(row){row.scrollLeft=keep;if(on){const r=row.getBoundingClientRect(),o=on.getBoundingClientRect();if(o.left<r.left+8)row.scrollLeft-=r.left+8-o.left;else if(o.right>r.right-8)row.scrollLeft+=o.right-(r.right-8)}}
 }
-{const _sh=show;show=function(v,push){const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
+{const _sh=show;show=function(v,push){if(v==="radar"){if(S.guest&&typeof showLock==="function"){showLock({view:"radar"});return}const r=_sh("briefing",push);try{setSub("numeri",false);if(push!==false)history.replaceState(null,"","#briefing")}catch(_){}try{updNav()}catch(_){}return r}const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
+/* il Radar si distribuisce: Numeri nel briefing, Termometri sopra la mappa, Sotto il radar in Temi */
+const RD={num:document.getElementById("rd-num"),term:document.getElementById("rd-term"),weak:document.getElementById("rd-weak")};
+(function moveRadar(){
+  const idx=document.getElementById("rdIdx");if(idx)idx.remove();
+  const ml=document.querySelector("#v-mappa .map-layout");
+  if(RD.term&&ml){RD.term.classList.add("rd-moved","rd-in-map");ml.insertAdjacentElement("afterend",RD.term);const pl=document.createElement("div");pl.id="mapPulse";pl.className="map-pulse";ml.parentNode.insertBefore(pl,ml)}
+  const tl=document.querySelector("#v-timeline .read");
+  if(RD.weak&&tl){RD.weak.classList.add("rd-moved","rd-in-temi");tl.appendChild(RD.weak);const h=RD.weak.querySelector(".radar-h h2");if(h)h.innerHTML='<span class="ic" aria-hidden="true">👁️</span>In osservazione';const l=RD.weak.querySelector(".radar-h .label");if(l)l.textContent="temi che potrebbero diventare storie"}
+  if(RD.num)RD.num.classList.add("rd-moved","rd-in-brief");
+  [RD.num,RD.term,RD.weak].forEach(x=>{if(x)x.hidden=false});
+  if(typeof rdTab==="function")rdTab=function(id){S.rdTab=id;[RD.num,RD.term,RD.weak].forEach(x=>{if(x)x.hidden=false})};
+})();
+/* le righe fisse (sezioni del briefing) si fermano esattamente sotto la barra in alto, qualunque sia la sua altezza */
+{const hd=document.querySelector("header.top");if(hd){const setH=()=>document.documentElement.style.setProperty("--hdr",hd.offsetHeight+"px");setH();if(window.ResizeObserver)new ResizeObserver(setH).observe(hd);window.addEventListener("resize",setH)}}
+function numCount(){const b=(S.briefings||[]).find(x=>x.cruscotto&&(x.cruscotto.voci||[]).length);return b?b.cruscotto.voci.filter(v=>v.mosso).length:0}
+function hookNumeri(){
+  const st=document.getElementById("subtabs"),br=document.getElementById("briefing");if(!st||!br||!RD.num)return;
+  if(!st.querySelector('[data-sub="numeri"]')){
+    const b=document.createElement("button");b.setAttribute("role","tab");b.id="tab-radar";b.dataset.sub="numeri";b.setAttribute("aria-selected",String(S.sub==="numeri"));
+    const n=numCount();b.innerHTML=`<span class="ic" aria-hidden="true">📈</span>Numeri${n?`<span class="n">${n}</span>`:""}`;
+    b.addEventListener("click",e=>{if(S.guest&&typeof showLock==="function"){e.stopImmediatePropagation();e.preventDefault();showLock({view:"radar"})}},true);
+    const after=st.querySelector('[data-sub="brevi"]')||st.lastElementChild;after.insertAdjacentElement("afterend",b);
+  }
+  let pn=br.querySelector('.subpanel[data-panel="numeri"]');
+  if(!pn){pn=document.createElement("div");pn.className="subpanel";pn.dataset.panel="numeri";const last=[...br.querySelectorAll(".subpanel")].pop();if(last)last.insertAdjacentElement("afterend",pn);else br.appendChild(pn)}
+  pn.hidden=S.sub!=="numeri";if(RD.num.parentNode!==pn)pn.appendChild(RD.num);
+}
+{const _rb2=renderBriefing;renderBriefing=function(){const r=_rb2.apply(this,arguments);try{hookNumeri()}catch(e){console.warn("numeri",e)}return r}}
+setTimeout(()=>{try{hookNumeri()}catch(_){}},0);
+{const vr=document.getElementById("v-radar");if(vr){const go2=()=>{if(!vr.hidden)setTimeout(()=>{if(!vr.hidden)show("radar")},0)};new MutationObserver(go2).observe(vr,{attributes:true,attributeFilter:["hidden"]});go2()}}
+/* sopra la mappa: il polso del mondo in una riga; i dettagli dei Termometri restano sotto la mappa */
+function renderPulse(){
+  const el=document.getElementById("mapPulse");if(!el)return;
+  const cs=Object.values(S.countries||{}),lv=c=>+c.livello||0;
+  const w=cs.filter(c=>lv(c)===5).length,h=cs.filter(c=>lv(c)>=4).length;
+  const act=Object.values(S.threads||{}).filter(t=>t&&t.stato==="attivo").length;
+  const reg=AREE.map(a=>{const xs=a.codes.map(c=>S.countries[c]).filter(Boolean);return {a,m:xs.length?xs.reduce((s,c)=>s+lv(c),0)/xs.length:0}}).sort((x,y)=>y.m-x.m)[0];
+  el.innerHTML=`<span class="mp-i"><b style="color:${LVC(5)}">${w}</b> paesi in guerra</span><span class="mp-i"><b style="color:${LVC(4)}">${h}</b> a livello 4 o 5</span><span class="mp-i"><b>${act}</b> temi aperti</span>${reg&&reg.m?`<span class="mp-i">area più tesa: <b>${esc(reg.a.n)}</b></span>`:""}<button type="button" class="xp-lnk mp-more" data-mp-more="1">Tutti i termometri ↓</button>`;
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-mp-more]")&&RD.term){const off=document.querySelector("header.top").offsetHeight+10;window.scrollTo({top:RD.term.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
+  if(e.target.closest("[data-weak-go]")&&RD.weak){const off=document.querySelector("header.top").offsetHeight+10;window.scrollTo({top:RD.weak.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}});
+/* in Temi: accesso ai dossier, il livello più profondo di un tema */
+function hookDossierLink(){
+  const tl=document.querySelector("#v-timeline .read");if(!tl)return;let a=document.getElementById("tmDos");
+  const td=document.getElementById("tab-dossier");const on=td&&!td.hidden;
+  if(!on){if(a)a.remove();return}
+  const lab=((td.querySelector(".tlab")||{}).textContent||"Dossier").replace(/^Dossier/,"").trim();
+  if(!a){a=document.createElement("button");a.type="button";a.id="tmDos";a.className="tm-dos";a.addEventListener("click",()=>show("dossier"));tl.insertBefore(a,tl.firstChild)}
+  a.innerHTML=`<span>🧭 <b>I dossier</b> · i temi più grandi spiegati per intero${lab?` <em>${esc(lab.replace(/^·\s*/,""))}</em>`:""}</span><span aria-hidden="true">›</span>`;
+}
+{const _ra2=renderAll;renderAll=function(){const r=_ra2.apply(this,arguments);try{hookDossierLink();hookNumeri();renderPulse();hookWeakLink()}catch(e){console.warn("temi",e)}return r}}
+function hookWeakLink(){const tl=document.querySelector("#v-timeline .read");if(!tl||!RD.weak)return;let a=document.getElementById("tmWeak");const n=RD.weak.querySelectorAll(".wk,.weak,[class*=wk-]").length;
+  if(!a){a=document.createElement("button");a.type="button";a.id="tmWeak";a.className="tm-dos tm-weak";a.dataset.weakGo="1";const d=document.getElementById("tmDos");if(d)d.insertAdjacentElement("afterend",a);else tl.insertBefore(a,tl.firstChild)}
+  a.innerHTML=`<span>👁️ <b>In osservazione</b> · fatti piccoli che potrebbero diventare temi</span><span aria-hidden="true">↓</span>`}
+setTimeout(()=>{try{hookDossierLink();renderPulse();hookWeakLink()}catch(_){}},0);
 window.addEventListener("popstate",()=>setTimeout(()=>{try{updNav()}catch(_){}},0));
 setTimeout(()=>{try{updNav()}catch(_){}},0);
+/* ---------- Archivio ridisegnato: prima la ricerca, poi i giorni con dentro le notizie, poi «Da rileggere» ---------- */
+const GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+(function buildArch(){
+  const v=document.getElementById("v-archivio");if(!v||document.getElementById("arch2"))return;
+  const old=v.querySelector(".arch-grid");
+  const w=document.createElement("div");w.id="arch2";w.className="arch2";
+  w.innerHTML=`<div class="a2-search"><label for="q" class="a2-lab">Cerca in tutto l’archivio</label><div class="a2-q" id="a2q"></div><div class="a2-chips" id="a2chips"></div><div id="a2res"></div></div>
+  <div id="a2days"><div class="a2-mon" id="a2mon"></div><div class="a2-grid" id="archDays"></div></div>
+  <h3 class="a2-h">Da rileggere</h3>
+  <div class="a2-shelf"><div><span class="a2-k">📚 Approfondimenti</span><div id="a2ap"></div></div><div><span class="a2-k">🐢 Tendenze lente</span><div id="a2sl"></div></div></div>
+  <div id="a2queue"></div>`;
+  v.insertBefore(w,v.firstChild);
+  const mv=(id,to)=>{const n=document.getElementById(id),t=document.getElementById(to);if(n&&t)t.appendChild(n)};
+  mv("q","a2q");mv("results","a2res");mv("archApprof","a2ap");mv("archSlow","a2sl");
+  const ql=old&&old.querySelector(".q-label"),qq=document.getElementById("archQueue");const aq=document.getElementById("a2queue");if(ql&&aq)aq.appendChild(ql);if(qq&&aq)aq.appendChild(qq);
+  if(old)old.hidden=true;
+  const q=document.getElementById("q");if(q){q.placeholder="Un paese, un tema, una persona… es. Hormuz, BCE, Zelensky";const upd=()=>{w.classList.toggle("searching",!!q.value.trim());try{a2chips()}catch(_){}};q.addEventListener("input",upd);upd()}
+  w.addEventListener("click",e=>{const c=e.target.closest("[data-a2q]");if(c&&q){q.value=c.dataset.a2q;q.dispatchEvent(new Event("input"));q.focus();return}
+    const m=e.target.closest("[data-a2m]");if(m){S.archMonth=m.dataset.a2m;renderArchDates();return}
+    if(e.target.closest("[data-a2clear]")&&q){q.value="";q.dispatchEvent(new Event("input"))}});
+})();
+function a2chips(){
+  const el=document.getElementById("a2chips");if(!el)return;
+  const st=storiesWhere(s=>s.data>=ago(30));const c={};st.forEach(s=>{if(s.filone_id&&S.threads[s.filone_id])c[s.filone_id]=(c[s.filone_id]||0)+1});
+  const top=Object.entries(c).sort((x,y)=>y[1]-x[1]).slice(0,7).map(([id])=>tName(id));
+  const q=document.getElementById("q"),on=q&&q.value.trim();
+  el.innerHTML=(on?`<button type="button" class="a2-chip clr" data-a2clear="1">✕ Torna ai giorni</button>`:`<span class="a2-try">Prova:</span>`)+top.map(t=>`<button type="button" class="a2-chip" data-a2q="${esc(t)}">${esc(t)}</button>`).join("");
+}
+renderArchDates=function(){
+  const el=document.getElementById("archDays"),mon=document.getElementById("a2mon");if(!el)return;
+  try{a2chips()}catch(_){}
+  const bs=(S.briefings||[]).slice().sort((x,y)=>String(y.data).localeCompare(String(x.data)));
+  if(!bs.length){el.innerHTML='<p class="muted">Nessun briefing.</p>';return}
+  const groups=[],byM={};bs.forEach(b=>{const m=(b.data||"").slice(0,7);if(!byM[m]){byM[m]={key:m,items:[]};groups.push(byM[m])}byM[m].items.push(b)});
+  const sel=(S.archMonth&&byM[S.archMonth])?S.archMonth:groups[0].key;
+  const ml=k=>{const [y,mo]=k.split("-");const n=MONTHS[+mo-1]||"";return n.charAt(0).toUpperCase()+n.slice(1)+" "+y};
+  if(mon)mon.innerHTML=groups.length>1?groups.map(g=>`<button type="button" data-a2m="${esc(g.key)}" aria-pressed="${g.key===sel}">${esc(ml(g.key))}</button>`).join(""):`<span class="a2-m1">${esc(ml(sel))}</span>`;
+  const cur=byM[sel]||groups[0];
+  el.innerHTML=cur.items.map((b,i)=>{
+    const ids=(b.storie_mondo||[]).concat(b.storie_italia||[]);const st=ids.map(id=>S.stories[id]).filter(Boolean);
+    const th=[];st.forEach(s=>{const t=s.filone_id&&S.threads[s.filone_id];const n=t&&(t.breve||t.titolo);if(n&&!th.includes(n))th.push(n)});
+    const d=new Date(b.data+"T12:00:00");const big=i===0&&sel===groups[0].key;
+    return `<button type="button" class="a2-day${big?" big":""}" data-brief="${esc(b.id)}"><span class="a2-dh"><span class="a2-dg">${GG[d.getDay()]}</span><span class="a2-dd">${d.getDate()} ${esc((MONTHS[d.getMonth()]||"").slice(0,3))}</span><span class="a2-dn">${st.length} storie</span></span>
+      <ol>${st.slice(0,3).map(s=>`<li>${(s.paesi||[]).slice(0,2).map(flag).join("")} ${esc(s.titolo)}</li>`).join("")}</ol>
+      ${th.length?`<span class="a2-th">${th.slice(0,4).map(t=>`<span>${esc(t)}</span>`).join("")}</span>`:""}</button>`}).join("");
+};
+setTimeout(()=>{try{renderArchDates()}catch(_){}},0);
 setTimeout(pullF,300);
 {const p=parse(location.hash);if(p!==undefined){X.page=p;_show("esplora",false);renderEx();const top0=()=>window.scrollTo(0,0);setTimeout(top0,0);window.addEventListener("load",()=>setTimeout(top0,50),{once:true})}}
 })();
