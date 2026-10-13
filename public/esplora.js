@@ -106,6 +106,12 @@ css.textContent=`
 .xp-chip[aria-pressed="true"] span{color:inherit;opacity:.7}
 .xp-also{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin:0 0 8px}
 .xp-also .xp-follow{font-size:13px;padding:4px 12px}
+.xp-item.on{background:var(--surface);border-radius:12px;margin:6px -10px;padding:0 10px 10px}
+.xp-item.on .xp-sv{border-top-color:transparent}
+.xp-tog{float:right;color:var(--accent);font-size:12.5px}
+.xp-open .story .sto-h{display:none}
+.xp-open .story{margin:0;border:0;background:transparent;box-shadow:none;padding:0}
+.xp-open-f{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .xp-sv{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:none;border:0;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}
 .xp-sv:hover .xp-stt{color:var(--accent)}
 .xp-sd{display:block;font-size:12px;color:var(--faint)}
@@ -146,7 +152,7 @@ if(main&&!document.getElementById("v-esplora")){
   sec.innerHTML='<div class="read" id="esplora"></div>';
   main.insertBefore(sec,document.getElementById("v-mappa"));
 }
-const X={mode:"area",page:null,chip:"",lim:4,ret:null};
+const X={mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
 function pathOf(p){return p?`esplora/${p.k}/${encodeURIComponent(p.id)}`:"esplora"}
 function parse(h){h=(h||"").replace(/^#/,"");if(!h.startsWith("esplora"))return undefined;const m=h.split("/");return m.length>=3?{k:m[1],id:decodeURIComponent(m[2])}:null}
 function labelOf(p){if(!p)return"Esplora";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
@@ -156,7 +162,7 @@ show=function(v,push){
   const r=_show(v,push);updBack();return r;
 };
 function go(p,push){
-  X.page=p;X.chip="";X.lim=4;
+  X.page=p;X.chip="";X.lim=4;X.open=null;
   if(p&&p.k==="area")X.mode="area";if(p&&p.k==="tema")X.mode="tema";
   const h="#"+pathOf(p);
   try{if(push===false)history.replaceState(null,"",h);else if(location.hash!==h)history.pushState(null,"",h)}catch(e){}
@@ -202,7 +208,8 @@ function threadCards(ranked,all){
 }
 function storyList(list){
   const shown=list.slice(0,X.lim);
-  return (shown.map(s=>`<button type="button" class="xp-sv" data-story="${esc(s.id)}"><span class="xp-sd">${esc(fmtDate(s.data))}</span><span class="xp-stt">${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</span>${s.perche_conta?`<span class="xp-sp">${esc(sentence(s.perche_conta))}</span>`:""}</button>`).join("")||`<p class="xp-empty">Nessuna storia in questa selezione. Prova «Tutto».</p>`)
+  return (shown.map(s=>{const open=X.open===s.id;
+    return `<div class="xp-item${open?" on":""}" id="xpi-${esc(s.id)}"><button type="button" class="xp-sv" data-xs="${esc(s.id)}" aria-expanded="${open}"><span class="xp-sd">${esc(fmtDate(s.data))}<span class="xp-tog">${open?"Chiudi ▴":"Leggi ▾"}</span></span><span class="xp-stt">${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</span>${!open&&s.perche_conta?`<span class="xp-sp">${esc(sentence(s.perche_conta))}</span>`:""}</button>${open?`<div class="xp-open">${storyHTML(s,0).replace(/id="st-/g,'id="xst-')}<div class="xp-open-f"><button type="button" class="xp-lnk" data-xs="${esc(s.id)}">Chiudi la storia</button>${S.briefings.some(b=>(b.storie_mondo||[]).concat(b.storie_italia||[]).includes(s.id))?`<button type="button" class="xp-lnk" data-story="${esc(s.id)}">Vedi nel briefing del ${esc(fmtDate(s.data))}</button>`:""}</div></div>`:""}</div>`}).join("")||`<p class="xp-empty">Nessuna storia in questa selezione. Prova «Tutto».</p>`)
    +(list.length>shown.length?`<button type="button" class="xp-more" data-more="1">${X.lim<=4?`Tutte le ${list.length} storie`:`Altre ${Math.min(20,list.length-shown.length)}`}</button>`:"");
 }
 function myInterests(){
@@ -304,7 +311,12 @@ document.addEventListener("click",e=>{
   const f=e.target.closest("[data-follow]");if(f){const [k,id]=f.dataset.follow.split("|");toggleF(k,id);renderEx();try{perTe()}catch(_){}return}
   const m=e.target.closest("[data-mode]");if(m){X.mode=m.dataset.mode;renderEx();return}
   const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");go({k:v.slice(0,i),id:v.slice(i+1)});return}
-  const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;renderEx();return}
+  const xs=e.target.closest("[data-xs]");if(xs){const id=xs.dataset.xs;
+    if(S.guest&&X.open!==id){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){if(typeof showLock==="function")showLock({what:"storie"});return}}
+    X.open=X.open===id?null:id;renderEx();
+    const it=document.getElementById("xpi-"+id);if(it){const off=document.querySelector("header.top").offsetHeight+8;window.scrollTo({top:it.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
+    return}
+  const c=e.target.closest("[data-chip]");if(c){X.chip=c.dataset.chip;X.open=null;renderEx();return}
   if(e.target.closest("[data-more]")){X.lim=X.lim<=4?20:X.lim+20;renderEx();return}
 });
 
