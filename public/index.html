@@ -4485,7 +4485,7 @@ const PT_TN={conflitto:"conflitto",sanzioni:"sanzioni",accordo:"mediazione/accor
 const PT_BIG=["RUS","CAN","USA","CHN","BRA","AUS","IND","KAZ","ARG","DZA"];
 const _storyHTML=storyHTML;
 storyHTML=function(s,rank){const h=_storyHTML(s,rank);if(!s||!(s.paesi||[]).length)return h;const id=esc(s.id);return h.replace(/\s*<\/div>\s*<div class="sto-b">/,`<button type="button" class="pt-th" data-pt="${id}" aria-expanded="false" aria-controls="pt-${id}" title="Apri la mappa dei paesi coinvolti" hidden></button></div><div class="portrait" id="pt-${id}" hidden></div><div class="sto-b">`)};
-const W=780,H=330;
+let W=780,H=330;
 function ptBuild(s,geo){
   const byId={};geo.features.forEach(f=>{if(f.id)byId[f.id]=f});
   const P=(s.paesi||[]).filter(p=>byId[p]);if(!P.length)return null;
@@ -4544,13 +4544,15 @@ async function ptFill(){
   if(ptBusy)return;const els=[...document.querySelectorAll(".pt-th[data-pt]:not([data-done])")];if(!els.length)return;
   if(typeof d3==="undefined"||typeof topojson==="undefined")return;
   ptBusy=true;try{const geo=await loadGeo();
-    for(const el of els){el.dataset.done="1";const s=S.stories[el.dataset.pt];let r=null;try{r=s?ptBuild(s,geo):null}catch(_){r=null}
+    for(const el of els){el.dataset.done="1";const s=S.stories[el.dataset.pt];let r=null;
+      // su schermi larghi la mappa copre più territorio invece di ingrandire le scritte
+      const st0=el.closest(".story");const cw=st0?st0.clientWidth:0;if(cw>700){W=Math.round(cw*1.4);H=Math.round(W*0.34)}else{W=780;H=330}try{r=s?ptBuild(s,geo):null}catch(_){r=null}
       const full=el.closest(".story")&&el.closest(".story").querySelector(".portrait");
-      if(r&&full){el.innerHTML=r.thumb;el.hidden=false;el.parentNode.classList.add("has-pt");full.innerHTML=r.full+'<span class="pt-hint" aria-hidden="true"><b class="pt-o">Tocca per ingrandire ⤢</b><b class="pt-c">✕ Riduci</b></span>';full.dataset.ok="1";const sv=full.querySelector("svg");if(sv)sv.setAttribute("preserveAspectRatio","xMidYMid slice")}else{el.remove();if(full)full.remove()}}
+      if(r&&full){el.innerHTML=r.thumb;el.hidden=false;el.parentNode.classList.add("has-pt");full.innerHTML=r.full+'<span class="pt-hint" aria-hidden="true"><b class="pt-o"><span class="pt-tm">Tocca</span><span class="pt-td">Clicca</span> per ingrandire ⤢</b><b class="pt-c">✕ Riduci</b></span>';full.dataset.ok="1";const sv=full.querySelector("svg");if(sv)sv.setAttribute("preserveAspectRatio","xMidYMid slice")}else{el.remove();if(full)full.remove()}}
   }catch(_){}finally{ptBusy=false}
   if(document.querySelector(".pt-th[data-pt]:not([data-done])"))setTimeout(ptFill,50);
 }
-const ptNarrow=()=>window.matchMedia("(max-width:700px)").matches;
+const ptNarrow=()=>true;
 document.addEventListener("click",e=>{const b=e.target.closest(".pt-th");if(!b)return;const f=document.getElementById("pt-"+b.dataset.pt);if(!f)return;const open=f.hidden;f.hidden=!open;b.setAttribute("aria-expanded",String(open));b.title=open?"Chiudi la mappa":"Apri la mappa dei paesi coinvolti"});
 // telefono: striscia sempre visibile; tocco = ingrandisci, «✕ Riduci» = torna striscia
 document.addEventListener("click",e=>{if(!ptNarrow())return;const p=e.target.closest(".portrait[data-ok]");if(!p)return;
@@ -4566,15 +4568,18 @@ const st=document.createElement("style");st.textContent=`.sto-h.has-pt{grid-temp
 .pt-th[aria-expanded="true"] .pt-o{display:none}.pt-th[aria-expanded="true"] .pt-c{display:inline}
 .pt-th:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pt-hint{display:none}
-@media (max-width:700px){.sto-h.has-pt{grid-template-columns:22px minmax(0,1fr)}.pt-th{display:none!important}
+.sto-h.has-pt{grid-template-columns:28px minmax(0,1fr)}.pt-th{display:none!important}
 .story .portrait[data-ok]{display:block!important;position:relative;cursor:pointer}
-.story .portrait[data-ok]:not(.big) svg{height:84px;max-height:84px}
+.story .portrait[data-ok]:not(.big) svg{height:110px;max-height:110px}
 .story .portrait[data-ok]:not(.big) .pt-leg{display:none}
 .portrait .pt-hint{display:block;position:absolute;right:8px;top:8px;font:600 11.5px/1 var(--sans);color:var(--ink);background:color-mix(in srgb,var(--bg) 78%,transparent);border:1px solid var(--line);padding:5px 8px;border-radius:7px}
 .portrait:not(.big) .pt-hint{top:auto;bottom:7px}
-.pt-hint b{font-weight:600}.pt-hint .pt-c{display:none}.portrait.big .pt-hint .pt-o{display:none}.portrait.big .pt-hint .pt-c{display:inline}}
+.pt-hint b{font-weight:600}.pt-hint .pt-c{display:none}.portrait.big .pt-hint .pt-o{display:none}.portrait.big .pt-hint .pt-c{display:inline}
+.pt-tm{display:none}
+@media (hover:hover){.story .portrait[data-ok]:not(.big):hover .pt-hint{background:var(--accent);color:var(--bg);border-color:var(--accent)}}
+@media (max-width:700px){.sto-h.has-pt{grid-template-columns:22px minmax(0,1fr)}.story .portrait[data-ok]:not(.big) svg{height:84px;max-height:84px}.pt-tm{display:inline}.pt-td{display:none}}
 .portrait{border-bottom:1px solid var(--line);background:var(--sea)}
-.portrait svg{display:block;width:100%;height:auto;max-height:340px}
+.portrait svg{display:block;width:100%;height:auto;max-height:420px}
 .pt-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--muted);padding:6px 14px 8px;background:var(--surface)}
 .pt-leg span{display:inline-flex;align-items:center;gap:5px}.pt-leg i{display:inline-block;width:16px;height:3px;border-radius:2px}
 .pt-leg .pt-n{color:var(--faint)}
