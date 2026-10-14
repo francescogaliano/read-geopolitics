@@ -4708,10 +4708,12 @@ let amT=null;new MutationObserver(()=>{clearTimeout(amT);amT=setTimeout(amFill,6
 /* ---------- Mappa: zoom sul paese scelto e su chi è in relazione con lui ---------- */
 function zRel(iso){const r=new Set();((S.countries[iso]||{}).dinamiche||[]).forEach(d=>d.con&&r.add(d.con));
   Object.entries(S.countries).forEach(([k,c])=>(c.dinamiche||[]).forEach(d=>{if(d.con===iso)r.add(k)}));r.delete(iso);return [...r]}
-let zLast=null;
+let zLast=null,zNode=null;
 function zoomToSel(){
   const ms=typeof mapState!=="undefined"?mapState:null;if(!ms||!ms.zoom||!ms.proj||!S.selCountry||!S.geo)return;
-  if(zLast===S.selCountry)return;zLast=S.selCountry;
+  // stessa mappa e stesso paese: niente da fare; mappa ridisegnata (arrivo da un altro punto del sito): zoom di nuovo
+  const node=ms.svg.node();if(!node||!node.isConnected)return;
+  if(zLast===S.selCountry&&zNode===node)return;zLast=S.selCountry;zNode=node;
   const byId={};S.geo.features.forEach(f=>{if(f.id)byId[f.id]=f});const sel=byId[S.selCountry];if(!sel)return;
   const c0=d3.geoCentroid(amMain(sel));
   // i paesi collegati entrano nell'inquadratura solo se vicini: gli Stati Uniti non fanno rimpicciolire il Medio Oriente
