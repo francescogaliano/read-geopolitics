@@ -1435,7 +1435,7 @@ nav.tabs button .ic{margin-right:.3em}
     </section>
 
     <section id="g-nav"><h3><span class="ic" aria-hidden="true">🧭</span>2. Come muoversi</h3>
-      <p>In alto ci sono cinque linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti, Protagonisti e Glossario) e <b>Temi</b> (Temi e In osservazione; un tema con dossier si legge in due modi: «Giorno per giorno» e «Il quadro»). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri) e <b>Calendario</b> (le scadenze in arrivo). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
+      <p>In alto ci sono cinque linguette. Prima i contenuti: <b>Oggi</b> (il briefing del giorno, con i <b>📈 Numeri</b> tra le sue sezioni), <b>Esplora</b> (Per te, Aree, Argomenti e Chi e cosa) e <b>Temi</b> (Temi e In osservazione; un tema con dossier si legge in due modi: «Giorno per giorno» e «Il quadro»). Poi gli strumenti: <b>Mappa</b> (il mondo per livello di tensione, con i termometri) e <b>Calendario</b> (le scadenze in arrivo). Esplora e Temi hanno una seconda riga con le loro sezioni.</p>
       <p>L’<b>Archivio</b> si apre con la <b>🔍</b> in alto (la ricerca in tutto quello che è uscito) o con «📅 Giorni precedenti» accanto al titolo del briefing.</p>
       <p>Tutto ciò che riguarda te (interessi, newsletter, aspetto, guida) sta nel pulsante <b>★ Il mio Read</b>.</p>
     </section>
@@ -1483,8 +1483,8 @@ nav.tabs button .ic{margin-right:.3em}
       <p>Per i paesi piccoli usa i bottoni <b>+ / −</b> in basso a destra sulla mappa, oppure il doppio tocco, per ingrandire fino a ×20.</p>
     </section>
 
-    <section id="g-prot"><h3><span class="ic" aria-hidden="true">👤</span>8. Protagonisti</h3>
-      <p>Le persone e le organizzazioni che muovono le notizie. In alto chi ha preso posizione negli ultimi 7 giorni; sotto tutti gli altri. Ogni scheda raccoglie <b>cosa ha detto o fatto, con data e fonte</b>, e nulla viene mai cancellato: la ricerca trova anche frasi di mesi fa (prova «Rubio G20»).</p>
+    <section id="g-prot"><h3><span class="ic" aria-hidden="true">📖</span>8. Chi e cosa</h3>
+      <p>Persone, organizzazioni, sigle, luoghi e parole delle storie, in un unico elenco dalla A alla Z con una sola ricerca. In alto chi ha preso posizione negli ultimi 7 giorni. Ogni scheda raccoglie <b>cosa ha detto o fatto, con data e fonte</b>, e nulla viene mai cancellato: la ricerca trova anche frasi di mesi fa (prova «Rubio G20»).</p>
     </section>
 
     <section id="g-radar"><h3><span class="ic" aria-hidden="true">📡</span>9. Numeri, termometri, temi in osservazione</h3>
@@ -4803,35 +4803,66 @@ glossifyInner=function(root){
 };
 // 2) pagina «Glossario» in Esplora
 const sec=document.createElement("section");sec.id="v-glossario";sec.className="view";sec.hidden=true;
-sec.innerHTML=`<div class="read" id="glView"><p class="hint" style="margin-top:4px">Le parole, le sigle, i luoghi e le persone che compaiono nelle storie, spiegati in breve. Nel testo sono sottolineate a puntini: toccale per leggerne la spiegazione.</p>
-<div class="gv-tools"><label for="gvq" class="sr">Cerca</label><input type="search" id="gvq" placeholder="Cerca una parola, es. ex Ilva, AIEA, Hormuz"></div><div class="gv-chips" id="gvChips"></div><div id="gvBody"></div></div>`;
+sec.innerHTML=`<div class="read" id="glView"><p class="hint" style="margin-top:4px">Persone, organizzazioni, sigle, luoghi e parole delle storie, in un solo posto. Per persone e organizzazioni c’è anche lo storico di cosa hanno detto e fatto, con data e fonte. Nel testo delle storie sono sottolineate a puntini.</p>
+<div class="gv-tools"><label for="gvq" class="sr">Cerca</label><input type="search" id="gvq" placeholder="Cerca un nome, una sigla o una frase, es. ex Ilva, AIEA, Rubio G20"></div><div class="gv-chips" id="gvChips"></div><div id="gvBody"></div></div>`;
 const after=document.getElementById("v-protagonisti");if(after&&after.parentNode)after.parentNode.insertBefore(sec,after.nextSibling);
-NAVG.esplora.items.push(["glossario","📖 Glossario"]);VGROUP.glossario="esplora";
+NAVG.esplora.items=NAVG.esplora.items.filter(([v])=>v!=="protagonisti").concat([["glossario","📖 Chi e cosa"]]);VGROUP.glossario="esplora";
+// i vecchi collegamenti a Protagonisti portano qui
+const _un=updNav;updNav=function(){const r=_un.apply(this,arguments);const b=document.querySelector('#subnav [data-sv="glossario"]');if(b&&!document.getElementById("tab-protagonisti"))b.id="tab-protagonisti";return r};
 const GV={q:"",t:""};
 const GT=[["","Tutto"],["termine","Termini"],["sigla","Sigle"],["organizzazione","Organizzazioni"],["persona","Persone"],["luogo","Luoghi"]];
 const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function gvEntries(){
+  const out=[],used=new Set();
+  Object.values(S.glossario||{}).forEach(g=>{if(!g||!g.termine||!g.spiegazione)return;const a=typeof actorFor==="function"?actorFor(g.id):null;if(a)used.add(a.id);out.push({t:g.termine,nc:g.nome_completo,sp:g.spiegazione,tipo:g.tipo,al:g.alias||[],a,f:g.fonte})});
+  Object.values(S.attori||{}).forEach(a=>{if(!a||used.has(a.id)||!a.nome)return;out.push({t:a.nome,nc:"",sp:a.ruolo||"",tipo:a.tipo==="persona"?"persona":"organizzazione",al:a.alias||[],a,f:null})});
+  return out}
 function renderGlossView(){
-  const all=Object.values(S.glossario||{}).filter(g=>g&&g.termine&&g.spiegazione);
+  const all=gvEntries();
   const cnt={};all.forEach(g=>{cnt[g.tipo]=(cnt[g.tipo]||0)+1});
-  document.getElementById("gvChips").innerHTML=GT.filter(([k])=>!k||cnt[k]).map(([k,l])=>`<button type="button" class="xp-pill" data-gvt="${k}" aria-pressed="${GV.t===k}">${l}${k?` <i>${cnt[k]}</i>`:` <i>${all.length}</i>`}</button>`).join("");
-  const q=norm(GV.q);
-  const list=all.filter(g=>(!GV.t||g.tipo===GV.t)&&(!q||[g.termine,g.nome_completo,g.spiegazione,...(g.alias||[])].some(x=>norm(x).includes(q))))
-    .sort((a,b)=>norm(a.termine).localeCompare(norm(b.termine),"it"));
-  const byL={};list.forEach(g=>{const L=norm(g.termine).charAt(0).toUpperCase()||"#";(byL[/[A-Z]/.test(L)?L:"#"]=byL[/[A-Z]/.test(L)?L:"#"]||[]).push(g)});
-  document.getElementById("gvBody").innerHTML=list.length?Object.keys(byL).sort().map(L=>`<h3 class="gv-l">${L}</h3>${byL[L].map(g=>{const a=typeof actorFor==="function"?actorFor(g.id):null;
-    return `<div class="gv-it"><div class="gv-h"><b>${esc(g.termine)}</b>${g.nome_completo&&g.nome_completo!==g.termine?` <span class="gv-nc">${esc(g.nome_completo)}</span>`:""}<span class="gv-k">${esc(GTYPE[g.tipo]||g.tipo||"")}</span></div><p>${esc(g.spiegazione)}</p>${a?`<button type="button" class="linkbtn" data-actor="${esc(a.id)}">Scheda: posizioni nel tempo →</button>`:""}${g.fonte&&g.fonte.url?` <a class="gv-f" href="${esc(g.fonte.url)}" target="_blank" rel="noopener">${esc(g.fonte.nome||"fonte")}</a>`:""}</div>`}).join("")}`).join(""):`<p class="xp-empty">Nessuna voce${q?` per «${esc(GV.q)}»`:""}.</p>`;
+  document.getElementById("gvChips").innerHTML=GT.filter(([k])=>!k||cnt[k]).map(([k,l])=>`<button type="button" class="xp-pill" data-gvt="${k}" aria-pressed="${GV.t===k}">${l} <i>${k?cnt[k]:all.length}</i></button>`).join("");
+  const toks=norm(GV.q.trim()).split(/\s+/).filter(Boolean);
+  const box=document.getElementById("gvBody");
+  const row=(g,extra)=>`<div class="gv-it"><div class="gv-h"><b>${esc(g.t)}</b>${g.nc&&g.nc!==g.t?` <span class="gv-nc">${esc(g.nc)}</span>`:""}<span class="gv-k">${esc(GTYPE[g.tipo]||g.tipo||"")}</span></div>${g.sp?`<p>${esc(g.sp)}</p>`:""}${extra||""}<div class="gv-a">${g.a?`<button type="button" class="gv-pos" data-actor="${esc(g.a.id)}">🕘 Posizioni nel tempo${(g.a.posizioni||[]).length?` · ${(g.a.posizioni||[]).length}`:""} ›</button>`:""}${g.f&&g.f.url?`<a class="gv-f" href="${esc(g.f.url)}" target="_blank" rel="noopener">${esc(g.f.nome||"fonte")}</a>`:""}</div></div>`;
+  let list=all.filter(g=>!GV.t||g.tipo===GV.t);
+  if(toks.length){
+    const hits=[];
+    list.forEach(g=>{const base=norm([g.t,g.nc,g.sp,...g.al].join(" "));const pos=g.a?(g.a.posizioni||[]).map(p=>({p,h:norm(p.testo)})):[];
+      const hay=base+" "+pos.map(x=>x.h).join(" ");if(!toks.every(t=>hay.includes(t)))return;
+      const rest=toks.filter(t=>!base.includes(t));const mp=rest.length?pos.filter(x=>rest.every(t=>x.h.includes(t))).map(x=>x.p).sort((x,y)=>String(y.data).localeCompare(String(x.data))):[];
+      const qq=toks.join(" ");const names=[g.t,g.nc,...g.al].filter(Boolean).map(norm);hits.push({g,mp,s:(names.includes(qq)?5000:0)+(names.some(n=>n.startsWith(qq))?2000:0)+(norm(g.t).startsWith(toks[0])?1000:0)+(rest.length?mp.length:100)})});
+    hits.sort((x,y)=>y.s-x.s||norm(x.g.t).localeCompare(norm(y.g.t),"it"));
+    box.innerHTML=`<p class="gv-n">${hits.length} ${hits.length===1?"risultato":"risultati"}</p>`+(hits.length?hits.map(({g,mp})=>row(g,mp.length?`<div class="gv-mp">${mp.slice(0,3).map(p=>`<span><b>${esc(fmtDate(p.data))}</b> ${esc(String(p.testo||"").slice(0,170))}</span>`).join("")}</div>`:"")).join(""):`<p class="xp-empty">Nessuna voce per «${esc(GV.q)}».</p>`);
+    return}
+  // in cima: chi ha preso posizione negli ultimi 7 giorni
+  let mov="";
+  if(!GV.t||GV.t==="persona"||GV.t==="organizzazione"){
+    const ref=(S.briefings&&S.briefings[0]&&S.briefings[0].data)||new Date().toISOString().slice(0,10);const lim=new Date(ref+"T12:00:00");lim.setDate(lim.getDate()-7);const L7=lim.toISOString().slice(0,10);
+    const m=Object.values(S.attori||{}).filter(a=>a&&(!GV.t||(GV.t==="persona"?a.tipo==="persona":a.tipo!=="persona"))).map(a=>({a,n:(a.posizioni||[]).filter(p=>String(p.data)>L7).length})).filter(x=>x.n).sort((x,y)=>y.n-x.n).slice(0,6);
+    if(m.length)mov=`<h3 class="gv-l gv-mov">📣 In movimento · ultimi 7 giorni</h3><div class="gv-cards">${m.map(({a,n})=>{const lp=typeof lastPos==="function"?lastPos(a):null;return `<button type="button" class="gv-card" data-actor="${esc(a.id)}"><span class="gv-ch"><b>${esc(a.nome)}</b><i>${n} ${n===1?"posizione":"posizioni"}</i></span>${a.ruolo?`<span class="gv-cr">${esc(String(a.ruolo).slice(0,70))}</span>`:""}${lp?`<span class="gv-cl"><b>${esc(fmtDate(lp.data))}</b> ${esc(String(lp.testo||"").slice(0,120))}</span>`:""}</button>`}).join("")}</div>`}
+  list.sort((a,b)=>norm(a.t).localeCompare(norm(b.t),"it"));
+  const byL={};list.forEach(g=>{let L=norm(g.t).charAt(0).toUpperCase();if(!/[A-Z]/.test(L))L="#";(byL[L]=byL[L]||[]).push(g)});
+  box.innerHTML=mov+(list.length?Object.keys(byL).sort().map(L=>`<h3 class="gv-l">${L}</h3>${byL[L].map(g=>row(g)).join("")}`).join(""):`<p class="xp-empty">Nessuna voce.</p>`);
 }
-const _show=show;show=function(v){const r=_show.apply(this,arguments);if(v==="glossario"){try{renderGlossView()}catch(e){console.warn("glossario",e)}}return r};
+const _show=show;show=function(v){if(v==="protagonisti"){v="glossario";arguments[0]=v}const r=_show.apply(this,arguments);if(v==="glossario"){try{renderGlossView()}catch(e){console.warn("glossario",e)}}return r};
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="gvq"){GV.q=e.target.value;renderGlossView()}});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-gvt]");if(b){GV.t=b.dataset.gvt;renderGlossView()}});
-if((location.hash||"")==="#glossario")setTimeout(()=>show("glossario",false),300);
+setTimeout(()=>{if((location.hash||"")==="#glossario"||(location.hash||"")==="#protagonisti"||S.view==="protagonisti")show("glossario",false)},300);
 const st=document.createElement("style");st.textContent=`#gloss{z-index:80!important}
 .gv-tools input{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);margin:6px 0 10px}
 .gv-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.gv-chips .xp-pill[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}.gv-chips i{font-style:normal;color:var(--faint);margin-left:4px}
 .gv-l{font:600 13px var(--mono);color:var(--accent);margin:18px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
 .gv-it{padding:8px 0 10px;border-bottom:1px solid var(--line)}.gv-it p{margin:4px 0 4px;line-height:1.5}
 .gv-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}.gv-nc{color:var(--muted);font-size:13.5px}.gv-k{margin-left:auto;font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
-.gv-f{font-size:12.5px;color:var(--muted);margin-left:8px}`;document.head.appendChild(st);
+.gv-f{font-size:12.5px;color:var(--muted)}
+.gv-a{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}
+.gv-pos{font:inherit;font-size:13px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:999px;padding:4px 11px;cursor:pointer}
+.gv-n{font:500 12px var(--mono);color:var(--faint);margin:4px 0 6px}
+.gv-mp{display:flex;flex-direction:column;gap:4px;margin:4px 0;font-size:13.5px;color:var(--muted)}.gv-mp b{font:500 11.5px var(--mono);color:var(--faint);margin-right:4px}
+.gv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin:4px 0 6px}
+.gv-card{display:flex;flex-direction:column;gap:3px;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.gv-card:hover{border-color:var(--accent)}.gv-ch{display:flex;justify-content:space-between;gap:8px}.gv-ch i{font:500 11.5px var(--mono);font-style:normal;color:var(--accent);white-space:nowrap}
+.gv-cr{font-size:12.5px;color:var(--muted)}.gv-cl{font-size:13px;line-height:1.45}.gv-cl b{font:500 11px var(--mono);color:var(--faint);margin-right:4px}`;document.head.appendChild(st);
 })();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
