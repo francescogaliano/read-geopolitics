@@ -4875,13 +4875,14 @@ async function podFill(){
   const d=h.dataset.bdate;if(!d)return;const m=await podLoad();const e=m[d];if(!e)return;
   if(h.nextElementSibling&&h.nextElementSibling.classList.contains("pod-bar"))return;
   const el=document.createElement("div");el.className="pod-bar";
-  el.innerHTML=`<div class="pod-t"><span class="pod-i" aria-hidden="true">🎧</span><span><b>Ascolta il briefing</b><span class="pod-m">${mins(e.duration)} min · la voce è sintetica</span></span></div><audio controls preload="none" src="${e.url}"></audio>`;
+  el.innerHTML=`<div class="pod-t"><span class="pod-i" aria-hidden="true">🎧</span><span><b>Ascolta il briefing</b><span class="pod-m">${mins(e.duration)} min · la voce è sintetica</span></span></div><audio controls preload="none" src="${e.url}"></audio><a class="pod-sp" href="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU" target="_blank" rel="noopener">Segui su Spotify ↗</a>`;
   h.insertAdjacentElement("afterend",el);
 }
 let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(podFill,80)}).observe(document.body,{childList:true,subtree:true});
 const st=document.createElement("style");st.textContent=`.pod-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:4px 0 18px;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--surface)}
 .pod-t{display:flex;align-items:center;gap:10px;flex:1 1 220px}.pod-i{font-size:22px}.pod-t b{display:block;font-size:15px}.pod-m{display:block;font-size:12.5px;color:var(--faint)}
-.pod-bar audio{flex:1 1 260px;width:100%;height:36px}`;document.head.appendChild(st);
+.pod-bar audio{flex:1 1 260px;width:100%;height:36px}
+.pod-sp{font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap}.pod-sp:hover{text-decoration:underline}`;document.head.appendChild(st);
 })();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
