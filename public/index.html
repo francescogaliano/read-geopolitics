@@ -4484,7 +4484,7 @@ body.has-bottombar .foot{margin-bottom:8px}`;document.head.appendChild(st)}
 const PT_TN={conflitto:"conflitto",sanzioni:"sanzioni",accordo:"mediazione/accordo",energia:"energia",migrazione:"migrazioni",commercio:"commercio"};
 const PT_BIG=["RUS","CAN","USA","CHN","BRA","AUS","IND","KAZ","ARG","DZA"];
 const _storyHTML=storyHTML;
-storyHTML=function(s,rank){const h=_storyHTML(s,rank);if(!s||!(s.paesi||[]).length)return h;const id=esc(s.id);return h.replace(/\s*<\/div>\s*<div class="sto-b">/,`<button type="button" class="pt-th" data-pt="${id}" aria-expanded="false" aria-controls="pt-${id}" title="Apri la mappa dei paesi coinvolti" hidden></button></div><div class="portrait" id="pt-${id}" hidden></div><div class="sto-b">`)};
+storyHTML=function(s,rank){const h=_storyHTML(s,rank);if(!s||!(s.paesi||[]).length)return h;const id=esc(s.id);return h.replace(/(<div class="sto-m">)/,`$1<button type="button" class="pt-chip" data-ptmap="${id}" aria-expanded="false" hidden><span class="pt-o">🗺️ Mappa</span><span class="pt-c">✕ Mappa</span></button>`).replace(/\s*<\/div>\s*<div class="sto-b">/,`<button type="button" class="pt-th" data-pt="${id}" aria-expanded="false" aria-controls="pt-${id}" title="Apri la mappa dei paesi coinvolti" hidden></button></div><div class="portrait" id="pt-${id}" hidden></div><div class="sto-b">`)};
 const W=780,H=330;
 function ptBuild(s,geo){
   const byId={};geo.features.forEach(f=>{if(f.id)byId[f.id]=f});
@@ -4546,11 +4546,12 @@ async function ptFill(){
   ptBusy=true;try{const geo=await loadGeo();
     for(const el of els){el.dataset.done="1";const s=S.stories[el.dataset.pt];let r=null;try{r=s?ptBuild(s,geo):null}catch(_){r=null}
       const full=el.closest(".story")&&el.closest(".story").querySelector(".portrait");
-      if(r&&full){el.innerHTML=r.thumb;el.hidden=false;el.parentNode.classList.add("has-pt");full.innerHTML=r.full}else{el.remove();if(full)full.remove()}}
+      const chip=el.closest(".story")&&el.closest(".story").querySelector(".pt-chip");
+      if(r&&full){el.innerHTML=r.thumb;el.hidden=false;el.parentNode.classList.add("has-pt");full.innerHTML=r.full;if(chip)chip.hidden=false}else{el.remove();if(full)full.remove();if(chip)chip.remove()}}
   }catch(_){}finally{ptBusy=false}
   if(document.querySelector(".pt-th[data-pt]:not([data-done])"))setTimeout(ptFill,50);
 }
-document.addEventListener("click",e=>{const b=e.target.closest(".pt-th");if(!b)return;const f=document.getElementById("pt-"+b.dataset.pt);if(!f)return;const open=f.hidden;f.hidden=!open;b.setAttribute("aria-expanded",String(open));b.title=open?"Chiudi la mappa":"Apri la mappa dei paesi coinvolti"});
+document.addEventListener("click",e=>{const b=e.target.closest(".pt-th,.pt-chip");if(!b)return;const id=b.dataset.pt||b.dataset.ptmap;const f=document.getElementById("pt-"+id);if(!f)return;const open=f.hidden;f.hidden=!open;const st=b.closest(".story");(st?st.querySelectorAll(".pt-th,.pt-chip"):[b]).forEach(x=>x.setAttribute("aria-expanded",String(open)));b.title=open?"Chiudi la mappa":"Apri la mappa dei paesi coinvolti"});
 const st=document.createElement("style");st.textContent=`.sto-h.has-pt{grid-template-columns:28px minmax(0,1fr) 116px}
 .pt-th{grid-column:3;grid-row:1 / span 3;align-self:start;position:relative;width:116px;height:96px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sea);cursor:pointer}
 .pt-th svg{display:block;width:100%;height:100%}
@@ -4560,7 +4561,9 @@ const st=document.createElement("style");st.textContent=`.sto-h.has-pt{grid-temp
 .pt-th .pt-zoom b{font-weight:700}.pt-th .pt-c{display:none}
 .pt-th[aria-expanded="true"] .pt-o{display:none}.pt-th[aria-expanded="true"] .pt-c{display:inline}
 .pt-th:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (max-width:560px){.sto-h.has-pt{grid-template-columns:22px minmax(0,1fr) 92px}.pt-th{width:92px;height:80px}}
+.pt-chip{order:9;display:none;align-items:center;font:600 12.5px/1 var(--sans);color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:5px 10px;cursor:pointer}
+.pt-chip .pt-c{display:none}.pt-chip[aria-expanded="true"] .pt-o{display:none}.pt-chip[aria-expanded="true"] .pt-c{display:inline}
+@media (max-width:700px){.sto-h.has-pt{grid-template-columns:22px minmax(0,1fr)}.pt-th{display:none!important}.pt-chip:not([hidden]){display:inline-flex}}
 .portrait{border-bottom:1px solid var(--line);background:var(--sea)}
 .portrait svg{display:block;width:100%;height:auto;max-height:340px}
 .pt-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--muted);padding:6px 14px 8px;background:var(--surface)}
