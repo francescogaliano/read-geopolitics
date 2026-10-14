@@ -3926,7 +3926,7 @@ function perTeView(){
   const cards=keys.map(k=>{const list=g[k];const sub=groupBy(list,k2);
     const subs=Object.keys(sub).sort((x,y)=>sub[y].length-sub[x].length);
     const lab=x=>byA?`${AIC(x)} ${tN(x)}`.trim():(SUBN[x]||"Altro");
-    const body=(byA?"":paBlock(k,tN(k)))+subs.map(x=>{const ls=sub[x];const a=byA?k:null,t=byA?x:k;
+    const body=(byA?`<div class="am-map" data-area="${esc(k)}"></div>`:paBlock(k,tN(k)))+subs.map(x=>{const ls=sub[x];const a=byA?k:null,t=byA?x:k;
       return `<div class="xp-sub"><div class="xp-sh"><span class="xp-shn">${esc(lab(x))} <span>${ls.length}</span></span>${byA?xFollow(a,t):""}</div>
       ${ls.slice(0,4).map(row).join("")}
       ${byA&&AREABY[a]&&AMBN[t]?`<button type="button" class="xp-lnk xp-sl" data-go="areachip|${esc(a+"~"+t)}">Apri ${esc(tN(t))} in ${esc(AREABY[a].n)} ›</button>`:""}</div>`}).join("");
@@ -4652,13 +4652,17 @@ function mfCities(){
   const box=document.getElementById("mapBox");if(box)box.classList.toggle("mf-zoom",k>=2.5);
   if(show){const sel=S.selCountry;const rel=sel?mfRel(sel):null;
     // dimensione leggibile sullo schermo, qualunque sia la larghezza della mappa; cresce un po' con lo zoom
-    const disp=(svg.getBoundingClientRect().width||960)/960;const px=Math.min(16,12+(k-2.5)*0.8);const sc=px/(11*disp*k);
+    const disp=(svg.getBoundingClientRect().width||960)/960;const px=Math.min(13,10+(k-2.5)*0.5);const sc=px/(11*disp*k);
     cg.querySelectorAll(".mf-k").forEach(x=>x.setAttribute("transform",`scale(${sc.toFixed(4)})`));
     cg.querySelectorAll(".mf-city").forEach(c=>{const iso=c.dataset.c;c.classList.toggle("mf-dim",!!sel&&iso!==sel&&!(rel&&rel[iso]))});
     // etichette che si sovrappongono: resta quella più importante (capitale, più storie, paese selezionato)
     const items=[...cg.querySelectorAll(".mf-city")].map(c=>({c,t:c.querySelector("text"),p:+c.dataset.pr+(c.classList.contains("mf-dim")?-1000:0)}));
-    items.forEach(i=>i.t.style.display="");items.sort((a,b)=>b.p-a.p);const kept=[];
-    items.forEach(i=>{const r=i.t.getBoundingClientRect();if(!r.width)return;const hit=kept.some(o=>r.left<o.right+2&&r.right>o.left-2&&r.top<o.bottom&&r.bottom>o.top);if(hit)i.t.style.display="none";else kept.push(r)})}
+    // etichetta a destra; se si sovrappone prova a sinistra, poi sopra e sotto; solo se non c'è posto la nasconde
+    const POS=[[5,-4,"start"],[-5,-4,"end"],[0,-9,"middle"],[0,13,"middle"]];
+    items.forEach(i=>{i.t.style.display="";i.t.setAttribute("x",5);i.t.setAttribute("y",-4);i.t.setAttribute("text-anchor","start")});items.sort((a,b)=>b.p-a.p);
+    const kept=[];const dots=items.map(i=>i.c.querySelector("circle").getBoundingClientRect());
+    const hitAny=r=>kept.some(o=>r.left<o.right+2&&r.right>o.left-2&&r.top<o.bottom&&r.bottom>o.top)||dots.some(o=>r.left<o.right&&r.right>o.left&&r.top<o.bottom&&r.bottom>o.top);
+    items.forEach(i=>{let ok=false;for(const [x,y,a] of POS){i.t.setAttribute("x",x);i.t.setAttribute("y",y);i.t.setAttribute("text-anchor",a);const r=i.t.getBoundingClientRect();if(!r.width)return;if(!hitAny(r)){kept.push(r);ok=true;break}}if(!ok)i.t.style.display="none"})}
 }
 const _drawMap=drawMap;
 drawMap=async function(){await _drawMap.apply(this,arguments);
@@ -4676,10 +4680,11 @@ const st=document.createElement("style");st.textContent=`#mapBox path.country{tr
 #mapBox.mf-on path.country.sel{opacity:.92;stroke:color-mix(in srgb,var(--ink) 80%,transparent)!important;stroke-width:1.6}
 #mapBox.mf-on path.arc{display:none}
 #mapBox path.arc,#mapBox path.country{vector-effect:non-scaling-stroke}
-#mapBox.mf-on path.arc.mf-arc{display:inline!important;stroke-width:2}
-#mapBox.mf-zoom path.arc{opacity:.55;stroke-width:1.4}
-#mapBox.mf-zoom.mf-on path.arc.mf-arc{opacity:.7;stroke-width:1.6}
-.mf-city circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.4}
+#mapBox.mf-on path.arc.mf-arc{display:inline!important;stroke-width:1.6;opacity:.85}
+#mapBox path.arc{stroke-width:1;opacity:.55}
+#mapBox.mf-zoom path.arc{opacity:.45;stroke-width:.9}
+#mapBox.mf-zoom.mf-on path.arc.mf-arc{opacity:.7;stroke-width:1.3}
+.mf-city circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.2}
 .mf-city text{font:600 11px var(--sans);fill:var(--ink);stroke:var(--bg);stroke-width:3px;paint-order:stroke;stroke-linejoin:round;pointer-events:none}
 .mf-city.mf-dim{opacity:.3}`;document.head.appendChild(st);
 })();
