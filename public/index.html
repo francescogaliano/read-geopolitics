@@ -3909,29 +3909,40 @@ function perTeView(){
     <p class="xp-hs" style="margin:12px 0 0">Vuoi solo curiosare? Apri <b>Aree</b> o <b>Argomenti</b> qui sopra.</p></div>`;
   }
   const st=storiesWhere(s=>s.data>=ago(7)&&matchF(s));
+  /* anche le brevi degli ultimi 7 giorni: per argomenti poco presenti nelle storie (es. tecnologia) sono il grosso delle notizie */
+  const bv=(S.brevi||[]).filter(x=>x&&x.testo&&String(x.data||"")>=ago(7)&&matchF(x)).map(x=>Object.assign({},x,{_b:1}));
   const byA=X.ptBy==="area";
-  const k1=s=>byA?storyArea(s):primTema(s),k2=s=>byA?primTema(s):storyArea(s);
-  const g=groupBy(st,k1);
-  const keys=Object.keys(g).filter(k=>byA?AREABY[k]:true).sort((x,y)=>byA?(lvArea(AREABY[y])-lvArea(AREABY[x])||g[y].length-g[x].length):g[y].length-g[x].length);
+  /* per geografia entra anche la notizia del giorno degli argomenti seguiti (per argomento è già in cima alla scheda) */
+  const pv=byA?(typeof TAX!=="undefined"?TAX:[]).map(T=>{const x=paToday(T.id);if(!x||!x.titolo)return null;const o={_b:1,_pa:T.n,data:x.data||x._d,paesi:x.paesi||[],testo:x.titolo,ambiti:[T.id],sottoambiti:x.sottoambito?[x.sottoambito]:[],fonte:(x.fonti||[])[0]};return matchF(o)?o:null}).filter(Boolean):[];
+  const all=st.concat(pv,bv).sort((x,y)=>String(y.data).localeCompare(String(x.data))||(y._pa?1:0)-(x._pa?1:0));
+  /* per geografia: area → argomenti; per argomento: argomento → sotto-argomenti (non di nuovo le aree) */
+  const subOf=s=>{const t=topics(s).s;return t[0]||"altro"};
+  const k1=s=>byA?storyArea(s):primTema(s),k2=s=>byA?primTema(s):subOf(s);
+  const g=groupBy(all,k1);
+  const keys=Object.keys(g).filter(k=>byA?AREABY[k]:AMBN[k]).sort((x,y)=>byA?(lvArea(AREABY[y])-lvArea(AREABY[x])||g[y].length-g[x].length):g[y].length-g[x].length);
+  const brRow=x=>`<p class="pt-br">${x._pa?`<span class="pt-pa">Oggi in ${esc(x._pa)}</span>`:""}<span class="pt-bd">${esc(fmtDate(x.data))}</span><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`;
+  const row=x=>x._b?brRow(x):itemHTML(x);
+  const cnt=l=>{const ns=l.filter(x=>!x._b).length,nb=l.length-ns;return [ns?`${ns} ${ns===1?"storia":"storie"}`:"",nb?`${nb} ${nb===1?"breve":"brevi"}`:""].filter(Boolean).join(" · ")+" in 7 giorni"};
   const cards=keys.map(k=>{const list=g[k];const sub=groupBy(list,k2);
-    const subs=Object.keys(sub).filter(x=>byA?true:AREABY[x]).sort((x,y)=>sub[y].length-sub[x].length);
-    const lab=x=>byA?`${AIC(x)} ${tN(x)}`.trim():AREABY[x].n;
-    const body=subs.map(x=>{const a=byA?k:x,t=byA?x:k;const ls=sub[x];
-      return `<div class="xp-sub"><div class="xp-sh"><span class="xp-shn">${esc(lab(x))} <span>${ls.length}</span></span>${xFollow(a,t)}</div>
-      ${ls.slice(0,3).map(itemHTML).join("")}
-      ${AREABY[a]&&AMBN[t]?`<button type="button" class="xp-lnk xp-sl" data-go="${byA?`areachip|${esc(a+"~"+t)}`:`temachip|${esc(t+"~"+a)}`}">${ls.length>3?`Tutte le ${ls.length} · `:""}Apri ${esc(tN(t))} in ${esc(AREABY[a].n)} ›</button>`:""}</div>`}).join("");
+    const subs=Object.keys(sub).sort((x,y)=>sub[y].length-sub[x].length);
+    const lab=x=>byA?`${AIC(x)} ${tN(x)}`.trim():(SUBN[x]||"Altro");
+    const body=(byA?"":paBlock(k,tN(k)))+subs.map(x=>{const ls=sub[x];const a=byA?k:null,t=byA?x:k;
+      return `<div class="xp-sub"><div class="xp-sh"><span class="xp-shn">${esc(lab(x))} <span>${ls.length}</span></span>${byA?xFollow(a,t):""}</div>
+      ${ls.slice(0,4).map(row).join("")}
+      ${byA&&AREABY[a]&&AMBN[t]?`<button type="button" class="xp-lnk xp-sl" data-go="areachip|${esc(a+"~"+t)}">Apri ${esc(tN(t))} in ${esc(AREABY[a].n)} ›</button>`:""}</div>`}).join("");
+    const pa=!byA&&paToday(k);
     return card({key:"pt:"+X.ptBy+":"+k,col:byA?LVC(lvArea(AREABY[k])):"var(--accent)",ic:byA?"":AIC(k),n:byA?AREABY[k].n:tN(k),
-      star:byA?follows("aree",k):follows("temi",k),meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,
+      star:byA?follows("aree",k):follows("temi",k),meta:cnt(list),
       badge:byA&&lvArea(AREABY[k])?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lvArea(AREABY[k]))} 40%,transparent)">${LVT[lvArea(AREABY[k])]}</span> `:"",
-      latest:list[0].titolo,subs:subs.map(x=>[x,lab(x),sub[x].length]),body,
+      latest:pa?`Oggi: ${pa.titolo}`:(t=>t.length>130?t.slice(0,127).replace(/\s\S*$/,"")+"…":t)(list[0]._b?list[0].testo:list[0].titolo),subs:subs.map(x=>[x,lab(x),sub[x].length]),body,
       foot:byA?`<button type="button" class="xp-lnk" data-go="area|${esc(k)}">Apri ${esc(AREABY[k].n)}: punto della settimana e paesi ›</button>`:(AMBN[k]?`<button type="button" class="xp-lnk" data-go="tema|${esc(k)}">Apri ${esc(tN(k))}: temi aperti e ultimi sviluppi ›</button>`:"")})}).join("");
   const b=typeof currentBrief==="function"?currentBrief():null;
   const br=b?(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x)):[];
   return `<div class="xp-pthd"><p><span class="xp-mode on">★ Filtrato sui tuoi interessi</span> Ultimi 7 giorni. Tocca una scheda per aprirla.</p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>${mailNudge()}
   ${ptToggle()}
   ${cards||`<p class="xp-empty">Negli ultimi 7 giorni niente su quello che segui.</p>`}
-  ${br.length?`<section class="xp-grp xp-brv"><div class="xp-gh"><span class="xp-gn">In breve, oggi</span></div>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}</section>`:""}
-  <p class="xp-note">${byA?"Il bordo di ogni area ha il colore del suo livello di tensione, come sulla mappa. Dentro, le storie sono divise per argomento.":"Dentro ogni argomento, le storie sono divise per area. Il bordo delle aree, nelle altre viste, è il livello di tensione."}</p>`;
+  
+  <p class="xp-note">${byA?"Il bordo di ogni area ha il colore del suo livello di tensione, come sulla mappa. Dentro, storie e brevi sono divise per argomento.":"Dentro ogni argomento: la notizia del giorno, poi storie e brevi divise per sotto-argomento."}</p>`;
 }
 function listView(){
   const st7=storiesWhere(s=>s.data>=ago(7)),st14=storiesWhere(s=>s.data>=ago(14));
@@ -4744,6 +4755,8 @@ const st=document.createElement("style");st.textContent=`.am-map{margin:0 0 10px
 .xp-oggi .xp-op{color:var(--muted)}.xp-oggi .xp-op b{color:var(--ink);font-weight:600;margin-right:4px}
 .xp-oggi .xp-of{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12.5px;color:var(--faint);margin:2px 0 0}
 .xp-oggi .xp-of a{color:var(--muted)}
+.pt-br .pt-pa{display:block;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.pt-br .pt-bd{font:500 11.5px var(--mono);color:var(--faint);margin-right:6px}
 .xp-zero{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:10px 0 2px;font-size:12.5px;color:var(--faint)}
 .xp-zero>span:first-child{margin-right:2px}
 .xp-zt{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border:1px dashed var(--line);border-radius:999px;color:var(--muted)}`;document.head.appendChild(st);
