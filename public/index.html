@@ -4638,7 +4638,9 @@ function mfCities(){
   const k=mfScale();const show=k>=2.5;cg.style.display=show?"":"none";
   const box=document.getElementById("mapBox");if(box)box.classList.toggle("mf-zoom",k>=2.5);
   if(show){const sel=S.selCountry;const rel=sel?mfRel(sel):null;
-    cg.querySelectorAll(".mf-k").forEach(x=>x.setAttribute("transform",`scale(${(1/k).toFixed(4)})`));
+    // dimensione leggibile sullo schermo, qualunque sia la larghezza della mappa; cresce un po' con lo zoom
+    const disp=(svg.getBoundingClientRect().width||960)/960;const px=Math.min(16,12+(k-2.5)*0.8);const sc=px/(11*disp*k);
+    cg.querySelectorAll(".mf-k").forEach(x=>x.setAttribute("transform",`scale(${sc.toFixed(4)})`));
     cg.querySelectorAll(".mf-city").forEach(c=>{const iso=c.dataset.c;c.classList.toggle("mf-dim",!!sel&&iso!==sel&&!(rel&&rel[iso]))});
     // etichette che si sovrappongono: resta quella più importante (capitale, più storie, paese selezionato)
     const items=[...cg.querySelectorAll(".mf-city")].map(c=>({c,t:c.querySelector("text"),p:+c.dataset.pr+(c.classList.contains("mf-dim")?-1000:0)}));
