@@ -3949,9 +3949,9 @@ function listView(){
     const sub=groupBy(list,storyArea);const subs=Object.keys(sub).filter(a=>AREABY[a]).sort((x,y)=>sub[y].length-sub[x].length);
     const top=rankThreads(st14.filter(s=>topics(s).a.includes(T.id))).slice(0,2).map(([id])=>tName(id)).join(" · ");
     const zeroA=AREE.filter(A=>!subs.includes(A.id));
-    const body=(subs.length?subs.map(a=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="temachip|${esc(T.id+"~"+a)}"><span class="xp-shn"><i class="xp-dot" style="background:${LVC(lvArea(AREABY[a]))}"></i>${esc(AREABY[a].n)} <span>${sub[a].length}</span></span><span class="xp-xt">${esc(sub[a][0].titolo)}</span></button>${xFollow(a,T.id)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`)+(zeroA.length?`<p class="xp-zero"><span>Nessuna storia in 7 giorni da</span> ${zeroA.map(A=>`<span class="xp-zt">${esc(A.n)}</span>`).join("")}</p>`:"");
+    const body=paBlock(T.id,T.n)+(subs.length?subs.map(a=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="temachip|${esc(T.id+"~"+a)}"><span class="xp-shn"><i class="xp-dot" style="background:${LVC(lvArea(AREABY[a]))}"></i>${esc(AREABY[a].n)} <span>${sub[a].length}</span></span><span class="xp-xt">${esc(sub[a][0].titolo)}</span></button>${xFollow(a,T.id)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`)+(zeroA.length?`<p class="xp-zero"><span>Nessuna storia in 7 giorni da</span> ${zeroA.map(A=>`<span class="xp-zt">${esc(A.n)}</span>`).join("")}</p>`:"");
     return card({key:"temi:"+T.id,col:"var(--accent)",ic:AIC(T.id),n:T.n,star:follows("temi",T.id),meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,
-      latest:top?`Temi aperti: ${top}`:"",subs:subs.map(a=>[a,AREABY[a].n,sub[a].length]),body,
+      latest:(paToday(T.id)?`Oggi: ${paToday(T.id).titolo}`:(top?`Temi aperti: ${top}`:"")),subs:subs.map(a=>[a,AREABY[a].n,sub[a].length]),body,
       foot:`<button type="button" class="xp-lnk" data-go="tema|${esc(T.id)}">Apri ${esc(T.n)}: temi aperti e ultimi sviluppi ›</button>${followBtn("temi",T.id,"l’argomento")}`})}).join("");
 }
 function landing(){
@@ -4004,6 +4004,7 @@ function temaPage(T){
   const one=X.fa.length===1?X.fa[0]:"";
   return `${crumb([{l:"Argomenti",p:{k:"lista",id:"tema"}},{l:T.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${AIC(T.id)} ${esc(T.n)}</h1>${followBtn("temi",T.id)}</div>
+  ${paBlock(T.id,T.n)}
   <p class="xp-hs" style="margin:2px 0 4px">Dentro ${esc(T.n)} · storie nell’ultimo mese</p><div class="xp-pills">${T.sotto.map(([k,nm])=>{const n=st30.filter(s=>topics(s).s.includes(k)).length;return `<button type="button" class="xp-pill${n?"":" xp-off"}" data-sub-go="${esc(k)}"${n?"":" disabled"}>${esc(nm)}<i style="background:${n?"var(--accent)":"var(--line)"};color:var(--bg)">${n}</i></button>`}).join("")}</div>
   ${inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
@@ -4735,10 +4736,24 @@ const _dm2=drawMap;drawMap=async function(){zLast=null;return _dm2.apply(this,ar
 const st=document.createElement("style");st.textContent=`.am-map{margin:0 0 10px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--sea)}
 .am-map svg{display:block;width:100%;height:auto}
 .am-map.am-big{margin:6px 0 14px}
+.xp-oggi{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--surface);padding:12px 14px;margin:10px 0 14px}
+.xp-oggi .xp-ok{display:block;font:600 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+.xp-oggi h3{font:600 17px/1.35 var(--serif);margin:0 0 6px}
+.xp-oggi p{margin:0 0 6px;line-height:1.5}
+.xp-oggi .xp-op{color:var(--muted)}.xp-oggi .xp-op b{color:var(--ink);font-weight:600;margin-right:4px}
+.xp-oggi .xp-of{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12.5px;color:var(--faint);margin:2px 0 0}
+.xp-oggi .xp-of a{color:var(--muted)}
 .xp-zero{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:10px 0 2px;font-size:12.5px;color:var(--faint)}
 .xp-zero>span:first-child{margin-right:2px}
 .xp-zt{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border:1px dashed var(--line);border-radius:999px;color:var(--muted)}`;document.head.appendChild(st);
 })();
+/* ===== Oggi per argomento (campo per_argomento del briefing) ===== */
+function paToday(id){const bs=(S.briefings||[]).filter(b=>b&&b.per_argomento&&b.per_argomento[id]).sort((a,b)=>String(b.data).localeCompare(String(a.data)));if(!bs.length)return null;const x=bs[0].per_argomento[id];return Object.assign({},x,{_d:bs[0].data})}
+function paBlock(id,name,compact){const x=paToday(id);if(!x||!x.titolo)return "";
+  const fl=(x.paesi||[]).slice(0,3).map(p=>flag(p)).join(" ");const old=x._d&&typeof ago==="function"&&x._d<ago(2);
+  const fonti=(x.fonti||[]).filter(f=>f&&f.url).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome||"fonte")}</a>`).join(" · ");
+  const st=x.storia_id&&S.stories&&S.stories[x.storia_id]?`<button type="button" class="xp-lnk" data-story="${esc(x.storia_id)}">Leggi la storia completa ›</button>`:"";
+  return `<section class="xp-oggi${compact?" cmp":""}"><span class="xp-ok">${old?"Ultimo punto":"Oggi"} in ${esc(name)}${x._d?` · ${esc(fmtDate(x._d))}`:""}</span><h3>${fl?fl+" ":""}${esc(x.titolo)}</h3>${compact?"":`<p>${esc(x.testo||"")}</p>${x.perche?`<p class="xp-op"><b>Perché conta</b> ${esc(x.perche)}</p>`:""}`}<p class="xp-of">${st}${fonti?`<span>Fonti: ${fonti}</span>`:""}</p></section>`}
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
