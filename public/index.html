@@ -4648,9 +4648,9 @@ const _hl=highlightSel;highlightSel=function(){_hl.apply(this,arguments);mfApply
 // tocco sul mare: togli la selezione
 document.addEventListener("click",e=>{const box=e.target.closest&&e.target.closest("#mapBox");if(!box||!S.selCountry)return;if(e.target.closest("path.country,.mf-city,.zctl,button"))return;if(e.target.tagName==="path"||e.target.tagName==="svg"){S.selCountry=null;mfApply();document.querySelectorAll("#mapBox .country.sel").forEach(p=>p.classList.remove("sel"))}});
 const st=document.createElement("style");st.textContent=`#mapBox path.country{transition:opacity .2s}
-#mapBox.mf-on path.country.mf-off{opacity:.15}
-#mapBox.mf-on path.country.mf-rel{opacity:.45;stroke-width:1.2;stroke-opacity:1}
-#mapBox.mf-on path.country.sel{opacity:1;stroke:var(--ink)!important;stroke-width:2.6;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ink) 55%,transparent))}
+#mapBox.mf-on path.country.mf-off{opacity:.18}
+#mapBox.mf-on path.country.mf-rel{opacity:.5;stroke-width:1.2;stroke-opacity:1}
+#mapBox.mf-on path.country.sel{opacity:.92;stroke:color-mix(in srgb,var(--ink) 80%,transparent)!important;stroke-width:1.6}
 #mapBox.mf-on path.arc{display:none}
 #mapBox path.arc,#mapBox path.country{vector-effect:non-scaling-stroke}
 #mapBox.mf-on path.arc.mf-arc{display:inline!important;stroke-width:2}
