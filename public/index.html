@@ -2124,7 +2124,7 @@ function renderBriefing(){
   el.classList.toggle("old-day",!latest);
   el.innerHTML=`
   ${latest?"":`<div class="arch-banner"><span class="lb">📅 Stai leggendo un giorno passato</span>Briefing di ${esc(fmtDate(b.data,true))}, non l'ultimo disponibile.<button type="button" class="askbtn ghost" id="toLatest">Torna a oggi →</button></div>`}
-  <div class="brief-head"><h1>Briefing di ${esc(fmtDate(b.data,true))}</h1><span class="meta">aggiornato alle ${esc(b.ora||"—")}${b.aggiornamento?" · "+esc(b.aggiornamento):""}</span>
+  <div class="brief-head" data-bdate="${esc(b.data||"")}"><h1>Briefing di ${esc(fmtDate(b.data,true))}</h1><span class="meta">aggiornato alle ${esc(b.ora||"—")}${b.aggiornamento?" · "+esc(b.aggiornamento):""}</span>
   ${(()=>{const c=(log.consultate||[]).length,n=(log.non_raggiungibili||[]).length,d=(log.dubbi||[]).length;return `<button class="logbadge${d?" warn":""}" data-sub="log" data-sub-scroll="1" title="Apri il log dell'agente"><span class="lb-i">📋 Log</span><span>${c} fonti consultate</span>${n?`<span>${n} non raggiungibili</span>`:""}<span class="${d?"d":""}">${d?(d===1?"1 dubbio aperto":d+" dubbi aperti"):"nessun dubbio"}</span></button>`})()}</div>
   <p class="hint">Tocca le parole sottolineate a puntini per sapere chi o cosa sono. Seleziona una frase o tocca «Fai una domanda» per approfondire con il tuo Claude.</p>
   <div class="in60"><span class="label"><span class="ic" aria-hidden="true">⚡</span>In 60 secondi</span><ol>${(b.in60||[]).map((x,i)=>{const ids=((b.in60_storie||[])[i]||[]).filter(id=>S.stories[id]);const refs=ids.map(id=>{const im=ita.findIndex(s=>s.id===id),mm=mondo.findIndex(s=>s.id===id);if(im<0&&mm<0)return"";const lab=im>=0?`Italia ${String(im+1).padStart(2,"0")}`:`Mondo ${String(mm+1).padStart(2,"0")}`;return `<button class="in60-ref" data-story="${esc(id)}" title="Vai alla storia">${lab} ↓</button>`}).join("");return `<li><span>${esc(typeof x==="string"?x:x.testo)}${refs?` <span class="in60-refs">${refs}</span>`:""}</span></li>`}).join("")}</ol></div>
@@ -4863,6 +4863,25 @@ const st=document.createElement("style");st.textContent=`#gloss{z-index:80!impor
 .gv-card{display:flex;flex-direction:column;gap:3px;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
 .gv-card:hover{border-color:var(--accent)}.gv-ch{display:flex;justify-content:space-between;gap:8px}.gv-ch i{font:500 11.5px var(--mono);font-style:normal;color:var(--accent);white-space:nowrap}
 .gv-cr{font-size:12.5px;color:var(--muted)}.gv-cl{font-size:13px;line-height:1.45}.gv-cl b{font:500 11px var(--mono);color:var(--faint);margin-right:4px}`;document.head.appendChild(st);
+})();
+/* ===== Podcast: «Ascolta il briefing» in cima a Oggi (puntata dello stesso giorno, dal Worker) ===== */
+(function(){
+if(typeof RG_API==="undefined"||!RG_API)return;
+let POD=null,PODL=null;
+const podLoad=()=>{if(POD)return Promise.resolve(POD);if(!PODL)PODL=fetch(RG_API+"/api/podcast/list").then(r=>r.ok?r.json():{episodes:[]}).catch(()=>({episodes:[]})).then(j=>{POD={};(j.episodes||[]).forEach(e=>POD[e.date]=e);return POD});return PODL};
+const mins=s=>Math.max(1,Math.round((+s||0)/60));
+async function podFill(){
+  const h=document.querySelector("#briefing .brief-head[data-bdate]");if(!h||h.nextElementSibling&&h.nextElementSibling.classList.contains("pod-bar"))return;
+  const d=h.dataset.bdate;if(!d)return;const m=await podLoad();const e=m[d];if(!e)return;
+  if(h.nextElementSibling&&h.nextElementSibling.classList.contains("pod-bar"))return;
+  const el=document.createElement("div");el.className="pod-bar";
+  el.innerHTML=`<div class="pod-t"><span class="pod-i" aria-hidden="true">🎧</span><span><b>Ascolta il briefing</b><span class="pod-m">${mins(e.duration)} min · la voce è sintetica</span></span></div><audio controls preload="none" src="${e.url}"></audio>`;
+  h.insertAdjacentElement("afterend",el);
+}
+let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(podFill,80)}).observe(document.body,{childList:true,subtree:true});
+const st=document.createElement("style");st.textContent=`.pod-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:4px 0 18px;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--surface)}
+.pod-t{display:flex;align-items:center;gap:10px;flex:1 1 220px}.pod-i{font-size:22px}.pod-t b{display:block;font-size:15px}.pod-m{display:block;font-size:12.5px;color:var(--faint)}
+.pod-bar audio{flex:1 1 260px;width:100%;height:36px}`;document.head.appendChild(st);
 })();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
