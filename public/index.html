@@ -2238,7 +2238,7 @@ async function drawMap(){
   box.insertAdjacentHTML("beforeend",'<div class="zctl"><button type="button" id="zIn" aria-label="Ingrandisci">+</button><button type="button" id="zOut" aria-label="Rimpicciolisci">−</button></div>');
   $("#zIn").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,1.7);
   $("#zOut").onclick=()=>svg.transition().duration(200).call(zoom.scaleBy,1/1.7);
-  mapState={svg};renderArcKey();applyArcs();highlightSel();
+  mapState={svg,zoom,proj,W,H};renderArcKey();applyArcs();highlightSel();
 }
 /* ---------- macchina del tempo ---------- */
 function tmDates(){const set=new Set();Object.values(S.countries).forEach(c=>(c.storico||[]).forEach(p=>{if(p&&p.d)set.add(p.d)}));S.briefings.forEach(b=>{if(b.data)set.add(b.data)});return [...set].sort()}
@@ -3939,7 +3939,8 @@ function listView(){
     return AREE.map(A=>({A,lv:lvArea(A),list:st7.filter(s=>storyArea(s)===A.id)})).sort((x,y)=>y.lv-x.lv||y.list.length-x.list.length).map(({A,lv,list})=>{
       const sub=groupBy(list,s=>topics(s).a[0]||null);const subs=Object.keys(sub).sort((x,y)=>sub[y].length-sub[x].length);
       const top=rankThreads(st14.filter(s=>storyArea(s)===A.id)).slice(0,2).map(([id])=>tName(id)).join(" · ");
-      const body=subs.length?subs.map(t=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="areachip|${esc(A.id+"~"+t)}"><span class="xp-shn">${AIC(t)} ${esc(tN(t))} <span>${sub[t].length}</span></span><span class="xp-xt">${esc(sub[t][0].titolo)}</span></button>${xFollow(A.id,t)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`;
+      const zeroT=TAX.filter(T=>!subs.includes(T.id));
+      const body=`<div class="am-map" data-area="${esc(A.id)}"></div>`+(subs.length?subs.map(t=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="areachip|${esc(A.id+"~"+t)}"><span class="xp-shn">${AIC(t)} ${esc(tN(t))} <span>${sub[t].length}</span></span><span class="xp-xt">${esc(sub[t][0].titolo)}</span></button>${xFollow(A.id,t)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`)+(zeroT.length?`<p class="xp-zero"><span>Nessuna storia in 7 giorni su</span> ${zeroT.map(T=>`<span class="xp-zt">${AIC(T.id)} ${esc(T.n)}</span>`).join("")}</p>`:"");
       return card({key:"aree:"+A.id,col:LVC(lv),n:A.n,star:follows("aree",A.id),badge:lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lv)} 40%,transparent)">${LVT[lv]}</span> `:"",
         meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,latest:top?`Temi aperti: ${top}`:"",subs:subs.map(t=>[t,`${AIC(t)} ${tN(t)}`.trim(),sub[t].length]),body,
         foot:`<button type="button" class="xp-lnk" data-go="area|${esc(A.id)}">Apri ${esc(A.n)}: punto della settimana, temi aperti e paesi ›</button>${followBtn("aree",A.id,"l’area")}`})}).join("");
@@ -3947,7 +3948,8 @@ function listView(){
   return TAX.map(T=>({T,list:st7.filter(s=>topics(s).a.includes(T.id))})).sort((x,y)=>y.list.length-x.list.length).map(({T,list})=>{
     const sub=groupBy(list,storyArea);const subs=Object.keys(sub).filter(a=>AREABY[a]).sort((x,y)=>sub[y].length-sub[x].length);
     const top=rankThreads(st14.filter(s=>topics(s).a.includes(T.id))).slice(0,2).map(([id])=>tName(id)).join(" · ");
-    const body=subs.length?subs.map(a=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="temachip|${esc(T.id+"~"+a)}"><span class="xp-shn"><i class="xp-dot" style="background:${LVC(lvArea(AREABY[a]))}"></i>${esc(AREABY[a].n)} <span>${sub[a].length}</span></span><span class="xp-xt">${esc(sub[a][0].titolo)}</span></button>${xFollow(a,T.id)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`;
+    const zeroA=AREE.filter(A=>!subs.includes(A.id));
+    const body=(subs.length?subs.map(a=>`<div class="xp-xr"><button type="button" class="xp-xl" data-go="temachip|${esc(T.id+"~"+a)}"><span class="xp-shn"><i class="xp-dot" style="background:${LVC(lvArea(AREABY[a]))}"></i>${esc(AREABY[a].n)} <span>${sub[a].length}</span></span><span class="xp-xt">${esc(sub[a][0].titolo)}</span></button>${xFollow(a,T.id)}</div>`).join(""):`<p class="xp-empty">Niente negli ultimi 7 giorni.</p>`)+(zeroA.length?`<p class="xp-zero"><span>Nessuna storia in 7 giorni da</span> ${zeroA.map(A=>`<span class="xp-zt">${esc(A.n)}</span>`).join("")}</p>`:"");
     return card({key:"temi:"+T.id,col:"var(--accent)",ic:AIC(T.id),n:T.n,star:follows("temi",T.id),meta:`${list.length} ${list.length===1?"storia":"storie"} in 7 giorni`,
       latest:top?`Temi aperti: ${top}`:"",subs:subs.map(a=>[a,AREABY[a].n,sub[a].length]),body,
       foot:`<button type="button" class="xp-lnk" data-go="tema|${esc(T.id)}">Apri ${esc(T.n)}: temi aperti e ultimi sviluppi ›</button>${followBtn("temi",T.id,"l’argomento")}`})}).join("");
@@ -3977,6 +3979,7 @@ function areaPage(A){
   const one=X.fs.length===1?X.fs[0]:"";
   return `${crumb([{l:"Aree",p:{k:"lista",id:"area"}},{l:A.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${esc(A.n)}</h1>${followBtn("aree",A.id)}</div>
+  <div class="am-map am-big" data-area="${esc(A.id)}"></div>
   ${hot.length?`<p class="xp-hs" style="margin:2px 0 4px">I paesi dell’area · livello di tensione</p><div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
   ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
@@ -4664,6 +4667,73 @@ const st=document.createElement("style");st.textContent=`#mapBox path.country{tr
 .mf-city circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.4}
 .mf-city text{font:600 11px var(--sans);fill:var(--ink);stroke:var(--bg);stroke-width:3px;paint-order:stroke;stroke-linejoin:round;pointer-events:none}
 .mf-city.mf-dim{opacity:.3}`;document.head.appendChild(st);
+})();
+/* ===== Mappa dell'area (Esplora) + zoom intelligente sul paese scelto (Mappa) ===== */
+(function(){
+// poligono più grande di un paese: evita che territori d'oltremare allarghino l'inquadratura
+function amMain(f){const g=f.geometry;if(!g||g.type!=="MultiPolygon")return f;let best=null,ba=-1;
+  g.coordinates.forEach(c=>{const p={type:"Feature",geometry:{type:"Polygon",coordinates:c}};const a=d3.geoArea(p);if(a>ba){ba=a;best=p}});return best||f}
+function amBuild(A,geo,W,H){
+  const byId={};geo.features.forEach(f=>{if(f.id)byId[f.id]=f});
+  const codes=A.codes.filter(c=>byId[c]);if(!codes.length)return "";
+  const FC={type:"FeatureCollection",features:codes.map(c=>amMain(byId[c]))};
+  const pad=codes.length===1?Math.min(W,H)*0.18:16;
+  const proj=d3.geoMercator().fitExtent([[pad,pad],[W-pad,H-pad]],FC);
+  const path=d3.geoPath(proj);
+  const lvl=c=>{const x=S.countries[c];return (x&&+x.livello)||0};
+  let g="";
+  geo.features.forEach(f=>{if(!f.id||f.id==="ATA")return;const d=path(f);if(!d)return;const on=codes.includes(f.id);
+    g+=on?`<path d="${d}" fill="var(--l${Math.max(lvl(f.id),1)})" stroke="var(--bg)" stroke-width="1" data-go="paese|${esc(f.id)}" style="cursor:pointer"><title>${esc(cName(f.id))}${lvl(f.id)?" · livello "+lvl(f.id):""}</title></path>`:`<path d="${d}" fill="var(--surface-2)" stroke="var(--sea)" stroke-width=".7" opacity=".7"/>`});
+  // nomi: i paesi più tesi dell'area, se c'è spazio
+  const fs=Math.round(W>780?W/46:W/32);const boxes=[];let lab="";
+  codes.filter(c=>lvl(c)).sort((a,b)=>lvl(b)-lvl(a)).slice(0,8).forEach(c=>{const q=path.centroid(amMain(byId[c]));if(!q||!isFinite(q[0]))return;
+    const n=cName(c);const w=n.length*fs*0.58;const b=[q[0]-w/2,q[1]-fs,q[0]+w/2,q[1]+4];
+    if(b[0]<4||b[2]>W-4||b[1]<4||b[3]>H-4)return;if(boxes.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))return;boxes.push(b);
+    lab+=`<text x="${q[0].toFixed(1)}" y="${q[1].toFixed(1)}" text-anchor="middle" font-family="var(--sans)" font-size="${fs}" font-weight="600" fill="var(--ink)" stroke="var(--bg)" stroke-width="${(fs/4).toFixed(1)}" paint-order="stroke" stroke-linejoin="round" pointer-events="none">${esc(n)}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mappa: ${esc(A.n)}"><rect width="${W}" height="${H}" fill="var(--sea)"/>${g}${lab}</svg>`}
+let amBusy=false;
+async function amFill(){
+  if(amBusy)return;const els=[...document.querySelectorAll(".am-map:not([data-done])")];if(!els.length)return;
+  if(typeof d3==="undefined"||typeof topojson==="undefined"||typeof AREABY==="undefined")return;
+  amBusy=true;try{const geo=await loadGeo();
+    els.forEach(el=>{el.dataset.done="1";const A=AREABY[el.dataset.area];if(!A){el.remove();return}
+      const cw=el.clientWidth||el.parentNode.clientWidth||400;const big=el.classList.contains("am-big");
+      const W=cw>700?Math.round(cw*1.3):780,H=Math.round(W*(big?0.42:(cw>700?0.26:0.34)));
+      let h="";try{h=amBuild(A,geo,W,H)}catch(_){h=""}
+      if(h)el.innerHTML=h;else el.remove()})
+  }catch(_){}finally{amBusy=false}
+  if(document.querySelector(".am-map:not([data-done])"))setTimeout(amFill,50)}
+let amT=null;new MutationObserver(()=>{clearTimeout(amT);amT=setTimeout(amFill,60)}).observe(document.body,{childList:true,subtree:true});
+
+/* ---------- Mappa: zoom sul paese scelto e su chi è in relazione con lui ---------- */
+function zRel(iso){const r=new Set();((S.countries[iso]||{}).dinamiche||[]).forEach(d=>d.con&&r.add(d.con));
+  Object.entries(S.countries).forEach(([k,c])=>(c.dinamiche||[]).forEach(d=>{if(d.con===iso)r.add(k)}));r.delete(iso);return [...r]}
+let zLast=null;
+function zoomToSel(){
+  const ms=typeof mapState!=="undefined"?mapState:null;if(!ms||!ms.zoom||!ms.proj||!S.selCountry||!S.geo)return;
+  if(zLast===S.selCountry)return;zLast=S.selCountry;
+  const byId={};S.geo.features.forEach(f=>{if(f.id)byId[f.id]=f});const sel=byId[S.selCountry];if(!sel)return;
+  const c0=d3.geoCentroid(amMain(sel));
+  // i paesi collegati entrano nell'inquadratura solo se vicini: gli Stati Uniti non fanno rimpicciolire il Medio Oriente
+  const near=zRel(S.selCountry).filter(k=>byId[k]&&d3.geoDistance(d3.geoCentroid(amMain(byId[k])),c0)<0.6);
+  const path=d3.geoPath(ms.proj);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  [sel,...near.map(k=>byId[k])].forEach(f=>{const b=path.bounds(amMain(f));x0=Math.min(x0,b[0][0]);y0=Math.min(y0,b[0][1]);x1=Math.max(x1,b[1][0]);y1=Math.max(y1,b[1][1])});
+  const W=ms.W||960,H=ms.H||500;const dx=Math.max(x1-x0,8),dy=Math.max(y1-y0,8);
+  const k=Math.max(1,Math.min(7,0.8/Math.max(dx/W,dy/H)));const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  ms.svg.transition().duration(750).call(ms.zoom.transform,d3.zoomIdentity.translate(W/2-k*cx,H/2-k*cy).scale(k));
+}
+const _hl2=highlightSel;highlightSel=function(){_hl2.apply(this,arguments);try{zoomToSel()}catch(_){}};
+// tocco sul mare: torna alla vista del mondo
+document.addEventListener("click",e=>{const box=e.target.closest&&e.target.closest("#mapBox");if(!box)return;if(e.target.closest("path.country,.mf-city,.zctl,button"))return;
+  if((e.target.tagName==="path"||e.target.tagName==="svg")&&!S.selCountry&&zLast){zLast=null;const ms=mapState;if(ms&&ms.zoom)ms.svg.transition().duration(600).call(ms.zoom.transform,d3.zoomIdentity)}});
+const _dm2=drawMap;drawMap=async function(){zLast=null;return _dm2.apply(this,arguments)};
+
+const st=document.createElement("style");st.textContent=`.am-map{margin:0 0 10px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--sea)}
+.am-map svg{display:block;width:100%;height:auto}
+.am-map.am-big{margin:6px 0 14px}
+.xp-zero{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:10px 0 2px;font-size:12.5px;color:var(--faint)}
+.xp-zero>span:first-child{margin-right:2px}
+.xp-zt{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border:1px dashed var(--line);border-radius:999px;color:var(--muted)}`;document.head.appendChild(st);
 })();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
