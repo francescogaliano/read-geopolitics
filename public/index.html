@@ -4598,6 +4598,8 @@ function mfApply(){
   box.querySelectorAll("path.country").forEach(p=>{const iso=p.dataset.iso;p.classList.remove("mf-rel","mf-off");p.style.stroke="";
     if(!sel||iso===sel)return;
     if(rel[iso]){p.classList.add("mf-rel");const t=MF_ORD.find(x=>rel[iso].has(x));p.style.stroke=`var(--arc-${t})`}else p.classList.add("mf-off")});
+  // il paese selezionato sopra gli altri paesi (sotto gli archi), così il bordo si vede tutto
+  if(sel){const sp=box.querySelector(`path.country[data-iso="${sel}"]`),ag=box.querySelector("g.arcs");if(sp&&ag&&sp.parentNode===ag.parentNode)ag.parentNode.insertBefore(sp,ag)}
   box.querySelectorAll("path.arc").forEach(a=>{a.classList.toggle("mf-arc",!!sel&&(a.dataset.i===sel||a.dataset.j===sel))});
   mfCities();
 }
@@ -4646,9 +4648,9 @@ const _hl=highlightSel;highlightSel=function(){_hl.apply(this,arguments);mfApply
 // tocco sul mare: togli la selezione
 document.addEventListener("click",e=>{const box=e.target.closest&&e.target.closest("#mapBox");if(!box||!S.selCountry)return;if(e.target.closest("path.country,.mf-city,.zctl,button"))return;if(e.target.tagName==="path"||e.target.tagName==="svg"){S.selCountry=null;mfApply();document.querySelectorAll("#mapBox .country.sel").forEach(p=>p.classList.remove("sel"))}});
 const st=document.createElement("style");st.textContent=`#mapBox path.country{transition:opacity .2s}
-#mapBox.mf-on path.country.mf-off{opacity:.22}
-#mapBox.mf-on path.country.mf-rel{opacity:.85;stroke-width:1.1}
-#mapBox.mf-on path.country.sel{opacity:1}
+#mapBox.mf-on path.country.mf-off{opacity:.15}
+#mapBox.mf-on path.country.mf-rel{opacity:.45;stroke-width:1.2;stroke-opacity:1}
+#mapBox.mf-on path.country.sel{opacity:1;stroke:var(--ink)!important;stroke-width:2.6;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ink) 55%,transparent))}
 #mapBox.mf-on path.arc{display:none}
 #mapBox path.arc,#mapBox path.country{vector-effect:non-scaling-stroke}
 #mapBox.mf-on path.arc.mf-arc{display:inline!important;stroke-width:2}
