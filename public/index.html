@@ -3982,6 +3982,7 @@ function areaPage(A){
   <div class="am-map am-big" data-area="${esc(A.id)}"></div>
   ${hot.length?`<p class="xp-hs" style="margin:2px 0 4px">I paesi dell’area · livello di tensione</p><div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
   ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
+  ${paArea(A)}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2" id="xpDev">Ultimi sviluppi</h2><p class="xp-hs">Tutte le storie, senza filtri sui tuoi interessi. Puoi restringere questa lista qui sotto.</p>
   ${filtRow("Di cosa","fs",Object.entries(tc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,`${AIC(k)} ${AMBN[k]}`.trim(),n]),X.fs,"Tutto")}
@@ -4749,11 +4750,13 @@ const st=document.createElement("style");st.textContent=`.am-map{margin:0 0 10px
 })();
 /* ===== Oggi per argomento (campo per_argomento del briefing) ===== */
 function paToday(id){const bs=(S.briefings||[]).filter(b=>b&&b.per_argomento&&b.per_argomento[id]).sort((a,b)=>String(b.data).localeCompare(String(a.data)));if(!bs.length)return null;const x=bs[0].per_argomento[id];return Object.assign({},x,{_d:bs[0].data})}
+function paArea(A){const items=(typeof TAX!=="undefined"?TAX:[]).map(T=>{const x=paToday(T.id);return x&&(x.paesi||[]).some(p=>A.codes.includes(p))?paBlock(T.id,T.n,true):""}).filter(Boolean);
+  return items.length?`<h2 class="xp-h2">Oggi dagli argomenti</h2><p class="xp-hs">Le notizie del giorno dei singoli argomenti che riguardano quest’area.</p>${items.join("")}`:""}
 function paBlock(id,name,compact){const x=paToday(id);if(!x||!x.titolo)return "";
   const fl=(x.paesi||[]).slice(0,3).map(p=>flag(p)).join(" ");const old=x._d&&typeof ago==="function"&&x._d<ago(2);
   const fonti=(x.fonti||[]).filter(f=>f&&f.url).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome||"fonte")}</a>`).join(" · ");
   const st=x.storia_id&&S.stories&&S.stories[x.storia_id]?`<button type="button" class="xp-lnk" data-story="${esc(x.storia_id)}">Leggi la storia completa ›</button>`:"";
-  return `<section class="xp-oggi${compact?" cmp":""}"><span class="xp-ok">${old?"Ultimo punto":"Oggi"} in ${esc(name)}${x._d?` · ${esc(fmtDate(x._d))}`:""}</span><h3>${fl?fl+" ":""}${esc(x.titolo)}</h3>${compact?"":`<p>${esc(x.testo||"")}</p>${x.perche?`<p class="xp-op"><b>Perché conta</b> ${esc(x.perche)}</p>`:""}`}<p class="xp-of">${st}${fonti?`<span>Fonti: ${fonti}</span>`:""}</p></section>`}
+  return `<section class="xp-oggi${compact?" cmp":""}"><span class="xp-ok">${old?"Ultimo punto":"Oggi"} in ${esc(name)}${x._d?` · ${esc(fmtDate(x._d))}`:""}</span><h3>${fl?fl+" ":""}${esc(x.titolo)}</h3>${compact?"":`<p>${esc(x.testo||"")}</p>${x.perche?`<p class="xp-op"><b>Perché conta</b> ${esc(x.perche)}</p>`:""}`}<p class="xp-of">${compact?`<button type="button" class="xp-lnk" data-go="tema|${esc(id)}">Apri ${esc(name)} ›</button>`:""}${st}${fonti?`<span>Fonti: ${fonti}</span>`:""}</p></section>`}
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
