@@ -3561,6 +3561,48 @@ css.textContent=`
 .xp-tabs button{font:inherit;font-size:15.5px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px 9px;cursor:pointer;margin-bottom:-1px}
 .xp-tabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
 .xp-pthd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+/* «Per te oggi» a gruppi colorati */
+.pf-seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.pf-seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 13px;min-height:34px;cursor:pointer}
+.pf-seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.pf-dot{width:9px;height:9px;border-radius:50%;background:var(--pc);flex:none}
+.pt2{padding:14px 16px}
+.pt2-h{display:flex;align-items:center;gap:12px}
+.pt2-t{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pt2-t b{font-size:16px}
+.pt2-s{font-size:13.5px;color:var(--muted);line-height:1.4}
+.pt2-tg{flex:none;min-height:44px;border:0;border-radius:999px;background:var(--accent-soft);color:var(--accent);font:inherit;font-size:14px;font-weight:600;padding:0 16px;cursor:pointer}
+.pt2-fl{margin-top:8px;font-size:16px;letter-spacing:2px}
+.pt2-l{margin-top:8px}
+.pt2-st{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:11px 0;color:var(--ink);font:inherit;font-size:15px;line-height:1.4;cursor:pointer}
+.pt2-tag{flex:none;font-family:var(--mono);font-size:10.5px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 6px;margin-top:3px;min-width:62px;text-align:center}
+.pt2-brt{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:11px 0;color:var(--muted);font:inherit;font-size:14px;cursor:pointer}
+.pt2-brt b{color:var(--accent)}
+.pt2-f{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:10px}
+.pt2-m{border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;text-decoration:underline;cursor:pointer;padding:6px 0}
+.pt2-go{margin-left:auto;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:6px 0}
+.pt3-by{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.pt3-by .pf-seg button{min-height:30px;padding:4px 11px;font-size:12px}
+.pt3-gs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.pt3-gp{display:flex;align-items:center;gap:8px;min-height:40px;width:100%;border-radius:999px;padding:0 14px;background:color-mix(in srgb,var(--gc) 12%,transparent);border:1px solid color-mix(in srgb,var(--gc) 50%,transparent);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+.pt3-gn{flex:1;min-width:0}
+.pt3-ms{display:flex;gap:4px}.pt3-mi{width:8px;height:8px;border-radius:50%}
+.pt3-gc{font-weight:500;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.pt3-l{margin-top:4px}
+.pt3-g{border-top:2px solid var(--gc);margin-top:10px}
+.pt3-gh{display:flex;align-items:center;gap:8px;padding:10px 0 4px}
+.pt3-gh b{font-family:var(--serif);font-size:16.5px;flex:1}.pt3-gh span:last-child{font-size:12px;color:var(--muted)}
+.pt3-st{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);border-left:3px solid var(--qc);padding:9px 0 9px 10px;color:var(--ink);font:inherit;cursor:pointer}
+.pt3-sm{display:flex;align-items:center;gap:7px}
+.pt3-q{font-size:12px;font-weight:600}
+.pt3-tt{font-size:15px;font-weight:600;line-height:1.35}
+.pt3-br{margin:0;border-top:1px solid var(--line);border-left:3px solid var(--qc);padding:8px 0 8px 10px;font-size:14px;line-height:1.45}
+.pt3-bm{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;padding:6px 0 4px 13px;cursor:pointer;text-align:left}
+.pt3-acc{display:flex;flex-direction:column}
+.pt3-acc.on{border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:20px;padding:0 0 6px;background:color-mix(in srgb,var(--bg) 35%,transparent)}
+.pt3-acc.on .pt3-g{border-top:0;margin:4px 12px 0}
+.pt3-car{color:var(--muted);font-size:12px;margin-left:2px}
+
 .xp-pthd p{margin:0;color:var(--muted);font-size:14.5px}
 .xp-mod{font:inherit;font-size:14px;font-weight:600;white-space:nowrap;color:var(--accent);background:var(--accent-soft);border:0;border-radius:999px;padding:7px 12px;cursor:pointer}
 .xp-grp{border:1px solid var(--line);border-left:5px solid var(--gc,var(--line));border-radius:12px;padding:10px 14px 8px;margin:0 0 14px;background:var(--surface)}
@@ -3912,6 +3954,18 @@ function card(o){/* o:{key,col,ic,n,meta,badge,subs:[[id,label,n]],latest,body,f
     ${open?`<div class="xp-cb">${o.body}</div>${o.foot?`<div class="xp-cf">${o.foot}</div>`:""}`:""}</section>`;
 }
 function ptToggle(){return `<div class="xp-seg xp-by" role="group" aria-label="Raggruppa per"><button type="button" data-ptby="area" aria-pressed="${X.ptBy==="area"}">🌍 Per geografia</button><button type="button" data-ptby="tema" aria-pressed="${X.ptBy==="tema"}">🏷️ Per argomento</button></div>`}
+/* ===== Elenchi a gruppi incrociati (Per te, pagina area, pagina argomento) =====
+   Regola dei colori: le aree hanno il colore del loro livello di tensione (come sulla mappa),
+   gli argomenti il loro colore fisso. Il gruppo principale è un riquadro con il suo colore;
+   dentro, i sotto-gruppi sono etichette colorate dell'altra dimensione e la barra di ogni notizia ne prende il colore. */
+const PG_AV={geopolitica:"--amb-geo",politica:"--amb-pol",economia:"--amb-eco",tecnologia:"--amb-tec",energia:"--amb-ene",societa:"--amb-soc",sport:"--amb-spo"};
+const PG_SHA={"medio-oriente-e-nord-africa":"Medio Oriente","russia-ed-europa-orientale":"Russia ed Est Europa","africa-subsahariana":"Africa subsahariana","asia-e-pacifico":"Asia e Pacifico"};
+const PG_A={of:x=>{const a=storyArea(x);return AREABY[a]?a:"altro"},name:a=>a==="altro"?"Altro":(PG_SHA[a]||AREABY[a].n),col:a=>a==="altro"?"var(--faint)":LVC(lvArea(AREABY[a])),rank:a=>a==="altro"?-1:lvArea(AREABY[a])};
+const PG_T={of:x=>{const t=primTema(x);return AMBN[t]?t:"altro"},name:t=>t==="altro"?"Altro":String(tN(t)).split(" ")[0].replace(/[,.;]$/,""),col:t=>PG_AV[t]?`var(${PG_AV[t]})`:"var(--faint)",rank:()=>0};
+const PG_C={of:x=>{const P=x.paesi||[];return P[0]||"altro"},name:c=>c==="altro"?"Altro":cName(c),col:c=>c==="altro"?"var(--faint)":LVC(S.countries[c]?+S.countries[c].livello||1:1),rank:c=>S.countries[c]?+S.countries[c].livello||0:0};
+function pgCount(l,f){const m={};l.forEach(x=>{const k=f(x);m[k]=(m[k]||0)+1});return m}
+function pgKeys(m,D){return Object.keys(m).sort((x,y)=>(x==="altro")-(y==="altro")||D.rank(y)-D.rank(x)||m[y]-m[x])}
+function pgChip(k,lab,n,col,on,attr){return `<button type="button" class="pf-chip${on?" on":""}" ${attr}="${esc(k)}" aria-pressed="${on}" style="--pc:${col}">${k===""||k==="tutto"?"":`<span class="pf-dot"></span>`}${esc(lab)} <span class="pf-n">${n}</span></button>`}
 function perTeView(){
   if(!anyF()){
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
@@ -4229,6 +4283,8 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-int-open]")){e.
 {const g=document.getElementById("guideBtn");if(g&&!document.getElementById("intBtn")){const b=document.createElement("button");b.className="prefbtn";b.id="intBtn";b.type="button";b.setAttribute("data-int-open","1");b.textContent="★ Il mio Read";g.parentNode.insertBefore(b,g)}}
 
 /* ---------- "Per te oggi" nel briefing ---------- */
+let PT_BR=new Set(),PT_GO=(()=>{try{return new Set(JSON.parse(localStorage.getItem("rg-pt-go")||"[]"))}catch(_){return new Set()}})();
+const ptGoSave=()=>{try{localStorage.setItem("rg-pt-go",JSON.stringify([...PT_GO]))}catch(_){}};
 function perTe(){
   const el=document.getElementById("briefing");if(!el)return;
   const old=el.querySelector(".pt-box");if(old)old.remove();
@@ -4237,14 +4293,28 @@ function perTe(){
   if(anyF()){
     const ids=(b.storie_mondo||[]).concat(b.storie_italia||[]);
     const st=ids.map(id=>S.stories[id]).filter(Boolean).filter(matchF);
-    const br=(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x));
+    const br=(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x)).map(x=>Object.assign({},x,{_b:1}));
     const names=allNames();
-    box.innerHTML=`<div class="pt-h"><b>Per te oggi</b><button type="button" data-pt-manage="1">Gestisci</button></div>
-      <p class="pt-seg">Segui ${esc(names.join(", "))}</p>
-      ${st.map(s=>`<button type="button" class="pt-st" data-story="${esc(s.id)}"><span class="pt-f">${(s.paesi||[]).slice(0,3).map(flag).join("")}</span><span>${esc(s.titolo)}</span></button>`).join("")}
-      ${br.length?`<p class="pt-sub">In breve</p>${br.map(x=>`<p class="pt-br"><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`).join("")}`:""}
-      ${!st.length&&!br.length?`<p class="pt-n">Oggi niente su quello che segui, né tra le storie né tra le brevi.</p>`:""}
-      <button type="button" class="pt-open" data-pt-open="1">Apri «Per te» in Esplora: tutta la settimana, per gruppi ›</button>`;
+    const tag=id=>{const m=(b.storie_mondo||[]).indexOf(id);if(m>=0)return "MONDO "+String(m+1).padStart(2,"0");const i=(b.storie_italia||[]).indexOf(id);return i>=0?"ITALIA "+String(i+1).padStart(2,"0"):""};
+    const byA=X.ptBy!=="tema",P=byA?PG_A:PG_T,Q=byA?PG_T:PG_A;
+    const all=st.concat(br);
+    const keys=pgKeys(pgCount(all,P.of),P);
+    const pl=(n,s,p)=>n+" "+(n===1?s:p);
+    const cnt=L=>{const ns=L.filter(x=>!x._b).length,nb=L.length-ns;return [ns?pl(ns,"storia","storie"):"",nb?pl(nb,"breve","brevi"):""].filter(Boolean).join(" · ")};
+    const groups=keys.map(k=>{const L=all.filter(x=>P.of(x)===k);return {k,L,S:L.filter(x=>!x._b),B:L.filter(x=>x._b),subs:[...new Set(L.map(Q.of))]}});
+    const seg=`<div class="pt3-by"><span>Per</span><div class="pf-seg" role="group"><button type="button" data-pt-by="area" aria-pressed="${byA}">Aree</button><button type="button" data-pt-by="tema" aria-pressed="${!byA}">Argomenti</button></div></div>`;
+    const gk=k=>(byA?"a:":"t:")+k;
+    const isO=k=>PT_GO.has(gk(k));
+    const allO=groups.length&&groups.every(g=>isO(g.k));
+    const brRow=x=>`<p class="pt3-br" style="--qc:${Q.col(Q.of(x))}"><span class="pt3-q" style="color:${Q.col(Q.of(x))}">${esc(Q.name(Q.of(x)))}</span> ${(x.paesi||[]).slice(0,2).map(flag).join("")} ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`;
+    const body=g=>`<div class="pt3-g" style="--gc:${P.col(g.k)}">${g.S.map(s=>`<button type="button" class="pt3-st" data-story="${esc(s.id)}" style="--qc:${Q.col(Q.of(s))}"><span class="pt3-sm"><span class="pt2-tag">${esc(tag(s.id))}</span><span class="pt3-q" style="color:${Q.col(Q.of(s))}">${esc(Q.name(Q.of(s)))}</span></span><span class="pt3-tt">${(s.paesi||[]).slice(0,3).map(flag).join("")} ${esc(s.titolo)}</span></button>`).join("")}
+      ${g.B.length?(PT_BR.has(gk(g.k))?g.B.map(brRow).join("")+`<button type="button" class="pt3-bm" data-pt-br="${esc(gk(g.k))}">Nascondi le brevi ▴</button>`:`<button type="button" class="pt3-bm" data-pt-br="${esc(gk(g.k))}">+ ${pl(g.B.length,"breve","brevi")} (${esc([...new Set(g.B.map(x=>Q.name(Q.of(x))))].join(", "))}) ▾</button>`):""}</div>`;
+    const listHTML=`<div class="pt3-gs">${groups.map(g=>`<div class="pt3-acc${isO(g.k)?" on":""}"><button type="button" class="pt3-gp" data-pt-g="${esc(gk(g.k))}" aria-expanded="${isO(g.k)}" style="--gc:${P.col(g.k)}"><span class="pf-dot" style="--pc:${P.col(g.k)}"></span><span class="pt3-gn">${esc(P.name(g.k))}</span><span class="pt3-ms">${g.subs.map(q=>`<span class="pt3-mi" style="background:${Q.col(q)}" title="${esc(Q.name(q))}"></span>`).join("")}</span><span class="pt3-gc">${cnt(g.L)}</span><span class="pt3-car" aria-hidden="true">${isO(g.k)?"▴":"▾"}</span></button>${isO(g.k)?body(g):""}</div>`).join("")}</div>`;
+    box.classList.add("pt2");
+    box.innerHTML=`<div class="pt2-h"><div class="pt2-t"><b>★ Per te oggi</b><span class="pt2-s">${all.length?cnt(all):`Oggi niente su ${esc(names.join(", "))}`}</span></div>${all.length?`<button type="button" class="pt2-tg" data-pt-all="${allO?"0":"1"}">${allO?"Chiudi tutto ▴":"Apri tutto ▾"}</button>`:""}</div>
+      ${all.length?seg:""}
+      ${all.length?listHTML:""}
+      <div class="pt2-f"><button type="button" class="pt2-m" data-pt-manage="1">Gestisci</button><button type="button" class="pt2-go" data-pt-open="1">Tutta la settimana in Esplora →</button></div>`;
   }else{
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
     box.innerHTML=`<div class="pt-h"><b>Per te oggi</b></div>
@@ -4257,6 +4327,10 @@ function perTe(){
 }
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-pt-manage]")){openPanel();return}
+  const ptg=e.target.closest("[data-pt-g]");if(ptg){const k=ptg.dataset.ptG;if(PT_GO.has(k))PT_GO.delete(k);else PT_GO.add(k);ptGoSave();perTe();return}
+  const pta=e.target.closest("[data-pt-all]");if(pta){const box=pta.closest(".pt-box");const ks=[...box.querySelectorAll("[data-pt-g]")].map(x=>x.dataset.ptG);ks.forEach(k=>pta.dataset.ptAll==="1"?PT_GO.add(k):PT_GO.delete(k));ptGoSave();perTe();return}
+  const ptb=e.target.closest("[data-pt-br]");if(ptb){const k=ptb.dataset.ptBr;if(PT_BR.has(k))PT_BR.delete(k);else PT_BR.add(k);perTe();return}
+  const pby=e.target.closest("[data-pt-by]");if(pby){X.ptBy=pby.dataset.ptBy;try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}X.ptP="tutto";X.ptS="tutto";perTe();try{renderEx()}catch(_){}return}
   const f=e.target.closest("[data-pt-follow]");if(f){toggleF("aree",f.dataset.ptFollow);perTe();return}
 });
 const _rb=renderBriefing;
