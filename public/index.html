@@ -805,7 +805,7 @@ body.static #dlBox,body.static #dosNew,body.static #dosForm,body.static #dosCand
 body.static #prefBtn,body.static #ideePill,body.static #tab-idee,body.static nav.tabs .tab-sep,body.static [data-ask-idea],body.static .reqbtn,body.static .qcancel,body.static #archQueue,body.static .q-label,body.static #deepFoot{display:none!important}
 body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],body.static:not(.can-ask) [data-ask-country],body.static:not(.can-ask) [data-ask-ind],body.static:not(.can-ask) [data-ask-term],body.static:not(.can-ask) #deepForm,body.static:not(.can-ask) #deepChips{display:none!important}
 /* log in evidenza */
-.logbadge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px 10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:var(--mono);flex-basis:100%;max-width:max-content}
+.logbadge{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:inherit;flex-basis:100%;max-width:max-content;white-space:nowrap}
 .logbadge:hover{border-color:var(--accent);color:var(--ink)}
 .logbadge .lb-i{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 9px;font-weight:500}
 .logbadge span+span:not(.lb-i)::before{content:"· ";color:var(--faint)}
@@ -2125,7 +2125,7 @@ function renderBriefing(){
   el.innerHTML=`
   ${latest?"":`<div class="arch-banner"><span class="lb">📅 Stai leggendo un giorno passato</span>Briefing di ${esc(fmtDate(b.data,true))}, non l'ultimo disponibile.<button type="button" class="askbtn ghost" id="toLatest">Torna a oggi →</button></div>`}
   <div class="brief-head" data-bdate="${esc(b.data||"")}"><h1>Briefing di ${esc(fmtDate(b.data,true))}</h1><span class="meta">aggiornato alle ${esc(b.ora||"—")}${b.aggiornamento?" · "+esc(b.aggiornamento):""}</span>
-  ${(()=>{const c=(log.consultate||[]).length,n=(log.non_raggiungibili||[]).length,d=(log.dubbi||[]).length;return `<button class="logbadge${d?" warn":""}" data-sub="log" data-sub-scroll="1" title="Apri il log dell'agente"><span class="lb-i">📋 Log</span><span>${c} fonti consultate</span>${n?`<span>${n} non raggiungibili</span>`:""}<span class="${d?"d":""}">${d?(d===1?"1 dubbio aperto":d+" dubbi aperti"):"nessun dubbio"}</span></button>`})()}</div>
+  ${(()=>{const c=(log.consultate||[]).length,n=(log.non_raggiungibili||[]).length,d=(log.dubbi||[]).length;return `<button class="logbadge${d?" warn":""}" data-sub="log" data-sub-scroll="1" title="Apri il log dell'agente"><span class="lb-i">📋 Log</span><span>${c} fonti</span>${n?`<span>${n} non raggiunte</span>`:""}<span class="${d?"d":""}">${d?(d===1?"1 dubbio":d+" dubbi"):"nessun dubbio"}</span></button>`})()}</div>
   <p class="hint">Tocca le parole sottolineate a puntini per sapere chi o cosa sono. Seleziona una frase o tocca «Fai una domanda» per approfondire con il tuo Claude.</p>
   <div class="in60"><span class="label"><span class="ic" aria-hidden="true">⚡</span>In 60 secondi</span><ol>${(b.in60||[]).map((x,i)=>{const ids=((b.in60_storie||[])[i]||[]).filter(id=>S.stories[id]);const refs=ids.map(id=>{const im=ita.findIndex(s=>s.id===id),mm=mondo.findIndex(s=>s.id===id);if(im<0&&mm<0)return"";const lab=im>=0?`Italia ${String(im+1).padStart(2,"0")}`:`Mondo ${String(mm+1).padStart(2,"0")}`;return `<button class="in60-ref" data-story="${esc(id)}" title="Vai alla storia">${lab} ↓</button>`}).join("");return `<li><span>${esc(typeof x==="string"?x:x.testo)}${refs?` <span class="in60-refs">${refs}</span>`:""}</span></li>`}).join("")}</ol></div>
   ${sinceHTML(b)}
@@ -3640,6 +3640,13 @@ header.top nav.tabs > button[aria-selected="true"] .ic{transform:scale(1.12)}
   header.top nav.tabs > button[aria-selected="true"]{box-shadow:inset 0 -3px 0 var(--accent)}
   .srch-t{display:none}
   header.top nav.tabs .tab-sep{display:none}
+  /* testata su telefono: riga 1 nome + Instagram, riga 2 data, ricerca, Il mio Read (niente a capo) */
+  header.top .top-row{gap:8px;align-items:center;padding-block:10px 4px}
+  header.top .top-row .brand{flex:0 0 calc(100% - 50px);min-width:0;line-height:1.15}
+  header.top .top-row .brand small{display:block;margin:3px 0 0;font-size:10px}
+  header.top .top-row .igl{margin-left:auto}
+  header.top .top-row .stamp{flex:1 1 auto;margin-left:0;white-space:nowrap;font-size:11.5px}
+  header.top .top-row .prefbtn{margin-left:0;white-space:nowrap}
 }
 .rd-moved .radar-h{margin-top:0;flex-wrap:wrap;row-gap:2px}
 #v-calendario .radar-h,#v-osservazione .radar-h{flex-wrap:wrap;row-gap:2px}
