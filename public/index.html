@@ -226,6 +226,10 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 .igl:hover{border-color:var(--ink)}
 .igl-foot{color:inherit;text-decoration:underline}
 @media(max-width:520px){.igl .igt{display:none}.igl{padding:5px 8px}}
+/* icona ufficiale Spotify, monocromatica come da regole del marchio: nera su chiaro, bianca su scuro */
+.spl,.pod-sp .spi{color:#fff}.spl svg{width:16px;height:16px}
+:root[data-theme="light"] .spl,:root[data-theme="light"] .pod-sp .spi{color:#000}
+.pod-sp svg{width:15px;height:15px;vertical-align:-3px;margin-right:6px}
 .stamp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
@@ -805,7 +809,7 @@ body.static #dlBox,body.static #dosNew,body.static #dosForm,body.static #dosCand
 body.static #prefBtn,body.static #ideePill,body.static #tab-idee,body.static nav.tabs .tab-sep,body.static [data-ask-idea],body.static .reqbtn,body.static .qcancel,body.static #archQueue,body.static .q-label,body.static #deepFoot{display:none!important}
 body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],body.static:not(.can-ask) [data-ask-country],body.static:not(.can-ask) [data-ask-ind],body.static:not(.can-ask) [data-ask-term],body.static:not(.can-ask) #deepForm,body.static:not(.can-ask) #deepChips{display:none!important}
 /* log in evidenza */
-.logbadge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px 10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:var(--mono);flex-basis:100%;max-width:max-content}
+.logbadge{display:inline-flex;flex-wrap:nowrap;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:inherit;flex-basis:100%;max-width:max-content;white-space:nowrap}
 .logbadge:hover{border-color:var(--accent);color:var(--ink)}
 .logbadge .lb-i{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 9px;font-weight:500}
 .logbadge span+span:not(.lb-i)::before{content:"· ";color:var(--faint)}
@@ -1259,7 +1263,7 @@ nav.tabs button .ic{margin-right:.3em}
   <div class="wrap">
     <div class="top-row">
       <span class="brand">Read Geopolitics<small>Il mondo in 15 minuti</small></span>
-      <a class="igl" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener" aria-label="Seguici su Instagram @read.geopolitics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg><span class="igt">@read.geopolitics</span></a><span class="stamp" id="stamp"></span><button class="prefbtn idee-pill" id="ideePill" type="button" hidden>✨ Idee</button><button class="prefbtn dos-pill" id="dosPill" type="button" hidden>🧭 Dossier</button><button class="prefbtn themebtn" id="themeBtn" type="button" aria-label="Cambia tema">☀️</button><button class="prefbtn" id="guideBtn" type="button" aria-label="Guida">📘 Guida</button><button class="prefbtn" id="prefBtn" type="button">⚙️ Preferenze</button>
+      <a class="igl" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener" aria-label="Seguici su Instagram @read.geopolitics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg><span class="igt">@read.geopolitics</span></a><a class="igl spl" href="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU" target="_blank" rel="noopener" aria-label="Ascolta il podcast su Spotify"><svg viewBox="0 0 236.05 225.25" aria-hidden="true"><path fill="currentColor" d="m122.37,3.31C61.99.91,11.1,47.91,8.71,108.29c-2.4,60.38,44.61,111.26,104.98,113.66,60.38,2.4,111.26-44.6,113.66-104.98C229.74,56.59,182.74,5.7,122.37,3.31Zm46.18,160.28c-1.36,2.4-4.01,3.6-6.59,3.24-.79-.11-1.58-.37-2.32-.79-14.46-8.23-30.22-13.59-46.84-15.93-16.62-2.34-33.25-1.53-49.42,2.4-3.51.85-7.04-1.3-7.89-4.81-.85-3.51,1.3-7.04,4.81-7.89,17.78-4.32,36.06-5.21,54.32-2.64,18.26,2.57,35.58,8.46,51.49,17.51,3.13,1.79,4.23,5.77,2.45,8.91Zm14.38-28.72c-2.23,4.12-7.39,5.66-11.51,3.43-16.92-9.15-35.24-15.16-54.45-17.86-19.21-2.7-38.47-1.97-57.26,2.16-1.02.22-2.03.26-3.01.12-3.41-.48-6.33-3.02-7.11-6.59-1.01-4.58,1.89-9.11,6.47-10.12,20.77-4.57,42.06-5.38,63.28-2.4,21.21,2.98,41.46,9.62,60.16,19.74,4.13,2.23,5.66,7.38,3.43,11.51Zm15.94-32.38c-2.1,4.04-6.47,6.13-10.73,5.53-1.15-.16-2.28-.52-3.37-1.08-19.7-10.25-40.92-17.02-63.07-20.13-22.15-3.11-44.42-2.45-66.18,1.97-5.66,1.15-11.17-2.51-12.32-8.16-1.15-5.66,2.51-11.17,8.16-12.32,24.1-4.89,48.74-5.62,73.25-2.18,24.51,3.44,47.99,10.94,69.81,22.29,5.12,2.66,7.11,8.97,4.45,14.09Z"/></svg><span class="igt">Podcast</span></a><span class="stamp" id="stamp"></span><button class="prefbtn idee-pill" id="ideePill" type="button" hidden>✨ Idee</button><button class="prefbtn dos-pill" id="dosPill" type="button" hidden>🧭 Dossier</button><button class="prefbtn themebtn" id="themeBtn" type="button" aria-label="Cambia tema">☀️</button><button class="prefbtn" id="guideBtn" type="button" aria-label="Guida">📘 Guida</button><button class="prefbtn" id="prefBtn" type="button">⚙️ Preferenze</button>
     </div>
     <nav class="tabs" role="tablist" aria-label="Viste">
       <button role="tab" id="tab-briefing" data-view="briefing" aria-selected="true"><span class="ic" aria-hidden="true">📰</span>Briefing</button>
@@ -2125,7 +2129,7 @@ function renderBriefing(){
   el.innerHTML=`
   ${latest?"":`<div class="arch-banner"><span class="lb">📅 Stai leggendo un giorno passato</span>Briefing di ${esc(fmtDate(b.data,true))}, non l'ultimo disponibile.<button type="button" class="askbtn ghost" id="toLatest">Torna a oggi →</button></div>`}
   <div class="brief-head" data-bdate="${esc(b.data||"")}"><h1>Briefing di ${esc(fmtDate(b.data,true))}</h1><span class="meta">aggiornato alle ${esc(b.ora||"—")}${b.aggiornamento?" · "+esc(b.aggiornamento):""}</span>
-  ${(()=>{const c=(log.consultate||[]).length,n=(log.non_raggiungibili||[]).length,d=(log.dubbi||[]).length;return `<button class="logbadge${d?" warn":""}" data-sub="log" data-sub-scroll="1" title="Apri il log dell'agente"><span class="lb-i">📋 Log</span><span>${c} fonti consultate</span>${n?`<span>${n} non raggiungibili</span>`:""}<span class="${d?"d":""}">${d?(d===1?"1 dubbio aperto":d+" dubbi aperti"):"nessun dubbio"}</span></button>`})()}</div>
+  ${(()=>{const c=(log.consultate||[]).length,n=(log.non_raggiungibili||[]).length,d=(log.dubbi||[]).length;return `<button class="logbadge${d?" warn":""}" data-sub="log" data-sub-scroll="1" title="Apri il log dell'agente"><span class="lb-i">📋 Log</span><span>${c} fonti</span>${n?`<span>${n} non raggiunte</span>`:""}<span class="${d?"d":""}">${d?(d===1?"1 dubbio":d+" dubbi"):"nessun dubbio"}</span></button>`})()}</div>
   <p class="hint">Tocca le parole sottolineate a puntini per sapere chi o cosa sono. Seleziona una frase o tocca «Fai una domanda» per approfondire con il tuo Claude.</p>
   <div class="in60"><span class="label"><span class="ic" aria-hidden="true">⚡</span>In 60 secondi</span><ol>${(b.in60||[]).map((x,i)=>{const ids=((b.in60_storie||[])[i]||[]).filter(id=>S.stories[id]);const refs=ids.map(id=>{const im=ita.findIndex(s=>s.id===id),mm=mondo.findIndex(s=>s.id===id);if(im<0&&mm<0)return"";const lab=im>=0?`Italia ${String(im+1).padStart(2,"0")}`:`Mondo ${String(mm+1).padStart(2,"0")}`;return `<button class="in60-ref" data-story="${esc(id)}" title="Vai alla storia">${lab} ↓</button>`}).join("");return `<li><span>${esc(typeof x==="string"?x:x.testo)}${refs?` <span class="in60-refs">${refs}</span>`:""}</span></li>`}).join("")}</ol></div>
   ${sinceHTML(b)}
@@ -3640,6 +3644,14 @@ header.top nav.tabs > button[aria-selected="true"] .ic{transform:scale(1.12)}
   header.top nav.tabs > button[aria-selected="true"]{box-shadow:inset 0 -3px 0 var(--accent)}
   .srch-t{display:none}
   header.top nav.tabs .tab-sep{display:none}
+  /* testata su telefono: riga 1 nome + Instagram, riga 2 data, ricerca, Il mio Read (niente a capo) */
+  header.top .top-row{gap:8px;align-items:center;padding-block:10px 4px}
+  header.top .top-row .brand{flex:0 0 calc(100% - 92px);min-width:0;line-height:1.15}
+  header.top .top-row .brand small{display:block;margin:3px 0 0;font-size:10px}
+  header.top .top-row .igl{margin-left:auto}
+  header.top .top-row .spl{margin-left:0}
+  header.top .top-row .stamp{flex:1 1 auto;margin-left:0;white-space:nowrap;font-size:11.5px}
+  header.top .top-row .prefbtn{margin-left:0;white-space:nowrap}
 }
 .rd-moved .radar-h{margin-top:0;flex-wrap:wrap;row-gap:2px}
 #v-calendario .radar-h,#v-osservazione .radar-h{flex-wrap:wrap;row-gap:2px}
@@ -4875,7 +4887,7 @@ async function podFill(){
   const d=h.dataset.bdate;if(!d)return;const m=await podLoad();const e=m[d];if(!e)return;
   if(h.nextElementSibling&&h.nextElementSibling.classList.contains("pod-bar"))return;
   const el=document.createElement("div");el.className="pod-bar";
-  el.innerHTML=`<div class="pod-t"><span class="pod-i" aria-hidden="true">🎧</span><span><b>Ascolta il briefing</b><span class="pod-m">${mins(e.duration)} min · la voce è sintetica</span></span></div><audio controls preload="none" src="${e.url}"></audio><a class="pod-sp" href="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU" target="_blank" rel="noopener">Segui su Spotify ↗</a>`;
+  el.innerHTML=`<div class="pod-t"><span class="pod-i" aria-hidden="true">🎧</span><span><b>Ascolta il briefing</b><span class="pod-m">${mins(e.duration)} min · la voce è sintetica</span></span></div><audio controls preload="none" src="${e.url}"></audio><a class="pod-sp" href="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU" target="_blank" rel="noopener"><svg class="spi" viewBox="0 0 236.05 225.25" aria-hidden="true"><path fill="currentColor" d="m122.37,3.31C61.99.91,11.1,47.91,8.71,108.29c-2.4,60.38,44.61,111.26,104.98,113.66,60.38,2.4,111.26-44.6,113.66-104.98C229.74,56.59,182.74,5.7,122.37,3.31Zm46.18,160.28c-1.36,2.4-4.01,3.6-6.59,3.24-.79-.11-1.58-.37-2.32-.79-14.46-8.23-30.22-13.59-46.84-15.93-16.62-2.34-33.25-1.53-49.42,2.4-3.51.85-7.04-1.3-7.89-4.81-.85-3.51,1.3-7.04,4.81-7.89,17.78-4.32,36.06-5.21,54.32-2.64,18.26,2.57,35.58,8.46,51.49,17.51,3.13,1.79,4.23,5.77,2.45,8.91Zm14.38-28.72c-2.23,4.12-7.39,5.66-11.51,3.43-16.92-9.15-35.24-15.16-54.45-17.86-19.21-2.7-38.47-1.97-57.26,2.16-1.02.22-2.03.26-3.01.12-3.41-.48-6.33-3.02-7.11-6.59-1.01-4.58,1.89-9.11,6.47-10.12,20.77-4.57,42.06-5.38,63.28-2.4,21.21,2.98,41.46,9.62,60.16,19.74,4.13,2.23,5.66,7.38,3.43,11.51Zm15.94-32.38c-2.1,4.04-6.47,6.13-10.73,5.53-1.15-.16-2.28-.52-3.37-1.08-19.7-10.25-40.92-17.02-63.07-20.13-22.15-3.11-44.42-2.45-66.18,1.97-5.66,1.15-11.17-2.51-12.32-8.16-1.15-5.66,2.51-11.17,8.16-12.32,24.1-4.89,48.74-5.62,73.25-2.18,24.51,3.44,47.99,10.94,69.81,22.29,5.12,2.66,7.11,8.97,4.45,14.09Z"/></svg>Segui su Spotify ↗</a>`;
   h.insertAdjacentElement("afterend",el);
 }
 let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(podFill,80)}).observe(document.body,{childList:true,subtree:true});
