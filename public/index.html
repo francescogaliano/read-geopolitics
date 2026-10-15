@@ -3561,11 +3561,53 @@ css.textContent=`
 .xp-tabs button{font:inherit;font-size:15.5px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px 9px;cursor:pointer;margin-bottom:-1px}
 .xp-tabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
 .xp-pthd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
-/* «Per te oggi» a gruppi colorati */
+/* «Per te» a elenco unico (aree ⇄ argomenti) */
+.pf-ctl{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin:0 0 12px}
+.pf-cr{display:flex;align-items:center;gap:8px}
+.pf-sl{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .pf-seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
 .pf-seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 13px;min-height:34px;cursor:pointer}
 .pf-seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.pf-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;align-items:center}
+.pf-row::-webkit-scrollbar{display:none}
+.pf-sub{gap:6px;margin-top:2px}
+.pf-chip{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:38px;border:1px solid color-mix(in srgb,var(--pc) 60%,var(--line));background:none;color:var(--ink);border-radius:999px;padding:0 14px;font:inherit;font-size:14px;cursor:pointer}
+.pf-sub .pf-chip{min-height:32px;font-size:13px;padding:0 11px;border-color:var(--line)}
+.pf-chip .pf-n{color:var(--muted);font-size:12px}
 .pf-dot{width:9px;height:9px;border-radius:50%;background:var(--pc);flex:none}
+.pf-chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.pf-chip.on .pf-n{color:inherit;opacity:.7}
+.pf-sub .pf-chip.on{background:var(--surface-2);color:var(--ink);border-color:var(--pc);font-weight:600}
+.pf-day{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:18px 0 6px}
+.pf-dn{text-transform:none;letter-spacing:0;color:var(--accent)}
+.pf-it{display:flex;gap:12px;border-top:1px solid var(--line);padding:12px 0}
+.pf-it::before{content:"";flex:0 0 3px;border-radius:2px;background:var(--bar)}
+.pf-c{flex:1;min-width:0}
+.pf-sv{display:flex;flex-direction:column;gap:5px;width:100%;text-align:left;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer}
+.pf-m{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.pf-k1{color:var(--ink);font-weight:600}.pf-k2{font-weight:600}.pf-sep{color:var(--faint)}
+.pf-tg{font-family:var(--mono);font-size:10.5px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 6px}
+.pf-tg.b{color:var(--muted);background:none;border:1px solid var(--line)}
+.pf-tt{font-size:16px;font-weight:600;line-height:1.35}
+.pf-wh{font-size:14px;color:var(--muted);line-height:1.45}
+.pf-tog{font-size:12.5px;color:var(--accent);font-weight:600}
+.pf-bt{margin:5px 0 0;font-size:14.5px;line-height:1.45;color:var(--ink)}
+.pf-bt a{font-size:13px}
+
+.pf-it::before{background:var(--bar,var(--qc,var(--line)))}
+.pf-d{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pg-sec{border:1px solid var(--line);border-top:4px solid var(--sc);border-radius:14px;background:color-mix(in srgb,var(--sc) 7%,var(--surface));padding:4px 14px 8px;margin:12px 0}
+.pg-sec.pg-nh{border-top-width:1px}
+.pg-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 0 6px}
+.pg-h h3{margin:0;font-family:var(--serif);font-size:19px;font-weight:600}
+.pg-dot{width:12px;height:12px;border-radius:50%;background:var(--sc);flex:none}
+.pg-n{font-size:12.5px;color:var(--muted)}
+.pg-go{margin-left:auto;border:0;background:none;color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0}
+.pg-sub{margin-top:6px}
+.pg-sh{padding:8px 0 2px}
+.pg-lb{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--qc) 20%,transparent);border:1px solid color-mix(in srgb,var(--qc) 55%,transparent);border-radius:999px;padding:3px 11px}
+.pg-sub .pf-it:first-of-type{border-top:0}
+.pg-more{border:0;background:none;color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0 4px 15px}
 .pt2{padding:14px 16px}
 .pt2-h{display:flex;align-items:center;gap:12px}
 .pt2-t{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -3581,6 +3623,57 @@ css.textContent=`
 .pt2-f{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:10px}
 .pt2-m{border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;text-decoration:underline;cursor:pointer;padding:6px 0}
 .pt2-go{margin-left:auto;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;padding:6px 0}
+.sp-tabs{display:flex;gap:18px;overflow-x:auto;border-bottom:1px solid var(--line);margin:6px 0 12px;position:sticky;top:var(--hdr,0px);background:var(--bg);z-index:3;scrollbar-width:none}
+.sp-tabs::-webkit-scrollbar{display:none}
+.sp-tabs button{flex:none;min-height:44px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);font:inherit;font-size:14.5px;font-weight:600;padding:0 2px;cursor:pointer}
+.sp-tabs button span{font-weight:500;font-size:12px;color:var(--faint)}
+.sp-tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.sp-idx{display:flex;flex-direction:column;margin-bottom:8px}
+.sp-ix,.sp-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:14px 0;color:var(--ink);font:inherit;cursor:pointer}
+.sp-row{padding-left:12px;position:relative}
+.sp-row::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--qc)}
+.sp-ixc,.sp-rc{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.sp-ixh,.sp-rh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sp-ixh b{font-size:15.5px}.sp-rh b{font-family:var(--serif);font-size:17px}
+.sp-ixh span,.sp-n{font-size:12.5px;color:var(--muted)}
+.sp-ixs{font-size:13px;color:var(--muted);line-height:1.4}
+.sp-bar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden}.sp-bar i{display:block}
+.sp-chev{color:var(--accent);font-size:20px;flex:none}
+.sp-lt{font-size:14px;line-height:1.4;color:var(--ink);opacity:.9}
+.sp-ds{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}.sp-ds i{width:8px;height:8px;border-radius:50%;display:inline-block}.sp-ds span{margin-left:3px}
+.sp-lv{font-size:11.5px;font-weight:600;border-radius:999px;padding:1px 8px;background:color-mix(in srgb,var(--qc) 35%,transparent);color:var(--ink)}
+.sp-back{border:0;background:none;color:var(--accent);font:inherit;font-size:14px;font-weight:600;padding:6px 0;cursor:pointer}
+.sp-dh{display:flex;align-items:center;gap:9px;border-top:3px solid var(--qc);padding-top:10px;margin-top:4px}
+.sp-dh h2{margin:0;font-family:var(--serif);font-size:21px;flex:1;min-width:0}
+.sp-fol{flex:none;border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 11px;cursor:pointer}
+.sp-fol[aria-pressed="true"]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.sp-more{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:2px 0 8px}
+.sp-all{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.sp-list{margin:6px 0 10px}
+.sp-list .pg-sub{margin:0}
+.sp-list .pg-sub .pf-it{border-top:1px solid var(--line)}
+.sp-links{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+.xw-aside{display:none}.xw-li.xw-0{opacity:.5}
+@media (min-width:1100px){
+  #esplora.read.xp-wide{max-width:1128px}
+  .xw{display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:28px;align-items:start}
+  .xw-main{min-width:0}
+  .xw-aside{display:block;position:sticky;top:calc(var(--hdr,120px) + 14px);max-height:calc(100vh - var(--hdr,120px) - 28px);overflow:auto;scrollbar-width:thin}
+  .xw-hide{display:none}
+}
+.xw-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.xw-card .am-map{margin:0 0 12px}
+.xw-t{font-family:var(--serif);font-size:18px;font-weight:600}
+.xw-s{font-size:13px;color:var(--muted);margin:4px 0 0;line-height:1.45}
+.xw-sec{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+.xw-k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.xw-leg{display:flex;flex-direction:column;margin-top:8px}
+.xw-li{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-radius:8px;padding:6px 6px;color:var(--ink);font:inherit;font-size:13.5px;text-align:left;cursor:pointer}
+.xw-li:hover,.xw-li.on{background:var(--accent-soft)}
+.xw-ln{flex:1}.xw-lc{color:var(--muted);font-size:12.5px}
+.xw-card .sp-ix:first-child{border-top:0}
+.xw-scale{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted)}.xw-scale span{display:flex;align-items:center;gap:8px}.xw-scale i{width:22px;height:8px;border-radius:4px;display:inline-block}
+.xw-lvl{display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:4px}.xw-lvl b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--qc);color:#fff;font-size:15px}
 .pt3-by{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .pt3-by .pf-seg button{min-height:30px;padding:4px 11px;font-size:12px}
 .pt3-gs{display:flex;flex-direction:column;gap:8px;margin-top:10px}
@@ -3863,7 +3956,7 @@ if(main&&!document.getElementById("v-esplora")){
   sec.innerHTML='<div class="read" id="esplora"></div>';
   main.insertBefore(sec,document.getElementById("v-mappa"));
 }
-const X={fa:[],fs:[],exp:new Set(),ptBy:(()=>{try{return localStorage.getItem("rg-pt-by")==="tema"?"tema":"area"}catch(e){return"area"}})(),mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
+const X={fa:[],fs:[],exp:new Set(),ptBy:(()=>{try{return localStorage.getItem("rg-pt-by")==="tema"?"tema":"area"}catch(e){return"area"}})(),ptP:"tutto",ptS:"tutto",ptPer:"7",ptLim:30,mode:"area",page:null,chip:"",lim:4,ret:null,open:null};
 function pathOf(p){if(p&&p.k==="lista")return p.id==="tema"?"esplora/argomenti":"esplora/aree";return p?`esplora/${p.k}/${encodeURIComponent(p.id)}`:"esplora"}
 function parse(h){h=(h||"").replace(/^#/,"");if(!h.startsWith("esplora"))return undefined;const m=h.split("/");if(m.length===2&&["aree","temi","argomenti"].includes(m[1]))return {k:"lista",id:m[1]==="aree"?"area":"tema"};return m.length>=3?{k:m[1],id:decodeURIComponent(m[2])}:null}
 function labelOf(p){if(!p)return"Per te";if(p.k==="lista")return p.id==="tema"?"Argomenti":"Aree";if(p.k==="area")return (AREABY[p.id]||{}).n||"Esplora";if(p.k==="tema")return AMBN[p.id]||"Esplora";if(p.k==="paese")return cName(p.id);return"Esplora"}
@@ -3966,6 +4059,32 @@ const PG_C={of:x=>{const P=x.paesi||[];return P[0]||"altro"},name:c=>c==="altro"
 function pgCount(l,f){const m={};l.forEach(x=>{const k=f(x);m[k]=(m[k]||0)+1});return m}
 function pgKeys(m,D){return Object.keys(m).sort((x,y)=>(x==="altro")-(y==="altro")||D.rank(y)-D.rank(x)||m[y]-m[x])}
 function pgChip(k,lab,n,col,on,attr){return `<button type="button" class="pf-chip${on?" on":""}" ${attr}="${esc(k)}" aria-pressed="${on}" style="--pc:${col}">${k===""||k==="tutto"?"":`<span class="pf-dot"></span>`}${esc(lab)} <span class="pf-n">${n}</span></button>`}
+function pgRow(x,o){
+  const tag=x._b?`<span class="pf-tg b">BREVE</span>`:(o.bIdx&&o.bIdx[x.id]&&x.data===o.bd?`<span class="pf-tg">${o.bIdx[x.id]}</span>`:"");
+  const meta=`<span class="pf-m"><span class="pf-d">${esc(fmtDate(x.data))}</span>${tag}</span>`;
+  if(x._b)return `<div class="pf-it pf-br"><div class="pf-c">${meta}<p class="pf-bt">${(x.paesi||[]).slice(0,2).map(flag).join("")} ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p></div></div>`;
+  const open=X.open===x.id;
+  return `<div class="pf-it${open?" on":""}" id="xpi-${esc(x.id)}"><div class="pf-c"><button type="button" class="pf-sv" data-xs="${esc(x.id)}" aria-expanded="${open}">${meta}<span class="pf-tt">${(x.paesi||[]).slice(0,3).map(flag).join("")} ${esc(x.titolo)}</span><span class="pf-tog">${open?"Chiudi ▴":"Leggi ▾"}</span></button>${open?`<div class="xp-open">${storyHTML(x,0).replace(/id="st-/g,'id="xst-')}<div class="xp-open-f"><button type="button" class="xp-lnk" data-xs="${esc(x.id)}">Chiudi la storia</button>${S.briefings.some(bb=>(bb.storie_mondo||[]).concat(bb.storie_italia||[]).includes(x.id))?`<button type="button" class="xp-lnk" data-story="${esc(x.id)}">Vedi nel briefing del ${esc(fmtDate(x.data))}</button>`:""}</div></div>`:""}</div></div>`;
+}
+/* items: notizie già filtrate; P: dimensione dei riquadri; Q: dimensione dei sotto-gruppi; o.id: chiave per «Altre» */
+function pgFeed(items,P,Q,o){
+  o=o||{};const per=o.per||3;
+  const g={};items.forEach(x=>{const k=P.of(x);(g[k]=g[k]||[]).push(x)});
+  const keys=pgKeys(pgCount(items,P.of),P);
+  return keys.map(k=>{const L=g[k];
+    const qk=pgKeys(pgCount(L,Q.of),Q);
+    const nS=L.filter(x=>!x._b).length,nB=L.length-nS;
+    const head=o.noHead?"":`<header class="pg-h"><span class="pg-dot"></span><h3>${esc(P.name(k))}</h3><span class="pg-n">${[nS?nS+(nS===1?" storia":" storie"):"",nB?nB+(nB===1?" breve":" brevi"):""].filter(Boolean).join(" · ")}</span>${o.go?o.go(k):""}</header>`;
+    return `<section class="pg-sec${o.noHead?" pg-nh":""}" style="--sc:${P.col(k)}">${head}${qk.map(q=>{const ls=L.filter(x=>Q.of(x)===q);const ek="pg:"+(o.id||"")+":"+k+":"+q;const open=X.exp.has(ek);
+      return `<div class="pg-sub" style="--qc:${Q.col(q)}"><div class="pg-sh"><span class="pg-lb"><span class="pf-dot" style="--pc:${Q.col(q)}"></span>${esc(Q.name(q))} <span class="pf-n">${ls.length}</span></span></div>${(open?ls:ls.slice(0,per)).map(x=>pgRow(x,o)).join("")}${ls.length>per?`<button type="button" class="pg-more" data-pgx="${esc(ek)}">${open?"Mostra meno ▴":`Altre ${ls.length-per} ▾`}</button>`:""}</div>`}).join("")}</section>`}).join("");
+}
+function ptAside(all,byA){
+  if(!all.length)return "";
+  const sec=(D,lab,by)=>{const m=pgCount(all,D.of);const ks=pgKeys(m,D);return `<div class="xw-sec"><div class="xw-k">${lab}</div>${pgBar(all,D)}<div class="xw-leg">${ks.map(k=>`<button type="button" class="xw-li${(X.ptBy===by||(by==="area"&&X.ptBy!=="tema"))&&X.ptP===k?" on":""}" data-ptjump="${by}|${esc(k)}"><span class="pf-dot" style="--pc:${D.col(k)}"></span><span class="xw-ln">${esc(D.name(k))}</span><span class="xw-lc">${m[k]}</span></button>`).join("")}</div></div>`};
+  return `<div class="xw-card"><div class="xw-t">${X.ptPer==="oggi"?"Oggi":"Gli ultimi 7 giorni"} per te</div><p class="xw-s">${all.length} notizie. Tocca una voce per vederla a sinistra.</p>
+  ${sec(PG_A,"Per area","area")}${sec(PG_T,"Per argomento","tema")}
+  <div class="xw-sec"><div class="xw-k">I tuoi interessi</div><p class="xw-s">${esc(allNames().join(", "))}</p><button type="button" class="xp-lnk" data-int-open="1">Modifica interessi</button></div></div>`;
+}
 function perTeView(){
   if(!anyF()){
     const sug=AREE.map(a=>({a,lv:lvArea(a)})).sort((x,y)=>y.lv-x.lv).slice(0,3);
@@ -3974,41 +4093,33 @@ function perTeView(){
     <button type="button" class="xp-cta" data-int-open="1">Scegli aree e argomenti</button>
     <p class="xp-hs" style="margin:12px 0 0">Vuoi solo curiosare? Apri <b>Aree</b> o <b>Argomenti</b> qui sopra.</p></div>`;
   }
-  const st=storiesWhere(s=>s.data>=ago(7)&&matchF(s));
-  /* anche le brevi degli ultimi 7 giorni: per argomenti poco presenti nelle storie (es. tecnologia) sono il grosso delle notizie */
-  const bv=(S.brevi||[]).filter(x=>x&&x.testo&&String(x.data||"")>=ago(7)&&matchF(x)).map(x=>Object.assign({},x,{_b:1}));
-  const byA=X.ptBy==="area";
-  /* per geografia entra anche la notizia del giorno degli argomenti seguiti (per argomento è già in cima alla scheda) */
-  const pv=byA?(typeof TAX!=="undefined"?TAX:[]).map(T=>{const x=paToday(T.id);if(!x||!x.titolo)return null;const o={_b:1,_pa:T.n,data:x.data||x._d,paesi:x.paesi||[],testo:x.titolo,ambiti:[T.id],sottoambiti:x.sottoambito?[x.sottoambito]:[],fonte:(x.fonti||[])[0]};return matchF(o)?o:null}).filter(Boolean):[];
-  const all=st.concat(pv,bv).sort((x,y)=>String(y.data).localeCompare(String(x.data))||(y._pa?1:0)-(x._pa?1:0));
-  /* per geografia: area → argomenti; per argomento: argomento → sotto-argomenti (non di nuovo le aree) */
-  const subOf=s=>{const t=topics(s).s;return t[0]||"altro"};
-  const k1=s=>byA?storyArea(s):primTema(s),k2=s=>byA?primTema(s):subOf(s);
-  const g=groupBy(all,k1);
-  const keys=Object.keys(g).filter(k=>byA?AREABY[k]:AMBN[k]).sort((x,y)=>byA?(lvArea(AREABY[y])-lvArea(AREABY[x])||g[y].length-g[x].length):g[y].length-g[x].length);
-  const brRow=x=>`<p class="pt-br">${x._pa?`<span class="pt-pa">Oggi in ${esc(x._pa)}</span>`:""}<span class="pt-bd">${esc(fmtDate(x.data))}</span><span class="pt-f">${(x.paesi||[]).slice(0,2).map(flag).join("")}</span> ${esc(x.testo)}${x.fonte&&x.fonte.url?` <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}</p>`;
-  const row=x=>x._b?brRow(x):itemHTML(x);
-  const cnt=l=>{const ns=l.filter(x=>!x._b).length,nb=l.length-ns;return [ns?`${ns} ${ns===1?"storia":"storie"}`:"",nb?`${nb} ${nb===1?"breve":"brevi"}`:""].filter(Boolean).join(" · ")+" in 7 giorni"};
-  const cards=keys.map(k=>{const list=g[k];const sub=groupBy(list,k2);
-    const subs=Object.keys(sub).sort((x,y)=>sub[y].length-sub[x].length);
-    const lab=x=>byA?`${AIC(x)} ${tN(x)}`.trim():(SUBN[x]||"Altro");
-    const body=(byA?`<div class="am-map" data-area="${esc(k)}"></div>`:paBlock(k,tN(k)))+subs.map(x=>{const ls=sub[x];const a=byA?k:null,t=byA?x:k;
-      return `<div class="xp-sub"><div class="xp-sh"><span class="xp-shn">${esc(lab(x))} <span>${ls.length}</span></span>${byA?xFollow(a,t):""}</div>
-      ${ls.slice(0,4).map(row).join("")}
-      ${byA&&AREABY[a]&&AMBN[t]?`<button type="button" class="xp-lnk xp-sl" data-go="areachip|${esc(a+"~"+t)}">Apri ${esc(tN(t))} in ${esc(AREABY[a].n)} ›</button>`:""}</div>`}).join("");
-    const pa=!byA&&paToday(k);
-    return card({key:"pt:"+X.ptBy+":"+k,col:byA?LVC(lvArea(AREABY[k])):"var(--accent)",ic:byA?"":AIC(k),n:byA?AREABY[k].n:tN(k),
-      star:byA?follows("aree",k):follows("temi",k),meta:cnt(list),
-      badge:byA&&lvArea(AREABY[k])?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lvArea(AREABY[k]))} 40%,transparent)">${LVT[lvArea(AREABY[k])]}</span> `:"",
-      latest:pa?`Oggi: ${pa.titolo}`:(t=>t.length>130?t.slice(0,127).replace(/\s\S*$/,"")+"…":t)(list[0]._b?list[0].testo:list[0].titolo),subs:subs.map(x=>[x,lab(x),sub[x].length]),body,
-      foot:byA?`<button type="button" class="xp-lnk" data-go="area|${esc(k)}">Apri ${esc(AREABY[k].n)}: punto della settimana e paesi ›</button>`:(AMBN[k]?`<button type="button" class="xp-lnk" data-go="tema|${esc(k)}">Apri ${esc(tN(k))}: temi aperti e ultimi sviluppi ›</button>`:"")})}).join("");
   const b=typeof currentBrief==="function"?currentBrief():null;
-  const br=b?(S.brevi||[]).filter(x=>(x.data===b.data||x.briefing===b.id)&&matchF(x)):[];
-  return `<div class="xp-pthd"><p><span class="xp-mode on">★ Filtrato sui tuoi interessi</span> Ultimi 7 giorni. Tocca una scheda per aprirla.</p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>${mailNudge()}
-  ${ptToggle()}
-  ${cards||`<p class="xp-empty">Negli ultimi 7 giorni niente su quello che segui.</p>`}
-  
-  <p class="xp-note">${byA?"Il bordo di ogni area ha il colore del suo livello di tensione, come sulla mappa. Dentro, storie e brevi sono divise per argomento.":"Dentro ogni argomento: la notizia del giorno, poi storie e brevi divise per sotto-argomento."}</p>`;
+  const bd=b&&b.data||"";
+  const bIdx={},bOrd={};if(b){(b.storie_mondo||[]).forEach((id,i)=>{bIdx[id]="MONDO "+String(i+1).padStart(2,"0");bOrd[id]=i});(b.storie_italia||[]).forEach((id,i)=>{bIdx[id]="ITALIA "+String(i+1).padStart(2,"0");bOrd[id]=100+i})}
+  const oggi=X.ptPer==="oggi";
+  const inPer=d=>oggi?String(d||"")===bd:String(d||"")>=ago(7);
+  const st=storiesWhere(s=>inPer(s.data)&&matchF(s));
+  const bv=(S.brevi||[]).filter(x=>x&&x.testo&&inPer(x.data)&&matchF(x)).map(x=>Object.assign({},x,{_b:1}));
+  const all=st.concat(bv).sort((x,y)=>String(y.data).localeCompare(String(x.data))||(x._b?1:0)-(y._b?1:0)||((bOrd[x.id]??999)-(bOrd[y.id]??999)));
+  const byA=X.ptBy!=="tema";
+  const P=byA?PG_A:PG_T,Q=byA?PG_T:PG_A;
+  const pc=pgCount(all,P.of),pKeys=pgKeys(pc,P);
+  if(X.ptP!=="tutto"&&!pc[X.ptP]){X.ptP="tutto";X.ptS="tutto"}
+  const inP=all.filter(x=>X.ptP==="tutto"||P.of(x)===X.ptP);
+  const sc=pgCount(inP,Q.of);
+  if(X.ptS!=="tutto"&&!sc[X.ptS])X.ptS="tutto";
+  const shown=inP.filter(x=>X.ptS==="tutto"||Q.of(x)===X.ptS);
+  const prim=[pgChip("tutto","Tutto",all.length,"var(--muted)",X.ptP==="tutto","data-ptp")].concat(pKeys.map(k=>pgChip(k,P.name(k),pc[k],P.col(k),X.ptP===k,"data-ptp"))).join("");
+  const sec=X.ptP==="tutto"?"":`<div class="pf-row pf-sub"><span class="pf-sl">${byA?"Argomenti":"Aree"}</span>${[pgChip("tutto",byA?"Tutti":"Tutte",inP.length,"var(--muted)",X.ptS==="tutto","data-pts")].concat(pgKeys(sc,Q).map(k=>pgChip(k,Q.name(k),sc[k],Q.col(k),X.ptS===k,"data-pts"))).join("")}</div>`;
+  const seg=(attr,opts,cur)=>`<div class="pf-seg" role="group">${opts.map(([v,l])=>`<button type="button" ${attr}="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+  const main=`<div class="xp-pthd"><p><span class="xp-mode on">★ Filtrato sui tuoi interessi</span></p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>${mailNudge()}
+  <div class="pf-ctl"><div class="pf-cr"><span class="pf-sl">Periodo</span>${seg("data-ptper",[["oggi","Oggi"],["7","7 giorni"]],oggi?"oggi":"7")}</div>
+  <div class="pf-cr"><span class="pf-sl">Raggruppa per</span>${seg("data-ptby",[["area","Aree"],["tema","Argomenti"]],byA?"area":"tema")}</div></div>
+  <div class="pf-row">${prim}</div>${sec}
+  ${shown.length?pgFeed(shown,P,Q,{id:"pt"+X.ptBy+X.ptPer,bIdx,bd,go:k=>k==="altro"?"":`<button type="button" class="pg-go" data-go="${byA?"area":"tema"}|${esc(k)}">Apri ›</button>`}):`<p class="xp-empty">${oggi?"Oggi niente su quello che segui: prova «7 giorni».":"Negli ultimi 7 giorni niente su quello che segui."}</p>`}
+  <p class="xp-note">${byA?"Ogni riquadro è un’area, con il colore del suo livello di tensione come sulla mappa. Dentro, le notizie sono divise per argomento, ognuno con il suo colore.":"Ogni riquadro è un argomento, con il suo colore. Dentro, le notizie sono divise per area, con il colore del suo livello di tensione."}</p>`;
+  return `<div class="xw"><div class="xw-main">${main}</div><aside class="xw-aside">${ptAside(all,byA)}</aside></div>`;
+
 }
 function listView(){
   const st7=storiesWhere(s=>s.data>=ago(7)),st14=storiesWhere(s=>s.data>=ago(14));
@@ -4034,63 +4145,123 @@ function listView(){
 function landing(){
   const head=`<div style="height:10px"></div>`;
   if(X.mode==="perte")return head+perTeView();
-  return `${head}
+  return `${head}<div class="xw"><div class="xw-main">
   <p class="xp-mode">Vista completa · senza filtri sui tuoi interessi. La ★ segna solo cosa segui.</p>
   <p class="xp-lead">${X.mode==="area"?"Le aree del mondo, dalla più tesa. Tocca un’area per vedere i suoi argomenti; tocca un argomento per aprire solo quelle storie.":"I grandi argomenti, dal più presente nell’ultima settimana. Tocca un argomento per vedere in quali aree si muove."}</p>
   ${listView()}
-  <p class="xp-note">${X.mode==="area"?"Il bordo di ogni area ha il colore del paese più teso, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"Il pallino accanto a ogni area ha il colore del suo livello di tensione, come sulla mappa."} Con «☆ Segui» accanto a un argomento dentro un’area segui solo quell’incrocio.</p>`;
+  <p class="xp-note">${X.mode==="area"?"Il bordo di ogni area ha il colore del paese più teso, sulla stessa scala della mappa (da 1, stabile, a 5, guerra).":"Il pallino accanto a ogni area ha il colore del suo livello di tensione, come sulla mappa."} Con «☆ Segui» accanto a un argomento dentro un’area segui solo quell’incrocio.</p></div><aside class="xw-aside">${listAside()}</aside></div>`;
 }
+/* bussola delle pagine elenco (solo da computer) */
+function listAside(){
+  const st7=storiesWhere(s=>s.data>=ago(7));
+  if(X.mode==="area"){
+    const rows=AREE.map(A=>({A,lv:lvArea(A),n:st7.filter(s=>storyArea(s)===A.id).length})).sort((x,y)=>y.lv-x.lv||y.n-x.n);
+    const byLv={};rows.forEach(r=>{byLv[r.lv]=(byLv[r.lv]||0)+1});
+    return `<div class="xw-card"><div class="xw-t">Il mondo questa settimana</div><p class="xw-s">${st7.length} storie in 7 giorni. Il colore è il livello di tensione più alto dell’area.</p>
+    <div class="xw-sec"><div class="xw-k">Aree per tensione</div><span class="sp-bar">${rows.map(r=>`<i style="flex:${Math.max(1,r.n)};background:${LVC(r.lv)}"></i>`).join("")}</span><div class="xw-leg">${rows.map(r=>`<button type="button" class="xw-li" data-go="area|${esc(r.A.id)}"><span class="pf-dot" style="--pc:${LVC(r.lv)}"></span><span class="xw-ln">${esc(r.A.n)}</span><span class="xw-lc">${r.lv?esc(LVT[r.lv]):""} · ${r.n}</span></button>`).join("")}</div></div>
+    <div class="xw-sec"><div class="xw-k">Scala</div><div class="xw-scale">${[1,2,3,4,5].map(l=>`<span><i style="background:${LVC(l)}"></i>${esc(LVT[l])}</span>`).join("")}</div></div></div>`;
+  }
+  const m={};st7.forEach(s=>topics(s).a.forEach(a=>{if(AMBN[a])m[a]=(m[a]||0)+1}));
+  const ks=Object.keys(AMBN).sort((x,y)=>(m[y]||0)-(m[x]||0));
+  return `<div class="xw-card"><div class="xw-t">Gli argomenti questa settimana</div><p class="xw-s">${st7.length} storie in 7 giorni. Ogni argomento ha il suo colore, lo stesso in tutto il sito.</p>
+  <div class="xw-sec"><div class="xw-k">Quanto pesano</div><span class="sp-bar">${ks.filter(k=>m[k]).map(k=>`<i style="flex:${m[k]};background:${PG_T.col(k)}"></i>`).join("")}</span><div class="xw-leg">${ks.map(k=>`<button type="button" class="xw-li${m[k]?"":" xw-0"}" data-go="tema|${esc(k)}"><span class="pf-dot" style="--pc:${PG_T.col(k)}"></span><span class="xw-ln">${esc(tN(k))}</span><span class="xw-lc">${m[k]||"nessuna"}</span></button>`).join("")}</div></div></div>`;
+}
+/* ===== Pagine area e argomento a sotto-pannelli: Panoramica · (Argomenti|Aree) · Paesi · Temi aperti ===== */
+function pgState(key){if(!X.pg||X.pg.key!==key)X.pg={key,tab:"pan",det:null,f:null};return X.pg}
+function pgTabs(st,defs){return `<div class="sp-tabs" role="tablist">${defs.map(([id,l,n])=>`<button type="button" role="tab" data-xtab="${id}" aria-selected="${st.tab===id}">${esc(l)}${n!=null?` <span>${n}</span>`:""}</button>`).join("")}</div>`}
+function pgBar(list,D){const m=pgCount(list,D.of);const ks=pgKeys(m,D);return `<span class="sp-bar">${ks.map(k=>`<i style="flex:${m[k]};background:${D.col(k)}"></i>`).join("")}</span>`}
+function pgIdxRow(tab,label,meta,bar,sub){return `<button type="button" class="sp-ix" data-xtab="${tab}"><span class="sp-ixc"><span class="sp-ixh"><b>${esc(label)}</b><span>${esc(meta)}</span></span>${bar||""}<span class="sp-ixs">${sub}</span></span><span class="sp-chev">›</span></button>`}
+function pgDimRow(k,D,O,list,det){const L=list.filter(x=>D.of(x)===k);const os=[...new Set(L.map(O.of))];
+  return `<button type="button" class="sp-row" data-xdet="${det}|${esc(k)}" style="--qc:${D.col(k)}"><span class="sp-rc"><span class="sp-rh"><b>${esc(D.name(k))}</b>${D.badge?D.badge(k):""}<span class="sp-n">${L.length} ${L.length===1?"storia":"storie"}</span></span><span class="sp-lt">${esc(L[0]?L[0].titolo:"")}</span><span class="sp-ds">${os.slice(0,6).map(o=>`<i style="background:${O.col(o)}" title="${esc(O.name(o))}"></i>`).join("")}<span>${esc(os.slice(0,4).map(O.name).join(", "))}</span></span></span><span class="sp-chev">›</span></button>`}
+function pgFol(items,label){const on=items.every(([k,id])=>follows(k,id));return `<button type="button" class="sp-fol" data-fcombo="${esc(items.map(x=>x.join("|")).join(","))}" aria-pressed="${on}" title="${on?"Lo trovi in «Per te»":"Aggiungi a «Per te»"}">${on?"★ Segui già":"☆ Segui"}</button>`}
+function pgDetail(st,list,D,O,backLab,title,meta,links,fol){
+  const k=st.det.v;const L=list.filter(x=>D.of(x)===k);const m=pgCount(L,O.of);const os=pgKeys(m,O);
+  const rows=L.filter(x=>!st.f||O.of(x)===st.f);
+  return `<button type="button" class="sp-back" data-xback="1">‹ ${esc(backLab)}</button>
+  <div class="sp-dh" style="--qc:${D.col(k)}"><span class="pf-dot" style="--pc:${D.col(k)}"></span><h2>${esc(title)}</h2>${fol||""}</div><p class="xp-hs" style="margin:2px 0 8px">${esc(meta)}</p>
+  <div class="pf-row pf-sub"><button type="button" class="pf-chip${st.f?"":" on"}" data-xf="" aria-pressed="${!st.f}" style="--pc:var(--muted)">Tutti <span class="pf-n">${L.length}</span></button>${os.map(o=>`<button type="button" class="pf-chip${st.f===o?" on":""}" data-xf="${esc(o)}" aria-pressed="${st.f===o}" style="--pc:${O.col(o)}"><span class="pf-dot"></span>${esc(O.name(o))} <span class="pf-n">${m[o]}</span></button>`).join("")}</div>
+  <div class="sp-list">${rows.slice(0,st.lim||8).map(x=>`<div class="pg-sub" style="--qc:${O.col(O.of(x))}">${pgRow(x,{})}</div>`).join("")}</div>
+  ${rows.length>(st.lim||8)?`<div class="sp-more"><button type="button" class="xp-more" data-xlim="${(st.lim||8)+10}">Altre ${Math.min(10,rows.length-(st.lim||8))}</button>${rows.length-(st.lim||8)>10?`<button type="button" class="sp-all" data-xlim="${rows.length}">Mostra tutte (${rows.length})</button>`:""}</div>`:""}
+  ${links||""}`;
+}
+function pgLatest(list,O){return `<div class="sp-list">${list.slice(0,3).map(x=>`<div class="pg-sub" style="--qc:${O.col(O.of(x))}">${pgRow(x,{})}</div>`).join("")}</div>`}
 function areaPage(A){
+  const PT0=Object.assign({},PG_T,{of:x=>{const t=topics(x).a[0];return AMBN[t]?t:"altro"}});
+  const st=pgState("a:"+A.id);
   const all=storiesWhere(s=>storyArea(s)===A.id),st30=all.filter(s=>s.data>=ago(30));
-  const hot=A.codes.filter(c=>S.countries[c]).sort((x,y)=>(+S.countries[y].livello||0)-(+S.countries[x].livello||0)).slice(0,6);
+  const base=st30.length?st30:all;
+  /* compatibilità con i link «areachip» e «xinc»: aprono direttamente il sotto-pannello */
+  if(X.fs.length===1&&AMBN[X.fs[0]]){st.tab="arg";st.det={k:"t",v:X.fs[0]};st.f=null}
+  if(X.fa.length===1&&A.codes.includes(X.fa[0])){st.tab="pae";st.det={k:"p",v:X.fa[0]};st.f=null}
+  X.fs=[];X.fa=[];
   const ranked=rankThreads(st30).slice(0,3);
   const pb=(S.briefings||[]).find(b=>b.punto_aree&&b.punto_aree.aree&&b.punto_aree.aree[A.id]);
   const pa=pb?pb.punto_aree.aree[A.id]:null;
   const inb=pa?"":ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
-  /* filtri: Di cosa (argomenti) e Dove (paesi dell'area), a scelta multipla; «o» dentro una riga, «e» tra le righe */
-  const inS=s=>!X.fs.length||topics(s).a.some(a=>X.fs.includes(a)),inP=s=>!X.fa.length||(s.paesi||[]).some(c=>X.fa.includes(c));
-  const tc={};all.filter(inP).forEach(s=>topics(s).a.forEach(a=>{if(AMBN[a])tc[a]=(tc[a]||0)+1}));
-  const pc={};all.filter(inS).forEach(s=>(s.paesi||[]).forEach(c=>{if(A.codes.includes(c))pc[c]=(pc[c]||0)+1}));
-  X.fs.forEach(k=>{if(!(k in tc))tc[k]=0});X.fa.forEach(k=>{if(!(k in pc))pc[k]=0});
-  const list=all.filter(s=>inS(s)&&inP(s));
-  const one=X.fs.length===1?X.fs[0]:"";
-  return `${crumb([{l:"Aree",p:{k:"lista",id:"area"}},{l:A.n}])}
+  const PC={of:x=>{const P=(x.paesi||[]).filter(c=>A.codes.includes(c));return P[0]||(x.paesi||[])[0]||"altro"},name:PG_C.name,col:PG_C.col,rank:PG_C.rank,
+    badge:c=>{const l=S.countries[c]?+S.countries[c].livello||0:0;return l?`<span class="sp-lv" style="--qc:${LVC(l)}">livello ${l}</span>`:""}};
+  const tk=pgKeys(pgCount(base,PT0.of),PT0),ck=pgKeys(pgCount(base,PC.of),PC);
+  const lv=lvArea(A);
+  const head=`${crumb([{l:"Aree",p:{k:"lista",id:"area"}},{l:A.n}])}
   <div class="xp-hdr"><h1 class="xp-h1">${esc(A.n)}</h1>${followBtn("aree",A.id)}</div>
-  <div class="am-map am-big" data-area="${esc(A.id)}"></div>
-  ${hot.length?`<p class="xp-hs" style="margin:2px 0 4px">I paesi dell’area · livello di tensione</p><div class="xp-pills">${hot.map(c=>{const l=+S.countries[c].livello||0;return `<button type="button" class="xp-pill" data-go="paese|${c}">${flag(c)} ${esc(cName(c))}<i style="background:${LVC(l)}">${l}</i></button>`}).join("")}</div>`:""}
+  <p class="xp-hs" style="margin:0 0 6px">${lv?`<span class="xp-lv" style="background:color-mix(in srgb,${LVC(lv)} 40%,transparent)">${LVT[lv]}</span> `:""}${base.length} storie ${st30.length?"negli ultimi 30 giorni":"in archivio"}</p>
+  ${pgTabs(st,[["pan","Panoramica"],["arg","Argomenti",tk.length],["pae","Paesi",ck.length],["temi","Temi aperti",ranked.length]])}`;
+  const idx=`<div class="sp-idx">${pgIdxRow("arg","Argomenti",`${tk.length} · ${base.length} storie`,pgBar(base,PT0),esc(tk.map(k=>PT0.name(k)+" "+base.filter(x=>PT0.of(x)===k).length).join(" · ")))}
+  ${pgIdxRow("pae","Paesi",`${ck.length} paesi`,pgBar(base,PC),esc(ck.slice(0,5).map(k=>PC.name(k)+" "+base.filter(x=>PC.of(x)===k).length).join(" · ")))}
+  ${ranked.length?pgIdxRow("temi","Temi aperti",`${ranked.length} temi`,"",esc(ranked.map(([id])=>tName(id)).filter(Boolean).join(" · "))):""}</div>`;
+  let body="";
+  if(st.det&&st.det.k==="t"){const t=st.det.v;
+    body=pgDetail(st,base,PT0,PC,"Argomenti",`${PT0.name(t)} in ${PG_SHA[A.id]||A.n}`,`${base.filter(x=>PT0.of(x)===t).length} storie · divise per paese`,
+      `<div class="sp-links"><button type="button" class="xp-lnk" data-go="tema|${esc(t)}">Apri ${esc(tN(t))} in tutto il mondo ›</button></div>`,pgFol([["incroci",A.id+"~"+t]]))}
+  else if(st.det&&st.det.k==="p"){const c=st.det.v;const l=S.countries[c]?+S.countries[c].livello||0:0;
+    body=pgDetail(st,base,PC,PT0,"Paesi",`${flag(c)} ${cName(c)}`.trim(),`${base.filter(x=>PC.of(x)===c).length} storie${l?` · tensione livello ${l} (${LVT[l]})`:""} · divise per argomento`,
+      `<div class="sp-links"><button type="button" class="xp-lnk" data-go="paese|${esc(c)}">Apri la scheda paese: situazione e dinamiche ›</button></div>`,pgFol([["paesi",c]]))}
+  else if(st.tab==="arg")body=`<p class="xp-hs">Tocca un argomento: dentro trovi le sue storie nell’area, divise per paese.</p>${tk.map(k=>pgDimRow(k,PT0,PC,base,"t")).join("")}`;
+  else if(st.tab==="pae")body=`<p class="xp-hs">Paesi in ordine di tensione. Tocca un paese: dentro le sue storie, divise per argomento.</p>${ck.map(k=>pgDimRow(k,PC,PT0,base,"p")).join("")}`;
+  else if(st.tab==="temi")body=ranked.length?`<p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:`<p class="xp-empty">Nessun tema aperto nell’ultimo mese.</p>`;
+  else body=`<div class="xw-hide"><div class="am-map am-big" data-area="${esc(A.id)}"></div></div>
   ${pa?`<h2 class="xp-h2">Il punto della settimana</h2><p class="xp-hs">Aggiornato ${esc(fmtDate(pb.punto_aree.aggiornato||pb.data))}</p><p class="xp-ib">${refText(pa.testo,pa.fonti)}</p>`:inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
   ${paArea(A)}
-  ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
-  <h2 class="xp-h2" id="xpDev">Ultimi sviluppi</h2><p class="xp-hs">Tutte le storie, senza filtri sui tuoi interessi. Puoi restringere questa lista qui sotto.</p>
-  ${filtRow("Di cosa","fs",Object.entries(tc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,`${AIC(k)} ${AMBN[k]}`.trim(),n]),X.fs,"Tutto")}
-  ${filtRow("Dove","fa",Object.entries(pc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,`${flag(k)} ${cName(k)}`,n]),X.fa,"Tutta l’area")}
-  ${(X.fa.length||X.fs.length)?comboBar(X.fa.length?X.fa:[A.id],X.fs,one?`<button type="button" class="xp-lnk" data-go="tema|${esc(one)}">Apri l’argomento</button>`:""):""}
-  ${storyList(list)}`;
+  ${base.length?`<h2 class="xp-h2">Le ultime</h2>${pgLatest(base,PT0)}`:""}
+  <div class="xw-hide"><h2 class="xp-h2">In questa area</h2>${idx}</div>`;
+  const aside=`<div class="xw-card"><div class="am-map" data-area="${esc(A.id)}"></div><div class="xw-k">In questa area</div>${idx}</div>`;
+  return head+`<div class="xw"><div class="xw-main sp-body">${body}</div><aside class="xw-aside">${aside}</aside></div>`;
 }
-
 function temaPage(T){
+  const st=pgState("t:"+T.id);
   const all=storiesWhere(s=>topics(s).a.includes(T.id)),st30=all.filter(s=>s.data>=ago(30));
+  const base=st30.length?st30:all;
+  if(X.fa.length===1&&AREABY[X.fa[0]]){st.tab="aree";st.det={k:"a",v:X.fa[0]};st.f=null}
+  X.fs=[];X.fa=[];
   const ranked=rankThreads(st30).slice(0,3);
   const inb=ranked.map(([id])=>sentence((S.threads[id]||{}).descrizione)).filter(x=>x.length>2).join(" ");
-  /* filtri: Di cosa (sotto-argomenti) e Dove (aree), a scelta multipla; «o» dentro una riga, «e» tra le righe */
-  const fs=X.fs.filter(k=>T.sotto.some(([x])=>x===k));
-  const inS=s=>!fs.length||topics(s).s.some(k=>fs.includes(k)),inA=s=>!X.fa.length||X.fa.includes(storyArea(s));
-  const sc={};all.filter(inA).forEach(s=>topics(s).s.forEach(k=>{if(T.sotto.some(([x])=>x===k))sc[k]=(sc[k]||0)+1}));
-  const ac={};all.filter(inS).forEach(s=>{const a=storyArea(s);if(a&&AREABY[a])ac[a]=(ac[a]||0)+1});
-  fs.forEach(k=>{if(!(k in sc))sc[k]=0});X.fa.forEach(k=>{if(!(k in ac))ac[k]=0});
-  const list=all.filter(s=>inS(s)&&inA(s));
-  const one=X.fa.length===1?X.fa[0]:"";
-  return `${crumb([{l:"Argomenti",p:{k:"lista",id:"tema"}},{l:T.n}])}
-  <div class="xp-hdr"><h1 class="xp-h1">${AIC(T.id)} ${esc(T.n)}</h1>${followBtn("temi",T.id)}</div>
-  ${paBlock(T.id,T.n)}
-  <p class="xp-hs" style="margin:2px 0 4px">Dentro ${esc(T.n)} · storie nell’ultimo mese</p><div class="xp-pills">${T.sotto.map(([k,nm])=>{const n=st30.filter(s=>topics(s).s.includes(k)).length;return `<button type="button" class="xp-pill${n?"":" xp-off"}" data-sub-go="${esc(k)}"${n?"":" disabled"}>${esc(nm)}<i style="background:${n?"var(--accent)":"var(--line)"};color:var(--bg)">${n}</i></button>`}).join("")}</div>
+  const tc=PG_T.col(T.id);
+  const PA=Object.assign({},PG_A,{badge:a=>{const l=AREABY[a]?lvArea(AREABY[a]):0;return l?`<span class="sp-lv" style="--qc:${LVC(l)}">${LVT[l]}</span>`:""}});
+  const PC=Object.assign({},PG_C,{badge:c=>{const l=S.countries[c]?+S.countries[c].livello||0:0;return l?`<span class="sp-lv" style="--qc:${LVC(l)}">livello ${l}</span>`:""}});
+  const ak=pgKeys(pgCount(base,PA.of),PA),ck=pgKeys(pgCount(base,PC.of),PC);
+  const head=`${crumb([{l:"Argomenti",p:{k:"lista",id:"tema"}},{l:T.n}])}
+  <div class="xp-hdr"><h1 class="xp-h1"><span class="pf-dot" style="--pc:${tc};width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:8px"></span>${esc(T.n)}</h1>${followBtn("temi",T.id)}</div>
+  <p class="xp-hs" style="margin:0 0 6px">${base.length} storie ${st30.length?"negli ultimi 30 giorni":"in archivio"}</p>
+  ${pgTabs(st,[["pan","Panoramica"],["aree","Aree",ak.length],["pae","Paesi",ck.length],["temi","Temi aperti",ranked.length]])}`;
+  const idx=`<div class="sp-idx">${pgIdxRow("aree","Aree",`${ak.length} · ${base.length} storie`,pgBar(base,PA),esc(ak.map(k=>PA.name(k)+" "+base.filter(x=>PA.of(x)===k).length).join(" · ")))}
+  ${pgIdxRow("pae","Paesi",`${ck.length} paesi`,pgBar(base,PC),esc(ck.slice(0,5).map(k=>PC.name(k)+" "+base.filter(x=>PC.of(x)===k).length).join(" · ")))}
+  ${ranked.length?pgIdxRow("temi","Temi aperti",`${ranked.length} temi`,"",esc(ranked.map(([id])=>tName(id)).filter(Boolean).join(" · "))):""}</div>`;
+  let body="";
+  if(st.det&&st.det.k==="a"){const a=st.det.v;
+    body=pgDetail(st,base,PA,PC,"Aree",`${T.n.split(" ")[0]} in ${PA.name(a)}`,`${base.filter(x=>PA.of(x)===a).length} storie · divise per paese`,
+      `<div class="sp-links"><button type="button" class="xp-lnk" data-go="area|${esc(a)}">Apri l’area ${esc(AREABY[a]?AREABY[a].n:"")} ›</button></div>`,pgFol([["incroci",a+"~"+T.id]]))}
+  else if(st.det&&st.det.k==="p"){const c=st.det.v;
+    body=pgDetail(st,base,PC,PA,"Paesi",`${flag(c)} ${cName(c)}`.trim(),`${base.filter(x=>PC.of(x)===c).length} storie di ${T.n}`,
+      `<div class="sp-links"><button type="button" class="xp-lnk" data-go="paese|${esc(c)}">Apri la scheda paese: situazione e dinamiche ›</button></div>`,pgFol([["paesi",c]]))}
+  else if(st.tab==="aree")body=`<p class="xp-hs">Aree con il colore della loro tensione. Tocca un’area: dentro le storie di ${esc(T.n)}, divise per paese.</p>${ak.map(k=>pgDimRow(k,PA,PC,base,"a")).join("")}`;
+  else if(st.tab==="pae")body=`<p class="xp-hs">Paesi in ordine di tensione. Tocca un paese: dentro le sue storie di ${esc(T.n)}.</p>${ck.map(k=>pgDimRow(k,PC,PA,base,"p")).join("")}`;
+  else if(st.tab==="temi")body=ranked.length?`<p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:`<p class="xp-empty">Nessun tema aperto nell’ultimo mese.</p>`;
+  else body=`${paBlock(T.id,T.n)}
   ${inb?`<h2 class="xp-h2">In breve</h2><p class="xp-ib">${esc(inb)}</p>`:""}
-  ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2><p class="xp-hs">Dalla più attiva nell’ultimo mese. Tocca per la storia completa del tema.</p>${threadCards(ranked,all)}`:""}
-  <h2 class="xp-h2" id="xpDev">Ultimi sviluppi</h2><p class="xp-hs">Tutte le storie, senza filtri sui tuoi interessi. Puoi restringere questa lista qui sotto.</p>
-  ${filtRow("Di cosa","fs",Object.entries(sc).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,SUBN[k],n]),fs,"Tutto")}
-  ${filtRow("Dove","fa",Object.entries(ac).sort((x,y)=>y[1]-x[1]).map(([k,n])=>[k,AREABY[k].n,n]),X.fa,"Ovunque")}
-  ${(X.fa.length||fs.length)?comboBar(X.fa,fs.length?fs:[T.id],one?`<button type="button" class="xp-lnk" data-go="area|${esc(one)}">Apri l’area</button>`:""):""}
-  ${storyList(list)}`;
+  ${base.length?`<h2 class="xp-h2">Le ultime</h2>${pgLatest(base,PA)}`:""}
+  <div class="xw-hide"><h2 class="xp-h2">In questo argomento</h2>${idx}</div>`;
+  const aside=`<div class="xw-card"><div class="xw-k">In questo argomento</div>${idx}</div>`;
+  return head+`<div class="xw"><div class="xw-main sp-body">${body}</div><aside class="xw-aside">${aside}</aside></div>`;
 }
 /* barra «segui»: propone esattamente la selezione fatta (geografie × argomenti) */
 function andList(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" e "+a[a.length-1]}
@@ -4114,13 +4285,16 @@ function paesePage(iso){
   const ranked=rankThreads(all.filter(s=>s.data>=ago(30))).slice(0,3);
   const lv=c?+c.livello||0:0;
   const dyn=(c&&Array.isArray(c.dinamiche))?c.dinamiche.slice(0,4):[];
-  return `${crumb([{l:"Aree",p:{k:"lista",id:"area"}}].concat(A?[{l:A.n,p:{k:"area",id:A.id}}]:[]).concat([{l:cName(iso)}]))}
+  const mates=A?A.codes.filter(x=>x!==iso&&S.countries[x]).sort((x,y)=>(+S.countries[y].livello||0)-(+S.countries[x].livello||0)).slice(0,10):[];
+  const aside=`<div class="xw-card">${A?`<div class="am-map" data-area="${esc(A.id)}"></div>`:""}${lv?`<div class="xw-k">Tensione</div><div class="xw-lvl" style="--qc:${LVC(lv)}"><b>${lv}</b> ${esc(LVT[lv]||"")}</div>`:""}${mates.length?`<div class="xw-sec"><div class="xw-k">Nella stessa area</div><div class="xw-leg">${mates.map(x=>{const l=+S.countries[x].livello||0;return `<button type="button" class="xw-li" data-go="paese|${esc(x)}"><span class="pf-dot" style="--pc:${LVC(l||1)}"></span><span class="xw-ln">${flag(x)} ${esc(cName(x))}</span><span class="xw-lc">${l?esc(LVT[l]):""}</span></button>`}).join("")}</div>${A?`<button type="button" class="xp-lnk" data-go="area|${esc(A.id)}">Apri ${esc(A.n)} ›</button>`:""}</div>`:""}</div>`;
+  return `<div class="xw"><div class="xw-main">${crumb([{l:"Aree",p:{k:"lista",id:"area"}}].concat(A?[{l:A.n,p:{k:"area",id:A.id}}]:[]).concat([{l:cName(iso)}]))}
   <div class="xp-hdr"><h1 class="xp-h1">${flag(iso)} ${esc(cName(iso))}</h1>${followBtn("paesi",iso,"il paese")}</div>
   <div class="xp-pills">${lv?`<span class="xp-pill" style="cursor:default">Livello di tensione<i style="background:${LVC(lv)}">${lv}</i>${esc(LVT[lv]||"")}</span>`:""}<button type="button" class="xp-pill xp-mapbtn" data-country="${esc(iso)}">🗺 Vedi sulla mappa</button></div>
   ${c&&c.sintesi?`<h2 class="xp-h2">La situazione</h2><p class="xp-ib">${esc(String(c.sintesi).replace(/\s*\[\d+\]/g,""))}</p>`:""}
   ${dyn.length?`<h2 class="xp-h2">Con chi è in gioco</h2><ul class="xp-dyn">${dyn.map(d=>`<li>${d.con?`<button type="button" data-go="paese|${esc(d.con)}">${flag(d.con)} ${esc(cName(d.con))}</button>: `:""}${esc(d.testo||"")}</li>`).join("")}</ul>`:""}
   ${ranked.length?`<h2 class="xp-h2">I temi aperti</h2>${threadCards(ranked,all)}`:""}
   <h2 class="xp-h2">Ultimi sviluppi</h2>${storyList(all)}
+</div><aside class="xw-aside">${aside}</aside></div>
 `;
 }
 
@@ -4154,7 +4328,7 @@ function renderEx(){
   else if(p&&p.k==="paese")h=paesePage(p.id);
   else if(p&&p.k==="lista"){X.mode=p.id==="tema"?"tema":"area";h=landing()}
   else{X.page=null;X.mode="perte";h=landing()}
-  el.innerHTML=h;
+  el.innerHTML=h;el.classList.toggle("xp-wide",h.indexOf('<div class="xw">')>=0);
   try{enhanceRows(el)}catch(e){console.warn("righe",e)}
   try{if(typeof updNav==="function")updNav()}catch(_){}
 }
@@ -4163,7 +4337,18 @@ document.addEventListener("click",e=>{
   const root=e.target.closest("#esplora");if(!root)return;
   const f=e.target.closest("[data-follow]");if(f){const [k,id]=f.dataset.follow.split("|");toggleF(k,id);renderEx();try{perTe()}catch(_){}return}
   const ex=e.target.closest("[data-exp]");if(ex){const k=ex.dataset.exp;if(X.exp.has(k))X.exp.delete(k);else X.exp.add(k);X.open=null;renderEx();return}
-  const pb=e.target.closest("[data-ptby]");if(pb){X.ptBy=pb.dataset.ptby;try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}renderEx();return}
+  const xt=e.target.closest("[data-xtab]");if(xt&&X.pg){X.pg.tab=xt.dataset.xtab;X.pg.det=null;X.pg.f=null;renderEx();const tb=document.querySelector(".sp-tabs");if(tb){const off=document.querySelector("header.top").offsetHeight+8;const y=tb.getBoundingClientRect().top+window.scrollY-off;if(window.scrollY>y)window.scrollTo({top:y,behavior:"smooth"})}return}
+  const xd=e.target.closest("[data-xdet]");if(xd&&X.pg){const v=xd.dataset.xdet,i=v.indexOf("|");X.pg.det={k:v.slice(0,i),v:v.slice(i+1)};X.pg.f=null;X.pg.lim=8;X.open=null;renderEx();const tb=document.querySelector(".sp-tabs");if(tb){const off=document.querySelector("header.top").offsetHeight+8;window.scrollTo({top:tb.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
+  const xb=e.target.closest("[data-xback]");if(xb&&X.pg){X.pg.det=null;X.pg.f=null;renderEx();return}
+  const xff=e.target.closest("[data-xf]");if(xff&&X.pg){X.pg.f=xff.dataset.xf||null;X.pg.lim=8;renderEx();return}
+  const xl=e.target.closest("[data-xlim]");if(xl&&X.pg){X.pg.lim=+xl.dataset.xlim;renderEx();return}
+  const pj=e.target.closest("[data-ptjump]");if(pj){const v=pj.dataset.ptjump,i=v.indexOf("|");X.ptBy=v.slice(0,i);try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}X.ptP=v.slice(i+1);X.ptS="tutto";renderEx();try{perTe()}catch(_){}const r=document.getElementById("esplora");if(r){const off=document.querySelector("header.top").offsetHeight+8;const y=r.getBoundingClientRect().top+window.scrollY-off;if(window.scrollY>y)window.scrollTo({top:y,behavior:"smooth"})}return}
+  const px=e.target.closest("[data-pgx]");if(px){const k=px.dataset.pgx;if(X.exp.has(k))X.exp.delete(k);else X.exp.add(k);renderEx();return}
+  const pp=e.target.closest("[data-ptp]");if(pp){X.ptP=pp.dataset.ptp;X.ptS="tutto";X.ptLim=30;renderEx();return}
+  const ps=e.target.closest("[data-pts]");if(ps){X.ptS=ps.dataset.pts;X.ptLim=30;renderEx();return}
+  const pr=e.target.closest("[data-ptper]");if(pr){X.ptPer=pr.dataset.ptper;X.ptP="tutto";X.ptS="tutto";X.ptLim=30;renderEx();return}
+  const pm=e.target.closest("[data-ptmore]");if(pm){X.ptLim=(X.ptLim||30)+30;renderEx();return}
+  const pb=e.target.closest("[data-ptby]");if(pb){X.ptBy=pb.dataset.ptby;X.ptP="tutto";X.ptS="tutto";X.ptLim=30;try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}renderEx();return}
   const m=e.target.closest("[data-mode]");if(m){X.mode=m.dataset.mode;renderEx();return}
   const g=e.target.closest("[data-go]");if(g){const v=g.dataset.go;if(!v){go(null);return}const i=v.indexOf("|");const k=v.slice(0,i),id=v.slice(i+1);
     if(k==="areachip"){const [a,t]=splitX(id);go({k:"area",id:a});X.fs=[t];renderEx();return}
