@@ -1,4 +1,5 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.b-disc{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-right:4px;white-space:nowrap}
+.corr{margin:10px 0 0;border-left:3px solid var(--l2,#C9A24A);background:var(--surface-2,rgba(255,255,255,.04));border-radius:6px;padding:8px 12px;font-size:13.5px}.corr p{margin:4px 0 0}.corr .corr-n{color:var(--muted);font-size:12.5px}
 </style><style>
 #nlm{position:fixed;inset:0;z-index:9999;background:rgba(10,16,32,.62);display:flex;align-items:center;justify-content:center;padding:16px}
 .nl-c{position:relative;max-width:440px;width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
@@ -1657,6 +1658,7 @@ function sxBody(s,th,hasSc,conf,prev){
   ${ids.length?sec("ppl","👤","Persone coinvolte","",`<div class="chips" style="margin:0">${ids.map(x=>`<button class="chip actor" data-actor="${esc(x)}">${esc(S.attori[x].nome)}</button>`).join("")}</div>`):""}
   ${sec("src","🔗",`Fonti · ${d.n} da ${d.paesi} ${plur(d.paesi,"paese","paesi")}`,"",`<p class="sx-src">${divHTML(s.fonti)}<span class="muted">Confidenza ${esc(conf.livello||"")}: ${esc(conf.motivo||"")}</span></p><details class="sx-list"><summary>▸ Elenco delle fonti</summary>${srcList(s.fonti)}</details>`)}
   <div class="sx-act"><button class="askbtn ghost" data-ask-story="${esc(id)}">💬 Fai una domanda</button><button class="askbtn" data-sx-close="${esc(id)}">▲ Chiudi</button></div>`}
+function corrHTML(s){const c=(s&&s.correzioni)||[];if(!c.length)return"";return `<div class="corr"><span class="label"><span class="ic" aria-hidden="true">✎</span>Corretta dopo l’uscita</span>${c.map(x=>`<p><b>${esc(x.ora||"")}</b> ${esc(x.testo||"")}</p>`).join("")}<p class="corr-n">Il podcast e l’email del mattino possono riportare la versione precedente.</p></div>`}
 function storyHTML(s,rank){
   if(!s)return"";
   const conf=s.confidenza||{};
@@ -1674,7 +1676,7 @@ function storyHTML(s,rank){
   <div class="sto-b">
     <div class="block"><span class="label tag-fact"><span class="ic" aria-hidden="true">🧾</span>Fatti · verificati</span><p>${refText(s.fatti,s.fonti)}</p></div>
     ${s.divergenze?`<div class="diverge"><span class="label"><span class="ic" aria-hidden="true">⚠️</span>Le fonti divergono</span><br>${refText(s.divergenze,s.fonti)}</div>`:""}
-    <div class="block pc"><span class="label tag-interp"><span class="ic" aria-hidden="true">💡</span>Perché conta · interpretazione</span><p>${refText(s.perche_conta,s.fonti)}</p></div>
+    <div class="block pc"><span class="label tag-interp"><span class="ic" aria-hidden="true">💡</span>Perché conta · interpretazione</span><p>${refText(s.perche_conta,s.fonti)}</p></div>${corrHTML(s)}
     ${dosStripHTML(dosForStory(s))}
   </div>
   <details class="sx"><summary><span class="sx-t"><span class="sx-o">▾ Posizioni, sintesi, segnali e fonti</span><span class="sx-c">▴ Posizioni, sintesi, segnali e fonti</span></span><span class="sx-f">${nf} fonti <span class="dots">${dots}</span></span></summary>
