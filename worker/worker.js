@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v27: /api/data.json?parte=oggi (primo blocco del sito), POST /api/perf (tempi di caricamento anonimi), pannello che precarica le tab in sottofondo.
 // v26: pannello più veloce (letture in parallelo, tabella kv verificata una volta, Utenti e posta caricati solo all'apertura della tab). /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
 // v25: /c/utile registra i clic «La usavo» della vecchia edizione condivisa (kv utile:<giorno>:<hash>).
 // v24: proposte e scelte della settimana nel pannello (parola, due letture, punto che sfugge; tema da preferire per martedì e venerdì), campo `scelta` in /v1/ig/plan.
@@ -173,13 +174,21 @@ async function siteFile(env, parte, ver) {
 async function siteWarm(env) { // dal cron: prepara i due file quando i dati cambiano, così nessun lettore aspetta la costruzione
   const ver = await siteVer(env);
   if ((await kvGet(env, "site_ver")) === ver) return;
-  await siteFile(env, "recente", ver); await siteFile(env, "tutto", ver);
+  await siteFile(env, "oggi", ver); await siteFile(env, "recente", ver); await siteFile(env, "tutto", ver);
   await kvSet(env, "site_ver", ver);
 }
 async function buildSiteData(env, parte = "tutto") {
   let sql = "SELECT type, key, data FROM docs WHERE status='published' ORDER BY type, key LIMIT 30000";
   let binds = [];
-  if (parte === "recente") {
+  if (parte === "oggi") {
+    /* v27: primo blocco, il minimo per disegnare il briefing e la mappa: ultimi 2 briefing e le loro storie, filoni, eventi, paesi, fonti. */
+    const last = await env.DB.prepare("SELECT key FROM docs WHERE type='briefings' AND status='published' ORDER BY key DESC LIMIT 2").all();
+    const days = (last.results || []).map((r) => r.key).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k));
+    const lim = days.length ? days[days.length - 1] : new Date().toISOString().slice(0, 10);
+    sql = "SELECT type, key, data FROM docs WHERE status='published' AND (" +
+      "(type IN ('briefings','stories') AND json_extract(data,'$.data')>=?1) OR type IN ('threads','events','countries','sources','pubblico')) ORDER BY type, key LIMIT 30000";
+    binds = [lim];
+  } else if (parte === "recente") {
     // la finestra parte dall'ultimo briefing pubblicato, non da oggi: se la routine salta qualche giorno la prima schermata non resta vuota
     const last = await env.DB.prepare("SELECT MAX(key) AS m FROM docs WHERE type='briefings' AND status='published'").first();
     const base = /^\d{4}-\d{2}-\d{2}$/.test((last && last.m) || "") ? Date.parse(last.m + "T12:00:00Z") : Date.now();
@@ -1056,7 +1065,15 @@ function renderReq(){
   el.querySelectorAll(".cx").forEach(b=>b.onclick=async()=>{await api({action:"req_cancel",id:b.closest(".day").dataset.id});load()});
 }
 setTab("list");
-load();
+load().then(()=>{
+ /* v27: misura e precarica. Appena le bozze sono a schermo: tempo registrato (anonimo) e le altre tab si caricano in sottofondo, così al tocco sono pronte. */
+ try{const n=performance.getEntriesByType("navigation")[0]||{};const c=navigator.connection||{};fetch("/api/perf",{method:"POST",body:JSON.stringify({src:"pannello",net:c.effectiveType||"",m:{html:n.responseEnd||0,dom:n.domContentLoadedEventEnd||0,bozze:performance.now()}}),keepalive:true}).catch(()=>{})}catch(e){}
+ setTimeout(()=>{
+  if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}
+  if(!PROP)loadProp(false);
+  setTimeout(()=>{if(!ST_GEN){ST_GEN=true;loadStats(false)}},1500);
+ },400);
+}).catch(()=>{});
 // ---------- Podcast: puntata del giorno e storia Instagram (disegnata qui, nel telefono) ----------
 let POD=null,POD_GEN=false,POD_BLOB=null,POD_IMG=null,POD_T=null;
 function podCopy(btn,txt){const done=()=>{const o=btn.textContent;btn.textContent="Copiato ✓";setTimeout(()=>{btn.textContent=o},1500)};
@@ -1977,6 +1994,17 @@ async function route(request, env) {
     return new Response(h, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300", ...CORS } });
   }
 
+  if (method === "POST" && p === "/api/perf") {
+    /* v27: tempi di caricamento anonimi (sito e pannello), per misurare invece di andare a sensazione. Si cancellano dopo 14 giorni. */
+    const txt = (await request.text()).slice(0, 3000);
+    let b = null; try { b = JSON.parse(txt); } catch (e) {}
+    if (!b || typeof b !== "object" || !["sito", "pannello"].includes(b.src)) return new Response(null, { status: 204, headers: CORS });
+    const m = {}; for (const [k, v] of Object.entries(b.m || {}).slice(0, 20)) if (typeof v === "number" && isFinite(v)) m[String(k).slice(0, 20)] = Math.round(v);
+    const ua = request.headers.get("user-agent") || "";
+    const dev = /iPhone|iPad/.test(ua) ? "iOS" : /Android/.test(ua) ? "Android" : /Mac/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "altro";
+    await kvSet(env, "perf:" + new Date().toISOString() + ":" + crypto.randomUUID().slice(0, 4), { src: b.src, m, dev, net: String(b.net || "").slice(0, 10), cf: (request.cf && request.cf.colo) || "" });
+    return new Response(null, { status: 204, headers: CORS });
+  }
   if (method === "GET" && p === "/c/utile") {
     /* v25: pulsante «La usavo» della vecchia edizione condivisa. Un clic per persona al giorno (ip in hash). */
     const ip = request.headers.get("cf-connecting-ip") || "x";
@@ -1989,10 +2017,11 @@ async function route(request, env) {
   if ((method === "GET" || method === "HEAD") && p === "/api/data.json") {
     /* v26: file dei dati già pronto (R2, preparato dal cron) + ETag: chi torna e i dati non sono cambiati scarica 0 byte.
        ?parte=recente → ultimi giorni (prima schermata veloce); senza parametro → tutto (come prima). */
-    const parte = url.searchParams.get("parte") === "recente" ? "recente" : "tutto";
+    const pq = url.searchParams.get("parte");
+    const parte = pq === "oggi" || pq === "recente" ? pq : "tutto";
     const ver = await siteVer(env);
     const etag = '"' + parte + "-" + ver + '"';
-    const hdr = { "content-type": "application/json; charset=utf-8", ...CORS, "access-control-expose-headers": "etag", etag, "cache-control": "public, max-age=0, must-revalidate", "x-rg-ver": ver };
+    const hdr = { "content-type": "application/json; charset=utf-8", ...CORS, "access-control-expose-headers": "etag", "timing-allow-origin": "*", etag, "cache-control": "public, max-age=0, must-revalidate", "x-rg-ver": ver };
     const inm = request.headers.get("if-none-match") || "";
     if (inm.split(",").map((s) => s.trim().replace(/^W\//, "")).includes(etag)) return new Response(null, { status: 304, headers: hdr });
     const body = await siteFile(env, parte, ver);
@@ -2510,6 +2539,7 @@ export default {
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
+    try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
     try {
       if (env.PODCAST) {
