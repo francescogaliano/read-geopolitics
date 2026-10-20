@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v25: /c/utile registra i clic «La usavo» della vecchia edizione condivisa (kv utile:<giorno>:<hash>).
 // v24: proposte e scelte della settimana nel pannello (parola, due letture, punto che sfugge; tema da preferire per martedì e venerdì), campo `scelta` in /v1/ig/plan.
 // v23: kit radar.mjs e rubrica del venerdì «Oggi in 40 secondi» (template oggi-reel, al posto di «Dentro il sito»).
 // v22: kit apertura.mjs (apertura col globo, 4 s fino al beat, per il reel del martedì) e copertina dei reel scelta (thumb_ms nella bozza → thumb_offset di Instagram).
@@ -1923,6 +1924,15 @@ async function route(request, env) {
     const c = mailCompose(src, await mailCfg(env));
     const h = c.html.split("@@UNSUB@@").join("#").replace("<head>", '<head><meta name="robots" content="noindex">');
     return new Response(h, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=300", ...CORS } });
+  }
+
+  if (method === "GET" && p === "/c/utile") {
+    /* v25: pulsante «La usavo» della vecchia edizione condivisa. Un clic per persona al giorno (ip in hash). */
+    const ip = request.headers.get("cf-connecting-ip") || "x";
+    const h = (await sha256("utile|" + ip)).slice(0, 16);
+    const day = romeToday();
+    await kvSet(env, "utile:" + day + ":" + h, { at: new Date().toISOString(), ua: (request.headers.get("user-agent") || "").slice(0, 80) });
+    return new Response(`<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Grazie</title><body style="margin:0;background:#0b1220;color:#e6ecf7;font:18px/1.55 system-ui,Segoe UI,Helvetica,Arial,sans-serif"><main style="max-width:520px;margin:12vh auto;padding:0 22px"><div style="font-weight:700;letter-spacing:.06em;font-size:15px;color:#f5b04c">READ GEOPOLITICS</div><h1 style="font-size:28px;line-height:1.2;margin:14px 0 12px">Grazie, ricevuto.</h1><p>Francesco ora sa che la versione condivisa ti era utile.</p><p>Nel frattempo trovi lo stesso briefing, ogni mattina e con tutto l'archivio, sul sito:</p><p><a href="https://www.readgeopolitics.com/?utm_source=condivisa" style="display:inline-block;background:#f5b04c;color:#0b1220;font-weight:700;text-decoration:none;padding:12px 18px;border-radius:8px">Apri readgeopolitics.com</a></p></main></body></html>`, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
   }
 
   if (method === "GET" && p === "/api/data.json") {
