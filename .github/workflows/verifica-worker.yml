@@ -1,0 +1,22 @@
+name: Verifica rg-api (sola lettura)
+# Legge la configurazione del Worker rg-api senza modificare nulla: binding (solo nomi e tipi, mai valori),
+# data di compatibilità, cron programmati, workers.dev e stato del token. Gira solo su push al ramo verifica-worker.
+on:
+  push:
+    branches: [verifica-worker]
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Leggi configurazione (GET)
+        env:
+          T: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          A="https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/rg-api"
+          H="Authorization: Bearer $T"
+          echo "== impostazioni"; curl -s -H "$H" "$A/settings" | jq '{success, errors, compatibility_date: .result.compatibility_date, compatibility_flags: .result.compatibility_flags, usage_model: .result.usage_model, placement: .result.placement, observability: .result.observability, logpush: .result.logpush, tail_consumers: .result.tail_consumers, bindings: [(.result.bindings // [])[] | {type, name, rif: (.database_id // .bucket_name // .namespace_id // .service // null)}]}'
+          echo "== cron"; curl -s -H "$H" "$A/schedules" | jq '{success, errors, schedules: .result.schedules}'
+          echo "== workers.dev"; curl -s -H "$H" "$A/subdomain" | jq '{success, errors, result}'
+          echo "== token (utente)"; curl -s -H "$H" "https://api.cloudflare.com/client/v4/user/tokens/verify" | jq '{success, errors, status: .result.status}'
+          echo "== token (account)"; curl -s -H "$H" "https://api.cloudflare.com/client/v4/accounts/$ACC/tokens/verify" | jq '{success, errors, status: .result.status}'
