@@ -3394,11 +3394,14 @@ function setHdr(){const h=document.querySelector("header.top");if(h)document.doc
 setHdr();window.addEventListener("resize",setHdr);
 let tmr=null;function schedule(){clearTimeout(tmr);tmr=setTimeout(renderAll,60)}
 function staticDb(j){
-  const C=j.collections||{};
+  /* I dati arrivano in due tempi: prima gli ultimi giorni (prima schermata veloce), poi tutto lo storico.
+     merge() sostituisce le collezioni arrivate e richiama i loro ascoltatori, come farebbe un database dal vivo. */
+  let C=j.collections||{};const L={};
+  const fire=(name,ord,next)=>{let docs=(C[name]||[]).map(d=>({id:d.id,data:()=>d.data}));if(ord){const [f,dir]=ord;docs.sort((a,b)=>String(a.data()[f]).localeCompare(String(b.data()[f]))*(dir==="desc"?-1:1))}next({docs,size:docs.length,empty:!docs.length,docChanges:()=>[]})};
   const coll=name=>{let ord=null;const api={orderBy(f,d){ord=[f,d];return api},where(){return api},limit(){return api},
     doc:()=>({set:()=>Promise.reject(new Error("read-only")),update:()=>Promise.reject(new Error("read-only")),delete:()=>Promise.reject(new Error("read-only"))}),
-    onSnapshot(next){setTimeout(()=>{let docs=(C[name]||[]).map(d=>({id:d.id,data:()=>d.data}));if(ord){const [f,dir]=ord;docs.sort((a,b)=>String(a.data()[f]).localeCompare(String(b.data()[f]))*(dir==="desc"?-1:1))}next({docs,size:docs.length,empty:!docs.length,docChanges:()=>[]})},0);return()=>{}}};return api};
-  return {collection:coll};
+    onSnapshot(next){const o={ord,next};(L[name]||(L[name]=[])).push(o);setTimeout(()=>fire(name,o.ord,next),0);return()=>{const a=L[name]||[];const i=a.indexOf(o);if(i>=0)a.splice(i,1)}}};return api};
+  return {collection:coll,merge(j2){const N=(j2&&j2.collections)||{};const ch=[];for(const k in N){const a=C[k]||[],b=N[k];if(a.length!==b.length||JSON.stringify(a)!==JSON.stringify(b))ch.push(k)}C={...C,...N};ch.forEach(k=>(L[k]||[]).slice().forEach(o=>{try{fire(k,o.ord,o.next)}catch(e){}}));return ch}};
 }
 function applyOwner(){
   ["tab-idee","ideePill","dlBox","dosNew"].forEach(id=>{const e=document.getElementById(id);if(e)e.hidden=true});
@@ -3413,7 +3416,7 @@ function applyOwner(){
   if(!S.static)(async()=>{try{const u=await (window.claude&&window.claude.use?window.claude.use("user"):null);if(u){S.userKnown=true;S.owner=await u.isOwner();S.editor=await u.canEdit()}}catch(e){}
     applyOwner();schedule()})();
   let db=null;
-  try{let r=null;try{r=await fetch("https://rg-api.briefinghub.workers.dev/api/data.json");if(!r.ok)r=null}catch(e){r=null}if(!r)r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
+  try{const API="https://rg-api.briefinghub.workers.dev/api/data.json";let r=null,parz=false;try{r=await fetch(API+"?parte=recente");if(r.ok)parz=true;else r=null}catch(e){r=null}if(!r)r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);if(parz&&j.parte==="recente"){const tutto=()=>fetch(API).then(x=>x.ok?x.json():null).then(j2=>{if(j2&&j2.collections){db.merge(j2);if(j2.generato)S.snapAt=j2.generato}}).catch(()=>{});setTimeout(tutto,300)}S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
   if(!db){db=await (window.claude&&window.claude.use?window.claude.use("db"):null);if(db)setTimeout(maybeNovita,1500)}
   if(!db){$("#briefing").innerHTML='<div class="state">Il database della dashboard non è disponibile in questa vista. Apri la pagina da claude.ai con il tuo account.</div>';return}
   S.db=db;

@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v26: /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
 // v25: /c/utile registra i clic «La usavo» della vecchia edizione condivisa (kv utile:<giorno>:<hash>).
 // v24: proposte e scelte della settimana nel pannello (parola, due letture, punto che sfugge; tema da preferire per martedì e venerdì), campo `scelta` in /v1/ig/plan.
 // v23: kit radar.mjs e rubrica del venerdì «Oggi in 40 secondi» (template oggi-reel, al posto di «Dentro il sito»).
@@ -144,10 +145,52 @@ function romeNow() {
   return `${g("day")}/${g("month")}/${g("year")} ${g("hour")}:${g("minute")}`;
 }
 
-async function buildSiteData(env) {
-  const { results } = await env.DB.prepare(
-    "SELECT type, key, data FROM docs WHERE status='published' ORDER BY type, key LIMIT 30000"
-  ).all();
+/* v26: versione dei dati del sito = ultimo aggiornamento della tabella docs (indice su updated_at: legge 1 riga). */
+let SITE_IDX = false;
+async function siteVer(env) {
+  if (!SITE_IDX) { try { await env.DB.prepare("CREATE INDEX IF NOT EXISTS docs_updated ON docs(updated_at)").run(); } catch (e) {} SITE_IDX = true; }
+  const r = await env.DB.prepare("SELECT MAX(updated_at) AS m FROM docs").first();
+  return String((r && r.m) || "0").replace(/[^0-9]/g, "").slice(0, 17) || "0";
+}
+const SITE_RECENTE_GIORNI = 4;
+const SITE_DOPO = ["dossier", "attori_storico"]; // non servono alla prima schermata
+async function siteFile(env, parte, ver) {
+  const key = "site/" + parte + "-" + ver + ".json";
+  if (env.PODCAST) {
+    try { const o = await env.PODCAST.get(key); if (o) return await o.text(); } catch (e) {}
+  }
+  const body = JSON.stringify(await buildSiteData(env, parte));
+  if (env.PODCAST) {
+    try {
+      await env.PODCAST.put(key, body, { httpMetadata: { contentType: "application/json" } });
+      const l = await env.PODCAST.list({ prefix: "site/" + parte + "-", limit: 100 });
+      const old = l.objects.map((o) => o.key).filter((k) => k !== key);
+      if (old.length) await env.PODCAST.delete(old);
+    } catch (e) {}
+  }
+  return body;
+}
+async function siteWarm(env) { // dal cron: prepara i due file quando i dati cambiano, così nessun lettore aspetta la costruzione
+  const ver = await siteVer(env);
+  if ((await kvGet(env, "site_ver")) === ver) return;
+  await siteFile(env, "recente", ver); await siteFile(env, "tutto", ver);
+  await kvSet(env, "site_ver", ver);
+}
+async function buildSiteData(env, parte = "tutto") {
+  let sql = "SELECT type, key, data FROM docs WHERE status='published' ORDER BY type, key LIMIT 30000";
+  let binds = [];
+  if (parte === "recente") {
+    // la finestra parte dall'ultimo briefing pubblicato, non da oggi: se la routine salta qualche giorno la prima schermata non resta vuota
+    const last = await env.DB.prepare("SELECT MAX(key) AS m FROM docs WHERE type='briefings' AND status='published'").first();
+    const base = /^\d{4}-\d{2}-\d{2}$/.test((last && last.m) || "") ? Date.parse(last.m + "T12:00:00Z") : Date.now();
+    const lim = new Date(base - SITE_RECENTE_GIORNI * 86400000).toISOString().slice(0, 10);
+    const limW = new Date(base - 8 * 86400000).toISOString().slice(0, 10);
+    sql = "SELECT type, key, data FROM docs WHERE status='published' AND type NOT IN ('" + SITE_DOPO.join("','") + "') AND (" +
+      "(type IN ('briefings','stories','brevi','segnali') AND json_extract(data,'$.data')>=?1) OR (type='settimanali' AND json_extract(data,'$.data')>=?2) OR " +
+      "type NOT IN ('briefings','stories','brevi','segnali','settimanali')) ORDER BY type, key LIMIT 30000";
+    binds = [lim, limW];
+  }
+  const { results } = await env.DB.prepare(sql).bind(...binds).all();
   const cols = {}; let pubblico = {};
   for (const r of results) {
     const d = JSON.parse(r.data);
@@ -157,7 +200,7 @@ async function buildSiteData(env) {
   }
   const collections = {};
   for (const c of ORDER) if (cols[c]) collections[c] = cols[c];
-  return { generato: romeNow(), pubblico, collections };
+  return { generato: romeNow(), parte, pubblico, collections };
 }
 
 
@@ -1935,14 +1978,17 @@ async function route(request, env) {
     return new Response(`<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Grazie</title><body style="margin:0;background:#0b1220;color:#e6ecf7;font:18px/1.55 system-ui,Segoe UI,Helvetica,Arial,sans-serif"><main style="max-width:520px;margin:12vh auto;padding:0 22px"><div style="font-weight:700;letter-spacing:.06em;font-size:15px;color:#f5b04c">READ GEOPOLITICS</div><h1 style="font-size:28px;line-height:1.2;margin:14px 0 12px">Grazie, ricevuto.</h1><p>Francesco ora sa che la versione condivisa ti era utile.</p><p>Nel frattempo trovi lo stesso briefing, ogni mattina e con tutto l'archivio, sul sito:</p><p><a href="https://www.readgeopolitics.com/?utm_source=condivisa" style="display:inline-block;background:#f5b04c;color:#0b1220;font-weight:700;text-decoration:none;padding:12px 18px;border-radius:8px">Apri readgeopolitics.com</a></p></main></body></html>`, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
   }
 
-  if (method === "GET" && p === "/api/data.json") {
-    const cache = caches.default;
-    const ck = new Request(url.origin + "/api/data.json");
-    let hit = await cache.match(ck);
-    if (hit) return hit;
-    const res = json(await buildSiteData(env), 200, { "cache-control": "public, max-age=60" });
-    await cache.put(ck, res.clone());
-    return res;
+  if ((method === "GET" || method === "HEAD") && p === "/api/data.json") {
+    /* v26: file dei dati già pronto (R2, preparato dal cron) + ETag: chi torna e i dati non sono cambiati scarica 0 byte.
+       ?parte=recente → ultimi giorni (prima schermata veloce); senza parametro → tutto (come prima). */
+    const parte = url.searchParams.get("parte") === "recente" ? "recente" : "tutto";
+    const ver = await siteVer(env);
+    const etag = '"' + parte + "-" + ver + '"';
+    const hdr = { "content-type": "application/json; charset=utf-8", ...CORS, "access-control-expose-headers": "etag", etag, "cache-control": "public, max-age=0, must-revalidate", "x-rg-ver": ver };
+    const inm = request.headers.get("if-none-match") || "";
+    if (inm.split(",").map((s) => s.trim().replace(/^W\//, "")).includes(etag)) return new Response(null, { status: 304, headers: hdr });
+    const body = await siteFile(env, parte, ver);
+    return new Response(method === "HEAD" ? null : body, { headers: hdr });
   }
 
   if (method === "GET" && p === "/api/bundle") {
@@ -2455,6 +2501,7 @@ export default {
     } catch (e) {}
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
+    try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
     try {
       if (env.PODCAST) {
