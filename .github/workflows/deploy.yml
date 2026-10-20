@@ -2,6 +2,7 @@ name: Pubblica su Cloudflare
 on:
   push:
     branches: [main]
+    paths-ignore: ["worker/**", ".github/workflows/worker.yml"]
   workflow_dispatch:
 jobs:
   deploy:

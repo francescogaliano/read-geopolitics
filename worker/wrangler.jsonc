@@ -1,0 +1,14 @@
+{
+  // Worker rg-api (API, pannello Instagram/TikTok, email, podcast). Configurazione identica a quella letta da Cloudflare il 20/10/2026.
+  // I secret (WRITE_TOKEN, IG_*, PANEL_PASSWORD, RESEND_API_KEY, GC_TOKEN, TT_*, RICHIESTE_*) restano su Cloudflare: una pubblicazione non li tocca.
+  "name": "rg-api",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-03",
+  "workers_dev": true,
+  "preview_urls": false,
+  "keep_vars": true,
+  "d1_databases": [{ "binding": "DB", "database_name": "rg-db", "database_id": "22bf73ea-7219-4649-80da-f042e8cd1bd3" }],
+  "r2_buckets": [{ "binding": "PODCAST", "bucket_name": "rg-podcast" }],
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "observability": { "enabled": true, "head_sampling_rate": 1, "logs": { "enabled": true, "head_sampling_rate": 1, "invocation_logs": true } }
+}

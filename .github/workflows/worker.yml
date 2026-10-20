@@ -1,0 +1,34 @@
+name: Worker rg-api
+# PR che tocca worker/: prova la pubblicazione senza farla (dry run).
+# Unione in main: pubblica davvero su Cloudflare. I secret restano quelli su Cloudflare.
+on:
+  pull_request:
+    paths: ["worker/**", ".github/workflows/worker.yml"]
+  push:
+    branches: [main]
+    paths: ["worker/**"]
+  workflow_dispatch:
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Controllo sintassi
+        run: node --check worker/worker.js
+      - name: Prova (senza pubblicare)
+        if: github.event_name == 'pull_request'
+        run: npx -y wrangler@4 deploy --config worker/wrangler.jsonc --dry-run --outdir /tmp/rgapi
+      - name: Pubblica
+        if: github.event_name != 'pull_request'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          if ! npx -y wrangler@4 deploy --config worker/wrangler.jsonc 2>&1 | tee out.log; then
+            grep -v '^\s*$' out.log | tail -25 | sed 's/^/::error::/'
+            exit 1
+          fi
