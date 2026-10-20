@@ -15,8 +15,9 @@ jobs:
         run: |
           A="https://api.cloudflare.com/client/v4/accounts/$ACC/workers/scripts/rg-api"
           H="Authorization: Bearer $T"
-          echo "== impostazioni"; curl -s -H "$H" "$A/settings" | jq '{success, errors, compatibility_date: .result.compatibility_date, compatibility_flags: .result.compatibility_flags, usage_model: .result.usage_model, placement: .result.placement, observability: .result.observability, logpush: .result.logpush, tail_consumers: .result.tail_consumers, bindings: [(.result.bindings // [])[] | {type, name, rif: (.database_id // .bucket_name // .namespace_id // .service // null)}]}'
-          echo "== cron"; curl -s -H "$H" "$A/schedules" | jq '{success, errors, schedules: .result.schedules}'
-          echo "== workers.dev"; curl -s -H "$H" "$A/subdomain" | jq '{success, errors, result}'
-          echo "== token (utente)"; curl -s -H "$H" "https://api.cloudflare.com/client/v4/user/tokens/verify" | jq '{success, errors, status: .result.status}'
-          echo "== token (account)"; curl -s -H "$H" "https://api.cloudflare.com/client/v4/accounts/$ACC/tokens/verify" | jq '{success, errors, status: .result.status}'
+          n(){ echo "::notice title=$1::$(jq -c . )"; }
+          curl -s -H "$H" "$A/settings" | jq '{success, errors, compatibility_date: .result.compatibility_date, compatibility_flags: .result.compatibility_flags, usage_model: .result.usage_model, placement: .result.placement, observability: .result.observability, logpush: .result.logpush, tail_consumers: .result.tail_consumers, bindings: [(.result.bindings // [])[] | {type, name, rif: (.database_id // .bucket_name // .namespace_id // .service // null)}]}' | n impostazioni
+          curl -s -H "$H" "$A/schedules" | jq '{success, errors, schedules: .result.schedules}' | n cron
+          curl -s -H "$H" "$A/subdomain" | jq '{success, errors, result}' | n workersdev
+          curl -s -H "$H" "https://api.cloudflare.com/client/v4/user/tokens/verify" | jq '{success, errors, status: .result.status}' | n token_utente
+          curl -s -H "$H" "https://api.cloudflare.com/client/v4/accounts/$ACC/tokens/verify" | jq '{success, errors, status: .result.status}' | n token_account
