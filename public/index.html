@@ -3366,6 +3366,10 @@ function closedScreen(P){
 }
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-track]");if(t){track(t.dataset.track);return}
+  const ln=e.target.closest("a[href]");if(ln){const h=ln.getAttribute("href")||"";
+    if(h.includes("open.spotify.com"))track(ln.closest(".pod-bar")?"podcast-spotify-briefing":"podcast-spotify");
+    else if(h.includes("instagram.com"))track("social-instagram");
+    else if(h.includes("tiktok.com"))track("social-tiktok");}
   const v=e.target.closest("nav.tabs [data-view]");if(v){track("vista-"+v.dataset.view);return}
   const sx=e.target.closest("details.sx>summary");if(sx){track("storia-aperta");return}
   const sub=e.target.closest("#subtabs [data-sub]");if(sub){track("sezione-"+sub.dataset.sub);return}
@@ -5276,6 +5280,10 @@ async function podFill(){
   h.insertAdjacentElement("afterend",el);
 }
 let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(podFill,80)}).observe(document.body,{childList:true,subtree:true});
+/* statistiche: ascolti del podcast dal sito (una volta per pagina), e chi arriva in fondo */
+let podPlayed=false,podEnded=false;
+document.addEventListener("play",e=>{if(!podPlayed&&e.target.closest&&e.target.closest(".pod-bar")){podPlayed=true;try{track("podcast-play")}catch(_){}}},true);
+document.addEventListener("ended",e=>{if(!podEnded&&e.target.closest&&e.target.closest(".pod-bar")){podEnded=true;try{track("podcast-finito")}catch(_){}}},true);
 const st=document.createElement("style");st.textContent=`.pod-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:4px 0 18px;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--surface)}
 .pod-t{display:flex;align-items:center;gap:10px;flex:1 1 220px}.pod-i{font-size:22px}.pod-t b{display:block;font-size:15px}.pod-m{display:block;font-size:12.5px;color:var(--faint)}
 .pod-bar audio{flex:1 1 260px;width:100%;height:36px}
