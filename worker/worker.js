@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v24: proposte e scelte della settimana nel pannello (parola, due letture, punto che sfugge; tema da preferire per martedì e venerdì), campo `scelta` in /v1/ig/plan.
 // v23: kit radar.mjs e rubrica del venerdì «Oggi in 40 secondi» (template oggi-reel, al posto di «Dentro il sito»).
 // v22: kit apertura.mjs (apertura col globo, 4 s fino al beat, per il reel del martedì) e copertina dei reel scelta (thumb_ms nella bozza → thumb_offset di Instagram).
 // v21: scheda Statistiche nel pannello (GoatCounter letto dal Worker; secret nuovo: GC_TOKEN, chiave API di sola lettura).
@@ -526,6 +527,19 @@ button{background:#86B4EA;color:#0E151B;font-weight:600;border:0}.e{color:#FF9A9
 async function panelApi(env, origin, b) {
   const act = b.action;
   if (String(act || "").startsWith("tt_")) { const r = await ttPanelApi(env, b); if (r) return r; }
+  if (act === "proposte") return { ok: true, proposte: await igProposte(env, !!b.force), scelte: await igScelte(env) };
+  if (act === "scelta_set") {
+    const date = String(b.date || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < romeToday()) throw { status: 400, code: "bad_date", detail: "data non valida o passata" };
+    const sc = await igScelte(env);
+    if (!b.value) delete sc[date];
+    else {
+      if (!["parola", "storia", "filone", "tema"].includes(b.kind)) throw { status: 400, code: "bad_kind" };
+      sc[date] = { kind: b.kind, value: String(b.value).slice(0, 120), label: String(b.label || b.value).slice(0, 120), set_at: new Date().toISOString() };
+    }
+    await kvSet(env, "ig_scelte", sc);
+    return { ok: true, scelte: sc };
+  }
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
   if (act === "list") {
     const t = await igSeed(env).catch(() => null);
@@ -668,6 +682,9 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 #st .fun .step{display:flex;justify-content:space-between;font-size:14px}#st .fun .tr{height:12px;background:#27353F;border-radius:6px;margin:4px 0 10px;overflow:hidden}#st .fun .fl{height:100%;background:#86B4EA}
 #st ul.ins{margin:6px 0 0;padding-left:18px}#st ul.ins li{margin:6px 0;font-size:15px}
 @media(max-width:560px){#st .kpis{grid-template-columns:1fr 1fr}#st .two{grid-template-columns:1fr}#st .hb{grid-template-columns:86px 1fr 62px}#st .chart{gap:4px}#st .xl{gap:4px}}
+#wk .props{display:grid;gap:8px;margin-top:10px}#wk .pr{display:flex;gap:10px;align-items:flex-start;border:1px solid #2F4252;border-radius:12px;padding:10px 12px;background:#0E151B;cursor:pointer}
+#wk .pr.on{border-color:#F2B84B;background:#211D12}#wk .rd{width:18px;height:18px;border-radius:50%;border:2px solid #5C7183;flex:none;margin-top:2px}#wk .pr.on .rd{border-color:#F2B84B;background:radial-gradient(#F2B84B 45%,transparent 50%)}
+#wk .pr .t{font-weight:600}#wk .pr .w{font-size:13px;color:#8FA0AE}#wk .tagr{font:600 11px ui-monospace,monospace;color:#86B4EA;margin-left:6px;letter-spacing:.04em}
 </style>
 <main><h1>Pannello Instagram</h1><div class="sub" id="acc">carico…</div>
 <div class="card"><div class="row"><b>Pubblicazione</b><label><input type="checkbox" id="pause"> in pausa (blocca anche l'automatico)</label></div>
@@ -896,7 +913,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}["list","wk","rq","ut","pd","st"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}["list","wk","rq","ut","pd","st"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
@@ -910,6 +927,20 @@ function dayState(date,e){
   if(tp&&tp.pronto)return {c:"warn",t:"Da produrre su richiesta: "+tp.nome+" (scheda Richieste)"};
   return {c:"warn",t:"Rubrica da costruire: per ora vale il carosello del giorno"};
 }
+let PROP=null,PSC={},POPEN=null;
+const SK={parola:"parola",numero:"parola","due-letture":"storia",filone:"filone","reel-storia":"tema","oggi-reel":"tema","sito-reel":"tema","sito-schermate":"tema"};
+async function loadProp(force){const r=await api({action:"proposte",force:!!force});if(r.ok){PROP=r.proposte;PSC=r.scelte||{}}renderWeek()}
+function propHtml(date,e){const k=SK[e.template];if(!k||!PROP||date<D.today)return "";const sc=PSC[date];const items=PROP[k]||[];
+ let h='<div class="s" style="margin-top:8px"><button class="'+(sc?"":"g ")+'pp" style="padding:6px 12px">'+(sc?"Scelta tua: "+esc(sc.label):"Decide la routine")+(POPEN===date?" ▴":" ▾")+'</button></div>';
+ if(POPEN!==date)return h;
+ h+='<div class="props">';
+ if(k==="tema")h+='<div class="sub">Le notizie del giorno escono alle 6:45. Scegli un tema da preferire: se quel giorno il briefing ha una storia sul tema, entra nel contenuto; altrimenti decide la routine.</div>';
+ const opt=(v,l,w,on,auto)=>'<div class="pr'+(on?" on":"")+'" data-v="'+esc(v)+'" data-l="'+esc(l)+'"><span class="rd"></span><div><div class="t">'+esc(l)+(auto?'<span class="tagr">LA SCEGLIEREBBE ANCHE LA ROUTINE</span>':"")+'</div>'+(w?'<div class="w">'+esc(w)+'</div>':"")+'</div></div>';
+ h+=opt("","Decide la routine",k==="tema"?"Nessuna preferenza: sceglie la routine con le notizie di quel giorno.":"Sceglie la routine quel giorno, con i dati di quel momento.",!sc,false);
+ items.forEach(x=>{h+=opt(x.value,x.label,x.why,!!(sc&&sc.value===x.value),x.auto)});
+ if(!items.length)h+='<div class="sub">Nessuna proposta per ora: decide la routine.</div>';
+ h+='<div class="sub">Vale per '+esc(DN[dowOf(date)-1].toLowerCase())+" "+itDate(date)+'. Proposte aggiornate alle '+esc(new Date(PROP.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}))+' · <a href="#" class="prf">aggiorna</a></div></div>';
+ return h}
 function renderWeek(){
   if(!D)return;const el=document.getElementById("wk");
   const mon=addDays(D.today,-(dowOf(D.today)-1)+7*WOFF);
@@ -917,10 +948,11 @@ function renderWeek(){
   h+='<div class="sub" style="margin-top:6px">La regia vale per ogni settimana: cambia un giorno e resta cambiato. Un solo post al giorno.</div></div><div class="card">';
   for(let i=0;i<7;i++){
     const date=addDays(mon,i),e=D.plan[i],tp=tplOf(e.template),st=dayState(date,e);
-    h+='<div class="day'+(date===D.today?" oggi":"")+'" data-dow="'+(i+1)+'"><div class="row"><span class="t">'+DN[i]+" "+itDate(date)+(date===D.today?" · oggi":"")+'</span><span class="chip">'+esc(e.formato)+'</span><span class="sub">'+esc(e.ora)+'</span><button class="g ed2" style="margin-left:auto;padding:6px 10px">Modifica</button></div>';
+    h+='<div class="day'+(date===D.today?" oggi":"")+'" data-dow="'+(i+1)+'" data-date="'+date+'"><div class="row"><span class="t">'+DN[i]+" "+itDate(date)+(date===D.today?" · oggi":"")+'</span><span class="chip">'+esc(e.formato)+'</span><span class="sub">'+esc(e.ora)+'</span><button class="g ed2" style="margin-left:auto;padding:6px 10px">Modifica</button></div>';
     h+='<div class="s"><b>'+esc(e.rubrica)+'</b>'+(tp?" · "+esc(tp.nome):"")+(e.auto?" · la prepara la routine":" · solo su richiesta")+'</div>';
     if(e.note)h+='<div class="s mut">'+esc(e.note)+'</div>';
     h+='<div class="s '+st.c+'">'+st.t+'</div>';
+    h+=propHtml(date,e);
     if(WED===i+1){
       h+='<div class="frm"><label>Rubrica<input type="text" class="f-r" maxlength="60" value="'+esc(e.rubrica)+'"></label>';
       h+='<label>Contenuto standard<select class="f-t">'+D.templates.map(t=>'<option value="'+t.id+'"'+(t.id===e.template?" selected":"")+">"+esc(t.nome)+" ("+t.formato+")"+(t.pronto?"":" – da costruire")+"</option>").join("")+"</select></label>";
@@ -938,6 +970,10 @@ function renderWeek(){
   document.getElementById("wt").onclick=()=>{WOFF=0;renderWeek()};
   el.querySelectorAll(".day").forEach(c=>{const dow=+c.dataset.dow;const q=s=>c.querySelector(s);
     q(".ed2").onclick=()=>{WED=(WED===dow?null:dow);renderWeek()};
+    const dd=c.dataset.date;
+    if(q(".pp"))q(".pp").onclick=()=>{POPEN=(POPEN===dd?null:dd);renderWeek()};
+    if(q(".prf"))q(".prf").onclick=ev=>{ev.preventDefault();loadProp(true)};
+    c.querySelectorAll(".pr").forEach(o=>o.onclick=async()=>{const v=o.dataset.v;const r=await api({action:"scelta_set",date:dd,kind:SK[D.plan[dow-1].template],value:v||null,label:o.dataset.l});if(r.ok)PSC=r.scelte;else alert("Errore: "+(r.detail||r.error));renderWeek()});
     if(q(".f-c"))q(".f-c").onclick=()=>{WED=null;renderWeek()};
     if(q(".f-t"))q(".f-t").onchange=ev=>{const t=tplOf(ev.target.value);if(t)q(".f-f").value=t.formato};
     if(q(".f-s"))q(".f-s").onclick=async ev=>{ev.target.disabled=true;const r=await api({action:"plan_set",dow,entry:{rubrica:q(".f-r").value,template:q(".f-t").value,formato:q(".f-f").value,ora:q(".f-o").value,auto:q(".f-a").checked,note:q(".f-n").value}});if(!r.ok){alert("Errore: "+JSON.stringify(r));ev.target.disabled=false;return}WED=null;load()}});
@@ -1251,7 +1287,7 @@ async function igPrivate(request, env, p, method) {
   if (method === "GET" && p === "/v1/ig/plan") {
     const today = romeToday(); const plan = await igPlan(env);
     const dow = romeDow(today);
-    return json({ ok: true, today, dow, today_entry: plan[dow - 1], plan, templates: IG_TEMPLATES });
+    return json({ ok: true, today, dow, today_entry: plan[dow - 1], scelta: (await igScelte(env))[today] || null, plan, templates: IG_TEMPLATES });
   }
   if (method === "GET" && p === "/v1/ig/requests") {
     await kvSet(env, "ig_req_seen", { at: new Date().toISOString() });
@@ -1794,6 +1830,72 @@ async function siteStats(env, days, force) {
   return data;
 }
 // ============ fine statistiche ============
+
+
+// ============ Proposte e scelte della settimana (v24) ============
+// Il pannello mostra per alcuni giorni 3 proposte calcolate dai dati del sito; Francesco può sceglierne una per una data precisa.
+// La scelta arriva alla routine nel campo `scelta` di /v1/ig/plan. Nessuna scelta: decide la routine, come sempre.
+const SCELTA_KIND = { parola: "parola", numero: "parola", "due-letture": "storia", filone: "filone", "reel-storia": "tema", "oggi-reel": "tema", "sito-reel": "tema", "sito-schermate": "tema" };
+const romeDay = (ms) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(ms));
+const itShort = (d) => { const p = String(d || "").split("-"); return p.length === 3 ? +p[2] + " " + ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"][+p[1] - 1] : ""; };
+const clipT = (s, n) => { s = String(s || "").trim(); return s.length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : s; };
+async function docsOf(env, type, where, binds) {
+  const r = await env.DB.prepare(`SELECT key, data FROM docs WHERE type=?1 ${where || ""}`).bind(type, ...(binds || [])).all();
+  return (r.results || []).map((x) => { try { return { _key: x.key, ...JSON.parse(x.data) }; } catch (e) { return null; } }).filter(Boolean);
+}
+async function igProposte(env, force) {
+  const c = await kvGet(env, "ig_proposte");
+  if (!force && c && Date.now() - Date.parse(c.at) < 3600000) return c;
+  const now = Date.now(), from = romeDay(now - 6 * 86400000), last2 = romeDay(now - 86400000), last3 = romeDay(now - 2 * 86400000);
+  const st = await docsOf(env, "stories", "AND json_extract(data,'$.data') >= ?2", [from]);
+  const th = await docsOf(env, "threads");
+  const thBy = {}; th.forEach((t) => (thBy[t._key] = t));
+  const cnt = {}, lastD = {};
+  st.forEach((s) => { const f = s.filone_id; if (!f) return; cnt[f] = (cnt[f] || 0) + 1; if (!lastD[f] || String(s.data) > lastD[f]) lastD[f] = String(s.data); });
+  const thIds = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || String(lastD[b]).localeCompare(String(lastD[a])));
+  const tname = (id) => clipT((thBy[id] && (thBy[id].titolo || thBy[id].breve)) || id.replace(/^t-/, "").replace(/-/g, " "), 60);
+  // LA PAROLA: stessa regola della ricetta J (termini del glossario in almeno 2 storie della settimana, una degli ultimi 2 giorni)
+  const EX = new Set(["onu", "ue", "pil", "nato", "g7", "g20", "fmi"]);
+  const used = new Set((await kvList(env, "draft:", 200)).filter((d) => /^La parola:/i.test(d.caption || "") && Date.parse(d.created_at || 0) > now - 70 * 86400000).map((d) => String(d.caption).split("\n")[0].replace(/^La parola:\s*/i, "").trim().toLowerCase()));
+  const gl = await docsOf(env, "glossario");
+  const flat = (x) => (typeof x === "string" ? x : x ? JSON.stringify(x) : "");
+  const txt = st.map((s) => ({ s, t: [s.titolo, s.fatti, s.perche_conta, s.sintesi].map(flat).join(" ").toLowerCase() }));
+  const wre = (w) => new RegExp("(^|[^\\p{L}\\p{N}])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^\\p{L}\\p{N}])", "u");
+  const cand = [];
+  for (const g of gl) {
+    if (!g.termine || g.tipo === "persona") continue;
+    const terms = [g.termine, ...(Array.isArray(g.alias) ? g.alias : [])].filter(Boolean).map((x) => String(x).toLowerCase());
+    if (terms.some((x) => EX.has(x) || used.has(x))) continue;
+    const res = terms.map(wre), hit = txt.filter((o) => res.some((r) => r.test(o.t)));
+    if (hit.length < 2) continue;
+    const lastS = hit.map((o) => o.s).sort((a, b) => String(b.data).localeCompare(String(a.data)))[0];
+    if (String(lastS.data) < last2) continue;
+    cand.push({ g, n: hit.length, last: lastS });
+  }
+  const pri = (t) => (t === "termine" ? 0 : 1);
+  cand.sort((a, b) => pri(a.g.tipo) - pri(b.g.tipo) || b.n - a.n || String(b.last.data).localeCompare(String(a.last.data)));
+  const parola = cand.slice(0, 3).map((c, i) => ({ value: c.g.termine, label: c.g.termine, why: `In ${c.n} storie della settimana, l'ultima il ${itShort(c.last.data)}: ${clipT(c.last.titolo, 70)}`, auto: i === 0 }));
+  // DUE LETTURE: storie recenti solide, con due posizioni e sintesi, dei filoni più mossi (una per filone)
+  const lvl = (s) => String((s.confidenza && s.confidenza.livello) || s.confidenza || "").toLowerCase();
+  const full = (x) => !!x && (typeof x === "string" ? !!x.trim() : !["{}", "[]", "null"].includes(JSON.stringify(x)));
+  const ok = st.filter((s) => ["alto", "medio"].includes(lvl(s)) && full(s.sintesi) && full(s.pro) && full(s.contro) && String(s.data) >= last3)
+    .sort((a, b) => (cnt[b.filone_id] || 0) - (cnt[a.filone_id] || 0) || String(b.data).localeCompare(String(a.data)));
+  const seen = new Set(), storia = [];
+  for (const s of ok) { const k = s.filone_id || s._key; if (seen.has(k)) continue; seen.add(k); storia.push({ value: s.id || s._key, label: clipT(s.titolo, 90), why: `Del ${itShort(s.data)}${s.filone_id ? " · " + tname(s.filone_id) + ", " + cnt[s.filone_id] + " storie in settimana" : ""}` }); if (storia.length === 3) break; }
+  // IL PUNTO CHE SFUGGE: i filoni più mossi della settimana
+  const filone = thIds.slice(0, 3).map((id, i) => ({ value: id, label: tname(id), why: `${cnt[id]} storie in settimana, l'ultima il ${itShort(lastD[id])}`, auto: i === 0 }));
+  // TEMA da preferire (martedì e venerdì): i filoni attivi della settimana
+  const tema = thIds.filter((id) => !thBy[id] || thBy[id].stato !== "chiuso").slice(0, 8).map((id) => ({ value: id, label: tname(id), why: `${cnt[id]} storie in settimana` }));
+  const out = { at: new Date().toISOString(), parola, storia, filone, tema };
+  await kvSet(env, "ig_proposte", out);
+  return out;
+}
+async function igScelte(env) {
+  const s = (await kvGet(env, "ig_scelte")) || {}, t = romeToday();
+  for (const d of Object.keys(s)) if (d < t) delete s[d];
+  return s;
+}
+// ============ fine proposte ============
 
 async function route(request, env) {
   const url = new URL(request.url);
