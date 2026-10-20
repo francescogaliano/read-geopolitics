@@ -1,5 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
-// v26: /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
+// v26: pannello più veloce (letture in parallelo, tabella kv verificata una volta, Utenti e posta caricati solo all'apertura della tab). /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
 // v25: /c/utile registra i clic «La usavo» della vecchia edizione condivisa (kv utile:<giorno>:<hash>).
 // v24: proposte e scelte della settimana nel pannello (parola, due letture, punto che sfugge; tema da preferire per martedì e venerdì), campo `scelta` in /v1/ig/plan.
 // v23: kit radar.mjs e rubrica del venerdì «Oggi in 40 secondi» (template oggi-reel, al posto di «Dentro il sito»).
@@ -272,8 +272,10 @@ const IG_APP_ID = "1786208542590699";
 const IG_SCOPE = "instagram_business_basic,instagram_business_content_publish";
 const IG_GRAPH = "https://graph.instagram.com/v23.0";
 
+let KV_OK = null; // v26: la tabella si crea una volta per istanza, non a ogni lettura (era un viaggio in più verso il database ogni volta)
 async function kvInit(env) {
-  await env.DB.prepare("CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+  if (!KV_OK) KV_OK = env.DB.prepare("CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL, updated_at TEXT NOT NULL)").run().catch((e) => { KV_OK = null; throw e; });
+  await KV_OK;
 }
 async function kvGet(env, k) {
   await kvInit(env);
@@ -586,12 +588,17 @@ async function panelApi(env, origin, b) {
   }
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
   if (act === "list") {
-    const t = await igSeed(env).catch(() => null);
-    const st = await igSettings(env);
-    const drafts = (await kvList(env, "draft:", 30)).sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
-    const reqs = (await kvList(env, "req:", 30)).sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
-    return { ok: true, settings: st, today: romeToday(), plan: await igPlan(env), templates: IG_TEMPLATES, requests: reqs, req_seen: await kvGet(env, "ig_req_seen"), tiktok: await ttPanelInfo(env), tt: Object.fromEntries((await kvList(env, "tt:", 40)).map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption) })) };
+    /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
+    await kvInit(env);
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows] = await Promise.all([
+      igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40),
+    ]);
+    const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
+    const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
+    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption) })) };
   }
+
   if (act === "users") {
     const { results } = await env.DB.prepare(
       "SELECT email, created_at, last_seen, visits, source, campaign, newsletter_at, unsub_at FROM users ORDER BY created_at DESC LIMIT 5000"
@@ -790,9 +797,10 @@ function ttHtml(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status===
  else if(t&&t.status==="pubblicato")h+='<button class="g ttl">Aggiungi link</button>';
  h+='</div>';if(t&&t.error)h+='<div class="err">'+esc(t.error)+'</div>';
  if(t&&t.status!=="pubblicato"&&(t.tt_status||t.check_error||t.checked_at))h+='<div class="sub" style="font-size:12px">Dettagli: stato TikTok '+esc(t.tt_status||"non ancora letto")+(t.checked_at?' · controllato '+esc(when(t.checked_at)):'')+(t.check_error?' · errore nel controllo: '+esc(t.check_error):'')+(t.upload_http?' · caricamento HTTP '+esc(t.upload_http):'')+'</div>';return h}
+let VPRE=0;
 function stripHtml(x){
  const open=x.status==="bozza"||x.status==="errore";
- if(x.video_url)return '<video controls playsinline preload="metadata" style="width:100%;max-width:300px;border-radius:10px;background:#000" src="'+esc(x.video_url)+'"></video>';
+ if(x.video_url){const pre=VPRE++<1?"metadata":"none";return '<video controls playsinline preload="'+pre+'" style="width:100%;max-width:300px;border-radius:10px;background:#000" src="'+esc(x.video_url)+'"></video>'}
   if(!EDIT[x.id])return '<div class="strip">'+x.image_urls.map(u=>'<img loading="lazy" src="'+esc(u)+'">').join("")+'</div>'+(open?'<div class="row"><button class="g ed">Modifica immagini</button></div>':'');
  const L=EDIT[x.id];
  return '<div class="ed-list">'+L.map((u,i)=>'<div class="it"><img src="'+esc(u)+'"><div class="row"><span class="sub">'+(i+1)+'</span><button class="g up" data-i="'+i+'">↑</button><button class="g dn" data-i="'+i+'">↓</button><button class="r rm" data-i="'+i+'">×</button></div></div>').join("")+'</div>'
@@ -818,7 +826,7 @@ async function load(){
  D=d;renderWeek();renderReq();
  const L=document.getElementById("list");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
- L.innerHTML=d.drafts.map(x=>{
+ VPRE=0;L.innerHTML=d.drafts.map(x=>{
   const open=x.status==="bozza"||x.status==="errore";
   return '<div class="card" data-id="'+x.id+'"><div class="row"><b>'+esc(x.format)+' · '+esc(x.date)+'</b><span class="chip '+x.status+'">'+esc(x.status.replace("_"," "))+'</span><span class="sub">'+(x.status==="bozza"?(x.mode==="auto"?"esce da sola alle "+when(x.publish_at):"in attesa del tuo ok"):"")+'</span></div>'
   +stripHtml(x)
@@ -887,7 +895,7 @@ document.getElementById("ml-s").onclick=saveMail;
 document.getElementById("ml-pv").onclick=()=>{window.open("/ig/mail/preview?k="+encodeURIComponent(K),"_blank")};
 document.getElementById("ml-t1").onclick=async e=>{e.target.disabled=true;const r=await api({action:"mail_test",to:document.getElementById("ml-te").value});e.target.disabled=false;
  document.getElementById("ml-m").textContent=r.ok?"Prova inviata (briefing del "+r.date+"). Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?");loadLog()};
-loadMail();loadLog();
+let UT_GEN=false;
 let USERS=[];
 async function loadUsers(){
  const d=await api({action:"users"});
@@ -957,7 +965,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}["list","wk","rq","ut","pd","st"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["list","wk","rq","ut","pd","st"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
@@ -1048,7 +1056,7 @@ function renderReq(){
   el.querySelectorAll(".cx").forEach(b=>b.onclick=async()=>{await api({action:"req_cancel",id:b.closest(".day").dataset.id});load()});
 }
 setTab("list");
-load();loadUsers();
+load();
 // ---------- Podcast: puntata del giorno e storia Instagram (disegnata qui, nel telefono) ----------
 let POD=null,POD_GEN=false,POD_BLOB=null,POD_IMG=null,POD_T=null;
 function podCopy(btn,txt){const done=()=>{const o=btn.textContent;btn.textContent="Copiato ✓";setTimeout(()=>{btn.textContent=o},1500)};
