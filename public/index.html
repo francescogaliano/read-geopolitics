@@ -3411,18 +3411,26 @@ function applyOwner(){
   const pb=document.getElementById("prefBtn");if(pb)pb.hidden=S.userKnown&&!S.editor;
   if(!S.owner&&(S.view==="idee"||(S.view==="dossier"&&!dv)))show("briefing");
 }
+const PERF={m:{},sent:false};
+function perfSend(){if(PERF.sent)return;PERF.sent=true;try{const n=performance.getEntriesByType("navigation")[0]||{};const c=navigator.connection||{};const m=Object.assign({html:n.responseEnd||0,dom:n.domContentLoadedEventEnd||0},PERF.m);
+  performance.getEntriesByType("resource").forEach(e=>{const q=(e.name.match(/parte=(oggi|recente)/)||[])[1]||(/\/api\/data\.json$/.test(e.name)?"tutto":"");if(q)m["kb_"+q]=Math.round((e.transferSize||0)/1024)});
+  const b=JSON.stringify({src:"sito",net:c.effectiveType||"",m});if(!(navigator.sendBeacon&&navigator.sendBeacon("https://rg-api.briefinghub.workers.dev/api/perf",b)))fetch("https://rg-api.briefinghub.workers.dev/api/perf",{method:"POST",body:b,keepalive:true}).catch(()=>{})}catch(e){}}
+setTimeout(perfSend,20000);
 (async function init(){
   loadGeo().catch(()=>{});
   if(!S.static)(async()=>{try{const u=await (window.claude&&window.claude.use?window.claude.use("user"):null);if(u){S.userKnown=true;S.owner=await u.isOwner();S.editor=await u.canEdit()}}catch(e){}
     applyOwner();schedule()})();
   let db=null;
-  try{const API="https://rg-api.briefinghub.workers.dev/api/data.json";let r=null,parz=false;try{r=await fetch(API+"?parte=recente");if(r.ok)parz=true;else r=null}catch(e){r=null}if(!r)r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);if(parz&&j.parte==="recente"){const tutto=()=>fetch(API).then(x=>x.ok?x.json():null).then(j2=>{if(j2&&j2.collections){db.merge(j2);if(j2.generato)S.snapAt=j2.generato}}).catch(()=>{});setTimeout(tutto,300)}S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
+  try{const API="https://rg-api.briefinghub.workers.dev/api/data.json";let r=null,parz=false;try{r=await fetch(API+"?parte=oggi");if(r.ok)parz=true;else r=null}catch(e){r=null}if(!r)r=await fetch("data.json",{cache:"no-store"});if(r.ok){const j=await r.json();if(j&&j.collections){db=staticDb(j);PERF.m.blocco1=performance.now();if(parz&&j.parte){
+    /* A blocchi: 1) il briefing di oggi e la mappa, 2) gli ultimi giorni con glossario e attori, 3) lo storico. Ogni blocco aggiorna le viste. */
+    const step=(q,k)=>fetch(API+q).then(x=>x.ok?x.json():null).then(j2=>{if(j2&&j2.collections){db.merge(j2);if(j2.generato)S.snapAt=j2.generato;PERF.m[k]=performance.now()}}).catch(()=>{});
+    setTimeout(()=>{(j.parte==="oggi"?step("?parte=recente","blocco2"):Promise.resolve()).then(()=>step("","blocco3")).then(perfSend)},150)}S.static=true;S.userKnown=true;S.owner=false;S.editor=false;S.snapAt=j.generato||"";document.body.classList.add("static");applyOwner();const bs=document.querySelector(".brand small");if(bs)bs.textContent="Il mondo in 15 minuti";setupPublic(j.pubblico||{});setTimeout(maybeGuideHint,1400);setTimeout(maybeNovita,1200)}}}catch(e){}
   if(!db){db=await (window.claude&&window.claude.use?window.claude.use("db"):null);if(db)setTimeout(maybeNovita,1500)}
   if(!db){$("#briefing").innerHTML='<div class="state">Il database della dashboard non è disponibile in questa vista. Apri la pagina da claude.ai con il tuo account.</div>';return}
   S.db=db;
   db.collection("richieste").onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());S.richieste=o;schedule()},e=>console.warn("richieste",e));
   const pending=new Set(["briefings","stories","threads","events","countries","sources"]);
-  const done=n=>{pending.delete(n);if(!pending.size)S.loaded=true;schedule()};
+  const done=n=>{pending.delete(n);if(!pending.size){if(!S.loaded)PERF.m.pronto=performance.now();S.loaded=true}schedule()};
   const onErr=n=>e=>{console.warn(n,e);done(n)};
   db.collection("briefings").orderBy("data","desc").onSnapshot(s=>{S.briefings=s.docs.map(d=>({id:d.id,...d.data()}));done("briefings")},onErr("briefings"));
   db.collection("stories").onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]={id:d.id,...d.data()});S.stories=o;done("stories")},onErr("stories"));
