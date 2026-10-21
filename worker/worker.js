@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v34: scheda Podcast con il link unico alla pagina /ascolta.html (Spotify, Apple, Telegram, sito) e i link diretti.
 // v33: Telegram. Ogni mattina sul canale i 60 secondi con la puntata del podcast; i post di Instagram dal pannello o in automatico.
 // v32: pannello riordinato. In alto «Canali e uscita» espandibile (stato di ogni canale, impostazioni dentro ogni riga); bozze con titolo vero, un pulsante principale, menu «⋯», didascalie Instagram/TikTok/Threads in schede che si salvano da sole, righe di stato per canale.
 // v31: collegamento Threads via threads.net e chiavi ripulite da spazi/virgolette.
@@ -807,11 +808,15 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row"><button id="pd-ap">Applica</button><button class="g" id="pd-an">Annulla</button><button class="g" id="pd-rs">Ripristina originali</button></div></div>
 <canvas id="pd-cv" width="1080" height="1920" style="width:100%;max-width:300px;display:block;margin:10px auto;border-radius:12px;border:1px solid #34475A"></canvas>
 <div class="row" style="justify-content:center"><button id="pd-sh">Salva o condividi</button><a id="pd-dl" class="sub" href="#">scarica il file</a></div></div>
-<div class="card"><b>Da copiare nello sticker Link</b>
-<div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU</span><button class="g" data-copy="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU">Copia link</button></div>
-<div class="row" style="margin-top:8px"><span style="flex:1">Ascolta su Spotify</span><button class="g" data-copy="Ascolta su Spotify">Copia testo</button></div></div>
+<div class="card"><b>Da copiare nello sticker Link</b><div class="sub" style="margin-top:4px">Un solo sticker: la pagina «Ascolta» del sito apre la scelta tra Spotify, Apple Podcasts, Telegram e la puntata sul sito.</div>
+<div class="row" style="margin-top:10px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px"><b>Consigliato</b> · https://www.readgeopolitics.com/ascolta.html?utm_source=ig_storia</span><button class="g" data-copy="https://www.readgeopolitics.com/ascolta.html?utm_source=ig_storia">Copia link</button></div>
+<div class="row" style="margin-top:8px"><span style="flex:1">Ascolta il podcast</span><button class="g" data-copy="Ascolta il podcast">Copia testo</button></div>
+<details style="margin-top:10px"><summary class="sub">Link diretti (se vuoi un canale solo)</summary>
+<div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Spotify · https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU</span><button class="g" data-copy="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU">Copia</button></div>
+<div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Apple Podcasts · https://podcasts.apple.com/it/podcast/id6825275444</span><button class="g" data-copy="https://podcasts.apple.com/it/podcast/id6825275444">Copia</button></div>
+<div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Telegram · https://t.me/readgeopolitics</span><button class="g" data-copy="https://t.me/readgeopolitics">Copia</button></div></details></div>
 <div class="card"><b>Ogni mattina, tra le 8 e le 9</b><ol class="sub" style="margin:8px 0 0;padding-left:20px">
-<li>Salva la storia da qui.</li><li>Instagram → nuova storia → scegli l'immagine.</li><li>Sticker <b>Link</b>: incolla il link, poi «Personalizza testo» → «Ascolta su Spotify».</li><li>Mettilo sotto «Ascolta qui sotto ↓» e pubblica.</li><li>Aggiungi la storia in evidenza a «Podcast». Le altre storie solo la sera.</li></ol></div>
+<li>Salva la storia da qui.</li><li>Instagram → nuova storia → scegli l&#39;immagine.</li><li>Sticker <b>Link</b>: incolla il link consigliato, poi «Personalizza testo» → «Ascolta il podcast».</li><li>Mettilo sotto «Ascolta qui sotto ↓» e pubblica.</li><li>Aggiungi la storia in evidenza a «Podcast». Le altre storie solo la sera.</li></ol></div>
 </div><div id="ut" hidden><div class="card" id="uscard"><div class="row"><b>Iscritti Early Access</b><span class="sub" id="ust">carico…</span></div>
 <div class="row" style="margin-top:10px"><button class="g" id="usb">Mostra elenco</button><button class="g" id="usc">Scarica CSV</button></div>
 <div id="us" style="display:none;margin-top:10px"></div></div>
@@ -1040,7 +1045,7 @@ function dowOf(s){const g=new Date(s+"T12:00:00Z").getUTCDay();return g===0?7:g}
 function tplOf(id){return D.templates.find(t=>t.id===id)}
 function itDate(s){const p=s.split("-");return +p[2]+"/"+(+p[1])}
 let STP=7,ST_GEN=false;
-const ST_LAB={"storia-aperta":"Storie aperte","fonte-aperta":"Fonti aperte","fai-domanda":"Domande fatte","glossario":"Glossario","vista-briefing":"Oggi","vista-timeline":"Temi","vista-mappa":"Mappa","vista-radar":"Radar","vista-archivio":"Archivio","vista-dossier":"Dossier","vista-protagonisti":"Protagonisti","vista-idee":"Idee","guida":"Guida","paese":"Schede paese","podcast-play":"Podcast avviato","podcast-finito":"Podcast finito","podcast-spotify":"Click su Spotify (testata)","podcast-spotify-briefing":"Click su Spotify (lettore)","podcast-apple":"Click su Apple Podcasts","social-instagram":"Click su Instagram","social-tiktok":"Click su TikTok","gate-vista":"Invito visto (ingresso)","nl-iscritto":"Newsletter attivata","lock-perte":"Invito «Per te» visto"};
+const ST_LAB={"storia-aperta":"Storie aperte","fonte-aperta":"Fonti aperte","fai-domanda":"Domande fatte","glossario":"Glossario","vista-briefing":"Oggi","vista-timeline":"Temi","vista-mappa":"Mappa","vista-radar":"Radar","vista-archivio":"Archivio","vista-dossier":"Dossier","vista-protagonisti":"Protagonisti","vista-idee":"Idee","guida":"Guida","paese":"Schede paese","podcast-play":"Podcast avviato","podcast-finito":"Podcast finito","podcast-spotify":"Click su Spotify (testata)","podcast-spotify-briefing":"Click su Spotify (lettore)","podcast-apple":"Click su Apple Podcasts","podcast-spotify-ascolta":"Pagina Ascolta → Spotify","podcast-apple-ascolta":"Pagina Ascolta → Apple","podcast-telegram-ascolta":"Pagina Ascolta → Telegram","podcast-play-ascolta":"Pagina Ascolta → play","social-instagram":"Click su Instagram","social-tiktok":"Click su TikTok","gate-vista":"Invito visto (ingresso)","nl-iscritto":"Newsletter attivata","lock-perte":"Invito «Per te» visto"};
 const stN=n=>Number(n||0).toLocaleString("it-IT");
 const stPct=(a,b)=>b?Math.round(a/b*100):0;
 const stHb=(name,n,max,tot,showN)=>'<div class="hb"><span>'+esc(name)+'</span><div class="tr"><div class="fl" style="width:'+Math.max(2,Math.round(n/(max||1)*100))+'%"></div></div><span class="n">'+(showN?stN(n)+' ':'')+'<small>'+stPct(n,tot)+'%</small></span></div>';
