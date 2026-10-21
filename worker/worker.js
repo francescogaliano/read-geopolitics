@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v28: la parola proposta conta i filoni diversi, non le storie (stessa regola della ricetta J); proposte ricalcolate quando cambiano i dati.
 // v27: /api/data.json?parte=oggi (primo blocco del sito), POST /api/perf (tempi di caricamento anonimi), pannello che precarica le tab in sottofondo.
 // v26: pannello più veloce (letture in parallelo, tabella kv verificata una volta, Utenti e posta caricati solo all'apertura della tab). /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
 // v25: /c/utile registra i clic «La usavo» della vecchia edizione condivisa (kv utile:<giorno>:<hash>).
@@ -996,7 +997,7 @@ function propHtml(date,e){const k=SK[e.template];if(!k||!PROP||date<D.today)retu
  if(POPEN!==date)return h;
  h+='<div class="props">';
  if(k==="tema")h+='<div class="sub">Le notizie del giorno escono alle 6:45. Scegli un tema da preferire: se quel giorno il briefing ha una storia sul tema, entra nel contenuto; altrimenti decide la routine.</div>';
- const opt=(v,l,w,on,auto)=>'<div class="pr'+(on?" on":"")+'" data-v="'+esc(v)+'" data-l="'+esc(l)+'"><span class="rd"></span><div><div class="t">'+esc(l)+(auto?'<span class="tagr">LA SCEGLIEREBBE ANCHE LA ROUTINE</span>':"")+'</div>'+(w?'<div class="w">'+esc(w)+'</div>':"")+'</div></div>';
+ const opt=(v,l,w,on,auto)=>'<div class="pr'+(on?" on":"")+'" data-v="'+esc(v)+'" data-l="'+esc(l)+'"><span class="rd"></span><div><div class="t">'+esc(l)+(auto?'<span class="tagr" title="Con i dati di adesso la routine sceglierebbe questa. Il briefing del mattino può cambiarla.">IN TESTA ADESSO</span>':"")+'</div>'+(w?'<div class="w">'+esc(w)+'</div>':"")+'</div></div>';
  h+=opt("","Decide la routine",k==="tema"?"Nessuna preferenza: sceglie la routine con le notizie di quel giorno.":"Sceglie la routine quel giorno, con i dati di quel momento.",!sc,false);
  items.forEach(x=>{h+=opt(x.value,x.label,x.why,!!(sc&&sc.value===x.value),x.auto)});
  if(!items.length)h+='<div class="sub">Nessuna proposta per ora: decide la routine.</div>';
@@ -1914,7 +1915,8 @@ async function docsOf(env, type, where, binds) {
 }
 async function igProposte(env, force) {
   const c = await kvGet(env, "ig_proposte");
-  if (!force && c && Date.now() - Date.parse(c.at) < 3600000) return c;
+  const ver = await siteVer(env).catch(() => ""); // v28: si ricalcola appena cambiano i dati (es. dopo il briefing del mattino), non a tempo
+  if (!force && c && c.ver === ver && Date.now() - Date.parse(c.at) < 6 * 3600000) return c;
   const now = Date.now(), from = romeDay(now - 6 * 86400000), last2 = romeDay(now - 86400000), last3 = romeDay(now - 2 * 86400000);
   const st = await docsOf(env, "stories", "AND json_extract(data,'$.data') >= ?2", [from]);
   const th = await docsOf(env, "threads");
@@ -1923,7 +1925,8 @@ async function igProposte(env, force) {
   st.forEach((s) => { const f = s.filone_id; if (!f) return; cnt[f] = (cnt[f] || 0) + 1; if (!lastD[f] || String(s.data) > lastD[f]) lastD[f] = String(s.data); });
   const thIds = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || String(lastD[b]).localeCompare(String(lastD[a])));
   const tname = (id) => clipT((thBy[id] && (thBy[id].titolo || thBy[id].breve)) || id.replace(/^t-/, "").replace(/-/g, " "), 60);
-  // LA PAROLA: stessa regola della ricetta J (termini del glossario in almeno 2 storie della settimana, una degli ultimi 2 giorni)
+  // LA PAROLA: stessa regola della ricetta J (v28): termini del glossario in almeno 2 storie della settimana, una degli ultimi 2 giorni;
+  // vince chi compare in più FILONI diversi (una vicenda che si ripete pesa una volta), poi più storie, poi la storia più recente
   const EX = new Set(["onu", "ue", "pil", "nato", "g7", "g20", "fmi"]);
   const used = new Set((await kvList(env, "draft:", 200)).filter((d) => /^La parola:/i.test(d.caption || "") && Date.parse(d.created_at || 0) > now - 70 * 86400000).map((d) => String(d.caption).split("\n")[0].replace(/^La parola:\s*/i, "").trim().toLowerCase()));
   const gl = await docsOf(env, "glossario");
@@ -1939,11 +1942,12 @@ async function igProposte(env, force) {
     if (hit.length < 2) continue;
     const lastS = hit.map((o) => o.s).sort((a, b) => String(b.data).localeCompare(String(a.data)))[0];
     if (String(lastS.data) < last2) continue;
-    cand.push({ g, n: hit.length, last: lastS });
+    const fil = new Set(hit.map((o) => o.s.filone_id || "s:" + (o.s.id || o.s._key)));
+    cand.push({ g, n: hit.length, f: fil.size, last: lastS });
   }
   const pri = (t) => (t === "termine" ? 0 : 1);
-  cand.sort((a, b) => pri(a.g.tipo) - pri(b.g.tipo) || b.n - a.n || String(b.last.data).localeCompare(String(a.last.data)));
-  const parola = cand.slice(0, 3).map((c, i) => ({ value: c.g.termine, label: c.g.termine, why: `In ${c.n} storie della settimana, l'ultima il ${itShort(c.last.data)}: ${clipT(c.last.titolo, 70)}`, auto: i === 0 }));
+  cand.sort((a, b) => pri(a.g.tipo) - pri(b.g.tipo) || b.f - a.f || b.n - a.n || String(b.last.data).localeCompare(String(a.last.data)));
+  const parola = cand.slice(0, 3).map((c, i) => ({ value: c.g.termine, label: c.g.termine, why: `${c.f === 1 ? "1 filone" : c.f + " filoni"}, ${c.n} storie della settimana, l'ultima il ${itShort(c.last.data)}: ${clipT(c.last.titolo, 70)}`, auto: i === 0 }));
   // DUE LETTURE: storie recenti solide, con due posizioni e sintesi, dei filoni più mossi (una per filone)
   const lvl = (s) => String((s.confidenza && s.confidenza.livello) || s.confidenza || "").toLowerCase();
   const full = (x) => !!x && (typeof x === "string" ? !!x.trim() : !["{}", "[]", "null"].includes(JSON.stringify(x)));
@@ -1955,7 +1959,7 @@ async function igProposte(env, force) {
   const filone = thIds.slice(0, 3).map((id, i) => ({ value: id, label: tname(id), why: `${cnt[id]} storie in settimana, l'ultima il ${itShort(lastD[id])}`, auto: i === 0 }));
   // TEMA da preferire (martedì e venerdì): i filoni attivi della settimana
   const tema = thIds.filter((id) => !thBy[id] || thBy[id].stato !== "chiuso").slice(0, 8).map((id) => ({ value: id, label: tname(id), why: `${cnt[id]} storie in settimana` }));
-  const out = { at: new Date().toISOString(), parola, storia, filone, tema };
+  const out = { at: new Date().toISOString(), ver, parola, storia, filone, tema };
   await kvSet(env, "ig_proposte", out);
   return out;
 }
