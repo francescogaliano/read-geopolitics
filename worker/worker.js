@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v32: pannello riordinato. In alto «Canali e uscita» espandibile (stato di ogni canale, impostazioni dentro ogni riga); bozze con titolo vero, un pulsante principale, menu «⋯», didascalie Instagram/TikTok/Threads in schede che si salvano da sole, righe di stato per canale.
 // v31: collegamento Threads via threads.net e chiavi ripulite da spazi/virgolette.
 // v30: Threads. Collegamento (/ig/th/connect), pubblicazione di caroselli e reel dal pannello o in automatico dopo Instagram, testo Threads modificabile, rinnovo del token dal cron.
 // v29: statistiche leggibili sul telefono (grafico senza sbordare, sigle C/R) e provenienze complete con «Altre provenienze» apribile.
@@ -752,19 +753,43 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .sug{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 6px}.sug .sub{width:100%}.sug .chip{font-size:14px;padding:6px 10px}.sug .chip.on{outline:2px solid #f5b04c}#wk .props{display:grid;gap:8px;margin-top:10px}#wk .pr{display:flex;gap:10px;align-items:flex-start;border:1px solid #2F4252;border-radius:12px;padding:10px 12px;background:#0E151B;cursor:pointer}
 #wk .pr.on{border-color:#F2B84B;background:#211D12}#wk .rd{width:18px;height:18px;border-radius:50%;border:2px solid #5C7183;flex:none;margin-top:2px}#wk .pr.on .rd{border-color:#F2B84B;background:radial-gradient(#F2B84B 45%,transparent 50%)}
 #wk .pr .t{font-weight:600}#wk .pr .w{font-size:13px;color:#8FA0AE}#wk .tagr{font:600 11px ui-monospace,monospace;color:#86B4EA;margin-left:6px;letter-spacing:.04em}
+#chan{padding:0}#chan>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px}#chan>summary::-webkit-details-marker{display:none}
+.lab{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}.chsum{flex:1;text-align:right;font-size:13px;color:#C5D0D8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chev{color:#8FA0AE;transition:transform .2s}#chan[open]>summary .chev{transform:rotate(180deg)}
+.chr{border-top:1px solid #27353F;padding:0 14px}.chr>summary,.chs{list-style:none;cursor:pointer;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0}.chr.chs{padding:10px 14px}.chr>summary::-webkit-details-marker{display:none}
+.ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font:700 12px system-ui;background:#1E2A33;color:#E4EAEF}.cht{min-width:0}.cht b{font-size:14.5px}.cht .s{font-size:12.5px;color:#8FA0AE;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#8FA0AE}.dot.g{background:#7BD39A}.dot.y{background:#F2B84B}.dot.r{background:#E5645A}
+.tg{font:600 11px ui-monospace,monospace;border:1px solid #3A4C5C;color:#86B4EA;border-radius:999px;padding:2px 8px;white-space:nowrap}.tg.off{color:#8FA0AE;border-color:#27353F}.tg:empty{display:none}.gear{color:#8FA0AE;font-size:16px}
+.set{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px;font-size:14px}.set .row{margin:0}
+.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.tab{flex:none;border-radius:999px;padding:8px 14px}
+.dc .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.dc .dh b{font-size:16px;display:block;overflow-wrap:anywhere}
+.pill{flex:none;font:700 10.5px ui-monospace,monospace;border-radius:6px;padding:3px 7px;letter-spacing:.05em;background:#27353F;color:#C5D0D8}.p-bozza{background:#5A4A22;color:#F2B84B}.p-pubblicata{background:#1F4A2E;color:#7BD39A}.p-errore{background:#4A2222;color:#FF9A9A}.p-in_elaborazione,.p-in_pubblicazione{background:#22364A;color:#86B4EA}
+.dc .pri{display:flex;gap:8px;align-items:center;margin-top:10px}.btn.main{flex:1;background:#F2B84B;color:#16120A;font-weight:700}.btn.more{width:46px;padding-left:0;padding-right:0;background:#27353F;color:#E4EAEF}
+.menu{margin-top:8px;background:#0E151B;border:1px solid #27353F;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}.menu[hidden]{display:none!important}.mi{background:transparent;color:#E4EAEF;text-align:left;border:0;border-top:1px solid #27353F;border-radius:0;padding:11px 12px;font-weight:500}.mi:first-child{border-top:0}.mi.d{color:#FF9A9A}
+.seg{display:flex;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:3px;gap:3px;margin-top:12px}.seg button{flex:1;background:transparent;color:#8FA0AE;padding:7px 0;border-radius:7px;font-size:13.5px}.seg button.on{background:#27353F;color:#E4EAEF;font-weight:600}
+.cp textarea{margin-top:8px;width:100%}.cnt{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#8FA0AE;margin-top:4px}.capd{margin-top:10px}.capd summary{cursor:pointer}
+.dist{margin-top:12px;border-top:1px solid #27353F;padding-top:10px;display:flex;flex-direction:column;gap:8px}.dist .lab{margin-bottom:2px}
+.dr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:14px}.dr .ic{width:22px;height:22px;font-size:10.5px;border-radius:6px}.dr .st{font-size:12.5px;color:#8FA0AE}.dr a{font-size:13.5px;text-decoration:none}
+.sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
 </style>
-<main><h1>Pannello Instagram</h1><div class="sub" id="acc">carico…</div>
-<div class="card"><div class="row"><b>Pubblicazione</b><label><input type="checkbox" id="pause"> in pausa (blocca anche l'automatico)</label></div>
-<div class="row" style="margin-top:10px"><span>Uscita dei contenuti:</span><select id="mode"><option value="approva">chiedi approvazione</option><option value="auto">pubblica da solo</option></select><span>ora predefinita</span><input type="time" id="time" value="08:30"><button class="g" id="sv">Salva</button></div></div>
-<div class="card" id="ttc"><div class="row"><b>TikTok</b><span class="sub" id="tts" style="flex:1">carico…</span><a id="ttcon" href="/ig/tt/connect"><button class="g" type="button">Collega TikTok</button></a></div>
-<div class="row" style="margin-top:10px"><span>Invio:</span><select id="ttmode" style="max-width:100%"><option value="bozza">bozza nella casella TikTok (pubblichi tu dall'app)</option><option value="diretto">pubblica direttamente (serve l'audit di TikTok)</option></select><label><input type="checkbox" id="ttauto"> invia da solo dopo Instagram</label></div>
-<details style="margin-top:8px"><summary class="sub">Verifica indirizzo immagini (serve per i caroselli)</summary><div class="row" style="margin-top:8px"><input id="ttvn" placeholder="tiktokXXXX.txt"><input id="ttvc" placeholder="contenuto del file"><button class="g" id="ttvs" type="button">Salva</button></div><div class="sub" id="ttvi"></div></details></div>
-<div class="card" id="thc"><div class="row"><b>Threads</b><span class="sub" id="ths" style="flex:1">carico…</span><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div>
-<div class="row" style="margin-top:10px"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div></div>
-
-
-<div id="mbar" class="card" style="cursor:pointer;display:flex;gap:8px;align-items:center"><span id="mbd" style="width:12px;height:12px;border-radius:50%;background:#8FA0AE;flex:none"></span><span id="mbt" class="sub" style="flex:1">Email del mattino: carico…</span></div>
-<div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti ed email</button><button class="tab" data-t="st">Statistiche</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="pd" hidden>
+<main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
+<details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
+<details class="chr"><summary><span class="ic">⏱</span><div class="cht"><b>Uscita</b><div class="s"><span class="dot" id="usd"></span><span id="ussum">carico…</span></div></div><span class="gear">⚙</span></summary>
+<div class="set"><label><input type="checkbox" id="pause"> in pausa (blocca anche l&#39;automatico)</label>
+<div class="row"><span>Uscita dei contenuti</span><select id="mode"><option value="approva">chiedi approvazione</option><option value="auto">pubblica da solo</option></select></div>
+<div class="row"><span>Ora predefinita</span><input type="time" id="time" value="08:30"><button class="g" id="sv">Salva</button></div></div></details>
+<div class="chr chs"><span class="ic">IG</span><div class="cht"><b>Instagram</b><div class="s"><span class="dot" id="igd"></span><span id="igs">carico…</span></div></div><span></span></div>
+<details class="chr" id="ttc"><summary><span class="ic">TT</span><div class="cht"><b>TikTok</b><div class="s"><span class="dot" id="ttdot"></span><span id="tts">carico…</span></div></div><span class="tg" id="tttag"></span></summary>
+<div class="set"><div class="row"><span>Invio</span><select id="ttmode" style="max-width:100%"><option value="bozza">bozza nella casella TikTok</option><option value="diretto">pubblica direttamente (serve l&#39;audit)</option></select></div>
+<label><input type="checkbox" id="ttauto"> invia da solo dopo Instagram</label>
+<details><summary class="sub">Verifica indirizzo immagini (per i caroselli)</summary><div class="row" style="margin-top:8px"><input id="ttvn" placeholder="tiktokXXXX.txt"><input id="ttvc" placeholder="contenuto del file"><button class="g" id="ttvs" type="button">Salva</button></div><div class="sub" id="ttvi"></div></details>
+<div class="row"><a id="ttcon" href="/ig/tt/connect"><button class="g" type="button">Collega TikTok</button></a></div></div></details>
+<details class="chr" id="thc"><summary><span class="ic">TH</span><div class="cht"><b>Threads</b><div class="s"><span class="dot" id="thdot"></span><span id="ths">carico…</span></div></div><span class="tg" id="thtag"></span></summary>
+<div class="set"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label>
+<div class="row"><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div>
+<div class="row"><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div></div></details>
+<div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
+</details>
+<div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -801,35 +826,65 @@ document.addEventListener("click",e=>{const im=e.target.closest(".strip img,.ed-
  if(e.target.closest(".p"))lbMove(-1);else if(e.target.closest(".f"))lbMove(1);else if(e.target.tagName!=="IMG")b.classList.remove("on")});
 document.addEventListener("keydown",e=>{const b=document.getElementById("lb");if(!b.classList.contains("on"))return;if(e.key==="Escape")b.classList.remove("on");if(e.key==="ArrowLeft")lbMove(-1);if(e.key==="ArrowRight")lbMove(1)});
 const EDIT={};let D=null,WOFF=0,WED=null,TAB="list";
-function ttHtml(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.tiktok||!D.tiktok.collegato)return "";const t=(D.tt||{})[x.id];
- const lab={invio:"invio in corso",in_elaborazione:"TikTok sta elaborando",nella_casella:"nella casella di TikTok: apri l'app, scegli il suono e pubblica",pubblicato:(t&&t.marked?"pubblicato su TikTok (segnato da te)":"pubblicato su TikTok"),errore:"non inviato"};
- let h='';
- if(!t||t.status!=="pubblicato")h+='<div style="margin-top:10px"><div class="sub" style="font-size:12px">Didascalia TikTok (hashtag già ridotti; per i reel in bozza va incollata a mano)</div><textarea rows="4" class="ttcap">'+esc(x.tt_cap||"")+'</textarea><div class="row" style="margin-top:6px"><button class="g ttsv">Salva didascalia TikTok</button></div></div>';
- h+='<div class="row" style="margin-top:8px"><b style="font-size:14px">TikTok</b>';
- if(t)h+='<span class="sub">'+esc(lab[t.status]||t.status)+'</span>';
- if(!t||t.status==="errore")h+='<button class="g tts">'+(t?"Riprova su TikTok":"Invia a TikTok")+'</button>';
- if(t&&(t.status==="in_elaborazione"||t.status==="nella_casella"))h+='<button class="g ttk">Aggiorna stato</button>';
- if(t&&t.status==="nella_casella")h+='<button class="g ttm">L&#39;ho pubblicato</button><button class="g ttf">Reinvia</button>';
- if(t&&x.type==="reel"&&t.status!=="errore")h+='<button class="g ttc">Copia didascalia</button>';
- if(t&&t.link)h+='<a href="'+esc(t.link)+'" target="_blank">Apri su TikTok</a>';
- else if(t&&t.status==="pubblicato")h+='<button class="g ttl">Aggiungi link</button>';
- h+='</div>';if(t&&t.error)h+='<div class="err">'+esc(t.error)+'</div>';
- if(t&&t.status!=="pubblicato"&&(t.tt_status||t.check_error||t.checked_at))h+='<div class="sub" style="font-size:12px">Dettagli: stato TikTok '+esc(t.tt_status||"non ancora letto")+(t.checked_at?' · controllato '+esc(when(t.checked_at)):'')+(t.check_error?' · errore nel controllo: '+esc(t.check_error):'')+(t.upload_http?' · caricamento HTTP '+esc(t.upload_http):'')+'</div>';return h}
-function thHtml(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.threads||!D.threads.collegato)return "";const t=(D.th||{})[x.id];
- const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"pubblicato su Threads",errore:"non pubblicato"};
- let h='';
- if(!t||t.status!=="pubblicato")h+='<div style="margin-top:10px"><div class="sub" style="font-size:12px">Testo Threads (max 500 caratteri, senza hashtag)</div><textarea rows="4" class="thcap" maxlength="500">'+esc(x.th_cap||"")+'</textarea><div class="row" style="margin-top:6px"><button class="g thsv">Salva testo Threads</button></div></div>';
- h+='<div class="row" style="margin-top:8px"><b style="font-size:14px">Threads</b>';
- if(t)h+='<span class="sub">'+esc(lab[t.status]||t.status)+'</span>';
- if(!t||t.status==="errore")h+='<button class="g thsd">'+(t?"Riprova su Threads":"Pubblica su Threads")+'</button>';
- if(t&&t.status==="in_elaborazione")h+='<button class="g thk">Aggiorna stato</button>';
- if(t&&t.link)h+='<a href="'+esc(t.link)+'" target="_blank">Apri su Threads</a>';
- h+='</div>';if(t&&t.error)h+='<div class="err">'+esc(t.error)+'</div>';return h}
+const TYL={carousel:"carosello",reel:"reel",image:"post",story:"storia"};
+const STL={bozza:"DA APPROVARE",pubblicata:"PUBBLICATA",errore:"ERRORE",in_elaborazione:"IN ELABORAZIONE",in_pubblicazione:"IN PUBBLICAZIONE",scartata:"SCARTATA"};
+const DNS=["dom","lun","mar","mer","gio","ven","sab"];
+let MAILERR=false;
+const NL=String.fromCharCode(10);
+function dTitle(x){const l=(String(x.caption||"").split(NL).find(s=>s.trim())||x.format||"").trim();return l.length>70?l.slice(0,68)+"…":l}
+function dSub(x){const s=String(x.date||"");const d=new Date(s+"T12:00:00Z");const ds=isNaN(d)?esc(s):DNS[d.getUTCDay()]+" "+(+s.slice(8))+"/"+(+s.slice(5,7));const n=(x.type!=="reel"&&x.image_urls&&x.image_urls.length)?" · "+x.image_urls.length+(x.image_urls.length===1?" immagine":" carte"):"";return ds+" · "+(TYL[x.type]||esc(x.type||""))+n}
+function nTags(s){return String(s||"").split(NL).join(" ").split(" ").filter(w=>w.charAt(0)==="#"&&w.length>1).length}
+function ttOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.tiktok&&D.tiktok.collegato}
+function thOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.threads&&D.threads.collegato}
+function igRow(x){if(x.status!=="pubblicata")return "";const tm=x.published_at?new Date(x.published_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· uscito'+(tm?" alle "+tm:"")+'</span></div>'+(x.permalink?'<a href="'+esc(x.permalink)+'" target="_blank">Apri ›</a>':'<span></span>')+'</div>'}
+function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=!!(D.tiktok.settings&&D.tiktok.settings.auto)&&x.status!=="pubblicata";
+ const lab={invio:"invio in corso",in_elaborazione:"TikTok sta elaborando",nella_casella:"nella casella: scegli il suono e pubblica",pubblicato:(t&&t.marked?"pubblicato (segnato da te)":"pubblicato"),errore:"non inviato"};
+ const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"da inviare");let act='<span></span>';
+ if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm tts">Invia</button>';
+ else if(t.status==="errore")act='<button class="sm tts">Riprova</button>';
+ else if(t.status==="nella_casella")act='<button class="sm ttm">Fatto</button>';
+ else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
+ else if(t.status==="pubblicato")act='<button class="sm ttl">Link</button>';
+ else if(t.status==="in_elaborazione")act='<button class="sm ttk">Aggiorna</button>';
+ return '<div class="dr"><span class="ic">TT</span><div>TikTok <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=!!(D.threads.settings&&D.threads.settings.auto)&&x.status!=="pubblicata";
+ const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"uscito",errore:"non pubblicato"};
+ const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"da pubblicare");let act='<span></span>';
+ if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm thsd">Pubblica</button>';
+ else if(t.status==="errore")act='<button class="sm thsd">Riprova</button>';
+ else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
+ else if(t.status==="in_elaborazione")act='<button class="sm thk">Aggiorna</button>';
+ return '<div class="dr"><span class="ic">TH</span><div>Threads <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];let m="";
+ if(open&&!x.video_url&&x.image_urls&&x.image_urls.length)m+='<button class="mi ed">Modifica immagini</button>';
+ if(x.status==="in_pubblicazione"||x.status==="in_elaborazione")m+='<button class="mi rst">Reset a bozza (solo se bloccata)</button>';
+ if(ttOk(x)){if(x.type==="reel")m+='<button class="mi ttc">Copia didascalia TikTok</button>';if(t&&(t.status==="in_elaborazione"||t.status==="nella_casella"))m+='<button class="mi ttk">Aggiorna stato TikTok</button>';if(t&&t.status==="nella_casella")m+='<button class="mi ttf">Reinvia a TikTok</button>'}
+ if(thOk(x)&&h&&h.status==="in_elaborazione")m+='<button class="mi thk">Aggiorna stato Threads</button>';
+ if(open)m+='<button class="mi d dis">Scarta la bozza</button>';
+ return m}
+function capsHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];
+ const tabs=[["ig","Instagram"]];if(ttOk(x))tabs.push(["tt","TikTok"]);if(thOk(x))tabs.push(["th","Threads"]);
+ let s=tabs.length>1?'<div class="seg">'+tabs.map((a,i)=>'<button type="button" data-cp="'+a[0]+'"'+(i===0?' class="on"':'')+'>'+a[1]+'</button>').join("")+'</div>':'';
+ s+='<div class="cp" data-cp="ig"><textarea rows="5" class="cap"'+(open?'':' readonly')+'>'+esc(x.caption)+'</textarea><div class="cnt"><span class="svm">'+(open?'si salva da sola':'già pubblicata')+'</span><span>'+nTags(x.caption)+' hashtag</span></div></div>';
+ if(ttOk(x)){const ed=!(t&&t.status==="pubblicato");s+='<div class="cp" data-cp="tt" hidden><textarea rows="5" class="ttcap"'+(ed?'':' readonly')+'>'+esc(x.tt_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span>'+(x.type==="reel"?'per i reel va incollata a mano':nTags(x.tt_cap)+' hashtag')+'</span></div></div>'}
+ if(thOk(x)){const ed=!(h&&h.status==="pubblicato");s+='<div class="cp" data-cp="th" hidden><textarea rows="5" maxlength="500" class="thcap"'+(ed?'':' readonly')+'>'+esc(x.th_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span class="thn">'+String(x.th_cap||"").length+'/500</span></div></div>'}
+ return s}
+function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},S=d.settings||{formats:{daily:{}}};const g=id=>document.getElementById(id);
+ if(A){g("igs").textContent="@"+A.username+" · valido "+A.days_left+" giorni";g("igd").className="dot "+(A.days_left<7?"y":"g");if(A.days_left<7)iss.push("token Instagram in scadenza")}else{g("igs").textContent="non collegato";g("igd").className="dot r";iss.push("Instagram non collegato")}
+ g("ttdot").className="dot "+(!T.collegato?"y":T.scaduto?"r":"g");if(T.scaduto)iss.push("TikTok da ricollegare");
+ const ta=!!(T.settings&&T.settings.auto);g("tttag").textContent=T.collegato?(ta?"auto dopo IG":"manuale"):"";g("tttag").className="tg"+(ta?"":" off");
+ g("thdot").className="dot "+(!H.collegato?"y":H.scaduto?"r":"g");if(H.scaduto)iss.push("Threads da ricollegare");
+ const ha=!!(H.settings&&H.settings.auto);g("thtag").textContent=H.collegato?(ha?"auto dopo IG":"manuale"):"";g("thtag").className="tg"+(ha?"":" off");
+ const f=S.formats.daily||{};g("ussum").textContent=(S.paused?"in pausa · ":"")+(f.mode==="auto"?"pubblica da solo":"chiedi approvazione")+" · alle "+(f.time||"");g("usd").className="dot "+(S.paused?"y":"g");if(S.paused)iss.push("pubblicazione in pausa");
+ if(MAILERR)iss.push("email del mattino");
+ const pend=(d.drafts||[]).filter(x=>x.status==="bozza"&&x.mode!=="auto").length;
+ g("acc").textContent=(iss.length?"Da sistemare: "+iss.join(", "):"Tutto a posto")+(pend?" · "+pend+(pend===1?" bozza da approvare":" bozze da approvare"):"");
+ g("chsum").textContent=iss.length?iss.length+(iss.length===1?" cosa da sistemare":" cose da sistemare"):"tutto collegato"}
 let VPRE=0;
 function stripHtml(x){
  const open=x.status==="bozza"||x.status==="errore";
  if(x.video_url){const pre=VPRE++<1?"metadata":"none";return '<video controls playsinline preload="'+pre+'" style="width:100%;max-width:300px;border-radius:10px;background:#000" src="'+esc(x.video_url)+'"></video>'}
-  if(!EDIT[x.id])return '<div class="strip">'+x.image_urls.map(u=>'<img loading="lazy" src="'+esc(u)+'">').join("")+'</div>'+(open?'<div class="row"><button class="g ed">Modifica immagini</button></div>':'');
+  if(!EDIT[x.id])return '<div class="strip">'+x.image_urls.map(u=>'<img loading="lazy" src="'+esc(u)+'">').join("")+'</div>';
  const L=EDIT[x.id];
  return '<div class="ed-list">'+L.map((u,i)=>'<div class="it"><img src="'+esc(u)+'"><div class="row"><span class="sub">'+(i+1)+'</span><button class="g up" data-i="'+i+'">↑</button><button class="g dn" data-i="'+i+'">↓</button><button class="r rm" data-i="'+i+'">×</button></div></div>').join("")+'</div>'
  +'<div class="sub">'+L.length+' immagini (2–10). Le immagini aggiunte vengono ritagliate in 4:5 come le altre.</div>'
@@ -854,20 +909,27 @@ async function load(){
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
- D=d;renderWeek();renderReq();
+ D=d;chUpd(d);renderWeek();renderReq();
  const L=document.getElementById("list");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
  VPRE=0;L.innerHTML=d.drafts.map(x=>{
-  const open=x.status==="bozza"||x.status==="errore";
-  return '<div class="card" data-id="'+x.id+'"><div class="row"><b>'+esc(x.format)+' · '+esc(x.date)+'</b><span class="chip '+x.status+'">'+esc(x.status.replace("_"," "))+'</span><span class="sub">'+(x.status==="bozza"?(x.mode==="auto"?"esce da sola alle "+when(x.publish_at):"in attesa del tuo ok"):"")+'</span></div>'
+  const open=x.status==="bozza"||x.status==="errore";const m=menuHtml(x);
+  const tm=x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
+  const pl=x.status==="bozza"?(x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
+  let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
+  const rows=igRow(x)+ttRow(x)+thRow(x);
+  return '<div class="card dc" data-id="'+x.id+'"><div class="dh"><div style="min-width:0"><b>'+esc(dTitle(x))+'</b><div class="sub">'+dSub(x)+'</div></div><span class="pill p-'+x.status+'">'+esc(pl)+'</span></div>'
   +stripHtml(x)
-  +(open?'<textarea rows="5" class="cap">'+esc(x.caption)+'</textarea><div class="row" style="margin-top:8px"><button class="pub">Pubblica ora</button><button class="g savecap">Salva didascalia</button><button class="r dis">Scarta</button></div>':'<div class="sub" style="white-space:pre-wrap">'+esc(x.caption)+'</div>')
-  +(x.status==="in_elaborazione"?'<div class="row" style="margin-top:8px"><button class="fin">Controlla e pubblica</button><span class="sub">Instagram sta elaborando il video</span></div>':'')
-  +(x.status==="scartata"?'<div class="row"><button class="g res">Ripristina</button></div>':'')
-  +((x.status==="in_pubblicazione"||x.status==="in_elaborazione")?'<div class="row" style="margin-top:8px"><button class="r rst">Reset a bozza</button><span class="sub">Solo se la pubblicazione è bloccata</span></div>':'')
-  +(x.permalink?'<div style="margin-top:8px"><a href="'+esc(x.permalink)+'" target="_blank">Apri il post su Instagram</a></div>':'')+ttHtml(x)+thHtml(x)
+  +((pri||m)?'<div class="pri">'+(pri||'<span style="flex:1"></span>')+(m?'<button class="btn more mo" type="button" aria-label="Altre azioni">⋯</button>':'')+'</div>':'')
+  +(m?'<div class="menu" hidden>'+m+'</div>':'')
+  +(open?capsHtml(x):'<details class="capd"><summary class="sub">Didascalie</summary>'+capsHtml(x)+'</details>')
+  +(rows?'<div class="dist"><div class="lab">'+(x.status==="pubblicata"?"Canali":"Dopo Instagram")+'</div>'+rows+'</div>':'')
   +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'}).join("");
  L.querySelectorAll(".card[data-id]").forEach(c=>{const id=c.dataset.id;const q=s=>c.querySelector(s);
+  if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
+  c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
+  const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
+  autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");
   if(q(".pub"))q(".pub").onclick=async e=>{if(!confirm("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
     if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok&&r.draft&&r.draft.error)alert("Errore: "+r.draft.error);load()};
   const X=d.drafts.find(z=>z.id===id);
@@ -908,13 +970,13 @@ async function loadMail(){
 async function loadLog(){
  const d=await api({action:"mail_log"});
  const bd=document.getElementById("mbd"),bt=document.getElementById("mbt"),ls=document.getElementById("mls"),ld=document.getElementById("mld");
- if(!d.ok){bt.textContent="Email del mattino: errore nel caricamento";return}
+ if(!d.ok){bt.textContent="errore nel caricamento";bd.style.background="#E5645A";MAILERR=true;if(D)chUpd(D);return}
  const t=new Date().toISOString().slice(0,10);const td=d.days.find(x=>x.date===t)||{ok:0,err:0,rows:[]};
  let col="#8FA0AE",txt;
  if(td.err>0){col="#E5645A";txt="\u2717 "+td.err+" error"+(td.err===1?"e":"i")+(td.ok?" \u00b7 inviata a "+td.ok:"")}
  else if(td.ok>0){col="#7BD39A";txt="\u2713 inviata a "+td.ok}
  else txt="nessun invio oggi";
- bd.style.background=col;bt.textContent="Email del mattino: "+txt;ls.innerHTML='<span style="color:'+col+'">'+esc(txt)+'</span>';
+ bd.style.background=col;bt.textContent=txt;MAILERR=td.err>0;if(D)chUpd(D);ls.innerHTML='<span style="color:'+col+'">'+esc(txt)+'</span>';
  ld.innerHTML=d.days.length?d.days.map(x=>'<div style="margin-top:8px"><b>'+esc(x.date)+'</b> <span class="sub">\u00b7 '+x.ok+' ok'+(x.err?' \u00b7 '+x.err+' errori':'')+'</span>'+x.rows.map(r=>'<div style="padding:5px 0;border-top:1px solid #27353F;word-break:break-all"><span style="color:'+(r.ok?"#7BD39A":"#E5645A")+'">'+(r.ok?"\u2713":"\u2717")+'</span> '+esc(r.email)+(r.kind!=="iscritto"?' <span class="chip">'+esc(r.kind)+'</span>':'')+' <span class="sub">'+when(r.ts)+(r.ok?'':' \u00b7 '+esc(r.err||"errore"))+'</span></div>').join("")+'</div>').join(""):'<div class="sub">Nessun invio negli ultimi 7 giorni.</div>'}
 document.getElementById("mbar").onclick=()=>{setTab("ut");document.getElementById("ml-log").open=true;document.getElementById("mlogcard").scrollIntoView()};
 document.getElementById("ml-log").addEventListener("toggle",loadLog);
