@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v35: scheda «Link» nel pannello: profilo Instagram, sticker delle storie, tutti i canali e bio pronte, con Copia e Apri.
 // v34: scheda Podcast con il link unico alla pagina /ascolta.html (Spotify, Apple, Telegram, sito) e i link diretti.
 // v33: Telegram. Ogni mattina sul canale i 60 secondi con la puntata del podcast; i post di Instagram dal pannello o in automatico.
 // v32: pannello riordinato. In alto «Canali e uscita» espandibile (stato di ogni canale, impostazioni dentro ogni riga); bozze con titolo vero, un pulsante principale, menu «⋯», didascalie Instagram/TikTok/Threads in schede che si salvano da sole, righe di stato per canale.
@@ -775,6 +776,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dist{margin-top:12px;border-top:1px solid #27353F;padding-top:10px;display:flex;flex-direction:column;gap:8px}.dist .lab{margin-bottom:2px}
 .dr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:14px}.dr .ic{width:22px;height:22px;font-size:10.5px;border-radius:6px}.dr .st{font-size:12.5px;color:#8FA0AE}.dr a{font-size:13.5px;text-decoration:none}
 .sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
+.lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
 </style>
 <main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
 <details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
@@ -799,7 +801,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row"><button class="g" id="tgsv" type="button">Salva</button><button class="g" id="tgnow" type="button">Invia ora il mattino</button></div><div class="sub" id="tgmsg"></div></div></details>
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
-<div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="pd" hidden>
+<div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -840,6 +842,38 @@ document.addEventListener("click",e=>{const im=e.target.closest(".strip img,.ed-
  if(e.target.closest(".p"))lbMove(-1);else if(e.target.closest(".f"))lbMove(1);else if(e.target.tagName!=="IMG")b.classList.remove("on")});
 document.addEventListener("keydown",e=>{const b=document.getElementById("lb");if(!b.classList.contains("on"))return;if(e.key==="Escape")b.classList.remove("on");if(e.key==="ArrowLeft")lbMove(-1);if(e.key==="ArrowRight")lbMove(1)});
 const EDIT={};let D=null,WOFF=0,WED=null,TAB="list";
+
+const LK=[
+ {t:"Profilo Instagram",d:"I link del profilo, in quest&#39;ordine. Instagram ne accetta fino a 5.",r:[
+  ["1 · Sito","https://www.readgeopolitics.com/?utm_source=ig"],
+  ["2 · Ascolta il podcast","https://www.readgeopolitics.com/ascolta.html?utm_source=ig"],
+  ["3 · Telegram","https://t.me/readgeopolitics"],
+  ["4 · YouTube (quando è collegato)","https://www.youtube.com/@ReadGeopolitics"]]},
+ {t:"Sticker delle storie",d:"Uno per storia. Il testo dello sticker è tra parentesi.",r:[
+  ["Podcast (Ascolta il podcast)","https://www.readgeopolitics.com/ascolta.html?utm_source=ig_storia"],
+  ["Telegram (Unisciti al canale)","https://t.me/readgeopolitics"],
+  ["Sito (Apri Read Geopolitics)","https://www.readgeopolitics.com/?utm_source=instagram"]]},
+ {t:"Tutti i canali",d:"Indirizzi diretti, da usare dove serve.",r:[
+  ["Sito","https://www.readgeopolitics.com"],
+  ["Pagina Ascolta (tutti i podcast)","https://www.readgeopolitics.com/ascolta.html"],
+  ["Spotify","https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU"],
+  ["Apple Podcasts","https://podcasts.apple.com/it/podcast/id6825275444"],
+  ["Amazon Music (in approvazione)",""],
+  ["YouTube","https://www.youtube.com/@ReadGeopolitics"],
+  ["Telegram","https://t.me/readgeopolitics"],
+  ["Instagram","https://www.instagram.com/read.geopolitics"],
+  ["Threads","https://www.threads.com/@read.geopolitics"],
+  ["TikTok","https://www.tiktok.com/@readgeopolitics"],
+  ["Iscrizione (pagina per annunci)","https://www.readgeopolitics.com/iscriviti.html"],
+  ["Feed del podcast (RSS)","https://rg-api.briefinghub.workers.dev/podcast/feed.xml"]]},
+ {t:"Bio pronte",d:"Da incollare nei profili.",r:[
+  ["Instagram","Il mondo in 15 minuti, ogni mattina. Fatti con le fonti, due tesi a confronto: decidi tu. 🎧 Podcast ogni giorno · 📲 Canale Telegram"],
+  ["Threads e Telegram","Il mondo in 15 minuti, ogni mattina. I fatti con le fonti, le due tesi a confronto: decidi tu. Podcast quotidiano su Spotify e Apple Podcasts."],
+  ["YouTube","Il mondo in 15 minuti, ogni mattina. I fatti con le fonti, le due tesi a confronto: decidi tu. Ogni giorno qui la puntata del podcast."]]}];
+function lkRender(){const el=document.getElementById("lk");if(el.dataset.ok)return;el.dataset.ok="1";
+ el.innerHTML=LK.map(g=>'<div class="card"><b>'+g.t+'</b><div class="sub" style="margin-top:4px">'+g.d+'</div>'+g.r.map(r=>{const v=r[1];const isUrl=v.indexOf("http")===0;
+  return '<div class="lkr"><div class="lkt"><b>'+esc(r[0])+'</b><span>'+(v?esc(v):'<i>ancora non disponibile</i>')+'</span></div>'+(v?'<button class="g" data-copy="'+esc(v)+'">Copia</button>':'')+(isUrl?'<a class="lka" href="'+esc(v)+'" target="_blank" rel="noopener">Apri</a>':'')+'</div>'}).join("")+'</div>').join("");
+ el.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>podCopy(b,b.dataset.copy))}
 const TYL={carousel:"carosello",reel:"reel",image:"post",story:"storia"};
 const STL={bozza:"DA APPROVARE",pubblicata:"PUBBLICATA",errore:"ERRORE",in_elaborazione:"IN ELABORAZIONE",in_pubblicazione:"IN PUBBLICAZIONE",scartata:"SCARTATA"};
 const DNS=["dom","lun","mar","mer","gio","ven","sab"];
@@ -1087,7 +1121,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["list","wk","rq","ut","pd","st"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["list","wk","rq","ut","pd","st","lk"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
