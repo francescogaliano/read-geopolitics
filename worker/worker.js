@@ -743,7 +743,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 #st .fun .step{display:flex;justify-content:space-between;font-size:14px}#st .fun .tr{height:12px;background:#27353F;border-radius:6px;margin:4px 0 10px;overflow:hidden}#st .fun .fl{height:100%;background:#86B4EA}
 #st ul.ins{margin:6px 0 0;padding-left:18px}#st ul.ins li{margin:6px 0;font-size:15px}
 @media(max-width:560px){#st .kpis{grid-template-columns:1fr 1fr}#st .two{grid-template-columns:1fr}#st .hb{grid-template-columns:86px 1fr 62px}#st .chart{gap:4px}#st .xl{gap:4px}}
-#wk .props{display:grid;gap:8px;margin-top:10px}#wk .pr{display:flex;gap:10px;align-items:flex-start;border:1px solid #2F4252;border-radius:12px;padding:10px 12px;background:#0E151B;cursor:pointer}
+.sug{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 6px}.sug .sub{width:100%}.sug .chip{font-size:14px;padding:6px 10px}.sug .chip.on{outline:2px solid #f5b04c}#wk .props{display:grid;gap:8px;margin-top:10px}#wk .pr{display:flex;gap:10px;align-items:flex-start;border:1px solid #2F4252;border-radius:12px;padding:10px 12px;background:#0E151B;cursor:pointer}
 #wk .pr.on{border-color:#F2B84B;background:#211D12}#wk .rd{width:18px;height:18px;border-radius:50%;border:2px solid #5C7183;flex:none;margin-top:2px}#wk .pr.on .rd{border-color:#F2B84B;background:radial-gradient(#F2B84B 45%,transparent 50%)}
 #wk .pr .t{font-weight:600}#wk .pr .w{font-size:13px;color:#8FA0AE}#wk .tagr{font:600 11px ui-monospace,monospace;color:#86B4EA;margin-left:6px;letter-spacing:.04em}
 </style>
@@ -1045,7 +1045,7 @@ function renderReq(){
   const pr=D.templates.filter(t=>t.pronto);
   let h='<div class="card"><b>Chiedi un contenuto</b><div class="sub" style="margin-top:4px">Scegli il formato standard e, se vuoi, il tema. La routine lo prepara e lo trovi tra le Bozze, dove lo controlli prima che esca.</div><div class="frm">';
   h+='<label>Contenuto<select id="r-t">'+pr.map(t=>'<option value="'+t.id+'">'+esc(t.nome)+" ("+t.formato+")</option>").join("")+"</select></label>";
-  h+='<div class="sub" id="r-d"></div><label id="r-pl"><span id="r-pt">Tema</span><input type="text" id="r-p" maxlength="200"></label>';
+  h+='<div class="sub" id="r-d"></div><label id="r-pl"><span id="r-pt">Tema</span><input type="text" id="r-p" maxlength="200"></label><div id="r-sug" class="sug"></div>';
   h+='<label>Nota per chi produce (facoltativa)<textarea id="r-n" rows="6"></textarea></label><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="r-f"> Forza: producilo subito, con l ultimo briefing disponibile anche se non è di oggi</label><div class="row"><button id="r-go">Metti in coda</button></div></div></div>';
   const pend=D.templates.filter(t=>!t.pronto);
   if(pend.length)h+='<div class="card sub">Da costruire (non richiedibili): '+pend.map(t=>esc(t.nome)).join(", ")+".</div>";
@@ -1060,7 +1060,13 @@ function renderReq(){
     +(r.stato==="fallita"?'<div class="s warn">Non riuscita'+(r.esito?": "+esc(r.esito):"")+"</div>":"")+"</div>").join("");
   el.innerHTML=h+"</div>";
   const sel=document.getElementById("r-t");
-  const upd=()=>{const t=tplOf(sel.value);document.getElementById("r-d").textContent=t?t.desc:"";document.getElementById("r-pl").hidden=!(t&&t.param);if(t&&t.param)document.getElementById("r-pt").textContent=t.param};
+  const SUGK={"parola":"parola","due-letture":"storia","filone":"filone","reel-storia":"tema","oggi-reel":"tema"};
+  const sug=()=>{const box=document.getElementById("r-sug");const t=tplOf(sel.value);const k=SUGK[sel.value];if(!box)return;if(!(t&&t.param&&k)){box.innerHTML="";return}
+   if(!PROP){box.innerHTML='<span class="sub">Carico le proposte…</span>';loadProp(false).then(sug).catch(()=>{box.innerHTML=""});return}
+   const L=(PROP[k]||[]).slice(0,k==="tema"?6:3);if(!L.length){box.innerHTML="";return}
+   box.innerHTML='<div class="sub">Proposte della settimana, tocca per scegliere:</div>'+L.map(o=>'<button type="button" class="g chip" data-v="'+esc(k==="parola"?o.value:o.label)+'" title="'+esc(o.why||"")+'">'+esc(o.label)+(o.auto?" ★":"")+'</button>').join("");
+   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{document.getElementById("r-p").value=b.dataset.v;box.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b))})};
+  const upd=()=>{const t=tplOf(sel.value);document.getElementById("r-d").textContent=t?t.desc:"";document.getElementById("r-pl").hidden=!(t&&t.param);if(t&&t.param)document.getElementById("r-pt").textContent=t.param;sug()};
   sel.onchange=upd;upd();
   document.getElementById("r-go").onclick=async e=>{e.target.disabled=true;const r=await api({action:"req_create",template:sel.value,param:document.getElementById("r-p").value,note:document.getElementById("r-n").value,forza:document.getElementById("r-f").checked});if(!r.ok){alert("Errore: "+JSON.stringify(r));e.target.disabled=false;return}load()};
   el.querySelectorAll(".cx").forEach(b=>b.onclick=async()=>{await api({action:"req_cancel",id:b.closest(".day").dataset.id});load()});
