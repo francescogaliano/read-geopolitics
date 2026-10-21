@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v30: Threads. Collegamento (/ig/th/connect), pubblicazione di caroselli e reel dal pannello o in automatico dopo Instagram, testo Threads modificabile, rinnovo del token dal cron.
 // v29: statistiche leggibili sul telefono (grafico senza sbordare, sigle C/R) e provenienze complete con «Altre provenienze» apribile.
 // v28: la parola proposta conta i filoni diversi, non le storie (stessa regola della ricetta J); proposte ricalcolate quando cambiano i dati.
 // v27: /api/data.json?parte=oggi (primo blocco del sito), POST /api/perf (tempi di caricamento anonimi), pannello che precarica le tab in sottofondo.
@@ -530,6 +531,7 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
   } catch (e) { d.status = "errore"; d.error = JSON.stringify(e.detail || e).slice(0, 500); }
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
+  if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
   return d;
 }
 async function draftPublish(env, origin, id, by) {
@@ -545,6 +547,7 @@ async function draftPublish(env, origin, id, by) {
   } catch (e) { d.status = "errore"; d.error = JSON.stringify(e.detail || e).slice(0, 500); }
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
+  if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
   return d;
 }
 async function autoPublish(env) {
@@ -584,6 +587,7 @@ button{background:#86B4EA;color:#0E151B;font-weight:600;border:0}.e{color:#FF9A9
 async function panelApi(env, origin, b) {
   const act = b.action;
   if (String(act || "").startsWith("tt_")) { const r = await ttPanelApi(env, b); if (r) return r; }
+  if (String(act || "").startsWith("th_")) { const r = await thPanelApi(env, b); if (r) return r; }
   if (act === "proposte") return { ok: true, proposte: await igProposte(env, !!b.force), scelte: await igScelte(env) };
   if (act === "scelta_set") {
     const date = String(b.date || "");
@@ -601,13 +605,13 @@ async function panelApi(env, origin, b) {
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
-    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows] = await Promise.all([
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows] = await Promise.all([
       igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
-      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40),
     ]);
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
-    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption) })) };
+    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
   }
 
   if (act === "users") {
@@ -754,6 +758,8 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="card" id="ttc"><div class="row"><b>TikTok</b><span class="sub" id="tts" style="flex:1">carico…</span><a id="ttcon" href="/ig/tt/connect"><button class="g" type="button">Collega TikTok</button></a></div>
 <div class="row" style="margin-top:10px"><span>Invio:</span><select id="ttmode" style="max-width:100%"><option value="bozza">bozza nella casella TikTok (pubblichi tu dall'app)</option><option value="diretto">pubblica direttamente (serve l'audit di TikTok)</option></select><label><input type="checkbox" id="ttauto"> invia da solo dopo Instagram</label></div>
 <details style="margin-top:8px"><summary class="sub">Verifica indirizzo immagini (serve per i caroselli)</summary><div class="row" style="margin-top:8px"><input id="ttvn" placeholder="tiktokXXXX.txt"><input id="ttvc" placeholder="contenuto del file"><button class="g" id="ttvs" type="button">Salva</button></div><div class="sub" id="ttvi"></div></details></div>
+<div class="card" id="thc"><div class="row"><b>Threads</b><span class="sub" id="ths" style="flex:1">carico…</span><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div>
+<div class="row" style="margin-top:10px"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div></div>
 
 
 <div id="mbar" class="card" style="cursor:pointer;display:flex;gap:8px;align-items:center"><span id="mbd" style="width:12px;height:12px;border-radius:50%;background:#8FA0AE;flex:none"></span><span id="mbt" class="sub" style="flex:1">Email del mattino: carico…</span></div>
@@ -808,6 +814,16 @@ function ttHtml(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status===
  else if(t&&t.status==="pubblicato")h+='<button class="g ttl">Aggiungi link</button>';
  h+='</div>';if(t&&t.error)h+='<div class="err">'+esc(t.error)+'</div>';
  if(t&&t.status!=="pubblicato"&&(t.tt_status||t.check_error||t.checked_at))h+='<div class="sub" style="font-size:12px">Dettagli: stato TikTok '+esc(t.tt_status||"non ancora letto")+(t.checked_at?' · controllato '+esc(when(t.checked_at)):'')+(t.check_error?' · errore nel controllo: '+esc(t.check_error):'')+(t.upload_http?' · caricamento HTTP '+esc(t.upload_http):'')+'</div>';return h}
+function thHtml(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.threads||!D.threads.collegato)return "";const t=(D.th||{})[x.id];
+ const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"pubblicato su Threads",errore:"non pubblicato"};
+ let h='';
+ if(!t||t.status!=="pubblicato")h+='<div style="margin-top:10px"><div class="sub" style="font-size:12px">Testo Threads (max 500 caratteri, senza hashtag)</div><textarea rows="4" class="thcap" maxlength="500">'+esc(x.th_cap||"")+'</textarea><div class="row" style="margin-top:6px"><button class="g thsv">Salva testo Threads</button></div></div>';
+ h+='<div class="row" style="margin-top:8px"><b style="font-size:14px">Threads</b>';
+ if(t)h+='<span class="sub">'+esc(lab[t.status]||t.status)+'</span>';
+ if(!t||t.status==="errore")h+='<button class="g thsd">'+(t?"Riprova su Threads":"Pubblica su Threads")+'</button>';
+ if(t&&t.status==="in_elaborazione")h+='<button class="g thk">Aggiorna stato</button>';
+ if(t&&t.link)h+='<a href="'+esc(t.link)+'" target="_blank">Apri su Threads</a>';
+ h+='</div>';if(t&&t.error)h+='<div class="err">'+esc(t.error)+'</div>';return h}
 let VPRE=0;
 function stripHtml(x){
  const open=x.status==="bozza"||x.status==="errore";
@@ -831,6 +847,9 @@ async function load(){
  document.getElementById("ttcon").querySelector("button").textContent=T.collegato?"Ricollega TikTok":"Collega TikTok";
  if(T.settings){document.getElementById("ttmode").value=T.settings.mode;document.getElementById("ttauto").checked=!!T.settings.auto}
  document.getElementById("ttvi").textContent=T.verifica?("File attivi: "+T.verifica+" (rispondono in ogni cartella)"):"Nessun file di verifica salvato";}
+ {const H=d.threads||{};document.getElementById("ths").textContent=!H.configurato?"chiavi Threads mancanti nel Worker":H.collegato?((H.username?"@"+H.username:"collegato")+(H.scaduto?" · collegamento scaduto, ricollega":(H.giorni!=null?" · valido ancora "+H.giorni+" giorni":""))):"non collegato";
+ document.getElementById("thcon").querySelector("button").textContent=H.collegato?"Ricollega Threads":"Collega Threads";
+ if(H.settings){document.getElementById("thauto").checked=!!H.settings.auto;document.getElementById("thtopic").value=H.settings.topic||""}}
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
@@ -845,7 +864,7 @@ async function load(){
   +(x.status==="in_elaborazione"?'<div class="row" style="margin-top:8px"><button class="fin">Controlla e pubblica</button><span class="sub">Instagram sta elaborando il video</span></div>':'')
   +(x.status==="scartata"?'<div class="row"><button class="g res">Ripristina</button></div>':'')
   +((x.status==="in_pubblicazione"||x.status==="in_elaborazione")?'<div class="row" style="margin-top:8px"><button class="r rst">Reset a bozza</button><span class="sub">Solo se la pubblicazione è bloccata</span></div>':'')
-  +(x.permalink?'<div style="margin-top:8px"><a href="'+esc(x.permalink)+'" target="_blank">Apri il post su Instagram</a></div>':'')+ttHtml(x)
+  +(x.permalink?'<div style="margin-top:8px"><a href="'+esc(x.permalink)+'" target="_blank">Apri il post su Instagram</a></div>':'')+ttHtml(x)+thHtml(x)
   +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'}).join("");
  L.querySelectorAll(".card[data-id]").forEach(c=>{const id=c.dataset.id;const q=s=>c.querySelector(s);
   if(q(".pub"))q(".pub").onclick=async e=>{if(!confirm("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
@@ -873,6 +892,9 @@ async function load(){
   if(q(".ttl"))q(".ttl").onclick=async e=>{const l=prompt("Link del post su TikTok (in TikTok tocca Condividi, poi Copia link):","");if(!l)return;await api({action:"tt_mark",id,link:l});load()};
   if(q(".ttk"))q(".ttk").onclick=async e=>{e.target.disabled=true;await api({action:"tt_check",id});load()};
   if(q(".ttf"))q(".ttf").onclick=async e=>{if(!confirm("Reinviare? Il contenuto precedente resta comunque nella casella di TikTok finché non lo elimini dall'app."))return;e.target.disabled=true;const r=await api({action:"tt_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
+  if(q(".thsd"))q(".thsd").onclick=async e=>{if(!confirm("Pubblicare subito su Threads? Su Threads esce davvero, non come bozza."))return;e.target.disabled=true;e.target.textContent="Pubblico…";if(q(".thcap"))await api({action:"th_caption",id,caption:q(".thcap").value});const r=await api({action:"th_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.th&&r.th.status==="errore")alert(r.th.error);load()};
+  if(q(".thsv"))q(".thsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"th_caption",id,caption:q(".thcap").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
+  if(q(".thk"))q(".thk").onclick=async e=>{e.target.disabled=true;await api({action:"th_check",id});load()};
   if(q(".res"))q(".res").onclick=async()=>{await api({action:"restore",id});load()}})}
 async function loadMail(){
  const d=await api({action:"mail_get"});
@@ -925,6 +947,8 @@ document.getElementById("usc").onclick=()=>{
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
 document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!confirm("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
+document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()};
+document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
 document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
 document.getElementById("pause").onchange=async e=>{await api({action:"settings",paused:e.target.checked});load()};
 
@@ -1753,6 +1777,175 @@ async function ttPanelInfo(env) {
   return { configurato: !!(env.TT_CLIENT_KEY && env.TT_CLIENT_SECRET), collegato: !!(t && t.access_token), username: t ? t.username || null : null, nickname: t ? t.nickname || null : null,
     scope: t ? t.scope || "" : "", scaduto: !!(t && t.refresh_expires_at && t.refresh_expires_at < Date.now()), settings: await ttSettings(env), verifica: v ? (Array.isArray(v.list) ? v.list.map((x) => x.name).join(", ") : v.name) : null };
 }
+// ============ THREADS (v30): pubblica su Threads gli stessi caroselli e reel di Instagram ============
+// App Meta con il caso d'uso «Accesso all'API di Threads»; secret TH_APP_ID e TH_APP_SECRET (quelli di Threads, non di Instagram).
+// Il profilo @read.geopolitics va aggiunto come «Threads Tester» e accetta l'invito da Threads → Impostazioni → Account → Autorizzazioni dei siti web.
+const TH_API = "https://graph.threads.com/v1.0";
+const TH_TYPES = ["reel", "carousel", "image"];
+const TH_DEFAULT = { auto: false, topic: "Geopolitica" };
+async function thSettings(env) { return { ...TH_DEFAULT, ...((await kvGet(env, "th_settings")) || {}) }; }
+function thCaption(cap) { // testo per Threads: max 500 caratteri, niente hashtag (Threads usa un solo «argomento»), link al sito al posto di «link in bio»
+  let lines = String(cap || "").replace(/\s+$/, "").split("\n");
+  while (lines.length && /^\s*(#[^\s#]+\s*)+$/.test(lines[lines.length - 1])) lines.pop();
+  let t = lines.join("\n").replace(/(^|\s)#([^\s#]+)/g, "$1$2").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  t = t.replace(/link (nella|in) bio/gi, "readgeopolitics.com");
+  if (t.length <= 500) return t;
+  const cut = t.slice(0, 497); const k = Math.max(cut.lastIndexOf("\n"), cut.lastIndexOf(". "));
+  return (k > 250 ? cut.slice(0, k + 1) : cut).trim() + "…";
+}
+async function thToken(env) {
+  const t = await kvGet(env, "th_token");
+  if (!t || !t.access_token) throw { status: 409, code: "threads_non_collegato", detail: "Threads non è collegato: premi «Collega Threads» nel pannello." };
+  if (t.expires_at && t.expires_at < Date.now()) throw { status: 409, code: "threads_scaduto", detail: "Il collegamento a Threads è scaduto: premi «Ricollega Threads»." };
+  return t;
+}
+async function thRefresh(env) { // dal cron: rinnova il token lungo (60 giorni) quando ha più di 20 giorni
+  const t = await kvGet(env, "th_token");
+  if (!t || !t.access_token || Date.now() - Date.parse(t.refreshed_at || 0) < 20 * 86400000 || (t.expires_at && t.expires_at < Date.now())) return;
+  const r = await fetch("https://graph.threads.com/refresh_access_token?" + new URLSearchParams({ grant_type: "th_refresh_token", access_token: t.access_token }));
+  const j = await gj(r);
+  if (j.access_token) await kvSet(env, "th_token", { ...t, access_token: j.access_token, expires_at: Date.now() + (+j.expires_in || 5184000) * 1000, refreshed_at: new Date().toISOString() });
+}
+async function thCall(t, method, path, params) {
+  const q = new URLSearchParams({ ...(params || {}), access_token: t.access_token });
+  const r = method === "GET" ? await fetch(TH_API + path + "?" + q) : await fetch(TH_API + path, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: q });
+  const j = await gj(r);
+  if (!r.ok || j.error) throw { status: 502, code: "threads_" + ((j.error && (j.error.code || j.error.type)) || r.status), detail: "Threads: " + ((j.error && (j.error.error_user_msg || j.error.message)) || "HTTP " + r.status) };
+  return j;
+}
+const thErr = (e) => String((e && (typeof e.detail === "string" ? e.detail : e.detail ? JSON.stringify(e.detail) : e.message || e.code)) || e).slice(0, 500);
+async function thTry(env, id) { // contenitore pronto → pubblica; altrimenti resta «in_elaborazione» e ci riprova il cron
+  const x = await kvGet(env, "th:" + id);
+  if (!x || !x.container || x.status === "pubblicato") return x;
+  const t = await thToken(env);
+  try {
+    const s = await thCall(t, "GET", "/" + x.container, { fields: "status,error_message" });
+    x.th_status = s.status; x.checked_at = new Date().toISOString();
+    if (s.status === "ERROR" || s.status === "EXPIRED") { x.status = "errore"; x.error = "Threads non ha accettato il contenuto: " + (s.error_message || s.status); }
+    else if (s.status === "FINISHED") {
+      const p = await thCall(t, "POST", "/" + t.user_id + "/threads_publish", { creation_id: x.container });
+      x.media_id = p.id; x.status = "pubblicato"; x.published_at = new Date().toISOString(); delete x.error;
+      try { const m = await thCall(t, "GET", "/" + p.id, { fields: "permalink" }); x.link = m.permalink || null; } catch (e) {}
+    }
+  } catch (e) { x.check_error = thErr(e); }
+  await kvSet(env, "th:" + id, x);
+  return x;
+}
+async function thSend(env, id, by, force) {
+  const d = await kvGet(env, "draft:" + id);
+  if (!d) throw { status: 404, code: "draft_not_found" };
+  if (!TH_TYPES.includes(d.type)) throw { status: 400, code: "threads_formato", detail: "Le storie non vanno su Threads." };
+  const old = await kvGet(env, "th:" + id);
+  if (old && ["invio", "in_elaborazione", "pubblicato"].includes(old.status) && !force) throw { status: 409, code: "threads_gia_inviato", detail: old.status };
+  if (old && old.status === "pubblicato") throw { status: 409, code: "threads_gia_pubblicato", detail: "Già pubblicato su Threads." };
+  const st = await thSettings(env);
+  const x = { id, status: "invio", by, started_at: new Date().toISOString() };
+  await kvSet(env, "th:" + id, x);
+  try {
+    const t = await thToken(env);
+    const text = String(d.th_caption || thCaption(d.caption)).trim().slice(0, 500);
+    const base = { text, ...(st.topic ? { topic_tag: String(st.topic).replace(/[.&]/g, "").slice(0, 50) } : {}) };
+    let c;
+    if (d.type === "reel") {
+      if (!d.video_url) throw { code: "threads_video", detail: "Nessun video nella bozza." };
+      c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "VIDEO", video_url: d.video_url, ...base });
+    } else {
+      const imgs = (d.image_urls || []).slice(0, 20);
+      if (!imgs.length) throw { code: "threads_immagini", detail: "Nessuna immagine nella bozza." };
+      if (imgs.length === 1) c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "IMAGE", image_url: imgs[0], ...base });
+      else {
+        const kids = [];
+        for (const u of imgs) kids.push((await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "IMAGE", image_url: u, is_carousel_item: "true" })).id);
+        c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "CAROUSEL", children: kids.join(","), ...base });
+      }
+    }
+    x.container = c.id; x.status = "in_elaborazione"; x.sent_at = new Date().toISOString();
+  } catch (e) { x.status = "errore"; x.error = thErr(e); }
+  await kvSet(env, "th:" + id, x);
+  if (x.status !== "in_elaborazione") return x;
+  for (const w of [4000, 8000, 12000]) { await new Promise((r) => setTimeout(r, w)); const y = await thTry(env, id); if (y && y.status !== "in_elaborazione") return y; }
+  return await kvGet(env, "th:" + id);
+}
+async function thAuto(env, id) { // dopo una pubblicazione Instagram riuscita
+  const st = await thSettings(env);
+  if (!st.auto) return;
+  const d = await kvGet(env, "draft:" + id);
+  if (!d || !TH_TYPES.includes(d.type) || (await kvGet(env, "th:" + id))) return;
+  if (!(await kvGet(env, "th_token"))) return;
+  await thSend(env, id, "auto", false);
+}
+async function thPoll(env) { // dal cron: completa le pubblicazioni ancora in elaborazione (max 2 giorni) e rinnova il token
+  try { await thRefresh(env); } catch (e) {}
+  if (!(await kvGet(env, "th_token"))) return;
+  const lim = Date.now() - 2 * 86400000;
+  for (const x of await kvList(env, "th:", 20)) if (x.status === "in_elaborazione" && Date.parse(x.sent_at || x.started_at || 0) > lim) { try { await thTry(env, x.id); } catch (e) {} }
+}
+async function thPanelInfo(env) {
+  const t = await kvGet(env, "th_token");
+  return { configurato: !!(env.TH_APP_ID && env.TH_APP_SECRET), collegato: !!(t && t.access_token), username: t ? t.username || null : null,
+    scaduto: !!(t && t.expires_at && t.expires_at < Date.now()), giorni: t && t.expires_at ? Math.floor((t.expires_at - Date.now()) / 86400000) : null, settings: await thSettings(env) };
+}
+async function thPublic(request, env, p, url) {
+  const redirect = url.origin + "/th/callback";
+  if (p === "/th/connect") {
+    const okK = safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "");
+    if (!okK && !(await sessionOk(request, env))) return htmlPage("Accesso negato", "<p>Entra prima nel pannello (/ig/panel) e premi «Collega Threads» da lì.</p>", 401);
+    if (!env.TH_APP_ID || !env.TH_APP_SECRET) return htmlPage("Mancano le chiavi Threads", "<p>Aggiungi al Worker i secret <b>TH_APP_ID</b> e <b>TH_APP_SECRET</b> (ID e chiave segreta <b>dell'app Threads</b>, nella tua app Meta) e riprova.</p>", 500);
+    const state = crypto.randomUUID().replace(/-/g, "");
+    await kvSet(env, "th_state", { state, exp: Date.now() + 10 * 60000 });
+    return Response.redirect("https://threads.com/oauth/authorize?" + new URLSearchParams({ client_id: env.TH_APP_ID, redirect_uri: redirect, scope: "threads_basic,threads_content_publish", response_type: "code", state }), 302);
+  }
+  if (p === "/th/callback") {
+    const err = url.searchParams.get("error_description") || url.searchParams.get("error");
+    if (err) return htmlPage("Threads ha rifiutato", `<p>${esc(err)}</p>`, 400);
+    const code = (url.searchParams.get("code") || "").replace(/#_$/, "");
+    const st = await kvGet(env, "th_state");
+    if (!code || !st || st.exp < Date.now() || !safeEq(url.searchParams.get("state") || "", st.state))
+      return htmlPage("Richiesta non valida", "<p>Stato scaduto o non riconosciuto. Torna nel pannello e premi di nuovo «Collega Threads».</p>", 400);
+    await kvDel(env, "th_state");
+    const r1 = await fetch("https://graph.threads.com/oauth/access_token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: env.TH_APP_ID, client_secret: env.TH_APP_SECRET, code, grant_type: "authorization_code", redirect_uri: redirect }) });
+    const j1 = await gj(r1);
+    if (!j1.access_token) return htmlPage("Scambio del codice fallito", `<pre>${esc(JSON.stringify(j1.error || j1).slice(0, 600))}</pre>`, 502);
+    const r2 = await fetch("https://graph.threads.com/access_token?" + new URLSearchParams({ grant_type: "th_exchange_token", client_secret: env.TH_APP_SECRET, access_token: j1.access_token }));
+    const j2 = await gj(r2);
+    const tok = j2.access_token || j1.access_token;
+    const t = { access_token: tok, user_id: String(j1.user_id || ""), expires_at: Date.now() + (+(j2.expires_in) || 3600) * 1000, refreshed_at: new Date().toISOString(), long: !!j2.access_token };
+    try { const me = await thCall(t, "GET", "/me", { fields: "id,username" }); t.user_id = String(me.id || t.user_id); t.username = me.username || null; } catch (e) {}
+    await kvSet(env, "th_token", t);
+    return htmlPage("Threads collegato ✅", `<p>Profilo: <b>${t.username ? "@" + esc(t.username) : "(nome non letto)"}</b>.</p>` + (t.long ? "" : `<p style="color:#b00">Token lungo non ottenuto: il collegamento dura 1 ora. Ricollega.</p>`) + `<p><a href="/ig/panel">Torna al pannello</a></p>`);
+  }
+  if (p === "/th/uninstall" || p === "/th/delete") { // richiesti da Meta: alla revoca cancelliamo il token
+    await kvDel(env, "th_token");
+    if (p === "/th/delete") { const cc = crypto.randomUUID().slice(0, 8); return json({ url: "https://www.readgeopolitics.com/privacy.html", confirmation_code: cc }); }
+    return json({ ok: true });
+  }
+  return null;
+}
+async function thPanelApi(env, b) {
+  const act = b.action;
+  if (act === "th_send") return { ok: true, th: await thSend(env, String(b.id), "panel", !!b.force) };
+  if (act === "th_check") return { ok: true, th: await thTry(env, String(b.id)) };
+  if (act === "th_caption") {
+    const d = await kvGet(env, "draft:" + String(b.id));
+    if (!d) throw { status: 404, code: "draft_not_found" };
+    const c = String(b.caption || "").trim().slice(0, 500);
+    if (c && c !== thCaption(d.caption)) d.th_caption = c; else delete d.th_caption;
+    await kvSet(env, "draft:" + d.id, d);
+    return { ok: true, th_cap: d.th_caption || thCaption(d.caption) };
+  }
+  if (act === "th_settings") {
+    const cur = await thSettings(env);
+    if (typeof b.auto === "boolean") cur.auto = b.auto;
+    if (typeof b.topic === "string") cur.topic = b.topic.replace(/[.&]/g, "").trim().slice(0, 50);
+    await kvSet(env, "th_settings", cur);
+    return { ok: true, threads: await thPanelInfo(env) };
+  }
+  if (act === "th_disconnect") { await kvDel(env, "th_token"); return { ok: true, threads: await thPanelInfo(env) }; }
+  return null;
+}
+// ============ fine Threads ============
+
 async function ttPublic(request, env, p, url) {
   const redirect = url.origin + "/tt/callback";
   if (p === "/tt/connect") {
@@ -2089,6 +2282,8 @@ async function route(request, env) {
   }
   if (method === "GET" || method === "HEAD") { const vf = await ttVerifyFile(env, p); if (vf) return vf; }
   if (method === "GET" && p === "/ig/tt/connect") return await ttPublic(request, env, "/tt/connect", url); // sotto /ig: il cookie del pannello vale solo lì
+  if (method === "GET" && p === "/ig/th/connect") return await thPublic(request, env, "/th/connect", url); // v30: Threads
+  if ((method === "GET" || method === "POST") && p.startsWith("/th/")) { const r = await thPublic(request, env, p, url); if (r) return r; }
   if (method === "GET" && p.startsWith("/tt/")) { const r = await ttPublic(request, env, p, url); if (r) return r; }
   if ((method === "GET" || method === "HEAD" || (method === "POST" && p === "/ig/login")) && p.startsWith("/ig/")) return await igPublic(request, env, p, url);
   { const um = p.match(/^\/u\/([A-Za-z0-9]{1,40})$/); if (um && (method === "GET" || method === "POST")) return await mailUnsub(request, env, um[1]); }
@@ -2550,6 +2745,7 @@ export default {
     } catch (e) {}
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
+    try { await thPoll(env); } catch (e) {} // v30: Threads (pubblicazioni in attesa e rinnovo del token)
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
