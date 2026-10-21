@@ -3134,7 +3134,7 @@ $("#prefsSave").addEventListener("click",async()=>{
 /* ---------- test pubblico ---------- */
 function track(name,t){try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:"evento/"+name,title:name,event:true});else if(!t)setTimeout(()=>track(name,1),1500)}catch(e){}}
 function setupPublic(P){
-  S.pub=P;captureAttrib();
+  S.pub=P;pplCount();captureAttrib();
   if(P.goatcounter){const sc=document.createElement("script");sc.async=true;sc.src="https://gc.zgo.at/count.js";sc.dataset.goatcounter="https://"+P.goatcounter+".goatcounter.com/count";document.head.appendChild(sc)}
   const today=isoDay(new Date());const fino=P.aperta_fino||"";
   if(/[?&]gate=1(&|$)/.test(location.search)){earlyBar();showGate(P);return}
@@ -3142,6 +3142,11 @@ function setupPublic(P){
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
   if(bar&&fino){const d=daysTo(fino,today);tx.innerHTML=`<strong>ANTEPRIMA GRATUITA</strong> · accesso libero fino a ${esc(fmtDate(fino,true))}${d>=0?` · ${d===0?"ultimo giorno":d===1?"manca 1 giorno":"mancano "+d+" giorni"}`:""}${P.form_url?` · <a href="${esc(P.form_url)}" target="_blank" rel="noopener" data-track="lista-attesa-barra">resta aggiornato</a>`:""}`;bar.hidden=false}
 }
+/* persone nuove e di ritorno: al massimo un evento ogni 7 e ogni 30 giorni per browser, senza identificativi */
+function trackSure(name,n){n=n||0;if(window.goatcounter&&window.goatcounter.count){track(name);return}if(n<12)setTimeout(()=>trackSure(name,n+1),1000)}
+function pplCount(){try{const now=Date.now(),D=86400000;let f=+gStore("rg-v1")||0;
+  if(!f){f=(gStore("rg-attr")||gStore("rg-uid"))?1:now;if(gStore("rg-v1",String(f))===null&&!gStore("rg-v1"))return}
+  [[7,"rg-p7"],[30,"rg-p30"]].forEach(([n,k])=>{const l=+gStore(k)||0;if(now-l>=n*D){gStore(k,String(now));trackSure("persone"+n+"-"+(now-f<n*D?"nuova":"tornata"))}})}catch(e){}}
 /* ---------- Early Access: accesso con email ---------- */
 const RG_API="https://rg-api.briefinghub.workers.dev";
 const NL_TXT="Voglio ricevere ogni mattina via email l'anteprima del briefing (facoltativo, ti puoi disiscrivere quando vuoi)";
