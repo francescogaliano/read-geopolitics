@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v36: statistiche «Persone»: nuovi iscritti per settimana, persone nuove e di ritorno (stima dal browser), iscritti attivi e spariti; registro giornaliero dei passaggi (seen_log).
 // v35: scheda «Link» nel pannello: profilo Instagram, sticker delle storie, tutti i canali (con Amazon Music) e bio pronte, con Copia e Apri.
 // v34: scheda Podcast con il link unico alla pagina /ascolta.html (Spotify, Apple, Telegram, sito) e i link diretti.
 // v33: Telegram. Ogni mattina sul canale i 60 secondi con la puntata del podcast; i post di Instagram dal pannello o in automatico.
@@ -251,6 +252,7 @@ async function joinUser(request, env) {
       let sub = !!cur.newsletter_at;
       if (nl) { try { sub = await nlConsent(env, cur.id, now, clip(b.consent_text, 500)); } catch (e) {} }
       else { try { await mailSchema(env); const q = await env.DB.prepare("SELECT newsletter_at, unsub_at FROM users WHERE id=?1").bind(cur.id).first(); sub = !!(q && q.newsletter_at && !q.unsub_at); } catch (e) {} }
+      await seenLog(env, cur.id);
       return json({ ok: true, id: cur.id, returning: true, newsletter: sub });
     }
     const id = crypto.randomUUID();
@@ -261,12 +263,20 @@ async function joinUser(request, env) {
       ).bind(id, email, now, clip(b.source, 80), clip(b.campaign, 80), clip(b.content, 80), clip(b.referrer, 120), nl).run();
       try { await mailSchema(env); await env.DB.prepare("UPDATE users SET unsub_token=lower(hex(randomblob(16))) WHERE id=?1 AND unsub_token IS NULL").bind(id).run(); } catch (e) {}
       if (nl) { try { const ct = clip(b.consent_text, 500) || (await mailCfg(env)).consent_text; if (ct) await env.DB.prepare("UPDATE users SET consent_text=?2 WHERE id=?1").bind(id, ct).run(); } catch (e) {} }
+      await seenLog(env, id);
       return json({ ok: true, id, returning: false, newsletter: !!nl });
     } catch (e) { if (attempt) throw e; }
   }
   return fail(503, "db_error");
 }
 
+let SEEN_OK = false;
+async function seenLog(env, id) { // v36: un passaggio al giorno per iscritto
+  try {
+    if (!SEEN_OK) { await env.DB.prepare("CREATE TABLE IF NOT EXISTS seen_log (user_id TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY (user_id, day))").run(); SEEN_OK = true; }
+    await env.DB.prepare("INSERT OR IGNORE INTO seen_log (user_id, day) VALUES (?1, ?2)").bind(id, romeToday()).run();
+  } catch (e) {}
+}
 async function seenUser(request, env) {
   let b = {}; try { b = JSON.parse(await request.text()); } catch {}
   const id = b && typeof b.id === "string" && b.id.length <= 64 ? b.id : null;
@@ -274,6 +284,7 @@ async function seenUser(request, env) {
     const now = new Date().toISOString();
     await env.DB.prepare("UPDATE users SET last_seen=?2, visits=visits+1 WHERE id=?1 AND last_seen<?3")
       .bind(id, now, new Date(Date.now() - 6 * 3600000).toISOString()).run();
+    await seenLog(env, id);
   }
   return json({ ok: true });
 }
@@ -777,6 +788,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:14px}.dr .ic{width:22px;height:22px;font-size:10.5px;border-radius:6px}.dr .st{font-size:12.5px;color:#8FA0AE}.dr a{font-size:13.5px;text-decoration:none}
 .sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
 .lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
+#st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
 </style>
 <main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
 <details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
@@ -1089,6 +1101,14 @@ async function loadStats(force){const el=document.getElementById("st");el.innerH
  const r=await api({action:"stats",days:STP,force:!!force});
  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche non disponibili</b><div class="err" style="margin-top:6px">'+esc(r.detail||r.error||"errore")+'</div>'+(r.error==="gc_missing"?'<div class="sub" style="margin-top:6px">In Cloudflare: rg-api → Settings → Variables and Secrets → aggiungi il secret GC_TOKEN con la chiave API di GoatCounter (permessi di sola lettura).</div>':'')+'</div>';return}
  stRender(r.stats)}
+function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
+ if(W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
+  h+='<div class="card pp"><div class="ppl">Il numero della settimana · nuovi iscritti</div><div class="ppb">'+cur.n+'<small>finora · settimana dal '+fd(cur.da)+'</small></div><div class="ppw">'+W.map((w,i)=>'<div class="'+(i===W.length-1?'cur':'')+'"><b>'+w.n+'</b><i style="height:'+Math.max(3,Math.round(w.n/mx*80))+'px"></i>dal '+fd(w.da)+'</div>').join("")+'</div>'+(F.length?'<div class="ppi">Da dove sono arrivati '+(cur.n?'questa settimana':'la settimana scorsa')+': '+F.slice(0,4).map((x,i)=>i?esc(x.name)+' '+x.n:'<b>'+esc(x.name)+' '+x.n+'</b>').join(" · ")+'</div>':'')+'</div>'}
+ const P=s.persone||{},pn=P.nuove||0,po=P.tornate||0,pt=pn+po;
+ h+='<div class="card pp"><div class="ppl">Persone sul sito · ultimi '+s.days+' giorni</div>'+(pt?'<div class="ppb">≈ '+stN(pt)+'<small>persone diverse</small></div><div class="ppt"><div><b>'+stN(pn)+'</b><span>prima volta</span></div><div><b>'+stN(po)+'</b><span>tornate</span></div><div><b>'+Math.round(po/pt*100)+'%</b><span>tornano</span></div></div><div class="pps">Stima: chi cambia telefono o browser conta come nuovo.'+(s.start<"2026-10-22"?' Il conteggio è attivo dal 22 ottobre.':'')+'</div>':'<div class="pps">Il conteggio è attivo dal 22 ottobre: i numeri arrivano con le prossime visite.</div>')+'</div>';
+ const I=s.iscritti;if(I&&I.tot){const ft=Math.max(1,I.f1+I.f2+I.f4);
+  h+='<div class="card pp"><div class="ppl">Iscritti · chi è entrato con l&#39;email</div><div class="ppt"><div><b>'+stN(I.tot)+'</b><span>in tutto</span></div><div><b>'+stN(I.att)+'</b><span>passati in '+s.days+' gg</span></div><div><b class="dw">'+stN(I.spar)+'</b><span>spariti 14+ gg</span></div></div><div class="pps" style="margin-top:12px">Quanti giorni sono venuti, da quando sono iscritti</div><div class="ppbar"><i style="flex:'+I.f1+';background:#3A5A7A"></i><i style="flex:'+I.f2+';background:#86B4EA"></i><i style="flex:'+I.f4+';background:#F2B84B"></i></div><div class="ppg"><span><i style="background:#3A5A7A"></i>1 giorno · '+I.f1+'</span><span><i style="background:#86B4EA"></i>2–3 giorni · '+I.f2+'</span><span><i style="background:#F2B84B"></i>4 o più · '+I.f4+'</span></div>'+(I.f1*2>ft?'<div class="ppi">Più di metà degli iscritti è venuta <b>un giorno solo</b>: l&#39;email del mattino è il modo per riportarli.</div>':I.torn?'<div class="ppi"><b>'+I.torn+'</b> iscritti di prima sono tornati negli ultimi '+s.days+' giorni.</div>':'')+'</div>'}
+ return h}
 function stRender(s){const el=document.getElementById("st");const E=s.events||{};const ev=k=>E[k]||0;
  const ch=s.prev_visits?Math.round((s.visits-s.prev_visits)/s.prev_visits*100):null;
  const dn=["dom","lun","mar","mer","gio","ven","sab"];
@@ -1098,7 +1118,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  h+='<div class="kpi"><div class="l">Storie aperte</div><div class="v">'+stN(ev("storia-aperta"))+'</div><div class="d">'+stN(ev("fonte-aperta"))+' fonti aperte</div></div>';
  h+='<div class="kpi"><div class="l">Ascolti podcast</div><div class="v">'+stN(ev("podcast-play"))+'</div><div class="d">'+stN(ev("podcast-finito"))+' fino in fondo</div></div>';
  h+='<div class="kpi"><div class="l">Nuovi iscritti</div><div class="v">'+stN(s.joined)+'</div><div class="d">'+(s.seen?'su '+stN(s.seen)+' che hanno visto l&#39;invito':'iscritti nel periodo')+'</div></div></div></div>';
- h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
+ h+=ppHtml(s);h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach(d=>{const t=dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+' '+(+d.day.slice(8))+': '+d.n+' visite'+(d.post?' · '+d.post:'');h+='<div class="col" title="'+esc(t)+'">'+(!many||d.n===mx?'<span class="bv">'+d.n+'</span>':'')+'<div class="bar'+(d.post?' pb':'')+'" style="height:'+Math.max(1,Math.round(d.n/mx*100))+'%"></div></div>'});
  h+='</div><div class="xl" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach((d,i)=>{const lab=(!many||i%5===0||i===s.day_list.length-1)?dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+'<br>'+(+d.day.slice(8)):'';const pk=d.post?d.post.split("+").map(x=>({carosello:"C",reel:"R",post:"P"}[x]||"P")).join("+"):"";h+='<div>'+lab+(d.post&&!many?'<br><span class="post" title="'+esc(d.post)+'">'+pk+'</span>':'')+'</div>'});
@@ -2273,6 +2293,20 @@ const GC_OWN = [["Instagram (link nella bio)", /^ig$/i], ["Pagina Iscriviti (ann
 const gcRefName = (n) => { n = String(n || "").trim(); if (!n || /^\(?(no data|unknown|direct)\)?$/i.test(n)) return "Diretto"; const o = GC_OWN.find(([, re]) => re.test(n)); if (o) return o[0]; const g = GC_REF.find(([, re]) => re.test(n)); return g ? g[0] : n.replace(/^www\./, "").slice(0, 40); };
 const gcSize = (n) => /tablet/i.test(n) && !/phone/i.test(n) ? "Tablet" : /phone/i.test(n) ? "Telefono" : /monitor|computer|desktop|laptop/i.test(n) ? "Computer" : "Altro";
 const gcEv = (p) => String(p || "").replace(/^\/+/, "").replace(/^evento\//, "");
+function statSrc(s) {
+  s = String(s || "").toLowerCase().replace(/^www\./, "");
+  if (!s || s === "diretto") return "Diretto";
+  if (s === "ig" || s.includes("instagram")) return "Instagram";
+  if (s.includes("google")) return "Google";
+  if (s.includes("facebook") || s === "fb") return "Facebook";
+  if (s.includes("tiktok")) return "TikTok";
+  if (s.includes("threads")) return "Threads";
+  if (s.includes("t.me") || s.includes("telegram")) return "Telegram";
+  if (s.includes("linkedin") || s === "lnkd.in") return "LinkedIn";
+  if (s === "email" || s.includes("newsletter") || s.includes("mail")) return "Email";
+  if (s === "team") return "Team";
+  return s.slice(0, 30);
+}
 async function siteStats(env, days, force) {
   days = +days === 30 ? 30 : 7;
   if (!env.GC_TOKEN) throw { status: 409, code: "gc_missing", detail: "Manca il secret GC_TOKEN (chiave API di GoatCounter) nel Worker." };
@@ -2308,6 +2342,24 @@ async function siteStats(env, days, force) {
   // iscrizioni: dal database del sito (più preciso degli eventi)
   let joined = 0, nl = 0;
   try { const q = await env.DB.prepare("SELECT SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS j, SUM(CASE WHEN newsletter_at >= ?1 THEN 1 ELSE 0 END) AS n FROM users").bind(start).first(); joined = +(q && q.j) || 0; nl = +(q && q.n) || 0; } catch (e) {}
+  // v36: persone (eventi una volta per finestra dal browser) e iscritti
+  const persone = { nuove: events["persone" + days + "-nuova"] || 0, tornate: events["persone" + days + "-tornata"] || 0 };
+  for (const k of Object.keys(events)) if (k.startsWith("persone")) delete events[k];
+  let iscritti = null; const settimane = [], fonti = { cur: [], prev: [] };
+  try {
+    const sP = new Date(now - days * 86400000).toISOString(), s14 = new Date(now - 14 * 86400000).toISOString();
+    const q = await env.DB.prepare("SELECT COUNT(*) AS tot, SUM(CASE WHEN last_seen>=?1 THEN 1 ELSE 0 END) AS att, SUM(CASE WHEN last_seen>=?1 AND created_at<?1 THEN 1 ELSE 0 END) AS torn, SUM(CASE WHEN last_seen<?2 THEN 1 ELSE 0 END) AS spar, SUM(CASE WHEN visits<=1 THEN 1 ELSE 0 END) AS f1, SUM(CASE WHEN visits BETWEEN 2 AND 3 THEN 1 ELSE 0 END) AS f2, SUM(CASE WHEN visits>=4 THEN 1 ELSE 0 END) AS f4 FROM users").bind(sP, s14).first();
+    if (q) iscritti = { tot: +q.tot || 0, att: +q.att || 0, torn: +q.torn || 0, spar: +q.spar || 0, f1: +q.f1 || 0, f2: +q.f2 || 0, f4: +q.f4 || 0 };
+    const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }), D = 86400000;
+    const today = fmt.format(new Date(now)), tms = Date.parse(today + "T12:00:00Z"), mon0 = tms - ((new Date(tms).getUTCDay() + 6) % 7) * D;
+    const wk = []; for (let i = 5; i >= 0; i--) wk.push({ da: new Date(mon0 - i * 7 * D).toISOString().slice(0, 10), n: 0, src: {} });
+    const rows = await env.DB.prepare("SELECT created_at, source FROM users WHERE created_at>=?1").bind(new Date(mon0 - 36 * D).toISOString()).all();
+    for (const r of rows.results || []) { const d = fmt.format(new Date(r.created_at)); let w = null; for (const x of wk) if (d >= x.da) w = x; if (!w) continue; w.n++; const s = statSrc(r.source); w.src[s] = (w.src[s] || 0) + 1; }
+    let first = wk.findIndex((x) => x.n > 0); if (first < 0) first = wk.length - 3; first = Math.min(first, wk.length - 3);
+    for (const x of wk.slice(Math.max(0, first))) settimane.push({ da: x.da, n: x.n });
+    const top = (o) => Object.entries(o).map(([name, n]) => ({ name, n })).sort((a, z) => z.n - a.n);
+    fonti.cur = top(wk[5].src); fonti.prev = top(wk[4].src);
+  } catch (e) {}
   const seen = Object.entries(events).filter(([k]) => k === "gate-vista" || k.startsWith("lock-")).reduce((a, [, n]) => a + n, 0);
   // osservazioni automatiche (regole fisse)
   const ins = [];
@@ -2319,7 +2371,7 @@ async function siteStats(env, days, force) {
   if ((events["podcast-play"] || 0) >= 5) ins.push("Il " + Math.round(((events["podcast-finito"] || 0) / events["podcast-play"]) * 100) + "% di chi avvia il podcast sul sito lo ascolta fino in fondo.");
   if (prevVisits >= 10) { const c = Math.round(((visits - prevVisits) / prevVisits) * 100); if (Math.abs(c) >= 15) ins.push("Le visite sono " + (c > 0 ? "salite" : "scese") + " del " + Math.abs(c) + "% rispetto ai " + days + " giorni prima."); }
   const data = { days, start, end, at: new Date().toISOString(), visits, prev_visits: prevVisits, day_list: dayList, refs: top, events, sizes: sz,
-    locations: (locs.stats || []).map((s) => ({ id: s.id || "", name: s.name || s.id || "?", n: +s.count || 0 })), joined, nl, seen, insights: ins.slice(0, 3) };
+    locations: (locs.stats || []).map((s) => ({ id: s.id || "", name: s.name || s.id || "?", n: +s.count || 0 })), joined, nl, seen, persone, iscritti, settimane, fonti, insights: ins.slice(0, 3) };
   await kvSet(env, ck, { at: Date.now(), data });
   return data;
 }
