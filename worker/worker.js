@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v33: Telegram. Ogni mattina sul canale i 60 secondi con la puntata del podcast; i post di Instagram dal pannello o in automatico.
 // v32: pannello riordinato. In alto «Canali e uscita» espandibile (stato di ogni canale, impostazioni dentro ogni riga); bozze con titolo vero, un pulsante principale, menu «⋯», didascalie Instagram/TikTok/Threads in schede che si salvano da sole, righe di stato per canale.
 // v31: collegamento Threads via threads.net e chiavi ripulite da spazi/virgolette.
 // v30: Threads. Collegamento (/ig/th/connect), pubblicazione di caroselli e reel dal pannello o in automatico dopo Instagram, testo Threads modificabile, rinnovo del token dal cron.
@@ -534,6 +535,7 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
+  if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
   return d;
 }
 async function draftPublish(env, origin, id, by) {
@@ -550,6 +552,7 @@ async function draftPublish(env, origin, id, by) {
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
+  if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
   return d;
 }
 async function autoPublish(env) {
@@ -590,6 +593,7 @@ async function panelApi(env, origin, b) {
   const act = b.action;
   if (String(act || "").startsWith("tt_")) { const r = await ttPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("th_")) { const r = await thPanelApi(env, b); if (r) return r; }
+  if (String(act || "").startsWith("tg_")) { const r = await tgPanelApi(env, b); if (r) return r; }
   if (act === "proposte") return { ok: true, proposte: await igProposte(env, !!b.force), scelte: await igScelte(env) };
   if (act === "scelta_set") {
     const date = String(b.date || "");
@@ -607,13 +611,13 @@ async function panelApi(env, origin, b) {
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
-    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows] = await Promise.all([
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows] = await Promise.all([
       igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
-      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40),
     ]);
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
-    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
+    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
   }
 
   if (act === "users") {
@@ -787,6 +791,11 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="set"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label>
 <div class="row"><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div>
 <div class="row"><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div></div></details>
+<details class="chr" id="tgc"><summary><span class="ic">TG</span><div class="cht"><b>Telegram</b><div class="s"><span class="dot" id="tgdot"></span><span id="tgs">carico…</span></div></div><span class="tg" id="tgtag"></span></summary>
+<div class="set"><div class="row"><span>Canale</span><input id="tgchat" placeholder="@readgeopolitics" style="max-width:180px"></div>
+<label><input type="checkbox" id="tgm"> ogni mattina: 60 secondi e puntata, alle <input type="time" id="tgora" value="08:00" style="width:auto"></label>
+<label><input type="checkbox" id="tgp"> anche i post di Instagram, quando escono</label>
+<div class="row"><button class="g" id="tgsv" type="button">Salva</button><button class="g" id="tgnow" type="button">Invia ora il mattino</button></div><div class="sub" id="tgmsg"></div></div></details>
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
 <div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="pd" hidden>
@@ -855,6 +864,10 @@ function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=!!(D
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  else if(t.status==="in_elaborazione")act='<button class="sm thk">Aggiorna</button>';
  return '<div class="dr"><span class="ic">TH</span><div>Threads <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=!!D.telegram.settings.post&&x.status!=="pubblicata";
+ const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo dopo Instagram":"da inviare");let act='<span></span>';
+ if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm tgs">Invia</button>';else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
+ return '<div class="dr"><span class="ic">TG</span><div>Telegram <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
 function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];let m="";
  if(open&&!x.video_url&&x.image_urls&&x.image_urls.length)m+='<button class="mi ed">Modifica immagini</button>';
  if(x.status==="in_pubblicazione"||x.status==="in_elaborazione")m+='<button class="mi rst">Reset a bozza (solo se bloccata)</button>';
@@ -873,6 +886,9 @@ function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},
  if(A){g("igs").textContent="@"+A.username+" · valido "+A.days_left+" giorni";g("igd").className="dot "+(A.days_left<7?"y":"g");if(A.days_left<7)iss.push("token Instagram in scadenza")}else{g("igs").textContent="non collegato";g("igd").className="dot r";iss.push("Instagram non collegato")}
  g("ttdot").className="dot "+(!T.collegato?"y":T.scaduto?"r":"g");if(T.scaduto)iss.push("TikTok da ricollegare");
  const ta=!!(T.settings&&T.settings.auto);g("tttag").textContent=T.collegato?(ta?"auto dopo IG":"manuale"):"";g("tttag").className="tg"+(ta?"":" off");
+ const G=d.telegram||{},GS=G.settings||{};g("tgdot").className="dot "+(!G.configurato||!GS.chat?"y":G.errore?"r":"g");g("tgs").textContent=!G.configurato?"manca TG_BOT_TOKEN nel Worker":!GS.chat?"canale da impostare":GS.chat+(G.oggi?" · mattino inviato":"")+(G.errore?" · errore: "+G.errore:"");if(G.errore)iss.push("Telegram");
+ g("tgtag").textContent=G.configurato&&GS.chat?(GS.mattino?"mattino "+GS.ora:"")+(GS.post?(GS.mattino?" + post":"post"):""):"";g("tgtag").className="tg";
+ if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post}
  g("thdot").className="dot "+(!H.collegato?"y":H.scaduto?"r":"g");if(H.scaduto)iss.push("Threads da ricollegare");
  const ha=!!(H.settings&&H.settings.auto);g("thtag").textContent=H.collegato?(ha?"auto dopo IG":"manuale"):"";g("thtag").className="tg"+(ha?"":" off");
  const f=S.formats.daily||{};g("ussum").textContent=(S.paused?"in pausa · ":"")+(f.mode==="auto"?"pubblica da solo":"chiedi approvazione")+" · alle "+(f.time||"");g("usd").className="dot "+(S.paused?"y":"g");if(S.paused)iss.push("pubblicazione in pausa");
@@ -917,7 +933,7 @@ async function load(){
   const tm=x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
   const pl=x.status==="bozza"?(x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
   let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
-  const rows=igRow(x)+ttRow(x)+thRow(x);
+  const rows=igRow(x)+ttRow(x)+thRow(x)+tgRow(x);
   return '<div class="card dc" data-id="'+x.id+'"><div class="dh"><div style="min-width:0"><b>'+esc(dTitle(x))+'</b><div class="sub">'+dSub(x)+'</div></div><span class="pill p-'+x.status+'">'+esc(pl)+'</span></div>'
   +stripHtml(x)
   +((pri||m)?'<div class="pri">'+(pri||'<span style="flex:1"></span>')+(m?'<button class="btn more mo" type="button" aria-label="Altre azioni">⋯</button>':'')+'</div>':'')
@@ -929,6 +945,7 @@ async function load(){
   if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
   const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
+  if(q(".tgs"))q(".tgs").onclick=async e=>{if(!confirm("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")alert(r.tg.error);load()};
   autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");
   if(q(".pub"))q(".pub").onclick=async e=>{if(!confirm("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
     if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok&&r.draft&&r.draft.error)alert("Errore: "+r.draft.error);load()};
@@ -1010,6 +1027,8 @@ document.getElementById("usc").onclick=()=>{
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
 document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!confirm("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
+document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
+document.getElementById("tgnow").onclick=async e=>{if(!confirm("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
 document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()};
 document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
 document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
@@ -2012,6 +2031,105 @@ async function thPanelApi(env, b) {
 }
 // ============ fine Threads ============
 
+// ============ TELEGRAM (v33): canale con il mattino (60 secondi + puntata) e i post di Instagram ============
+// Secret TG_BOT_TOKEN (da @BotFather). Il bot è amministratore del canale; il nome del canale (@...) si imposta dal pannello.
+const RG_ORIGIN = "https://rg-api.briefinghub.workers.dev";
+const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false };
+async function tgSettings(env) { return { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; }
+async function tgCall(env, method, body) {
+  if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
+  const r = await fetch("https://api.telegram.org/bot" + String(env.TG_BOT_TOKEN).trim() + "/" + method, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const j = await gj(r);
+  if (!j.ok) throw { status: 502, code: "telegram_" + (j.error_code || r.status), detail: "Telegram: " + (j.description || "HTTP " + r.status) };
+  return j.result;
+}
+const tgClip = (s, n) => { s = String(s || ""); return s.length <= n ? s : s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…"; };
+const IT_GG = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
+const IT_MM = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+function itLong(day) { const d = new Date(day + "T12:00:00Z"); return IT_GG[d.getUTCDay()] + " " + d.getUTCDate() + " " + IT_MM[d.getUTCMonth()]; }
+async function tgMorning(env, force, onlyTo) { // il mattino: «In 60 secondi» del briefing + la puntata del podcast, in un solo messaggio
+  const st = await tgSettings(env);
+  const chat = onlyTo || st.chat;
+  if (!chat || !env.TG_BOT_TOKEN) { if (force) throw { status: 409, code: "telegram_canale", detail: !env.TG_BOT_TOKEN ? "Manca il secret TG_BOT_TOKEN nel Worker." : "Imposta il nome del canale Telegram nel pannello (es. @readgeopolitics)." }; return null; }
+  const day = romeToday();
+  if (!force) {
+    if (!st.mattino || (await kvGet(env, "tg_m:" + day))) return null;
+    const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+    if (hm < (st.ora || "08:00")) return null;
+  }
+  const b = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1 AND status='published'").bind(day).first();
+  if (!b) { if (force) throw { status: 409, code: "telegram_briefing", detail: "Il briefing di oggi non è ancora sul sito." }; return null; }
+  const br = JSON.parse(b.data);
+  let ep = null; try { ep = await env.DB.prepare("SELECT date, title, duration FROM podcast WHERE date=?1").bind(day).first(); } catch (e) {}
+  if (!ep && !force) { // aspetta la puntata fino alle 09:30, poi esce lo stesso senza
+    const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+    if (hm < "09:30") return null;
+  }
+  const lines = (Array.isArray(br.in60) ? br.in60 : []).slice(0, 5).map((l) => "• " + esc(String(l)));
+  const link = "https://www.readgeopolitics.com/?utm_source=telegram";
+  let cap = "<b>Il mondo in 60 secondi · " + itLong(day) + "</b>\n\n" + lines.join("\n") + "\n\n";
+  cap += (ep ? "🎧 La puntata di oggi qui sopra (" + Math.round((ep.duration || 0) / 60) + " min)\n" : "") + '📖 <a href="' + link + '">Il briefing completo, con le fonti</a>';
+  cap = cap.length > 1024 ? cap.slice(0, 1020) + "…" : cap;
+  let res;
+  if (ep) res = await tgCall(env, "sendAudio", { chat_id: chat, audio: RG_ORIGIN + "/podcast/ep/" + day + ".mp3", caption: cap, parse_mode: "HTML", title: tgClip(ep.title, 60), performer: "Read Geopolitics", duration: ep.duration || undefined });
+  else res = await tgCall(env, "sendMessage", { chat_id: chat, text: cap, parse_mode: "HTML", link_preview_options: { is_disabled: true } });
+  const out = { at: new Date().toISOString(), chat, audio: !!ep, message_id: res && res.message_id };
+  if (!onlyTo) await kvSet(env, "tg_m:" + day, out);
+  try { await kvDel(env, "tg_err"); } catch (e) {}
+  return out;
+}
+async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto per Instagram
+  const st = await tgSettings(env);
+  if (!st.chat) throw { status: 409, code: "telegram_canale", detail: "Imposta il nome del canale Telegram nel pannello." };
+  const d = await kvGet(env, "draft:" + id);
+  if (!d) throw { status: 404, code: "draft_not_found" };
+  const x = { id, status: "invio", by, at: new Date().toISOString() };
+  try {
+    const cap = tgClip(esc(thCaption(d.caption)), 900) + '\n\n<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
+    let r;
+    if (d.type === "reel" && d.video_url) r = await tgCall(env, "sendVideo", { chat_id: st.chat, video: d.video_url, caption: cap, parse_mode: "HTML", supports_streaming: true });
+    else {
+      const imgs = (d.image_urls || []).slice(0, 10);
+      if (!imgs.length) throw { code: "telegram_immagini", detail: "Nessuna immagine nella bozza." };
+      r = imgs.length === 1 ? await tgCall(env, "sendPhoto", { chat_id: st.chat, photo: imgs[0], caption: cap, parse_mode: "HTML" })
+        : await tgCall(env, "sendMediaGroup", { chat_id: st.chat, media: imgs.map((u, i) => ({ type: "photo", media: u, ...(i === 0 ? { caption: cap, parse_mode: "HTML" } : {}) })) });
+    }
+    const m = Array.isArray(r) ? r[0] : r;
+    x.status = "inviato"; x.message_id = m && m.message_id;
+    if (m && m.chat && m.chat.username) x.link = "https://t.me/" + m.chat.username + "/" + m.message_id;
+  } catch (e) { x.status = "errore"; x.error = thErr(e); }
+  await kvSet(env, "tg:" + id, x);
+  return x;
+}
+async function tgAuto(env, id) {
+  const st = await tgSettings(env);
+  if (!st.post || !st.chat || !env.TG_BOT_TOKEN) return;
+  const d = await kvGet(env, "draft:" + id);
+  if (!d || !["reel", "carousel", "image"].includes(d.type) || (await kvGet(env, "tg:" + id))) return;
+  await tgSendDraft(env, id, "auto");
+}
+async function tgPanelInfo(env) {
+  const st = await tgSettings(env);
+  const err = await kvGet(env, "tg_err");
+  return { configurato: !!env.TG_BOT_TOKEN, settings: st, oggi: await kvGet(env, "tg_m:" + romeToday()), errore: err && err.at > new Date(Date.now() - 6 * 3600000).toISOString() ? err.msg : null };
+}
+async function tgPanelApi(env, b) {
+  const act = b.action;
+  if (act === "tg_settings") {
+    const cur = await tgSettings(env);
+    if (typeof b.chat === "string") { const c = b.chat.trim(); cur.chat = !c ? "" : /^-?\d+$/.test(c) ? c : "@" + c.replace(/^@|^https?:\/\/t\.me\//g, "").replace(/[^A-Za-z0-9_]/g, ""); }
+    if (typeof b.mattino === "boolean") cur.mattino = b.mattino;
+    if (typeof b.post === "boolean") cur.post = b.post;
+    if (/^\d{2}:\d{2}$/.test(b.ora || "")) cur.ora = b.ora;
+    await kvSet(env, "tg_settings", cur);
+    return { ok: true, telegram: await tgPanelInfo(env) };
+  }
+  if (act === "tg_morning") { const r = await tgMorning(env, true, null); return { ok: true, sent: r, telegram: await tgPanelInfo(env) }; }
+  if (act === "tg_send") return { ok: true, tg: await tgSendDraft(env, String(b.id), "panel") };
+  return null;
+}
+// ============ fine Telegram ============
+
 async function ttPublic(request, env, p, url) {
   const redirect = url.origin + "/tt/callback";
   if (p === "/tt/connect") {
@@ -2812,6 +2930,7 @@ export default {
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
     try { await thPoll(env); } catch (e) {} // v30: Threads (pubblicazioni in attesa e rinnovo del token)
+    try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
