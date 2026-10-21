@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v31: collegamento Threads via threads.net e chiavi ripulite da spazi/virgolette.
 // v30: Threads. Collegamento (/ig/th/connect), pubblicazione di caroselli e reel dal pannello o in automatico dopo Instagram, testo Threads modificabile, rinnovo del token dal cron.
 // v29: statistiche leggibili sul telefono (grafico senza sbordare, sigle C/R) e provenienze complete con «Altre provenienze» apribile.
 // v28: la parola proposta conta i filoni diversi, non le storie (stessa regola della ricetta J); proposte ricalcolate quando cambiano i dati.
@@ -1781,6 +1782,8 @@ async function ttPanelInfo(env) {
 // App Meta con il caso d'uso «Accesso all'API di Threads»; secret TH_APP_ID e TH_APP_SECRET (quelli di Threads, non di Instagram).
 // Il profilo @read.geopolitics va aggiunto come «Threads Tester» e accetta l'invito da Threads → Impostazioni → Account → Autorizzazioni dei siti web.
 const TH_API = "https://graph.threads.com/v1.0";
+const thId = (env) => String(env.TH_APP_ID || "").replace(/[^0-9]/g, ""); // solo cifre: toglie spazi o virgolette incollati per sbaglio
+const thSecret = (env) => String(env.TH_APP_SECRET || "").trim().replace(/^["']|["']$/g, "");
 const TH_TYPES = ["reel", "carousel", "image"];
 const TH_DEFAULT = { auto: false, topic: "Geopolitica" };
 async function thSettings(env) { return { ...TH_DEFAULT, ...((await kvGet(env, "th_settings")) || {}) }; }
@@ -1890,10 +1893,11 @@ async function thPublic(request, env, p, url) {
   if (p === "/th/connect") {
     const okK = safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "");
     if (!okK && !(await sessionOk(request, env))) return htmlPage("Accesso negato", "<p>Entra prima nel pannello (/ig/panel) e premi «Collega Threads» da lì.</p>", 401);
-    if (!env.TH_APP_ID || !env.TH_APP_SECRET) return htmlPage("Mancano le chiavi Threads", "<p>Aggiungi al Worker i secret <b>TH_APP_ID</b> e <b>TH_APP_SECRET</b> (ID e chiave segreta <b>dell'app Threads</b>, nella tua app Meta) e riprova.</p>", 500);
+    if (!thId(env) || !thSecret(env)) return htmlPage("Mancano le chiavi Threads", "<p>Aggiungi al Worker i secret <b>TH_APP_ID</b> e <b>TH_APP_SECRET</b> (ID e chiave segreta <b>dell'app Threads</b>, nella tua app Meta) e riprova.</p>", 500);
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "th_state", { state, exp: Date.now() + 10 * 60000 });
-    return Response.redirect("https://threads.com/oauth/authorize?" + new URLSearchParams({ client_id: env.TH_APP_ID, redirect_uri: redirect, scope: "threads_basic,threads_content_publish", response_type: "code", state }), 302);
+    // v31: threads.net (l'indirizzo storico): da threads.com il passaggio al login può perdere i parametri («No app ID was sent»)
+    return Response.redirect("https://threads.net/oauth/authorize?" + new URLSearchParams({ client_id: thId(env), redirect_uri: redirect, scope: "threads_basic,threads_content_publish", response_type: "code", state }), 302);
   }
   if (p === "/th/callback") {
     const err = url.searchParams.get("error_description") || url.searchParams.get("error");
@@ -1904,10 +1908,10 @@ async function thPublic(request, env, p, url) {
       return htmlPage("Richiesta non valida", "<p>Stato scaduto o non riconosciuto. Torna nel pannello e premi di nuovo «Collega Threads».</p>", 400);
     await kvDel(env, "th_state");
     const r1 = await fetch("https://graph.threads.com/oauth/access_token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ client_id: env.TH_APP_ID, client_secret: env.TH_APP_SECRET, code, grant_type: "authorization_code", redirect_uri: redirect }) });
+      body: new URLSearchParams({ client_id: thId(env), client_secret: thSecret(env), code, grant_type: "authorization_code", redirect_uri: redirect }) });
     const j1 = await gj(r1);
     if (!j1.access_token) return htmlPage("Scambio del codice fallito", `<pre>${esc(JSON.stringify(j1.error || j1).slice(0, 600))}</pre>`, 502);
-    const r2 = await fetch("https://graph.threads.com/access_token?" + new URLSearchParams({ grant_type: "th_exchange_token", client_secret: env.TH_APP_SECRET, access_token: j1.access_token }));
+    const r2 = await fetch("https://graph.threads.com/access_token?" + new URLSearchParams({ grant_type: "th_exchange_token", client_secret: thSecret(env), access_token: j1.access_token }));
     const j2 = await gj(r2);
     const tok = j2.access_token || j1.access_token;
     const t = { access_token: tok, user_id: String(j1.user_id || ""), expires_at: Date.now() + (+(j2.expires_in) || 3600) * 1000, refreshed_at: new Date().toISOString(), long: !!j2.access_token };
