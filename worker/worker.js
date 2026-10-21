@@ -1674,7 +1674,6 @@ async function podPublic(request, env, p, url) {
 <itunes:image href="${xmlEsc(POD.cover)}"/>
 <image><url>${xmlEsc(POD.cover)}</url><title>${xmlEsc(POD.title)}</title><link>${xmlEsc(POD.site)}</link></image>
 <itunes:category text="News"><itunes:category text="Daily News"/></itunes:category>
-<itunes:category text="News"><itunes:category text="Politics"/></itunes:category>
 <itunes:explicit>false</itunes:explicit>
 <itunes:type>episodic</itunes:type>
 <podcast:locked>no</podcast:locked>
