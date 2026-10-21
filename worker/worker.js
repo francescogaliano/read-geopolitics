@@ -1,5 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
-// v35: scheda «Link» nel pannello: profilo Instagram, sticker delle storie, tutti i canali e bio pronte, con Copia e Apri.
+// v35: scheda «Link» nel pannello: profilo Instagram, sticker delle storie, tutti i canali (con Amazon Music) e bio pronte, con Copia e Apri.
 // v34: scheda Podcast con il link unico alla pagina /ascolta.html (Spotify, Apple, Telegram, sito) e i link diretti.
 // v33: Telegram. Ogni mattina sul canale i 60 secondi con la puntata del podcast; i post di Instagram dal pannello o in automatico.
 // v32: pannello riordinato. In alto «Canali e uscita» espandibile (stato di ogni canale, impostazioni dentro ogni riga); bozze con titolo vero, un pulsante principale, menu «⋯», didascalie Instagram/TikTok/Threads in schede che si salvano da sole, righe di stato per canale.
@@ -816,6 +816,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <details style="margin-top:10px"><summary class="sub">Link diretti (se vuoi un canale solo)</summary>
 <div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Spotify · https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU</span><button class="g" data-copy="https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU">Copia</button></div>
 <div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Apple Podcasts · https://podcasts.apple.com/it/podcast/id6825275444</span><button class="g" data-copy="https://podcasts.apple.com/it/podcast/id6825275444">Copia</button></div>
+<div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Amazon Music · https://music.amazon.it/podcasts/b3762eed-f62e-42c2-a601-e3827cbddc08/read-geopolitics-%C2%B7-il-mondo-in-15-minuti</span><button class="g" data-copy="https://music.amazon.it/podcasts/b3762eed-f62e-42c2-a601-e3827cbddc08/read-geopolitics-%C2%B7-il-mondo-in-15-minuti">Copia</button></div>
 <div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Telegram · https://t.me/readgeopolitics</span><button class="g" data-copy="https://t.me/readgeopolitics">Copia</button></div></details></div>
 <div class="card"><b>Ogni mattina, tra le 8 e le 9</b><ol class="sub" style="margin:8px 0 0;padding-left:20px">
 <li>Salva la storia da qui.</li><li>Instagram → nuova storia → scegli l&#39;immagine.</li><li>Sticker <b>Link</b>: incolla il link consigliato, poi «Personalizza testo» → «Ascolta il podcast».</li><li>Mettilo sotto «Ascolta qui sotto ↓» e pubblica.</li><li>Aggiungi la storia in evidenza a «Podcast». Le altre storie solo la sera.</li></ol></div>
@@ -858,7 +859,7 @@ const LK=[
   ["Pagina Ascolta (tutti i podcast)","https://www.readgeopolitics.com/ascolta.html"],
   ["Spotify","https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU"],
   ["Apple Podcasts","https://podcasts.apple.com/it/podcast/id6825275444"],
-  ["Amazon Music (in approvazione)",""],
+  ["Amazon Music","https://music.amazon.it/podcasts/b3762eed-f62e-42c2-a601-e3827cbddc08/read-geopolitics-%C2%B7-il-mondo-in-15-minuti"],
   ["YouTube","https://www.youtube.com/@ReadGeopolitics"],
   ["Telegram","https://t.me/readgeopolitics"],
   ["Instagram","https://www.instagram.com/read.geopolitics"],
@@ -1079,7 +1080,7 @@ function dowOf(s){const g=new Date(s+"T12:00:00Z").getUTCDay();return g===0?7:g}
 function tplOf(id){return D.templates.find(t=>t.id===id)}
 function itDate(s){const p=s.split("-");return +p[2]+"/"+(+p[1])}
 let STP=7,ST_GEN=false;
-const ST_LAB={"storia-aperta":"Storie aperte","fonte-aperta":"Fonti aperte","fai-domanda":"Domande fatte","glossario":"Glossario","vista-briefing":"Oggi","vista-timeline":"Temi","vista-mappa":"Mappa","vista-radar":"Radar","vista-archivio":"Archivio","vista-dossier":"Dossier","vista-protagonisti":"Protagonisti","vista-idee":"Idee","guida":"Guida","paese":"Schede paese","podcast-play":"Podcast avviato","podcast-finito":"Podcast finito","podcast-spotify":"Click su Spotify (testata)","podcast-spotify-briefing":"Click su Spotify (lettore)","podcast-apple":"Click su Apple Podcasts","podcast-spotify-ascolta":"Pagina Ascolta → Spotify","podcast-apple-ascolta":"Pagina Ascolta → Apple","podcast-telegram-ascolta":"Pagina Ascolta → Telegram","podcast-play-ascolta":"Pagina Ascolta → play","social-instagram":"Click su Instagram","social-tiktok":"Click su TikTok","gate-vista":"Invito visto (ingresso)","nl-iscritto":"Newsletter attivata","lock-perte":"Invito «Per te» visto"};
+const ST_LAB={"storia-aperta":"Storie aperte","fonte-aperta":"Fonti aperte","fai-domanda":"Domande fatte","glossario":"Glossario","vista-briefing":"Oggi","vista-timeline":"Temi","vista-mappa":"Mappa","vista-radar":"Radar","vista-archivio":"Archivio","vista-dossier":"Dossier","vista-protagonisti":"Protagonisti","vista-idee":"Idee","guida":"Guida","paese":"Schede paese","podcast-play":"Podcast avviato","podcast-finito":"Podcast finito","podcast-spotify":"Click su Spotify (testata)","podcast-spotify-briefing":"Click su Spotify (lettore)","podcast-apple":"Click su Apple Podcasts","podcast-amazon":"Click su Amazon Music","podcast-amazon-ascolta":"Pagina Ascolta → Amazon Music","podcast-spotify-ascolta":"Pagina Ascolta → Spotify","podcast-apple-ascolta":"Pagina Ascolta → Apple","podcast-telegram-ascolta":"Pagina Ascolta → Telegram","podcast-play-ascolta":"Pagina Ascolta → play","social-instagram":"Click su Instagram","social-tiktok":"Click su TikTok","gate-vista":"Invito visto (ingresso)","nl-iscritto":"Newsletter attivata","lock-perte":"Invito «Per te» visto"};
 const stN=n=>Number(n||0).toLocaleString("it-IT");
 const stPct=(a,b)=>b?Math.round(a/b*100):0;
 const stHb=(name,n,max,tot,showN)=>'<div class="hb"><span>'+esc(name)+'</span><div class="tr"><div class="fl" style="width:'+Math.max(2,Math.round(n/(max||1)*100))+'%"></div></div><span class="n">'+(showN?stN(n)+' ':'')+'<small>'+stPct(n,tot)+'%</small></span></div>';
