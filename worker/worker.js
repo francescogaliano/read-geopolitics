@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v29: statistiche leggibili sul telefono (grafico senza sbordare, sigle C/R) e provenienze complete con «Altre provenienze» apribile.
 // v28: la parola proposta conta i filoni diversi, non le storie (stessa regola della ricetta J); proposte ricalcolate quando cambiano i dati.
 // v27: /api/data.json?parte=oggi (primo blocco del sito), POST /api/perf (tempi di caricamento anonimi), pannello che precarica le tab in sottofondo.
 // v26: pannello più veloce (letture in parallelo, tabella kv verificata una volta, Utenti e posta caricati solo all'apertura della tab). /api/data.json servito da file già pronto su R2 (preparato dal cron), con ETag/304 e ?parte=recente per la prima schermata.
@@ -737,7 +738,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 #st .bv{font-size:12px;color:#C5D0D8;margin-bottom:3px;font-variant-numeric:tabular-nums}#st .xl{display:grid;gap:8px;margin-top:6px;text-align:center;font-size:12px;color:#8FA0AE}#st .chart.many+.xl{gap:2px;font-size:10.5px}
 #st .post{display:inline-block;margin-top:3px;font:600 10.5px ui-monospace,monospace;color:#F2B84B;border:1px solid #5A4A22;border-radius:6px;padding:0 4px}
 #st .hb{display:grid;grid-template-columns:110px 1fr 70px;gap:10px;align-items:center;font-size:14px;padding:5px 0}#st .hb .tr{height:10px;background:#0E151B;border-radius:5px;overflow:hidden}#st .hb .fl{height:100%;background:#86B4EA;border-radius:5px}
-#st .hb>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .hb .n{text-align:right;color:#C5D0D8;font-variant-numeric:tabular-nums}#st .hb .n small{color:#8FA0AE}#st .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#st .hb>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .hb .n{text-align:right;color:#C5D0D8;font-variant-numeric:tabular-nums}#st .hb .n small{color:#8FA0AE}#st .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}#st{overflow-x:hidden}#st .card{min-width:0}#st .xl>div{min-width:0;overflow:hidden}#st .more{margin-top:6px}#st .more summary{cursor:pointer;color:#8FA0AE;font-size:13.5px;padding:6px 0}@media (max-width:560px){#st .two{grid-template-columns:1fr}#st .hb{grid-template-columns:96px 1fr 64px;gap:8px}#st .kpi .v{font-size:22px}}
 #st .grp{background:#0E151B;border:1px solid #27353F;border-radius:12px;padding:10px 12px}#st .grp b{font-size:13px;color:#8FA0AE;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
 #st .li{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;border-top:1px solid #1E2A33}#st .li span:last-child{font-variant-numeric:tabular-nums;color:#C5D0D8}
 #st .fun .step{display:flex;justify-content:space-between;font-size:14px}#st .fun .tr{height:12px;background:#27353F;border-radius:6px;margin:4px 0 10px;overflow:hidden}#st .fun .fl{height:100%;background:#86B4EA}
@@ -951,13 +952,13 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  h+='<div class="kpi"><div class="l">Storie aperte</div><div class="v">'+stN(ev("storia-aperta"))+'</div><div class="d">'+stN(ev("fonte-aperta"))+' fonti aperte</div></div>';
  h+='<div class="kpi"><div class="l">Ascolti podcast</div><div class="v">'+stN(ev("podcast-play"))+'</div><div class="d">'+stN(ev("podcast-finito"))+' fino in fondo</div></div>';
  h+='<div class="kpi"><div class="l">Nuovi iscritti</div><div class="v">'+stN(s.joined)+'</div><div class="d">'+(s.seen?'su '+stN(s.seen)+' che hanno visto l&#39;invito':'iscritti nel periodo')+'</div></div></div></div>';
- h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',1fr)">';
+ h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach(d=>{const t=dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+' '+(+d.day.slice(8))+': '+d.n+' visite'+(d.post?' · '+d.post:'');h+='<div class="col" title="'+esc(t)+'">'+(!many||d.n===mx?'<span class="bv">'+d.n+'</span>':'')+'<div class="bar'+(d.post?' pb':'')+'" style="height:'+Math.max(1,Math.round(d.n/mx*100))+'%"></div></div>'});
- h+='</div><div class="xl" style="grid-template-columns:repeat('+s.day_list.length+',1fr)">';
- s.day_list.forEach((d,i)=>{const lab=(!many||i%5===0||i===s.day_list.length-1)?dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+'<br>'+(+d.day.slice(8)):'';h+='<div>'+lab+(d.post&&!many?'<br><span class="post">'+esc(d.post)+'</span>':'')+'</div>'});
+ h+='</div><div class="xl" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
+ s.day_list.forEach((d,i)=>{const lab=(!many||i%5===0||i===s.day_list.length-1)?dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+'<br>'+(+d.day.slice(8)):'';const pk=d.post?d.post.split("+").map(x=>({carosello:"C",reel:"R",post:"P"}[x]||"P")).join("+"):"";h+='<div>'+lab+(d.post&&!many?'<br><span class="post" title="'+esc(d.post)+'">'+pk+'</span>':'')+'</div>'});
  h+='</div>'+(many?'<p class="note" style="margin-top:8px">Barre gialle = giorni con un post. Passa sopra una barra per il dettaglio.</p>':'')+'</div>';
  const rt=s.refs.reduce((a,x)=>a+x.n,0),rm=Math.max(1,...s.refs.map(x=>x.n));
- h+='<div class="card"><h3>Da dove arrivano</h3><p class="note">Prima pagina vista da ogni visitatore: la provenienza la indica il browser o il link.</p>'+(s.refs.length?s.refs.map(x=>stHb(x.name,x.n,rm,rt,true)).join(""):'<div class="sub">Nessun dato nel periodo.</div>')+'</div>';
+ h+='<div class="card"><h3>Da dove arrivano</h3><p class="note">Prima pagina vista da ogni visitatore: la provenienza la indica il browser o il link.</p>'+(s.refs.length?s.refs.slice(0,7).map(x=>stHb(x.name,x.n,rm,rt,true)).join("")+(s.refs.length>7?'<details class="more"><summary>Altre provenienze ('+(s.refs.length-7)+') · '+stN(s.refs.slice(7).reduce((a,x)=>a+x.n,0))+' visite</summary>'+s.refs.slice(7).map(x=>stHb(x.name,x.n,rm,rt,true)).join("")+'</details>':''):'<div class="sub">Nessun dato nel periodo.</div>')+'</div>';
  const views=Object.keys(E).filter(k=>k.indexOf("vista-")===0).sort((a,b)=>E[b]-E[a]);
  h+='<div class="card"><h3>Cosa fanno sul sito</h3><p class="note">Ogni azione è contata una volta per visitatore.</p><div class="two"><div class="grp"><b>Lettura</b>'+stLi("Storie aperte",ev("storia-aperta"))+stLi("Fonti aperte",ev("fonte-aperta"))+stLi("Schede paese",ev("paese"))+stLi("Domande fatte",ev("fai-domanda"))+views.slice(0,4).map(k=>stLi("Scheda "+(ST_LAB[k]||k.slice(6)),E[k])).join("")+'</div>';
  h+='<div class="grp"><b>Podcast e social</b>'+stLi("Podcast avviato",ev("podcast-play"))+stLi("Podcast finito",ev("podcast-finito"))+stLi("Click su Spotify",ev("podcast-spotify")+ev("podcast-spotify-briefing"))+stLi("Click su Instagram",ev("social-instagram"))+stLi("Click su TikTok",ev("social-tiktok"))+'</div></div>';
@@ -1884,8 +1885,7 @@ async function siteStats(env, days, force) {
   for (const s of refs.stats || []) { const k = gcRefName(s.name); rg[k] = (rg[k] || 0) + (+s.count || 0); refSum += +s.count || 0; }
   if (!rg["Diretto"] && visits > refSum) rg["Diretto"] = visits - refSum;
   const refList = Object.entries(rg).map(([name, n]) => ({ name, n })).sort((a, z) => z.n - a.n);
-  const top = refList.slice(0, 7); const rest = refList.slice(7).reduce((a, x) => a + x.n, 0);
-  if (rest) top.push({ name: "Altro", n: rest });
+  const top = refList.slice(0, 40); // v29: tutte (fino a 40); il pannello mostra le prime 7 e il resto in «Altre provenienze», apribile
   const sz = {}; for (const s of sizes.stats || []) { const k = gcSize(s.name); sz[k] = (sz[k] || 0) + (+s.count || 0); }
   // iscrizioni: dal database del sito (più preciso degli eventi)
   let joined = 0, nl = 0;
