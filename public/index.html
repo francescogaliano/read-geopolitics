@@ -493,6 +493,12 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .tl-seg button{flex:1;border:0;background:none;font:inherit;font-size:14.5px;color:var(--muted);padding:7px 0;border-radius:8px;cursor:pointer}
 .tl-seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg);font-weight:600}
 .tl-grp{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.tl-sub{font-size:14px;font-weight:600;color:var(--ink);margin:14px 0 8px}
+.tl-leg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12px;color:var(--muted);margin:-2px 0 10px}.tl-leg i{display:inline-block;width:16px;height:7px;border-radius:2px}
+.tl-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 6px;margin:4px -16px 0 0}
+.acc.tens{border-left:5px solid var(--lv)}
+.tlv{display:inline-block;font-family:var(--mono);font-size:11px;line-height:1;padding:3px 6px;border-radius:4px;margin-left:6px;vertical-align:2px;color:var(--ink);background:color-mix(in srgb,var(--lv) 45%,transparent)}
+.tfl{font-size:13px;margin-left:6px;letter-spacing:1px}
 .tl-grp:first-child{margin-top:4px}
 .thc{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:2px 10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;font:inherit;color:var(--ink);cursor:pointer}
 .thc:hover{border-color:var(--accent)}
@@ -2383,7 +2389,18 @@ const ISO2={AFG:"AF",ALB:"AL",DZA:"DZ",AGO:"AO",ARG:"AR",ARM:"AM",AUS:"AU",AUT:"
 function flag(iso3){const c=ISO2[iso3];if(!c)return"";return String.fromCodePoint(...[...c].map(x=>0x1F1E6+x.charCodeAt(0)-65))}
 function thFlags(t){if(!t)return"";const b=(t.bandiere||[]).map(flag).filter(Boolean).join("");if(b)return b;if(t.icona)return t.icona;
   const cnt={};(t.storie||[]).forEach(x=>{const s=S.stories[x.id];(s&&s.paesi||[]).forEach(p=>cnt[p]=(cnt[p]||0)+1)});const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];return top?flag(top[0])||"🧵":"🧵"}
-function thShort(t){return t.breve||clip(t.titolo,24)}
+function thShort(t){const s=t.breve||clip(t.titolo,24);const b=(t.bandiere||[]).filter(x=>/^[A-Z]{3}$/.test(x));if(b.length===2){const n=b.map(cname);const i=n.findIndex(x=>String(x).toLowerCase()===String(s).toLowerCase());if(i>=0)return n[1-i]+"–"+n[i]}return s}
+/* categorie dei temi: dagli ambiti già scritti nei dati */
+const TCAT=[["conf","⚔️","Conflitti"],["dipl","🤝","Diplomazia e alleanze"],["ener","⚡","Energia"],["eco","💶","Economia e commercio"],["soc","🩺","Salute e società"],["pol","🏛️","Politica interna"],["alt","🧭","Altri temi"]];
+const TCAT_T=new Set(["conf","dipl"]);
+function thCat(t){const s=t.sottoambiti||[],a=t.ambiti||[],h=x=>s.includes(x);
+  if(h("conflitti")||h("terrorismo"))return"conf";if(h("diplomazia")||h("alleanze")||h("sanzioni")||h("difesa"))return"dipl";
+  if(h("governi")||h("elezioni")||h("istituzioni")||h("giustizia"))return"pol";
+  if(h("salute")||h("umanitario")||h("migrazioni"))return"soc";
+  if(h("petrolio-gas")||h("rinnovabili")||h("elettricita")||h("nucleare"))return"ener";
+  if(h("imprese")||h("lavoro")||h("commercio")||h("finanza")||h("mercati")||h("conti-pubblici"))return"eco";if(h("ue"))return"pol";
+  if(h("diritti")||a.includes("societa"))return"soc";if(a.includes("economia"))return"eco";if(a.includes("energia"))return"ener";if(a.includes("politica"))return"pol";if(a.includes("geopolitica"))return"dipl";return"alt"}
+function thLv(t){return Math.max(0,...(t.bandiere||[]).map(p=>{const c=S.countries[p];return (c&&+c.livello)||0}))}
 function renderTlChips(){const el=$("#tlChips");if(!el)return;const f=S.flt.f;
   const ths=Object.values(S.threads).filter(t=>t.stato!=="chiuso"||t.id===f).sort(thSort);
   el.innerHTML=`<button class="tl-chip" data-tl-chip="" aria-pressed="${!f}">Tutti</button>`+ths.map(t=>`<button class="tl-chip${t.stato!=="attivo"?" dorm":""}" data-tl-chip="${esc(t.id)}" aria-pressed="${f===t.id}" title="${esc(t.titolo)}"><span class="fl" aria-hidden="true">${thFlags(t)}</span>${esc(thShort(t))}</button>`).join("");
@@ -2397,6 +2414,7 @@ function openTheme(id){S.flt.f=id||"";S.tlMode="temi";renderTimeline();if(!id)re
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tl-chip],[data-tl-theme]");if(!b)return;e.preventDefault();openTheme(b.dataset.tlChip!==undefined?b.dataset.tlChip:b.dataset.tlTheme)});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tl-mode]");if(b){S.tlMode=b.dataset.tlMode;renderTimeline();return}
   const c=e.target.closest("[data-cal-f]");if(c){S.calF=c.dataset.calF;renderCal();return}
+  const tc=e.target.closest("[data-tl-cat]");if(tc){S.tlCat=tc.dataset.tlCat;renderTimeline();return}
   const x=e.target.closest("[data-tl-clear]");if(x){S.flt.r=S.flt.t=S.flt.a="";["fRegion","fTheme","fAmb"].forEach(id=>{const el=$("#"+id);if(el)el.value=""});renderTimeline();return}
   const o=e.target.closest("[data-open-cal]");if(o){S.tlMode="cal";renderTimeline();show("timeline")}});
 function daysTo(iso,today){return Math.round((new Date(iso+"T12:00:00")-new Date(today+"T12:00:00"))/864e5)}
@@ -2433,7 +2451,8 @@ function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.e
   return out+`</div><button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`}
 function themeCard(t,sel,evOk,nf){const l=thLast(t),n=thNext(t),today=isoDay(new Date());
   const star=S.owner&&!S.static?`<button type="button" class="th-star" data-star="${esc(t.id)}" aria-pressed="${prefs().seguiti.includes(t.id)}" title="Segui questo tema: avviso in cima al briefing quando si muove">${prefs().seguiti.includes(t.id)?"★":"☆"}</button>`:"";
-  return `<div class="acc${sel?" sel":""}${star?" has-star":""}" id="acc-${esc(t.id)}">${star}<button class="thc" data-tl-theme="${sel?"":esc(t.id)}" aria-expanded="${sel}"><span class="f" aria-hidden="true">${thFlags(t)}</span><span class="nm">${esc(thShort(t))}<span class="stt ${esc(t.stato)}">${esc(t.stato)}</span>${dosForThread(t.id)?'<span class="dos-badge">🧭 dossier</span>':""}</span><span class="go" aria-hidden="true">›</span>
+  const cat=thCat(t),tens=TCAT_T.has(cat),lv=tens?thLv(t):0,ci=(TCAT.find(x=>x[0]===cat)||TCAT[6])[1];
+  return `<div class="acc${sel?" sel":""}${star?" has-star":""}${lv?" tens":""}"${lv?` style="--lv:var(--l${lv})"`:""} id="acc-${esc(t.id)}">${star}<button class="thc" data-tl-theme="${sel?"":esc(t.id)}" aria-expanded="${sel}"><span class="f" aria-hidden="true">${tens||t.icona?thFlags(t):ci}</span><span class="nm">${esc(thShort(t))}<span class="stt ${esc(t.stato)}">${esc(t.stato)}</span>${lv?`<span class="tlv" title="Tensione più alta tra i paesi del tema, scala 1–5">${lv}</span>`:""}${!tens&&!t.icona&&(t.bandiere||[]).length?`<span class="tfl" aria-hidden="true">${thFlags(t)}</span>`:""}${dosForThread(t.id)?'<span class="dos-badge">🧭 dossier</span>':""}</span><span class="go" aria-hidden="true">›</span>
   <span class="l">${l.testo?`Ultimo: <i>${esc(clip(l.testo,90))}</i> · ${esc(dShort(l.data))}`:esc(t.descrizione||"")}</span>
   <span class="n${n?"":" no"}">${n?`Prossimo: ${esc(clip(n.titolo,60))} · ${esc(countdown(n,today))}`:"Nessuna scadenza in agenda"}</span></button>${sel?`<div class="acc-b">${themeArc(t,evOk,nf)}</div>`:""}</div>`}
 function renderTimeline(){
@@ -2450,7 +2469,16 @@ function renderTimeline(){
   if(nf){const ids=new Set(hits.map(e=>e.filone_id));all=all.filter(x=>ids.has(x.id)||x.id===cur)}
   const open=all.filter(x=>x.stato!=="chiuso"||x.id===cur),closed=all.filter(x=>x.stato==="chiuso"&&x.id!==cur);
   const mondo=open.filter(x=>!isIta(x)),ita=open.filter(isIta);const card=x=>themeCard(x,x.id===cur,evOk,nf);
-  tv.innerHTML=`${mondo.length?`<div class="tl-grp">🌍 Mondo · ${mondo.length}</div>${mondo.map(card).join("")}`:""}${ita.length?`<div class="tl-grp">🇮🇹 Italia · ${ita.length}</div>${ita.map(card).join("")}`:""}${closed.length?`<details class="tl-closed"><summary>Temi chiusi · ${closed.length}</summary>${closed.map(card).join("")}</details>`:""}${!all.length?`<div class="state">${nf?"Nessun tema con questi filtri.":"I temi compaiono con i prossimi briefing."}</div>`:""}
+  const TC=S.tlCat||"";if(TC){for(let i=closed.length-1;i>=0;i--)if(thCat(closed[i])!==TC)closed.splice(i,1)}const present=new Set(open.map(thCat));let legend=false;
+  const catBar=`<div class="tl-cats" role="group" aria-label="Categorie dei temi"><button class="tl-chip" data-tl-cat="" aria-pressed="${!TC}">Tutti</button>${TCAT.filter(c=>present.has(c[0])).map(c=>`<button class="tl-chip" data-tl-cat="${c[0]}" aria-pressed="${TC===c[0]}">${c[1]} ${esc(c[2].split(" ")[0])}</button>`).join("")}</div>`;
+  const grp=(lab,list)=>{list=list.filter(x=>!TC||thCat(x)===TC);if(!list.length)return"";let h=`<div class="tl-grp">${lab} · ${list.length}</div>`;
+    for(const c of TCAT){const ls=list.filter(x=>thCat(x)===c[0]);if(!ls.length)continue;const tens=TCAT_T.has(c[0]);
+      if(tens)ls.sort((a,b)=>thLv(b)-thLv(a)||thSort(a,b));
+      h+=`<div class="tl-sub">${c[1]} ${esc(c[2])} · ${ls.length}</div>`;
+      if(tens&&!legend){legend=true;h+=`<div class="tl-leg">Colore = tensione più alta tra i paesi coinvolti, scala della mappa: ${[1,2,3,4,5].map(n=>`<i style="background:var(--l${n})"></i>${n}`).join(" ")}</div>`}
+      h+=ls.map(card).join("")}
+    return h};
+  tv.innerHTML=`${catBar}${grp("🌍 Mondo",mondo)}${grp("🇮🇹 Italia",ita)}${closed.length?`<details class="tl-closed"><summary>Temi chiusi · ${closed.length}</summary>${closed.map(card).join("")}</details>`:""}${!all.length?`<div class="state">${nf?"Nessun tema con questi filtri.":"I temi compaiono con i prossimi briefing."}</div>`:""}
     ${nf&&hits.length?`<div class="tl-grp">🕰️ Eventi che corrispondono · ${hits.length}</div><div class="tl tl-arc" style="margin-top:0">${hits.map(e=>{const th=S.threads[e.filone_id];return `<details class="tr" id="${cur===e.filone_id?"evf":"ev"}-${esc(e.id)}"><summary><span class="td">${esc(dShort(e.data))}</span>${esc(e.testo)}</summary><div class="tb">${[...(e.paesi||[]).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`),...(th?[`<button class="linkbtn" data-tl-theme="${esc(th.id)}">tema ${esc(thShort(th))} ›</button>`]:[]),...(e.storia_id&&S.stories[e.storia_id]?[`<button class="linkbtn" data-story="${esc(e.storia_id)}">leggi la storia</button>`]:[])].join(" · ")}</div></details>`}).join("")}</div>`:""}
     ${cur?"":`<p class="hint" style="margin-top:10px">Tocca un tema per aprirne la storia qui sotto, da dove nasce a cosa arriva.</p>`}`;
   el.innerHTML="";
