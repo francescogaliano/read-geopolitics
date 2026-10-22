@@ -1,5 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
-// v41: canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
+// v41: «Oggi sui canali» nel pannello (anteprima, modifica, stop per oggi). Canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
 // v40: etichette delle statistiche per il sito installabile (app-*).
 // v39: newsletter: riquadro «Inoltrala» con link di iscrizione tracciato (utm_source=inoltro, «Email inoltrata» nelle statistiche).
 // v38: newsletter: righe di «In 60 secondi» fino all'Italia, podcast verso la pagina Ascolta, due letture in due riquadri, «Confidenza media/alta/bassa», piè di pagina senza nome del titolare.
@@ -629,13 +629,13 @@ async function panelApi(env, origin, b) {
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
-    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows] = await Promise.all([
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows, canali] = await Promise.all([
       igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
-      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40), canaliInfo(env).catch(() => null),
     ]);
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
-    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
+    return { ok: true, settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
   }
 
   if (act === "users") {
@@ -794,6 +794,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
 .lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
 #st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
+#cnl .cit{border-top:1px solid #27353F;padding:11px 0 6px}#cnl .cit:first-of-type{margin-top:8px}#cnl .cih{display:flex;align-items:center;gap:8px}#cnl .cih b{flex:1;font-size:14.5px}#cnl .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px system-ui;background:#1E2A33;flex:none}#cnl .cp{font:600 11px ui-monospace,monospace;border-radius:999px;padding:2px 8px;white-space:nowrap}#cnl .cp.wait{color:#F2B84B;border:1px solid #5A4A22}#cnl .cp.ok{color:#7BD39A;border:1px solid #2F5F4B}#cnl .cp.no{color:#8FA0AE;border:1px solid #27353F}#cnl .cp.bad{color:#FF9A9A;border:1px solid #5A3434}#cnl .cpv{margin:8px 0 0 32px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.45;color:#DCE4EA}#cnl .cta{margin:8px 0 0 32px;width:calc(100% - 32px)}#cnl .cwh{margin:6px 0 2px 32px;font-size:12.5px;color:#8FA0AE}#cnl .cwh a{color:#86B4EA}#cnl .cac{display:flex;gap:8px;margin:8px 0 4px 32px}#cnl .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}#cnl .sm.d{color:#FF9A9A;border-color:#5A3434}
 </style>
 <main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
 <details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
@@ -818,6 +819,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row"><button class="g" id="tgsv" type="button">Salva</button><button class="g" id="tgnow" type="button">Invia ora il mattino</button></div><div class="sub" id="tgmsg"></div></div></details>
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
+<div class="card" id="cnl" hidden></div>
 <div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
@@ -939,6 +941,30 @@ function capsHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=
  if(ttOk(x)){const ed=!(t&&t.status==="pubblicato");s+='<div class="cp" data-cp="tt" hidden><textarea rows="5" class="ttcap"'+(ed?'':' readonly')+'>'+esc(x.tt_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span>'+(x.type==="reel"?'per i reel va incollata a mano':nTags(x.tt_cap)+' hashtag')+'</span></div></div>'}
  if(thOk(x)){const ed=!(h&&h.status==="pubblicato");s+='<div class="cp" data-cp="th" hidden><textarea rows="5" maxlength="500" class="thcap"'+(ed?'':' readonly')+'>'+esc(x.th_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span class="thn">'+String(x.th_cap||"").length+'/500</span></div></div>'}
  return s}
+function cnlSt(x,ora){if(!x.on)return '<span class="cp no">spento</span>';if(x.stato==="uscito")return '<span class="cp ok">uscito ✓</span>';if(x.skip||x.stato==="fermato")return '<span class="cp no">fermato per oggi</span>';if(x.stato==="errore")return '<span class="cp bad">errore</span>';if(x.stato==="assente")return '<span class="cp no">oggi non c&#39;è</span>';return '<span class="cp wait">esce alle '+esc(ora)+'</span>'}
+function cnlIt(k,ic,tit,x,why){let h='<div class="cit" data-k="'+k+'"><div class="cih"><span class="ic">'+ic+'</span><b>'+tit+'</b>'+cnlSt(x,x.ora)+'</div>';
+ if(x.testo){h+='<div class="cpv">'+esc(x.testo).split(NL).join("<br>")+'</div>';if(x.modificato)h+='<div class="cwh">Testo modificato da te.</div>'}
+ if(why)h+='<div class="cwh">'+why+'</div>';
+ if(x.link)h+='<div class="cwh"><a href="'+esc(x.link)+'" target="_blank" rel="noopener">Apri il messaggio ›</a></div>';
+ if(x.on&&x.testo&&x.stato!=="uscito")h+='<div class="cac"><button class="sm" data-ce="'+k+'">Modifica</button>'+(x.skip?'<button class="sm" data-cs="'+k+'" data-v="0">Riattiva</button>':'<button class="sm d" data-cs="'+k+'" data-v="1">Non inviare oggi</button>')+'</div>';
+ return h+'</div>'}
+function cnlRender(c){const el=document.getElementById("cnl");if(!el)return;if(!c){el.hidden=true;return}el.hidden=false;
+ const dv=c.div,dm=c.dom;const td=new Date();
+ let h='<div class="row" style="justify-content:space-between"><b>Oggi sui canali</b><span class="sub">automatico · puoi correggere o fermare</span></div>';
+ h+=cnlIt("div","TG","Le fonti non sono d&#39;accordo",dv,dv.testo?(dv.fonti&&dv.fonti.length?esc(dv.fonti.join(" · ")):""):(!dv.briefing?"Il briefing di oggi non è ancora pronto.":"Nessuna divergenza che cambi la lettura dei fatti: oggi non esce."));
+ h+=cnlIt("dom","TH","Domanda del giorno",dm,dm.testo?(dm.stato==="errore"?esc(dm.errore||""):dm.post!=="pubblicata"&&dm.stato!=="uscito"?"Parte solo se pubblichi il post di oggi su Instagram.":""):(dm.post?"La bozza di oggi non ha una domanda: oggi non esce.":"La bozza di oggi non c&#39;è ancora."));
+ if(c.bil){const b=c.bil;h+='<div class="cit"><div class="cih"><span class="ic">TG</span><b>Com&#39;è andata</b>'+(b.stato==="uscito"?'<span class="cp ok">uscito ✓</span>':b.stato==="assente"?'<span class="cp no">niente da dire</span>':'<span class="cp '+(b.domenica?'wait':'no')+'">'+(b.domenica?'esce alle '+esc(b.ora):'domenica alle '+esc(b.ora))+'</span>')+'</div>';
+  h+='<div class="cpv">'+b.ok+' segnali avverati, '+b.no+' no'+(b.open?', '+b.open+' ancora aperti':'')+(b.righe.length?'<br><br>'+b.righe.map(esc).join("<br>")+(b.altri?'<br><i>… altri '+b.altri+'</i>':''):'')+'</div>';
+  if(!b.domenica)h+='<div class="cwh">Anteprima con le verifiche fin qui: si completa domenica mattina.</div>';
+  if(b.link)h+='<div class="cwh"><a href="'+esc(b.link)+'" target="_blank" rel="noopener">Apri il messaggio ›</a></div>';h+='</div>'}
+ el.innerHTML=h}
+document.getElementById("cnl").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;const it=b.closest(".cit");const k=it&&it.dataset.k;if(!k)return;
+ if(b.dataset.ce){const pv=it.querySelector(".cpv");const cur=(D.canali&&D.canali[k]&&D.canali[k].testo)||"";pv.outerHTML='<textarea class="cta" rows="5" maxlength="'+(k==="dom"?500:600)+'">'+esc(cur)+'</textarea>';const ac=it.querySelector(".cac");ac.innerHTML='<button class="sm" data-cv="1">Salva</button><button class="sm" data-cx="1">Annulla</button>';return}
+ if(b.dataset.cx){cnlRender(D.canali);return}
+ b.disabled=true;let r=null;
+ if(b.dataset.cv)r=await api({action:"canali_set",which:k,testo:it.querySelector("textarea").value});
+ else if(b.dataset.cs)r=await api({action:"canali_set",which:k,skip:b.dataset.v==="1"});
+ if(r&&r.ok){D.canali=r.canali;cnlRender(r.canali)}else{b.disabled=false;alert("Errore: "+((r&&(r.detail||r.error))||""))}});
 function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},S=d.settings||{formats:{daily:{}}};const g=id=>document.getElementById(id);
  if(A){g("igs").textContent="@"+A.username+" · valido "+A.days_left+" giorni";g("igd").className="dot "+(A.days_left<7?"y":"g");if(A.days_left<7)iss.push("token Instagram in scadenza")}else{g("igs").textContent="non collegato";g("igd").className="dot r";iss.push("Instagram non collegato")}
  g("ttdot").className="dot "+(!T.collegato?"y":T.scaduto?"r":"g");if(T.scaduto)iss.push("TikTok da ricollegare");
@@ -982,7 +1008,7 @@ async function load(){
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
- D=d;chUpd(d);renderWeek();renderReq();
+ D=d;chUpd(d);cnlRender(d.canali);renderWeek();renderReq();
  const L=document.getElementById("list");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
  VPRE=0;L.innerHTML=d.drafts.map(x=>{
@@ -2176,8 +2202,10 @@ async function tgDivergenza(env, force) {
   const st = await tgSettings(env); const day = romeToday();
   if (!st.chat || !env.TG_BOT_TOKEN) return null;
   if (!force) { if (!st.divergenze || (await kvGet(env, "tg_d:" + day)) || romeHM() < (st.ora_div || "12:30")) return null; }
+  const ov = ((await kvGet(env, "ch_ov:" + day)) || {}).div || {};
+  if (ov.skip) { if (!force) await kvSet(env, "tg_d:" + day, { skip: true, at: new Date().toISOString() }); return null; }
   const br = await tgBriefing(env, day);
-  const dv = br && br.tg_divergenza;
+  const dv = br && br.tg_divergenza ? { ...br.tg_divergenza, ...(ov.testo ? { testo: ov.testo } : {}) } : null;
   if (!dv || !dv.testo) { if (!force && (!br || romeHM() >= "14:00")) await kvSet(env, "tg_d:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const link = "https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=divergenza#briefing";
   let msg = "<b>Le fonti non sono d'accordo</b>\n\n" + esc(tgClip(dv.testo, 600));
@@ -2187,40 +2215,79 @@ async function tgDivergenza(env, force) {
   await kvSet(env, "tg_d:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
 }
-async function tgBilancio(env, force) { // la domenica: i segnali che si sono risolti nella settimana, dalle «verifiche» quotidiane dei briefing
-  const st = await tgSettings(env); const day = romeToday();
-  if (!st.chat || !env.TG_BOT_TOKEN) return null;
-  if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
+async function bilancioData(env, day) { // i segnali risolti nella settimana (dalle «verifiche» quotidiane dei briefing)
   const from = new Date(Date.parse(day + "T12:00:00Z") - 6 * 86400000).toISOString().slice(0, 10);
   const prev = new Date(Date.parse(day + "T12:00:00Z") - 13 * 86400000).toISOString().slice(0, 10);
   const { results } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='briefings' AND key>=?1 AND key<=?2 AND status='published' ORDER BY key").bind(prev, day).all();
-  const seen = new Map(); let open = 0;
+  const seen = new Map(); let open = 0; let last = "";
   for (const r of results || []) {
     let b; try { b = JSON.parse(r.data); } catch (e) { continue; }
+    last = r.key;
     for (const v of Array.isArray(b.verifiche) ? b.verifiche : []) {
       if (!v || !v.segnale) continue;
       const k = String(v.segnale).trim().toLowerCase();
-      if (v.esito === "non ancora") { if (r.key === day) open++; continue; }
+      if (v.esito === "non ancora") continue;
       if (!seen.has(k)) seen.set(k, { ...v, giorno: r.key });
     }
   }
+  for (const r of results || []) if (r.key === last) { try { open = (JSON.parse(r.data).verifiche || []).filter((v) => v && v.esito === "non ancora").length; } catch (e) {} }
   const done = [...seen.values()].filter((v) => v.giorno >= from);
-  const ok = done.filter((v) => v.esito === "avvenuto"), no = done.filter((v) => v.esito === "smentito" || v.esito === "scaduto");
-  if (!done.length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  return { ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
+}
+function bilancioText(B) {
   const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
-  let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + pl(no.length, "no", "no") + (open ? "; " + pl(open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
-  msg += [...ok, ...no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "")).join("\n\n");
-  msg += "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
-  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
+  let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(B.ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + B.no.length + " no" + (B.open ? "; " + pl(B.open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
+  msg += [...B.ok, ...B.no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "")).join("\n\n");
+  return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
+}
+async function tgBilancio(env, force) {
+  const st = await tgSettings(env); const day = romeToday();
+  if (!st.chat || !env.TG_BOT_TOKEN) return null;
+  if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
+  const B = await bilancioData(env, day);
+  if (!B.ok.length && !B.no.length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: bilancioText(B), parse_mode: "HTML", disable_web_page_preview: true });
   await kvSet(env, "tg_b:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
+}
+// «Oggi sui canali» nel pannello: anteprima, stato, modifica e stop per oggi
+async function canaliInfo(env) {
+  const day = romeToday(); const tg = await tgSettings(env); const th = await thSettings(env);
+  const ov = (await kvGet(env, "ch_ov:" + day)) || {};
+  const br = await tgBriefing(env, day);
+  const d = await kvGet(env, "draft:" + day + "-daily");
+  const chan = String(tg.chat || "").replace(/^@/, "");
+  const tgD = await kvGet(env, "tg_d:" + day), thQ = await kvGet(env, "thq:" + day);
+  const dv = br && br.tg_divergenza;
+  const out = {
+    div: { on: tg.divergenze !== false && !!tg.chat, ora: tg.ora_div || "12:30", briefing: !!br, testo: (ov.div && ov.div.testo) || (dv && dv.testo) || "", fonti: (dv && dv.fonti) || [], modificato: !!(ov.div && ov.div.testo), skip: !!(ov.div && ov.div.skip),
+      stato: tgD ? (tgD.msg ? "uscito" : tgD.skip ? "fermato" : "assente") : null, link: tgD && tgD.msg && chan ? "https://t.me/" + chan + "/" + tgD.msg : null },
+    dom: { on: th.domanda !== false, ora: th.ora_dom || "18:00", testo: (ov.dom && ov.dom.testo) || (d && d.th_domanda) || "", modificato: !!(ov.dom && ov.dom.testo), skip: !!(ov.dom && ov.dom.skip), post: d ? d.status : null,
+      stato: thQ ? (thQ.status === "pubblicato" ? "uscito" : thQ.skip ? "fermato" : thQ.status === "errore" ? "errore" : "assente") : null, link: thQ && thQ.link ? thQ.link : null, errore: thQ && thQ.error ? thQ.error : null },
+  };
+  const dow = romeDow(day);
+  if (dow >= 6 && tg.bilancio !== false && tg.chat) { const B = await bilancioData(env, day); const tgB = dow === 7 ? await kvGet(env, "tg_b:" + day) : null;
+    out.bil = { ora: tg.ora_bil || "18:00", domenica: dow === 7, ok: B.ok.length, no: B.no.length, open: B.open, righe: [...B.ok, ...B.no].slice(0, 3).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + String(v.segnale)), altri: Math.max(0, B.ok.length + B.no.length - 3),
+      stato: tgB ? (tgB.msg ? "uscito" : "assente") : null, link: tgB && tgB.msg && chan ? "https://t.me/" + chan + "/" + tgB.msg : null }; }
+  return out;
+}
+async function canaliSet(env, b) {
+  const day = romeToday(); const ov = (await kvGet(env, "ch_ov:" + day)) || {};
+  const w = b.which === "dom" ? "dom" : "div"; const cur = ov[w] || {};
+  if (typeof b.testo === "string") { const s = b.testo.trim().slice(0, w === "dom" ? 500 : 600); if (s) cur.testo = s; else delete cur.testo; }
+  if (typeof b.skip === "boolean") cur.skip = b.skip;
+  ov[w] = cur; await kvSet(env, "ch_ov:" + day, ov);
+  if (b.skip === false) { const k = (w === "dom" ? "thq:" : "tg_d:") + day; const s = await kvGet(env, k); if (s && s.skip) await kvDel(env, k); }
+  return { ok: true, canali: await canaliInfo(env) };
 }
 async function thDomanda(env, force) {
   const st = await thSettings(env); const day = romeToday();
   if (!(await kvGet(env, "th_token"))) return null;
   if (!force) { if (!st.domanda || (await kvGet(env, "thq:" + day)) || romeHM() < (st.ora_dom || "18:00")) return null; }
   const d = await kvGet(env, "draft:" + day + "-daily");
-  const q = d && typeof d.th_domanda === "string" ? d.th_domanda.trim() : "";
+  const ovq = ((await kvGet(env, "ch_ov:" + day)) || {}).dom || {};
+  if (ovq.skip) { if (!force) await kvSet(env, "thq:" + day, { skip: true, at: new Date().toISOString() }); return null; }
+  const q = ovq.testo || (d && typeof d.th_domanda === "string" ? d.th_domanda.trim() : "");
   if (!d || d.status !== "pubblicata" || !q) { if (!force && romeHM() >= "21:00") await kvSet(env, "thq:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const t = await thToken(env);
   const x = { status: "invio", at: new Date().toISOString() };
@@ -2248,6 +2315,7 @@ async function tgPanelInfo(env) {
 }
 async function tgPanelApi(env, b) {
   const act = b.action;
+  if (act === "canali_set") return await canaliSet(env, b);
   if (act === "tg_settings") {
     const cur = await tgSettings(env);
     if (typeof b.chat === "string") { const c = b.chat.trim(); cur.chat = !c ? "" : /^-?\d+$/.test(c) ? c : "@" + c.replace(/^@|^https?:\/\/t\.me\//g, "").replace(/[^A-Za-z0-9_]/g, ""); }
