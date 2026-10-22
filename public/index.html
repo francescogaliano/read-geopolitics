@@ -3949,6 +3949,10 @@ header.top nav.tabs > button[aria-selected="true"] .ic{transform:scale(1.12)}
 #intPanel[hidden]{display:none}
 .ip-box{background:var(--bg);color:var(--ink);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px;box-shadow:0 -8px 30px rgba(0,0,0,.3)}
 @media (min-width:700px){#intPanel{align-items:center}.ip-box{border-radius:18px}}
+.ip-box{height:min(88vh,780px);max-height:none}@media (min-width:700px){.ip-box{height:min(82vh,760px)}}
+.ip-app{display:flex;align-items:center;gap:10px;width:100%;font:inherit;color:var(--ink);text-align:left;background:var(--surface);border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:12px;padding:9px 10px;margin:4px 0 10px;cursor:pointer}
+.ip-app img{width:34px;height:34px;border-radius:8px;flex:none}.ip-app>span:first-of-type{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.ip-app b{font-size:14.5px}.ip-app small{font-size:12.5px;color:var(--muted);line-height:1.3}
+.ip-app-b{flex:none;background:#F2B84B;color:#16120A;font-weight:600;font-size:13.5px;border-radius:8px;padding:6px 11px}
 .ip-top{display:flex;justify-content:space-between;align-items:center;gap:10px;position:sticky;top:-16px;background:var(--bg);padding:6px 0 8px;z-index:1}
 .ip-top h2{font-family:var(--serif);font-size:22px;margin:0}
 .ip-hint{font-size:14px;color:var(--muted);line-height:1.45;margin:2px 0 6px}
@@ -4422,7 +4426,7 @@ function otherTab(t){
   if(t==="asp"){
     const dark=document.documentElement.getAttribute("data-theme")!=="light";
     return `<h3>Aspetto</h3><div class="xp-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark" aria-pressed="${dark}">🌙 Scuro</button><button type="button" data-theme-set="light" aria-pressed="${!dark}">☀️ Chiaro</button></div>
-    <h3>Aiuto</h3><div class="ip-links">${(window.rgAppCanShow&&window.rgAppCanShow())?`<button type="button" class="ip-link" data-app="1">📲 Installa l’app sul telefono<span>›</span></button>`:""}<button type="button" class="ip-link" data-help="guida">📘 Guida: come funziona Read Geopolitics<span>›</span></button><button type="button" class="ip-link" data-help="novita">✨ Cosa c’è di nuovo<span>›</span></button>${S.static?`<a class="ip-link" href="/metodo.html">🔎 Fonti e metodo<span>›</span></a>`:""}</div>`;
+    <h3>Aiuto</h3><div class="ip-links"><button type="button" class="ip-link" data-help="guida">📘 Guida: come funziona Read Geopolitics<span>›</span></button><button type="button" class="ip-link" data-help="novita">✨ Cosa c’è di nuovo<span>›</span></button>${S.static?`<a class="ip-link" href="/metodo.html">🔎 Fonti e metodo<span>›</span></a>`:""}</div>`;
   }
   if(t==="red")return `<p class="ip-hint"><b>Attenzione:</b> queste scelte cambiano il briefing per tutti i lettori, non solo per te. Priorità degli ambiti, sezioni, lenti e soglie degli avvisi.</p><button type="button" class="xp-cta" data-help="red">Apri la redazione</button>`;
   return "";
@@ -4475,6 +4479,7 @@ function renderPanel2_(){
   panel.innerHTML=`<div class="ip-box">
    <div class="ip-top"><h2 id="intPTitle">Il mio Read</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>
    ${acctLine()}
+   ${(window.rgAppCanShow&&window.rgAppCanShow())?`<button type="button" class="ip-app" data-app="1"><img src="/img/icon-192.png" alt=""><span><b>Read Geopolitics sul telefono</b><small>Installala come un’app: icona tra le app, si apre a schermo intero</small></span><span class="ip-app-b">Installa</span></button>`:""}
    <div class="ip-tabs" role="tablist" aria-label="Il mio Read">${tabs.map(([k,l])=>`<button type="button" role="tab" data-ptab="${k}" aria-selected="${PE.tab===k}">${l}</button>`).join("")}</div>
    ${PE.tab!=="int"?otherTab(PE.tab):`<p class="ip-hint">Scegli cosa vuoi trovare ogni mattina in «Per te oggi», in cima al briefing. Il briefing resta completo per tutti.${uidOK()?" Le scelte sono salvate con la tua email e le ritrovi su ogni dispositivo.":""}</p>${mailNudge()}
    <h3>Le aree del mondo</h3><p class="ip-hint" style="margin-top:0">Tocca un’area: puoi seguirla tutta o solo per alcuni argomenti.</p>${rows}
