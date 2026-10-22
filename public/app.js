@@ -40,7 +40,7 @@
     document.body.appendChild(g);
     tr("app-guida");
   }
-  window.rgAppCanShow = () => !standalone && ls("rg-app-ok") !== "1";
+  window.rgAppCanShow = () => !standalone && ls("rg-app-ok") !== "1" && (mobile || !!deferred);
   window.rgAppInstall = async function (from) {
     tr("app-installa-" + from);
     if (deferred) {
