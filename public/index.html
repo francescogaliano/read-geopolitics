@@ -20,6 +20,7 @@
 </style>
 </head><body>
 <title>Read Geopolitics</title>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0E151B"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Read Geo"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><script src="/app.js" defer></script>
 <meta name="description" content="Il mondo in 15 minuti: le notizie che contano, con le fonti, le due tesi e gli scenari. Anteprima gratuita.">
 <meta property="og:title" content="Read Geopolitics"><meta property="og:description" content="Il mondo in 15 minuti. Ogni mattina.">
 <script>(function(){var t="dark";try{var v=localStorage.getItem("rg-theme");if(v==="light"||v==="dark")t=v}catch(e){}document.documentElement.setAttribute("data-theme",t)})();</script>
@@ -4421,7 +4422,7 @@ function otherTab(t){
   if(t==="asp"){
     const dark=document.documentElement.getAttribute("data-theme")!=="light";
     return `<h3>Aspetto</h3><div class="xp-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark" aria-pressed="${dark}">🌙 Scuro</button><button type="button" data-theme-set="light" aria-pressed="${!dark}">☀️ Chiaro</button></div>
-    <h3>Aiuto</h3><div class="ip-links"><button type="button" class="ip-link" data-help="guida">📘 Guida: come funziona Read Geopolitics<span>›</span></button><button type="button" class="ip-link" data-help="novita">✨ Cosa c’è di nuovo<span>›</span></button>${S.static?`<a class="ip-link" href="/metodo.html">🔎 Fonti e metodo<span>›</span></a>`:""}</div>`;
+    <h3>Aiuto</h3><div class="ip-links">${(window.rgAppCanShow&&window.rgAppCanShow())?`<button type="button" class="ip-link" data-app="1">📲 Installa l’app sul telefono<span>›</span></button>`:""}<button type="button" class="ip-link" data-help="guida">📘 Guida: come funziona Read Geopolitics<span>›</span></button><button type="button" class="ip-link" data-help="novita">✨ Cosa c’è di nuovo<span>›</span></button>${S.static?`<a class="ip-link" href="/metodo.html">🔎 Fonti e metodo<span>›</span></a>`:""}</div>`;
   }
   if(t==="red")return `<p class="ip-hint"><b>Attenzione:</b> queste scelte cambiano il briefing per tutti i lettori, non solo per te. Priorità degli ambiti, sezioni, lenti e soglie degli avvisi.</p><button type="button" class="xp-cta" data-help="red">Apri la redazione</button>`;
   return "";
@@ -4430,6 +4431,7 @@ document.addEventListener("click",async e=>{
   if(!e.target.closest("#intPanel"))return;
   const tb=e.target.closest("[data-ptab]");if(tb){PE.tab=tb.dataset.ptab;renderPanel2();const b=panel.querySelector(".ip-box");if(b)b.scrollTop=0;if(PE.tab==="nl"&&ACC.newsletter===null)pullF();return}
   const th=e.target.closest("[data-theme-set]");if(th){const want=th.dataset.themeSet,dark=document.documentElement.getAttribute("data-theme")!=="light";if((want==="dark")!==dark){const b=document.getElementById("themeBtn");if(b)b.click()}renderPanel2();return}
+  const ap=e.target.closest("[data-app]");if(ap){closePanel();if(window.rgAppInstall)window.rgAppInstall("menu");return}
   const hp=e.target.closest("[data-help]");if(hp){const k=hp.dataset.help;closePanel();if(k==="guida"&&typeof openGuide==="function")openGuide();else if(k==="novita"&&typeof openNovita==="function"){if(!openNovita(VERSIONE-1))openGuide()}else if(k==="red"&&typeof openPrefs==="function")openPrefs();return}
   if(e.target.closest("[data-logout]")){if(!confirm("Vuoi uscire? Su questo dispositivo dovrai rientrare con la tua email."))return;["rg-uid","rg-email","rg-seen","rg-nl","rg-segui","rg-segui-uid","rg-segui-dirty"].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.hash="";location.reload();return}
   const ns=e.target.closest("[data-nl-set]");if(ns){const u=uidOK();if(!u)return;const off=ns.dataset.nlSet==="off";if(off&&!confirm("Vuoi smettere di ricevere la newsletter?"))return;ns.disabled=true;
