@@ -1,4 +1,5 @@
 // Read Geopolitics API: Cloudflare Worker + D1
+// v41: canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
 // v40: etichette delle statistiche per il sito installabile (app-*).
 // v39: newsletter: riquadro «Inoltrala» con link di iscrizione tracciato (utm_source=inoltro, «Email inoltrata» nelle statistiche).
 // v38: newsletter: righe di «In 60 secondi» fino all'Italia, podcast verso la pagina Ascolta, due letture in due riquadri, «Confidenza media/alta/bassa», piè di pagina senza nome del titolare.
@@ -535,7 +536,7 @@ async function draftCreate(env, origin, b) {
   const type = isReel ? "reel" : (b.type || (urls.length > 1 ? "carousel" : "image"));
   const st = await igSettings(env);
   const f = st.formats[format] || { mode: "approva", time: "08:30" };
-  const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400) };
+  const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400), ...(typeof b.th_domanda === "string" && b.th_domanda.trim() ? { th_domanda: b.th_domanda.trim().slice(0, 500) } : {}) };
   await kvSet(env, "draft:" + id, d);
   return d;
 }
@@ -807,13 +808,13 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <details><summary class="sub">Verifica indirizzo immagini (per i caroselli)</summary><div class="row" style="margin-top:8px"><input id="ttvn" placeholder="tiktokXXXX.txt"><input id="ttvc" placeholder="contenuto del file"><button class="g" id="ttvs" type="button">Salva</button></div><div class="sub" id="ttvi"></div></details>
 <div class="row"><a id="ttcon" href="/ig/tt/connect"><button class="g" type="button">Collega TikTok</button></a></div></div></details>
 <details class="chr" id="thc"><summary><span class="ic">TH</span><div class="cht"><b>Threads</b><div class="s"><span class="dot" id="thdot"></span><span id="ths">carico…</span></div></div><span class="tg" id="thtag"></span></summary>
-<div class="set"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label>
+<div class="set"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label> <label><input type="checkbox" id="thdom"> una domanda al giorno alle 18, dal fatto centrale (solo se il post del giorno è uscito)</label>
 <div class="row"><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div>
 <div class="row"><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div></div></details>
 <details class="chr" id="tgc"><summary><span class="ic">TG</span><div class="cht"><b>Telegram</b><div class="s"><span class="dot" id="tgdot"></span><span id="tgs">carico…</span></div></div><span class="tg" id="tgtag"></span></summary>
 <div class="set"><div class="row"><span>Canale</span><input id="tgchat" placeholder="@readgeopolitics" style="max-width:180px"></div>
 <label><input type="checkbox" id="tgm"> ogni mattina: 60 secondi e puntata, alle <input type="time" id="tgora" value="08:00" style="width:auto"></label>
-<label><input type="checkbox" id="tgp"> anche i post di Instagram, quando escono</label>
+<label><input type="checkbox" id="tgp"> anche i post di Instagram, quando escono</label> <label><input type="checkbox" id="tgdv"> «Le fonti non sono d&#39;accordo», alle 12:30, solo nei giorni in cui c&#39;è una divergenza vera</label> <label><input type="checkbox" id="tgbl"> «Com&#39;è andata», la domenica alle 18: il bilancio dei segnali della settimana</label>
 <div class="row"><button class="g" id="tgsv" type="button">Salva</button><button class="g" id="tgnow" type="button">Invia ora il mattino</button></div><div class="sub" id="tgmsg"></div></div></details>
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
@@ -944,7 +945,7 @@ function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},
  const ta=!!(T.settings&&T.settings.auto);g("tttag").textContent=T.collegato?(ta?"auto dopo IG":"manuale"):"";g("tttag").className="tg"+(ta?"":" off");
  const G=d.telegram||{},GS=G.settings||{};g("tgdot").className="dot "+(!G.configurato||!GS.chat?"y":G.errore?"r":"g");g("tgs").textContent=!G.configurato?"manca TG_BOT_TOKEN nel Worker":!GS.chat?"canale da impostare":GS.chat+(G.oggi?" · mattino inviato":"")+(G.errore?" · errore: "+G.errore:"");if(G.errore)iss.push("Telegram");
  g("tgtag").textContent=G.configurato&&GS.chat?(GS.mattino?"mattino "+GS.ora:"")+(GS.post?(GS.mattino?" + post":"post"):""):"";g("tgtag").className="tg";
- if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post}
+ if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post;g("tgdv").checked=GS.divergenze!==false;g("tgbl").checked=GS.bilancio!==false}
  g("thdot").className="dot "+(!H.collegato?"y":H.scaduto?"r":"g");if(H.scaduto)iss.push("Threads da ricollegare");
  const ha=!!(H.settings&&H.settings.auto);g("thtag").textContent=H.collegato?(ha?"auto dopo IG":"manuale"):"";g("thtag").className="tg"+(ha?"":" off");
  const f=S.formats.daily||{};g("ussum").textContent=(S.paused?"in pausa · ":"")+(f.mode==="auto"?"pubblica da solo":"chiedi approvazione")+" · alle "+(f.time||"");g("usd").className="dot "+(S.paused?"y":"g");if(S.paused)iss.push("pubblicazione in pausa");
@@ -977,7 +978,7 @@ async function load(){
  document.getElementById("ttvi").textContent=T.verifica?("File attivi: "+T.verifica+" (rispondono in ogni cartella)"):"Nessun file di verifica salvato";}
  {const H=d.threads||{};document.getElementById("ths").textContent=!H.configurato?"chiavi Threads mancanti nel Worker":H.collegato?((H.username?"@"+H.username:"collegato")+(H.scaduto?" · collegamento scaduto, ricollega":(H.giorni!=null?" · valido ancora "+H.giorni+" giorni":""))):"non collegato";
  document.getElementById("thcon").querySelector("button").textContent=H.collegato?"Ricollega Threads":"Collega Threads";
- if(H.settings){document.getElementById("thauto").checked=!!H.settings.auto;document.getElementById("thtopic").value=H.settings.topic||""}}
+ if(H.settings){document.getElementById("thauto").checked=!!H.settings.auto;document.getElementById("thdom").checked=H.settings.domanda!==false;document.getElementById("thtopic").value=H.settings.topic||""}}
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
@@ -1083,9 +1084,9 @@ document.getElementById("usc").onclick=()=>{
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
 document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!confirm("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
-document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
+document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
 document.getElementById("tgnow").onclick=async e=>{if(!confirm("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
-document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()};
+document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
 document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
 document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
 document.getElementById("pause").onchange=async e=>{await api({action:"settings",paused:e.target.checked});load()};
@@ -1929,7 +1930,7 @@ const TH_API = "https://graph.threads.com/v1.0";
 const thId = (env) => String(env.TH_APP_ID || "").replace(/[^0-9]/g, ""); // solo cifre: toglie spazi o virgolette incollati per sbaglio
 const thSecret = (env) => String(env.TH_APP_SECRET || "").trim().replace(/^["']|["']$/g, "");
 const TH_TYPES = ["reel", "carousel", "image"];
-const TH_DEFAULT = { auto: false, topic: "Geopolitica" };
+const TH_DEFAULT = { auto: false, topic: "Geopolitica", domanda: true, ora_dom: "18:00" };
 async function thSettings(env) { return { ...TH_DEFAULT, ...((await kvGet(env, "th_settings")) || {}) }; }
 function thCaption(cap) { // testo per Threads: max 500 caratteri, niente hashtag (Threads usa un solo «argomento»), link al sito al posto di «link in bio»
   let lines = String(cap || "").replace(/\s+$/, "").split("\n");
@@ -2085,6 +2086,7 @@ async function thPanelApi(env, b) {
   if (act === "th_settings") {
     const cur = await thSettings(env);
     if (typeof b.auto === "boolean") cur.auto = b.auto;
+    if (typeof b.domanda === "boolean") cur.domanda = b.domanda;
     if (typeof b.topic === "string") cur.topic = b.topic.replace(/[.&]/g, "").trim().slice(0, 50);
     await kvSet(env, "th_settings", cur);
     return { ok: true, threads: await thPanelInfo(env) };
@@ -2097,7 +2099,7 @@ async function thPanelApi(env, b) {
 // ============ TELEGRAM (v33): canale con il mattino (60 secondi + puntata) e i post di Instagram ============
 // Secret TG_BOT_TOKEN (da @BotFather). Il bot è amministratore del canale; il nome del canale (@...) si imposta dal pannello.
 const RG_ORIGIN = "https://rg-api.briefinghub.workers.dev";
-const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false };
+const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", bilancio: true, ora_bil: "18:00" };
 async function tgSettings(env) { return { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; }
 async function tgCall(env, method, body) {
   if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
@@ -2164,6 +2166,74 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
   await kvSet(env, "tg:" + id, x);
   return x;
 }
+
+// v41: contenuti propri dei canali. Telegram: «Le fonti non sono d'accordo» (solo nei giorni in cui la routine del mattino
+// ha scritto briefing.tg_divergenza) e «Com'è andata» la domenica (dalle `verifiche` dei briefing della settimana: nessun lavoro in più per le routine).
+// Threads: una domanda al giorno (draft.th_domanda), solo se il post del giorno è uscito su Instagram.
+const romeHM = () => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+async function tgBriefing(env, day) { const b = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1 AND status='published'").bind(day).first(); return b ? JSON.parse(b.data) : null; }
+async function tgDivergenza(env, force) {
+  const st = await tgSettings(env); const day = romeToday();
+  if (!st.chat || !env.TG_BOT_TOKEN) return null;
+  if (!force) { if (!st.divergenze || (await kvGet(env, "tg_d:" + day)) || romeHM() < (st.ora_div || "12:30")) return null; }
+  const br = await tgBriefing(env, day);
+  const dv = br && br.tg_divergenza;
+  if (!dv || !dv.testo) { if (!force && (!br || romeHM() >= "14:00")) await kvSet(env, "tg_d:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  const link = "https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=divergenza#briefing";
+  let msg = "<b>Le fonti non sono d'accordo</b>\n\n" + esc(tgClip(dv.testo, 600));
+  if (Array.isArray(dv.fonti) && dv.fonti.length) msg += "\n\n<i>" + esc(dv.fonti.slice(0, 4).join(" · ")) + "</i>";
+  msg += "\n\n<a href=\"" + link + "\">La storia con tutte le fonti</a>";
+  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
+  await kvSet(env, "tg_d:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
+  return { ok: true };
+}
+async function tgBilancio(env, force) { // la domenica: i segnali che si sono risolti nella settimana, dalle «verifiche» quotidiane dei briefing
+  const st = await tgSettings(env); const day = romeToday();
+  if (!st.chat || !env.TG_BOT_TOKEN) return null;
+  if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
+  const from = new Date(Date.parse(day + "T12:00:00Z") - 6 * 86400000).toISOString().slice(0, 10);
+  const prev = new Date(Date.parse(day + "T12:00:00Z") - 13 * 86400000).toISOString().slice(0, 10);
+  const { results } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='briefings' AND key>=?1 AND key<=?2 AND status='published' ORDER BY key").bind(prev, day).all();
+  const seen = new Map(); let open = 0;
+  for (const r of results || []) {
+    let b; try { b = JSON.parse(r.data); } catch (e) { continue; }
+    for (const v of Array.isArray(b.verifiche) ? b.verifiche : []) {
+      if (!v || !v.segnale) continue;
+      const k = String(v.segnale).trim().toLowerCase();
+      if (v.esito === "non ancora") { if (r.key === day) open++; continue; }
+      if (!seen.has(k)) seen.set(k, { ...v, giorno: r.key });
+    }
+  }
+  const done = [...seen.values()].filter((v) => v.giorno >= from);
+  const ok = done.filter((v) => v.esito === "avvenuto"), no = done.filter((v) => v.esito === "smentito" || v.esito === "scaduto");
+  if (!done.length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
+  let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + pl(no.length, "no", "no") + (open ? "; " + pl(open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
+  msg += [...ok, ...no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "")).join("\n\n");
+  msg += "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
+  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
+  await kvSet(env, "tg_b:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
+  return { ok: true };
+}
+async function thDomanda(env, force) {
+  const st = await thSettings(env); const day = romeToday();
+  if (!(await kvGet(env, "th_token"))) return null;
+  if (!force) { if (!st.domanda || (await kvGet(env, "thq:" + day)) || romeHM() < (st.ora_dom || "18:00")) return null; }
+  const d = await kvGet(env, "draft:" + day + "-daily");
+  const q = d && typeof d.th_domanda === "string" ? d.th_domanda.trim() : "";
+  if (!d || d.status !== "pubblicata" || !q) { if (!force && romeHM() >= "21:00") await kvSet(env, "thq:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  const t = await thToken(env);
+  const x = { status: "invio", at: new Date().toISOString() };
+  try {
+    const c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "TEXT", text: q.slice(0, 500), ...(st.topic ? { topic_tag: String(st.topic).replace(/[.&]/g, "").slice(0, 50) } : {}) });
+    await new Promise((r) => setTimeout(r, 3000));
+    const p = await thCall(t, "POST", "/" + t.user_id + "/threads_publish", { creation_id: c.id });
+    x.status = "pubblicato"; x.media_id = p.id;
+    try { const m = await thCall(t, "GET", "/" + p.id, { fields: "permalink" }); x.link = m.permalink || null; } catch (e) {}
+  } catch (e) { x.status = "errore"; x.error = thErr(e); }
+  await kvSet(env, "thq:" + day, x);
+  return x;
+}
 async function tgAuto(env, id) {
   const st = await tgSettings(env);
   if (!st.post || !st.chat || !env.TG_BOT_TOKEN) return;
@@ -2183,6 +2253,8 @@ async function tgPanelApi(env, b) {
     if (typeof b.chat === "string") { const c = b.chat.trim(); cur.chat = !c ? "" : /^-?\d+$/.test(c) ? c : "@" + c.replace(/^@|^https?:\/\/t\.me\//g, "").replace(/[^A-Za-z0-9_]/g, ""); }
     if (typeof b.mattino === "boolean") cur.mattino = b.mattino;
     if (typeof b.post === "boolean") cur.post = b.post;
+    if (typeof b.divergenze === "boolean") cur.divergenze = b.divergenze;
+    if (typeof b.bilancio === "boolean") cur.bilancio = b.bilancio;
     if (/^\d{2}:\d{2}$/.test(b.ora || "")) cur.ora = b.ora;
     await kvSet(env, "tg_settings", cur);
     return { ok: true, telegram: await tgPanelInfo(env) };
@@ -3040,6 +3112,9 @@ export default {
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
     try { await thPoll(env); } catch (e) {} // v30: Threads (pubblicazioni in attesa e rinnovo del token)
+    try { await tgDivergenza(env, false); } catch (e) {} // v41
+    try { await tgBilancio(env, false); } catch (e) {} // v41
+    try { await thDomanda(env, false); } catch (e) {} // v41
     try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
