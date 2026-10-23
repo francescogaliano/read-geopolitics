@@ -2049,7 +2049,7 @@ async function thCall(t, method, path, params) {
   const q = new URLSearchParams({ ...(params || {}), access_token: t.access_token });
   const r = method === "GET" ? await fetch(TH_API + path + "?" + q) : await fetch(TH_API + path, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: q });
   const j = await gj(r);
-  if (!r.ok || j.error) throw { status: 502, code: "threads_" + ((j.error && (j.error.code || j.error.type)) || r.status), detail: "Threads: " + ((j.error && (j.error.error_user_msg || j.error.message)) || "HTTP " + r.status) };
+  if (!r.ok || j.error) throw { status: 502, code: "threads_" + ((j.error && (j.error.code || j.error.type)) || r.status), detail: "Threads: " + ((j.error && (j.error.error_user_msg || j.error.message)) || "HTTP " + r.status) + (j.error && j.error.error_subcode ? " (sottocodice " + j.error.error_subcode + ")" : "") };
   return j;
 }
 const thErr = (e) => String((e && (typeof e.detail === "string" ? e.detail : e.detail ? JSON.stringify(e.detail) : e.message || e.code)) || e).slice(0, 500);
@@ -2168,7 +2168,15 @@ async function thPanelApi(env, b) {
   if (act === "th_search") { // v50: cerca post su Threads per parola chiave (con l'accesso di prova trova solo i nostri)
     const q = String(b.q || "").trim().slice(0, 100); if (!q) throw { status: 422, code: "q_missing" };
     const t = await thToken(env);
-    const j = await thCall(t, "GET", "/keyword_search", { q, search_type: b.type === "RECENT" ? "RECENT" : "TOP", fields: "id,text,permalink,timestamp,username,has_replies,is_reply", limit: "15" });
+    let j;
+    try { j = await thCall(t, "GET", "/keyword_search", { q, search_type: b.type === "RECENT" ? "RECENT" : "TOP", fields: "id,text,permalink,timestamp,username" }); }
+    catch (e) { // diagnosi: cosa può fare davvero il collegamento (senza mai mostrare la chiave)
+      const prova = async (path, params) => { try { await thCall(t, "GET", path, params); return "ok"; } catch (x) { return thErr(x) + " [" + (x.code || "") + "]"; } };
+      const me = await prova("/me", { fields: "id,username" });
+      const own = await prova("/" + t.user_id + "/threads", { fields: "id", limit: "1" });
+      const bare = await prova("/keyword_search", { q });
+      throw { status: 502, code: e.code || "threads_err", detail: thErr(e) + " [" + (e.code || "") + "] · profilo: " + me + " · nostri post: " + own + " · ricerca semplice: " + bare };
+    }
     const day = romeToday(); const done = (await kvGet(env, "thr_day:" + day)) || { n: 0, ids: [] };
     return { ok: true, q, posts: (j.data || []).filter((x) => x.text).slice(0, 15).map((x) => ({ id: x.id, text: String(x.text).slice(0, 600), link: x.permalink || "", at: x.timestamp || "", user: x.username || "", risposto: done.ids.includes(x.id) })), oggi: done.n, max: TH_REPLY_MAX };
   }
