@@ -1,5 +1,6 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
+// v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
 // v49: newsletter con la domanda del giorno (pulsanti che aprono il sito e registrano il voto); domanda di Threads con il link al sito.
 // v48: esito degli scenari: /v1/batch salva esito e probabilità accanto ai voti (polls); «Com'è andata» con gli scenari chiusi; pannello «Chi ci ha preso».
 // v47: previsioni dei lettori (g: sì/no sui segnali, c: scelta dello scenario) oltre alle tesi; copia di ogni sondaggio (tabella polls); pannello «Voti dei lettori · solo per te»; «Com'è andata» con la percentuale dei lettori.
@@ -786,7 +787,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 #wk .pr .t{font-weight:600}#wk .pr .w{font-size:13px;color:#8FA0AE}#wk .tagr{font:600 11px ui-monospace,monospace;color:#86B4EA;margin-left:6px;letter-spacing:.04em}
 #chan{padding:0}#chan>summary,#cnl>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px}#chan>summary::-webkit-details-marker,#cnl>summary::-webkit-details-marker{display:none}#cnl{padding:0}#cnlb{padding:0 14px 8px}#cnl[open]>summary .chev{transform:rotate(180deg)}.cpy{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:3px 9px;font:600 12px system-ui;cursor:pointer}.cpy.ok{color:#7BD39A;border-color:#2F5F4B}.cnt{align-items:center}
 .lab{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}.chsum{flex:1;text-align:right;font-size:13px;color:#C5D0D8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chev{color:#8FA0AE;transition:transform .2s}#chan[open]>summary .chev{transform:rotate(180deg)}
-.chr{border-top:1px solid #27353F;padding:0 14px}.chr>summary,.chs{list-style:none;cursor:pointer;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0}.chr.chs{padding:10px 14px}.chr>summary::-webkit-details-marker{display:none}
+.chr{border-top:1px solid #27353F;padding:0 14px}.thr{border-top:1px solid #27353F;margin-top:10px;padding-top:10px}.thrl{display:grid;gap:10px;margin-top:10px}.thp{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px}.thu{font-size:12px;color:#8FA0AE}.thu a{color:#86B4EA}.tht{font-size:13.5px;margin:4px 0 6px;white-space:pre-wrap}.thp textarea{width:100%}.thr .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}.thr .sm.p{background:#F2B84B;color:#16120A;border-color:#F2B84B}.chr>summary,.chs{list-style:none;cursor:pointer;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0}.chr.chs{padding:10px 14px}.chr>summary::-webkit-details-marker{display:none}
 .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font:700 12px system-ui;background:#1E2A33;color:#E4EAEF}.cht{min-width:0}.cht b{font-size:14.5px}.cht .s{font-size:12.5px;color:#8FA0AE;overflow:hidden;text-overflow:ellipsis}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#8FA0AE}.dot.g{background:#7BD39A}.dot.y{background:#F2B84B}.dot.r{background:#E5645A}
 .tg{font:600 11px ui-monospace,monospace;border:1px solid #3A4C5C;color:#86B4EA;border-radius:999px;padding:2px 8px;white-space:nowrap}.tg.off{color:#8FA0AE;border-color:#27353F}.tg:empty{display:none}.gear{color:#8FA0AE;font-size:16px}
@@ -821,7 +822,10 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <details class="chr" id="thc"><summary><span class="ic">TH</span><div class="cht"><b>Threads</b><div class="s"><span class="dot" id="thdot"></span><span id="ths">carico…</span></div></div><span class="tg" id="thtag"></span></summary>
 <div class="set"><label><input type="checkbox" id="thauto"> pubblica da solo dopo Instagram</label> <label><input type="checkbox" id="thdom"> una domanda al giorno alle 18, dal fatto centrale (solo se il post del giorno è uscito)</label>
 <div class="row"><span>Argomento</span><input id="thtopic" maxlength="50" style="max-width:160px"><button class="g" id="thtsv" type="button">Salva</button></div>
-<div class="row"><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div></div></details>
+<div class="row"><a id="thcon" href="/ig/th/connect"><button class="g" type="button">Collega Threads</button></a></div>
+<div class="thr"><b>Rispondi su Threads</b><div class="sub">Cerca i post su un tema e rispondi con un fatto e la fonte. Ogni risposta parte solo quando premi «Rispondi» (al massimo 3 al giorno).</div>
+<div class="row" style="margin-top:8px"><input id="thrq" value="geopolitica" maxlength="100" style="flex:1"><select id="thrt" style="max-width:120px"><option value="TOP">Più discussi</option><option value="RECENT">Più recenti</option></select><button class="g" id="thrgo" type="button">Cerca</button></div>
+<div id="thrl" class="thrl"></div></div></div></details>
 <details class="chr" id="tgc"><summary><span class="ic">TG</span><div class="cht"><b>Telegram</b><div class="s"><span class="dot" id="tgdot"></span><span id="tgs">carico…</span></div></div><span class="tg" id="tgtag"></span></summary>
 <div class="set"><div class="row"><span>Canale</span><input id="tgchat" placeholder="@readgeopolitics" style="max-width:180px"></div>
 <label><input type="checkbox" id="tgm"> ogni mattina: 60 secondi e puntata, alle <input type="time" id="tgora" value="08:00" style="width:auto"></label>
@@ -1148,6 +1152,15 @@ document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_setti
 document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked,dossier:document.getElementById("tgdz").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
 document.getElementById("tgnow").onclick=async e=>{if(!confirm("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
 document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
+async function thrSearch(){const L=document.getElementById("thrl");L.innerHTML='<div class="sub">Cerco…</div>';const r=await api({action:"th_search",q:document.getElementById("thrq").value,type:document.getElementById("thrt").value});
+ if(!r.ok){L.innerHTML='<div class="err">'+esc(r.detail||r.error)+(String(r.error||"").indexOf("threads_")===0?'<br>Se dice che manca il permesso, premi «Ricollega Threads» qui sopra.':'')+'</div>';return}
+ if(!r.posts.length){L.innerHTML='<div class="sub">Nessun post trovato.</div>';return}
+ L.innerHTML='<div class="sub">Risposte oggi: <b id="thrn">'+r.oggi+'</b>/'+r.max+'</div>'+r.posts.map(p=>'<div class="thp" data-id="'+esc(p.id)+'"><div class="thu">@'+esc(p.user||"?")+(p.at?' · '+esc(when(p.at)):'')+(p.link?' · <a href="'+esc(p.link)+'" target="_blank" rel="noopener">Apri ›</a>':'')+'</div><div class="tht">'+esc(p.text)+'</div>'+(p.risposto?'<div class="sub">Hai già risposto ✓</div>':'<textarea rows="3" maxlength="500" placeholder="La tua risposta: un fatto e la fonte, senza prendere posizione"></textarea><div class="row" style="margin-top:6px"><button class="sm p thrs" type="button">Rispondi</button><span class="sub thrc">0/500</span></div>')+'</div>').join("");
+ L.querySelectorAll(".thp textarea").forEach(ta=>ta.oninput=()=>{ta.parentNode.querySelector(".thrc").textContent=ta.value.length+"/500"});
+ L.querySelectorAll(".thrs").forEach(bt=>bt.onclick=async()=>{const c=bt.closest(".thp");const tx=c.querySelector("textarea").value.trim();if(tx.length<5){alert("Scrivi prima la risposta.");return}if(!confirm("Pubblicare questa risposta su Threads? Esce davvero, sotto il post."))return;bt.disabled=true;bt.textContent="Pubblico…";
+  const x=await api({action:"th_reply",id:c.dataset.id,text:tx});if(!x.ok){alert("Errore: "+(x.detail||x.error));bt.disabled=false;bt.textContent="Rispondi";return}
+  c.querySelector("textarea").remove();bt.parentNode.innerHTML='<span class="sub">Risposta pubblicata ✓'+(x.link?' · <a href="'+esc(x.link)+'" target="_blank" rel="noopener">Apri ›</a>':'')+'</span>';const n=document.getElementById("thrn");if(n)n.textContent=x.oggi})}
+document.getElementById("thrgo").onclick=thrSearch;
 document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
 document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
 document.getElementById("pause").onchange=async e=>{await api({action:"settings",paused:e.target.checked});load()};
@@ -2120,7 +2133,7 @@ async function thPublic(request, env, p, url) {
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "th_state", { state, exp: Date.now() + 10 * 60000 });
     // v31: threads.net (l'indirizzo storico): da threads.com il passaggio al login può perdere i parametri («No app ID was sent»)
-    return Response.redirect("https://threads.net/oauth/authorize?" + new URLSearchParams({ client_id: thId(env), redirect_uri: redirect, scope: "threads_basic,threads_content_publish", response_type: "code", state }), 302);
+    return Response.redirect("https://threads.net/oauth/authorize?" + new URLSearchParams({ client_id: thId(env), redirect_uri: redirect, scope: "threads_basic,threads_content_publish,threads_keyword_search", response_type: "code", state }), 302);
   }
   if (p === "/th/callback") {
     const err = url.searchParams.get("error_description") || url.searchParams.get("error");
@@ -2149,8 +2162,31 @@ async function thPublic(request, env, p, url) {
   }
   return null;
 }
+const TH_REPLY_MAX = 3;
 async function thPanelApi(env, b) {
   const act = b.action;
+  if (act === "th_search") { // v50: cerca post su Threads per parola chiave (con l'accesso di prova trova solo i nostri)
+    const q = String(b.q || "").trim().slice(0, 100); if (!q) throw { status: 422, code: "q_missing" };
+    const t = await thToken(env);
+    const j = await thCall(t, "GET", "/keyword_search", { q, search_type: b.type === "RECENT" ? "RECENT" : "TOP", fields: "id,text,permalink,timestamp,username,has_replies,is_reply", limit: "15" });
+    const day = romeToday(); const done = (await kvGet(env, "thr_day:" + day)) || { n: 0, ids: [] };
+    return { ok: true, q, posts: (j.data || []).filter((x) => x.text).slice(0, 15).map((x) => ({ id: x.id, text: String(x.text).slice(0, 600), link: x.permalink || "", at: x.timestamp || "", user: x.username || "", risposto: done.ids.includes(x.id) })), oggi: done.n, max: TH_REPLY_MAX };
+  }
+  if (act === "th_reply") { // risposta a un post: al massimo TH_REPLY_MAX al giorno, sempre approvata a mano dal pannello
+    const id = String(b.id || ""), text = String(b.text || "").trim();
+    if (!/^\d{5,30}$/.test(id) || text.length < 5 || text.length > 500) throw { status: 422, code: "bad_reply" };
+    const day = romeToday(); const done = (await kvGet(env, "thr_day:" + day)) || { n: 0, ids: [] };
+    if (done.n >= TH_REPLY_MAX) throw { status: 429, code: "limite_giornaliero", detail: "Oggi hai già mandato " + TH_REPLY_MAX + " risposte." };
+    if (done.ids.includes(id)) throw { status: 409, code: "gia_risposto" };
+    const t = await thToken(env);
+    const c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "TEXT", text, reply_to_id: id });
+    await new Promise((r) => setTimeout(r, 3000));
+    const pb = await thCall(t, "POST", "/" + t.user_id + "/threads_publish", { creation_id: c.id });
+    let link = null; try { const m = await thCall(t, "GET", "/" + pb.id, { fields: "permalink" }); link = m.permalink || null; } catch (e) {}
+    done.n++; done.ids.push(id); await kvSet(env, "thr_day:" + day, done);
+    await kvSet(env, "thr:" + id, { at: new Date().toISOString(), text, reply_id: pb.id, link });
+    return { ok: true, link, oggi: done.n, max: TH_REPLY_MAX };
+  }
   if (act === "th_send") return { ok: true, th: await thSend(env, String(b.id), "panel", !!b.force) };
   if (act === "th_check") return { ok: true, th: await thTry(env, String(b.id)) };
   if (act === "th_caption") {
