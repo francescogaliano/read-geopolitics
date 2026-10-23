@@ -2171,6 +2171,13 @@ async function thPublic(request, env, p, url) {
   return null;
 }
 const TH_REPLY_MAX = 3;
+async function thrAlive(env, t, id, done, day) { // la nostra risposta a quel post esiste ancora? se è stata cancellata a mano, libera il post e il conteggio
+  const r = await kvGet(env, "thr:" + id);
+  if (r && r.reply_id) { try { await thCall(t, "GET", "/" + r.reply_id, { fields: "id" }); return true; } catch (e) {} }
+  done.ids = done.ids.filter((x) => x !== id); done.n = Math.max(0, done.n - 1);
+  await kvSet(env, "thr_day:" + day, done); await kvDel(env, "thr:" + id);
+  return false;
+}
 async function thPanelApi(env, b) {
   const act = b.action;
   if (act === "th_search") { // v50: cerca post su Threads per parola chiave (con l'accesso di prova trova solo i nostri)
@@ -2186,15 +2193,16 @@ async function thPanelApi(env, b) {
       throw { status: 502, code: e.code || "threads_err", detail: thErr(e) + " [" + (e.code || "") + "] · profilo: " + me + " · nostri post: " + own + " · ricerca semplice: " + bare };
     }
     const day = romeToday(); const done = (await kvGet(env, "thr_day:" + day)) || { n: 0, ids: [] };
+    for (const x of j.data || []) if (done.ids.includes(x.id)) await thrAlive(env, t, x.id, done, day);
     return { ok: true, q, posts: (j.data || []).filter((x) => x.text).slice(0, 15).map((x) => ({ id: x.id, text: String(x.text).slice(0, 600), link: x.permalink || "", at: x.timestamp || "", user: x.username || "", risposto: done.ids.includes(x.id) })), oggi: done.n, max: TH_REPLY_MAX };
   }
   if (act === "th_reply") { // risposta a un post: al massimo TH_REPLY_MAX al giorno, sempre approvata a mano dal pannello
     const id = String(b.id || ""), text = String(b.text || "").trim();
     if (!/^\d{5,30}$/.test(id) || text.length < 5 || text.length > 500) throw { status: 422, code: "bad_reply" };
     const day = romeToday(); const done = (await kvGet(env, "thr_day:" + day)) || { n: 0, ids: [] };
-    if (done.n >= TH_REPLY_MAX) throw { status: 429, code: "limite_giornaliero", detail: "Oggi hai già mandato " + TH_REPLY_MAX + " risposte." };
-    if (done.ids.includes(id)) throw { status: 409, code: "gia_risposto" };
     const t = await thToken(env);
+    if (done.ids.includes(id) && await thrAlive(env, t, id, done, day)) throw { status: 409, code: "gia_risposto", detail: "Hai già risposto a questo post e la risposta è ancora su Threads." };
+    if (done.n >= TH_REPLY_MAX) throw { status: 429, code: "limite_giornaliero", detail: "Oggi hai già mandato " + TH_REPLY_MAX + " risposte." };
     const c = await thCall(t, "POST", "/" + t.user_id + "/threads", { media_type: "TEXT", text, reply_to_id: id });
     await new Promise((r) => setTimeout(r, 3000));
     const pb = await thCall(t, "POST", "/" + t.user_id + "/threads_publish", { creation_id: c.id });
