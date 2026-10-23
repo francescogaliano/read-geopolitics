@@ -568,6 +568,7 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .sto-m{grid-column:2;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:12.5px}
 .sto-fl{background:none;border:0;padding:0;font-size:17px;line-height:1;cursor:pointer;font-family:"Twemoji Country Flags","Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 .sto-m .conf{margin-left:4px}
+.dzc{display:inline-flex;align-items:center;gap:4px;max-width:100%;font:600 11.5px/1.5 var(--mono);color:var(--amb-ene,#E8B050);background:none;border:1px solid color-mix(in srgb,var(--amb-ene,#E8B050) 45%,transparent);border-radius:999px;padding:1px 9px;margin-left:6px;vertical-align:1px;white-space:nowrap;cursor:pointer}.dzc:hover,.dzc:focus-visible{background:color-mix(in srgb,var(--amb-ene,#E8B050) 12%,transparent)}.dzc .dzt{overflow:hidden;text-overflow:ellipsis;min-width:0}.sto-m .dzc{margin-left:4px}
 .sto-b{padding:10px 14px 4px;display:grid;gap:10px}
 .sto .sx{border-top:1px solid var(--line);margin:8px 0 0}
 .sto .sx>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;font-size:14px;color:var(--accent)}
@@ -1678,7 +1679,7 @@ function storyHTML(s,rank){
   <div class="sto-h">
     <span class="rank">${String(rank).padStart(2,"0")}</span>
     <h3>${esc(s.titolo)}</h3>
-    <div class="sto-m">${(s.paesi||[]).map(p=>`<button class="sto-fl" data-country="${esc(p)}" title="${esc(cname(p))}">${flag(p)||esc(p)}</button>`).join("")}<span class="conf ${esc(conf.livello)}" title="${esc(conf.motivo)}">confidenza ${esc(conf.livello||"—")}</span>${s.fuori_riflettori?'<span class="chip fuori" title="Storia rilevante da un\'area che di solito resta fuori dai riflettori">Fuori dai riflettori</span>':""}${s.esempio?'<span class="chip sample">esempio</span>':""}</div>
+    <div class="sto-m">${(s.paesi||[]).map(p=>`<button class="sto-fl" data-country="${esc(p)}" title="${esc(cname(p))}">${flag(p)||esc(p)}</button>`).join("")}<span class="conf ${esc(conf.livello)}" title="${esc(conf.motivo)}">confidenza ${esc(conf.livello||"—")}</span>${s.fuori_riflettori?'<span class="chip fuori" title="Storia rilevante da un\'area che di solito resta fuori dai riflettori">Fuori dai riflettori</span>':""}${s.esempio?'<span class="chip sample">esempio</span>':""}${(()=>{const dz=dosForStory(s);return dz?`<button type="button" class="dzc" data-open-dos="${esc(dz.id)}" title="Il dossier: tutta la storia del tema, da zero"><span class="dzi" aria-hidden="true">🧭</span><span class="dzt">dossier: ${esc(dz.titolo)}</span> ›</button>`:""})()}</div>
   </div>
   <div class="sto-b">
     <div class="block"><span class="label tag-fact"><span class="ic" aria-hidden="true">🧾</span>Fatti · verificati</span><p>${refText(s.fatti,s.fonti)}</p></div>
@@ -4786,6 +4787,7 @@ document.addEventListener("click",e=>{
 .map-q::before{content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7;pointer-events:none}
 .map-q .mq-msg{font-size:13px;color:var(--muted);margin-top:4px;display:block}`;document.head.appendChild(st)}
 function in60Kick(){const el=document.getElementById("briefing");if(!el)return;
+  el.querySelectorAll(".in60 li").forEach(li=>{if(li.querySelector(".dzc"))return;const r=li.querySelector(".in60-ref[data-story]");const s=r&&S.stories[r.dataset.story];const dz=s&&dosForStory(s);if(!dz)return;const c=document.createElement("button");c.type="button";c.className="dzc";c.dataset.openDos=dz.id;c.title="Il dossier: "+dz.titolo;c.innerHTML='<span class="dzi" aria-hidden="true">🧭</span><span class="dzt">dossier</span>';(li.querySelector(".in60-refs")||li).appendChild(c)});
   el.querySelectorAll(".in60 li").forEach(li=>{if(li.querySelector(".in60-k"))return;const r=li.querySelector(".in60-ref[data-story]");const s=r&&S.stories[r.dataset.story];const iso=s&&(s.paesi||[]).find(p=>/^[A-Z]{3}$/.test(p));if(!iso)return;
     const k=document.createElement("span");k.className="in60-k";k.innerHTML=`${flag(iso)?`<span class="fl" aria-hidden="true">${flag(iso)}</span>`:""}${esc(cname(iso))}`;const sp=li.querySelector(":scope>span");(sp||li).insertBefore(k,(sp||li).firstChild)})}
 function briefAside(){const el=document.getElementById("briefing");if(!el)return;const td=el.querySelector(":scope>.today");
