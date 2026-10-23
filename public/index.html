@@ -1659,7 +1659,7 @@ function sxBody(s,th,hasSc,conf,prev){
   const idx=[["ctx","🗂️","Contesto"],["pos","🧭","Posizioni"],["syn","⚖️","Sintesi"],...(hasSc?[["scn","📊","Scenari"]]:[]),["oss","🔭","Da osservare"],...(ids.length?[["ppl","👤","Persone"]]:[]),["src","🔗","Fonti"]];
   return `<nav class="sx-idx" aria-label="Sezioni della storia">${idx.map(([k,ic,t])=>`<button type="button" data-sx-go="sx-${esc(id)}-${k}">${ic} ${t}</button>`).join("")}</nav>
   ${sec("ctx","🗂️","Contesto","",`<div class="sx-ctx">${ctx}</div>`)}
-  ${sec("pos","🧭","Le due posizioni","la versione più forte di ciascuna",`<div class="sx-pos"><div class="pv pa"><span class="w">Chi sostiene</span>${refText(s.pro&&s.pro.tesi,s.fonti)}<span class="who">${esc(s.pro&&s.pro.attori)}</span></div><div class="pv pb"><span class="w">Chi si oppone</span>${refText(s.contro&&s.contro.tesi,s.fonti)}<span class="who">${esc(s.contro&&s.contro.attori)}</span></div></div>`)}
+  ${sec("pos","🧭","Le due posizioni","la versione più forte di ciascuna",`<div class="sx-pos"><div class="pv pa"><span class="w">Chi sostiene</span>${refText(s.pro&&s.pro.tesi,s.fonti)}<span class="who">${esc(s.pro&&s.pro.attori)}</span></div><div class="pv pb"><span class="w">Chi si oppone</span>${refText(s.contro&&s.contro.tesi,s.fonti)}<span class="who">${esc(s.contro&&s.contro.attori)}</span></div></div>${voteHTML(s)}`)}
   ${sec("syn","⚖️","Sintesi critica","",`<div class="sx-syn">${refText(syn,s.fonti)}${dec?`<span class="dec"><b>Cosa deciderà:</b> ${refText(dec.replace(/^(Decisiv[oa]|Cosa deciderà|A decidere|Il fatto che deciderà|Deciderà)\s*[:,]?\s*/,""),s.fonti)}</span>`:""}</div>`)}
   ${hasSc?sec("scn","📊","Come può andare","stima, non un fatto",scenMiniHTML(th)):""}
   ${sec("oss","🔭","Da osservare","",`<div class="sx-ck">${segs||'<p class="muted">—</p>'}</div>`)}
@@ -1781,12 +1781,41 @@ function sinceHTML(b){
   const ac=b.accadde;
   if(ac&&ac.testo){const d=new Date(b.data+"T12:00:00");const y=parseInt(ac.anno,10);const ago=y?d.getFullYear()-y:0;const th=S.threads[ac.filone_id];
     rows.push({k:"accadde",i:"📜",t:`Accadde oggi${ago>0?` · ${ago} anni fa`:""}`,sum:`${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} ${y||""}: ${esc(clip(ac.testo,80))}`,body:`<div class="acc-b"><p><b>${d.getDate()} ${MONTHS[d.getMonth()]} ${y||""}</b> · ${esc(ac.testo)}</p>${ac.legame?`<p class="acc-l">${esc(ac.legame)}</p>`:""}<p>${th?`<button class="linkbtn" data-thread="${esc(th.id)}">filone</button> `:""}${ac.fonte&&ac.fonte.url?`<a class="src-inline" href="${esc(ac.fonte.url)}" target="_blank" rel="noopener">${esc(ac.fonte.nome||"fonte")}</a>`:""}</p></div>`})}
+  {const r=vtRow(b);if(r)rows.push(r)}
   if(!rows.length)return"";
   return `<div class="today"><div class="today-h"><span class="label">Oggi in breve · tocca per aprire</span></div>${rows.map(r=>`<button class="trow" data-since="${r.k}" aria-expanded="${op===r.k}"><span class="ti" aria-hidden="true">${r.i}</span><span class="tt"><b>${r.t}</b><span class="ts">${r.sum}</span></span><span class="tc" aria-hidden="true">›</span></button><div class="tbody" data-since-p="${r.k}"${op===r.k?"":" hidden"}>${r.body}</div>`).join("")}</div>`;
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-since]");if(!b)return;const k=b.dataset.since;S.since=S.since===k?null:k;
   document.querySelectorAll("#briefing [data-since]").forEach(x=>x.setAttribute("aria-expanded",String(x.dataset.since===S.since)));
   document.querySelectorAll("#briefing [data-since-p]").forEach(p=>p.hidden=p.dataset.sinceP!==S.since)});
+
+/* ---------- voti dei lettori: quale tesi convince di più (v46). Anonimi; numeri visibili solo da VT_MIN voti ---------- */
+const VT_MIN=20;S.votes=S.votes||{};
+function pollFor(b){if(!b)return null;const so=b.sondaggio||{};const sid=so.storia_id||(b.storie_mondo||[])[0];if(!sid||!/^s-\d{8}-\d{2}$/.test(sid))return null;return {id:"t:"+sid,sid,domanda:so.domanda||"Quale tesi ti convince di più?",a:so.a||"Chi sostiene",b:so.b||"Chi si oppone"}}
+function vtMine(id){try{return (JSON.parse(localStorage.getItem("rg-vt")||"{}")||{})[id]||""}catch(e){return ""}}
+function vtDev(){try{let d=localStorage.getItem("rg-dev");if(!d){d=Array.from(crypto.getRandomValues(new Uint8Array(18)),x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");localStorage.setItem("rg-dev",d)}return d}catch(e){return ""}}
+function vtBar(c,P){const pc=k=>Math.round(100*c[k]/c.tot);return `<div class="vt-bar"><i style="flex:${c.a||0.001};background:var(--amb-eco)">${pc("a")>=12?pc("a")+"%":""}</i><i style="flex:${c.b||0.001};background:var(--amb-soc)">${pc("b")>=12?pc("b")+"%":""}</i><i style="flex:${c.n||0.001}" class="vn">${pc("n")>=12?pc("n")+"%":""}</i></div><div class="vt-lg"><span>${esc(P.a)} ${pc("a")}%</span><span>${esc(P.b)} ${pc("b")}%</span><span>Non so ${pc("n")}%</span></div>`}
+function vtRes(P){const c=S.votes[P.id];const m=vtMine(P.id);if(!m)return "";if(!c)return `<p class="vt-note">Grazie, il tuo voto è registrato.</p>`;
+  if(c.sotto_soglia)return `<p class="vt-note">Grazie, il tuo voto è registrato. I risultati compaiono quando i voti arrivano a ${VT_MIN}.</p>`;
+  return `<p class="vt-t">${c.tot} voti</p>${vtBar(c,P)}<p class="vt-note">Non è un sondaggio rappresentativo: dice cosa pensa chi legge Read, non gli italiani.</p>`}
+function voteHTML(s){const P=pollFor(S.briefings[0]);if(!P||P.sid!==s.id)return "";const m=vtMine(P.id);
+  return `<div class="vt" data-poll="${esc(P.id)}"><div class="vt-q">${esc(P.domanda)}</div><div class="vt-b">${[["a",P.a],["b",P.b],["n","Non so"]].map(([k,l])=>`<button type="button" class="vc-${k}" data-vt="${k}" aria-pressed="${m===k}">${esc(l)}</button>`).join("")}</div><div class="vt-r">${vtRes(P)}</div>${m?"":`<p class="vt-note">Anonimo: contiamo solo i voti, non chi vota.</p>`}</div>`}
+function vtFill(){const P=pollFor(S.briefings[0]);if(!P)return;document.querySelectorAll('.vt[data-poll="'+P.id+'"]').forEach(el=>{const m=vtMine(P.id);el.querySelectorAll("[data-vt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vt===m)));el.querySelector(".vt-r").innerHTML=vtRes(P);const n=el.querySelector(":scope>.vt-note");if(n&&m)n.remove()})}
+let VT_LOAD="";function vtLoad(){if(typeof RG_API==="undefined")return;const ids=[pollFor(S.briefings[0]),pollFor(S.briefings[1])].filter(Boolean).map(p=>p.id);const k=ids.join(",");if(!k||k===VT_LOAD)return;VT_LOAD=k;
+  fetch(RG_API+"/api/votes?p="+encodeURIComponent(k)).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.polls)return;Object.assign(S.votes,j.polls);vtFill();if(j.polls[ids[1]]&&j.polls[ids[1]].tot)schedule()}).catch(()=>{})}
+function vtRow(b){if(!S.briefings[0]||b!==S.briefings[0])return null;const P=pollFor(S.briefings[1]);const c=P&&S.votes[P.id];if(!c||!c.tot)return null;const s=S.stories[P.sid];
+  const pa=Math.round(100*c.a/c.tot),pb=Math.round(100*c.b/c.tot);
+  return {k:"lettori",i:"👥",t:"I lettori · ieri",sum:esc(`${s?clip(s.titolo,48)+": ":""}${pa}% «${P.a}», ${pb}% «${P.b}»`),body:`<div class="vt vt-y"><div class="vt-q">${esc(P.domanda)}${s?` · <button class="linkbtn" data-story="${esc(s.id)}">${esc(clip(s.titolo,70))}</button>`:""}</div><p class="vt-t">${c.tot} voti</p>${vtBar(c,P)}<p class="vt-note">Non è un sondaggio rappresentativo: dice cosa pensa chi legge Read, non gli italiani.</p></div>`}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-vt]");if(!b)return;const el=b.closest(".vt[data-poll]");if(!el)return;const id=el.dataset.poll,ch=b.dataset.vt,dev=vtDev();if(!dev)return;
+  try{const o=JSON.parse(localStorage.getItem("rg-vt")||"{}")||{};o[id]=ch;localStorage.setItem("rg-vt",JSON.stringify(o))}catch(_){}
+  vtFill();fetch(RG_API+"/api/vote",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({poll:id,choice:ch,dev})}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j[id]){S.votes[id]=j[id];vtFill()}}).catch(()=>{});try{track("voto-tesi")}catch(_){}});
+{const st=document.createElement("style");st.textContent=`.vt{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.vt.vt-y{border:0;margin:0;padding:0}.vt-q{font-size:14px;font-weight:600;margin-bottom:8px}
+.vt-b{display:flex;gap:8px;flex-wrap:wrap}.vt-b button{flex:1 1 0;min-width:0;font:600 13px/1.3 var(--sans);padding:8px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;text-align:center}
+.vt-b .vc-a{border-color:color-mix(in srgb,var(--amb-eco) 55%,transparent)}.vt-b .vc-b{border-color:color-mix(in srgb,var(--amb-soc) 55%,transparent)}.vt-b .vc-n{flex:.6;color:var(--muted)}
+.vt-b button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.vt-r:empty{display:none}.vt-r{margin-top:10px}.vt-t{font-size:12.5px;color:var(--muted);margin:0 0 6px}.vt-bar{display:flex;height:24px;border-radius:7px;overflow:hidden;font:600 12px var(--sans)}.vt-bar i{display:flex;align-items:center;padding:0 8px;font-style:normal;color:#0E151B;min-width:0}.vt-bar i.vn{background:var(--line);color:var(--ink)}
+.vt-lg{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}.vt-note{font-size:12px;color:var(--faint);margin:8px 0 0}`;document.head.appendChild(st)}
+{const _rb4=renderBriefing;renderBriefing=function(){const r=_rb4.apply(this,arguments);try{vtLoad();vtFill()}catch(e){}return r}}
 
 /* ---------- diversità delle fonti ---------- */
 const WEST=new Set("US CA GB IE FR DE IT ES PT NL BE LU AT CH DK SE NO FI IS PL CZ SK HU SI HR EE LV LT GR MT CY RO BG AU NZ VA SM MC LI AD".split(" "));

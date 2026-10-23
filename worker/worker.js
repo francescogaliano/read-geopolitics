@@ -1,6 +1,7 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v44: pannello, bozze: in alto solo quelle di oggi e quelle aperte; le altre in un archivio per mese e settimana, chiuso, che carica immagini e video solo quando apri un contenuto.
+// v46: /api/vote e /api/votes, voti anonimi dei lettori sulle due tesi della storia principale (conteggi visibili da 20 voti).
 // v45: Telegram «Nuovo dossier» quando /v1/batch riceve un dossier pronto che il sito non aveva (interruttore nel pannello).
 // v41: «Oggi sui canali» nel pannello (anteprima, modifica, stop per oggi). Canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
 // v43: pannello, pulsante «Copia» sotto ogni didascalia (Instagram, TikTok, Threads); «Oggi sui canali» apribile, chiuso di default, con riassunto degli orari.
@@ -2244,6 +2245,39 @@ async function tgDivergenza(env, force) {
   await kvSet(env, "tg_d:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
 }
+/* v46: voti anonimi dei lettori (quale tesi convince di più). Un voto per dispositivo (impronta del dispositivo cifrata), modificabile.
+   I conteggi si mostrano solo da VOTE_MIN voti in su: sotto la soglia l'API risponde solo «sotto soglia». */
+const VOTE_MIN = 20;
+const VOTE_RE = /^t:s-\d{8}-\d{2}$/;
+let VOTE_T = false;
+async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); VOTE_T = true; }
+async function voteCounts(env, polls) {
+  await voteTable(env); const out = {};
+  if (!polls.length) return out;
+  const { results } = await env.DB.prepare("SELECT poll, choice, COUNT(*) AS n FROM votes WHERE poll IN (" + polls.map((_, i) => "?" + (i + 1)).join(",") + ") GROUP BY poll, choice").bind(...polls).all();
+  for (const pl of polls) out[pl] = { a: 0, b: 0, n: 0 };
+  for (const r of results || []) if (out[r.poll] && r.choice in out[r.poll]) out[r.poll][r.choice] = r.n;
+  for (const pl of polls) { const c = out[pl], tot = c.a + c.b + c.n; out[pl] = tot >= VOTE_MIN ? { tot, a: c.a, b: c.b, n: c.n } : { sotto_soglia: true, min: VOTE_MIN }; }
+  return out;
+}
+async function voteApi(request, env) {
+  let b = null; try { b = JSON.parse((await request.text()).slice(0, 2000)); } catch (e) {}
+  const poll = String((b && b.poll) || ""), choice = String((b && b.choice) || ""), dev = String((b && b.dev) || "");
+  if (!VOTE_RE.test(poll) || !["a", "b", "n"].includes(choice) || !/^[A-Za-z0-9_-]{12,64}$/.test(dev)) return fail(422, "bad_vote");
+  const sid = poll.slice(2);
+  const st = await env.DB.prepare("SELECT published_at FROM docs WHERE type='stories' AND key=?1 AND status='published'").bind(sid).first();
+  if (!st) return fail(404, "no_story");
+  const day = sid.slice(2, 6) + "-" + sid.slice(6, 8) + "-" + sid.slice(8, 10);
+  if (Date.now() - Date.parse(day + "T00:00:00Z") > 3 * 86400000) return fail(410, "closed");
+  await voteTable(env);
+  const h = await sha256("rg-vote|" + dev);
+  await env.DB.prepare("INSERT INTO votes (poll, dev, choice, at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(poll, dev) DO UPDATE SET choice=?3, at=?4").bind(poll, h, choice, new Date().toISOString()).run();
+  return json({ ok: true, ...(await voteCounts(env, [poll])) }, 200, CORS);
+}
+async function votesApi(url, env) {
+  const polls = String(url.searchParams.get("p") || "").split(",").filter((x) => VOTE_RE.test(x)).slice(0, 10);
+  return json({ ok: true, polls: await voteCounts(env, polls) }, 200, { ...CORS, "cache-control": "public, max-age=60" });
+}
 async function tgDossier(env, id, d) { // v45: messaggio sul canale quando un dossier nuovo arriva sul sito
   const st = await tgSettings(env);
   if (!st.chat || !env.TG_BOT_TOKEN || st.dossier === false) return null;
@@ -2652,6 +2686,8 @@ async function route(request, env) {
   // ---------- LETTURE PUBBLICHE ----------
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
+  if (method === "POST" && p === "/api/vote") return await voteApi(request, env);
+  if (method === "GET" && p === "/api/votes") return await votesApi(url, env);
   if (method === "POST" && (p === "/api/me" || p === "/api/newsletter")) return await nlApi(request, env, p);
   if (method === "POST" && p === "/api/segui") return await seguiApi(request, env);
   if (method === "GET" && p === "/api/newsletter/esempio") {
