@@ -1,5 +1,6 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
+// v47: copia di ogni sondaggio accanto ai voti (tabella polls); pannello, Statistiche: «Voti dei lettori · solo per te» con i conteggi veri anche sotto soglia.
 // v44: pannello, bozze: in alto solo quelle di oggi e quelle aperte; le altre in un archivio per mese e settimana, chiuso, che carica immagini e video solo quando apri un contenuto.
 // v46: /api/vote e /api/votes, voti anonimi dei lettori sulle due tesi della storia principale (conteggi visibili da 20 voti).
 // v45: Telegram «Nuovo dossier» quando /v1/batch riceve un dossier pronto che il sito non aveva (interruttore nel pannello).
@@ -631,6 +632,7 @@ async function panelApi(env, origin, b) {
     return { ok: true, scelte: sc };
   }
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
+  if (act === "vote_stats") return { ok: true, v: await voteStats(env) };
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
@@ -798,6 +800,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:14px}.dr .ic{width:22px;height:22px;font-size:10.5px;border-radius:6px}.dr .st{font-size:12.5px;color:#8FA0AE}.dr a{font-size:13.5px;text-decoration:none}
 .sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
 .lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
+#st .vtd{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}#st .vtd div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8FA0AE}#st .vtd i{display:block;width:100%;background:#86B4EA;border-radius:3px 3px 1px 1px}#st .vti{display:grid;gap:6px;margin-top:12px;font-size:13px;color:#C9D4DC}#st .vti b{display:block;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase}#st .vtl{margin-top:12px;display:grid;gap:10px}#st .vtp{border-top:1px solid #27353F;padding-top:9px}#st .vth{display:flex;gap:8px;align-items:baseline;font-size:13.5px}#st .vth span{font:600 11px ui-monospace,monospace;color:#8FA0AE;flex:none}#st .vth b{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .vth em{font-style:normal;font-size:12px;color:#8FA0AE;flex:none}#st .vtb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:6px}#st .vtg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#8FA0AE;margin-top:5px}#st .vtg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 #st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
 #cnl .cit{border-top:1px solid #27353F;padding:11px 0 6px}#cnl .cit:first-of-type{margin-top:8px}#cnl .cih{display:flex;align-items:center;gap:8px}#cnl .cih b{flex:1;font-size:14.5px}#cnl .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px system-ui;background:#1E2A33;flex:none}#cnl .cp{font:600 11px ui-monospace,monospace;border-radius:999px;padding:2px 8px;white-space:nowrap}#cnl .cp.wait{color:#F2B84B;border:1px solid #5A4A22}#cnl .cp.ok{color:#7BD39A;border:1px solid #2F5F4B}#cnl .cp.no{color:#8FA0AE;border:1px solid #27353F}#cnl .cp.bad{color:#FF9A9A;border:1px solid #5A3434}#cnl .cpv{margin:8px 0 0 32px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.45;color:#DCE4EA}#cnl .cta{margin:8px 0 0 32px;width:calc(100% - 32px)}#cnl .cwh{margin:6px 0 2px 32px;font-size:12.5px;color:#8FA0AE}#cnl .cwh a{color:#86B4EA}#cnl .cac{display:flex;gap:8px;margin:8px 0 4px 32px}#cnl .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}#cnl .sm.d{color:#FF9A9A;border-color:#5A3434}
 </style>
@@ -1161,7 +1164,7 @@ function stLi(lab,n){return '<div class="li"><span>'+esc(lab)+'</span><span>'+st
 async function loadStats(force){const el=document.getElementById("st");el.innerHTML='<div class="card sub">Carico le statistiche da GoatCounter…</div>';
  const r=await api({action:"stats",days:STP,force:!!force});
  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche non disponibili</b><div class="err" style="margin-top:6px">'+esc(r.detail||r.error||"errore")+'</div>'+(r.error==="gc_missing"?'<div class="sub" style="margin-top:6px">In Cloudflare: rg-api → Settings → Variables and Secrets → aggiungi il secret GC_TOKEN con la chiave API di GoatCounter (permessi di sola lettura).</div>':'')+'</div>';return}
- stRender(r.stats)}
+ stRender(r.stats);vtStats()}
 function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
  if(W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
   h+='<div class="card pp"><div class="ppl">Il numero della settimana · nuovi iscritti</div><div class="ppb">'+cur.n+'<small>finora · settimana dal '+fd(cur.da)+'</small></div><div class="ppw">'+W.map((w,i)=>'<div class="'+(i===W.length-1?'cur':'')+'"><b>'+w.n+'</b><i style="height:'+Math.max(3,Math.round(w.n/mx*80))+'px"></i>dal '+fd(w.da)+'</div>').join("")+'</div>'+(F.length?'<div class="ppi">Da dove sono arrivati '+(cur.n?'questa settimana':'la settimana scorsa')+': '+F.slice(0,4).map((x,i)=>i?esc(x.name)+' '+x.n:'<b>'+esc(x.name)+' '+x.n+'</b>').join(" · ")+'</div>':'')+'</div>'}
@@ -1170,6 +1173,18 @@ function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/
  const I=s.iscritti;if(I&&I.tot){const ft=Math.max(1,I.f1+I.f2+I.f4);
   h+='<div class="card pp"><div class="ppl">Iscritti · chi è entrato con l&#39;email</div><div class="ppt"><div><b>'+stN(I.tot)+'</b><span>in tutto</span></div><div><b>'+stN(I.att)+'</b><span>passati in '+s.days+' gg</span></div><div><b class="dw">'+stN(I.spar)+'</b><span>spariti 14+ gg</span></div></div><div class="pps" style="margin-top:12px">Quanti giorni sono venuti, da quando sono iscritti</div><div class="ppbar"><i style="flex:'+I.f1+';background:#3A5A7A"></i><i style="flex:'+I.f2+';background:#86B4EA"></i><i style="flex:'+I.f4+';background:#F2B84B"></i></div><div class="ppg"><span><i style="background:#3A5A7A"></i>1 giorno · '+I.f1+'</span><span><i style="background:#86B4EA"></i>2–3 giorni · '+I.f2+'</span><span><i style="background:#F2B84B"></i>4 o più · '+I.f4+'</span></div>'+(I.f1*2>ft?'<div class="ppi">Più di metà degli iscritti è venuta <b>un giorno solo</b>: l&#39;email del mattino è il modo per riportarli.</div>':I.torn?'<div class="ppi"><b>'+I.torn+'</b> iscritti di prima sono tornati negli ultimi '+s.days+' giorni.</div>':'')+'</div>'}
  return h}
+async function vtStats(){const el=document.getElementById("st");if(!el)return;const r=await api({action:"vote_stats"});if(!r.ok||!r.v)return;const V=r.v;
+ const fd=d=>(+String(d).slice(8,10))+"/"+(+String(d).slice(5,7));const pc=(x,t)=>t?Math.round(100*x/t):0;
+ let h='<div class="card pp vts"><div class="ppl">Voti dei lettori · solo per te</div>';
+ if(!V.voti){h+='<div class="sub" style="margin-top:8px">Ancora nessun voto. Il primo sondaggio è sotto le due posizioni della storia principale del giorno.</div></div>'}
+ else{h+='<div class="ppt"><div><b>'+stN(V.voti)+'</b><span>voti</span></div><div><b>'+stN(V.dispositivi)+'</b><span>dispositivi diversi</span></div><div><b>'+stN(V.ricorrenti)+'</b><span>hanno votato 2+ volte</span></div></div>';
+  const G=V.giorni||[];if(G.length){const mx=Math.max(1,...G.map(g=>g.n));h+='<div class="vtd">'+G.map(g=>'<div title="'+fd(g.g)+': '+g.n+' voti"><i style="height:'+Math.max(3,Math.round(46*g.n/mx))+'px"></i><span>'+fd(g.g)+'</span></div>').join("")+'</div>'}
+  const L=(V.polls||[]).filter(p=>p.tot>0);
+  if(L.length>=2){const div=L.filter(p=>p.a+p.b>0).map(p=>({p,m:Math.abs(p.a-p.b)/(p.a+p.b)})).sort((x,y)=>x.m-y.m);const nso=Math.round(L.reduce((s,p)=>s+pc(p.n,p.tot),0)/L.length);const wa=L.filter(p=>p.a>p.b).length,wb=L.filter(p=>p.b>p.a).length;
+   h+='<div class="vti"><div><b>Più divisa</b>'+(div[0]?esc(div[0].p.titolo||div[0].p.storia_id)+' · '+pc(div[0].p.a,div[0].p.tot)+'% contro '+pc(div[0].p.b,div[0].p.tot)+'%':'—')+'</div><div><b>Più netta</b>'+(div.length>1?esc(div[div.length-1].p.titolo||div[div.length-1].p.storia_id)+' · '+pc(Math.max(div[div.length-1].p.a,div[div.length-1].p.b),div[div.length-1].p.tot)+'% da una parte':'—')+'</div><div><b>«Non so» in media</b>'+nso+'%</div><div><b>Maggioranza</b>con la prima tesi in '+wa+' sondaggi, con la seconda in '+wb+'</div></div>'}
+  h+='<div class="vtl">'+(V.polls||[]).map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.data||"")+'</span><b>'+esc(p.titolo||p.storia_id||p.poll)+'</b><em>'+p.tot+' voti'+(p.tot<V.min?' · sotto soglia sul sito':'')+'</em></div>'+(p.tot?'<div class="vtb"><i style="flex:'+(p.a||0.001)+';background:#6FCB9F"></i><i style="flex:'+(p.b||0.001)+';background:#E891B3"></i><i style="flex:'+(p.n||0.001)+';background:#3A4A57"></i></div>':'')+'<div class="vtg"><span><i style="background:#6FCB9F"></i>'+esc(p.la||"Tesi A")+' · '+p.a+'</span><span><i style="background:#E891B3"></i>'+esc(p.lb||"Tesi B")+' · '+p.b+'</span><span>Non so '+p.n+'</span></div></div>').join("")+'</div>';
+  h+='<div class="sub" style="margin-top:10px">Tutti i voti, anche sotto i '+V.min+' che servono per mostrarli sul sito. Voti anonimi: un codice casuale per dispositivo, mai collegato all&#39;email. Le previsioni dei lettori si aggiungeranno qui.</div></div>'}
+ const last=[...el.querySelectorAll(".card.pp")].pop();if(last)last.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h)}
 function stRender(s){const el=document.getElementById("st");const E=s.events||{};const ev=k=>E[k]||0;
  const ch=s.prev_visits?Math.round((s.visits-s.prev_visits)/s.prev_visits*100):null;
  const dn=["dom","lun","mar","mer","gio","ven","sab"];
@@ -2250,7 +2265,27 @@ async function tgDivergenza(env, force) {
 const VOTE_MIN = 20;
 const VOTE_RE = /^t:s-\d{8}-\d{2}$/;
 let VOTE_T = false;
-async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); VOTE_T = true; }
+async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); await env.DB.prepare("CREATE TABLE IF NOT EXISTS polls (poll TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT NOT NULL)").run(); VOTE_T = true; }
+async function pollSnap(env, poll, sid, day) { // copia del sondaggio accanto ai voti: domanda, etichette, titolo e tesi della storia
+  if (await env.DB.prepare("SELECT 1 FROM polls WHERE poll=?1").bind(poll).first()) return;
+  const sd = await env.DB.prepare("SELECT data FROM docs WHERE type='stories' AND key=?1").bind(sid).first();
+  const bd = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1").bind(day).first();
+  let s = {}, b = {}; try { s = unpack(sd) || {}; } catch (e) {} try { b = unpack(bd) || {}; } catch (e) {}
+  const so = (b.sondaggio && b.sondaggio.storia_id === sid) ? b.sondaggio : {};
+  const snap = { tipo: "tesi", data: day, storia_id: sid, titolo: s.titolo || "", domanda: so.domanda || "Quale tesi ti convince di più?", a: so.a || "Chi sostiene", b: so.b || "Chi si oppone", tesi_a: (s.pro && s.pro.tesi) || "", tesi_b: (s.contro && s.contro.tesi) || "", attori_a: (s.pro && s.pro.attori) || "", attori_b: (s.contro && s.contro.attori) || "", paesi: s.paesi || [], filone_id: s.filone_id || "" };
+  await env.DB.prepare("INSERT OR IGNORE INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3)").bind(poll, JSON.stringify(snap), new Date().toISOString()).run();
+}
+async function voteStats(env) { // per il pannello: tutti i sondaggi con i conteggi veri (anche sotto soglia) e qualche misura aggregata
+  await voteTable(env);
+  const P = (await env.DB.prepare("SELECT poll, data, created_at FROM polls ORDER BY poll DESC LIMIT 90").all()).results || [];
+  const C = (await env.DB.prepare("SELECT poll, choice, COUNT(*) AS n FROM votes GROUP BY poll, choice").all()).results || [];
+  const T = await env.DB.prepare("SELECT COUNT(*) AS v, COUNT(DISTINCT dev) AS d FROM votes").first();
+  const R2 = await env.DB.prepare("SELECT COUNT(*) AS n FROM (SELECT dev FROM votes GROUP BY dev HAVING COUNT(DISTINCT poll) >= 2)").first();
+  const G = (await env.DB.prepare("SELECT substr(at,1,10) AS g, COUNT(*) AS n FROM votes WHERE at >= ?1 GROUP BY g ORDER BY g").bind(new Date(Date.now() - 14 * 86400000).toISOString()).all()).results || [];
+  const cnt = {}; for (const r of C) { (cnt[r.poll] ||= { a: 0, b: 0, n: 0 })[r.choice] = r.n; }
+  const polls = P.map((r) => { let d = {}; try { d = JSON.parse(r.data); } catch (e) {} const c = cnt[r.poll] || { a: 0, b: 0, n: 0 }; return { poll: r.poll, ...d, la: d.a, lb: d.b, ...c, tot: c.a + c.b + c.n }; });
+  return { min: VOTE_MIN, voti: (T && T.v) || 0, dispositivi: (T && T.d) || 0, ricorrenti: (R2 && R2.n) || 0, giorni: G, polls };
+}
 async function voteCounts(env, polls) {
   await voteTable(env); const out = {};
   if (!polls.length) return out;
@@ -2270,6 +2305,7 @@ async function voteApi(request, env) {
   const day = sid.slice(2, 6) + "-" + sid.slice(6, 8) + "-" + sid.slice(8, 10);
   if (Date.now() - Date.parse(day + "T00:00:00Z") > 3 * 86400000) return fail(410, "closed");
   await voteTable(env);
+  await pollSnap(env, poll, sid, day);
   const h = await sha256("rg-vote|" + dev);
   await env.DB.prepare("INSERT INTO votes (poll, dev, choice, at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(poll, dev) DO UPDATE SET choice=?3, at=?4").bind(poll, h, choice, new Date().toISOString()).run();
   return json({ ok: true, ...(await voteCounts(env, [poll])) }, 200, CORS);

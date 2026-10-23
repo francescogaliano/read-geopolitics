@@ -478,7 +478,7 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .scm-bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
 .scm-more{display:block;font-size:12.5px;color:var(--accent);margin-top:8px}
 .tl-scen[open] .scm-more{display:none}
-.tl-scen[open]>summary{display:none}
+.tl-scen[open]>summary{padding:8px 14px 0;text-align:right}.tl-scen[open]>summary>:not(.scm-x){display:none}.tl-scen .scm-x{display:none;font-size:12.5px;color:var(--accent);font-weight:600}.tl-scen[open] .scm-x{display:inline}
 .tl-scen .scen{border:0;background:transparent}
 .tl-more{display:block;background:none;border:1px dashed var(--line);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;color:var(--accent);cursor:pointer;margin:0 0 10px;width:100%;text-align:left}
 .tl-month{margin:0 0 6px}
@@ -2453,7 +2453,7 @@ function agFlag(a){const p=(a.paesi||[]).filter(x=>/^[A-Z]{3}$/.test(x));if(p.le
 function srcA(f){return f&&f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome||"fonte")} ↗</a>${f.raggiunta===false?' <span class="muted">(data da confermare)</span>':""}`:""}
 function scenMiniHTML(t){const sc=t&&t.scenari;if(!sc||!(sc.voci||[]).length||sc.stato==="chiuso")return"";
   const v=sc.voci.slice().sort((a,b)=>b.prob-a.prob);
-  return `<details class="tl-scen"><summary><span class="scm-h"><span class="ic" aria-hidden="true">📊</span>Come può andare${sc.orizzonte?` entro il ${esc(fmtDM(sc.orizzonte))}`:""}<small>stima dell'agente, non un fatto</small></span>${v.map(x=>`<span class="scm-r">${esc(x.titolo)} ·<b>${esc(x.prob)}%</b><span class="scm-bar"><i style="width:${Math.max(0,Math.min(100,+x.prob||0))}%"></i></span></span>`).join("")}<span class="scm-more">Tocca per la domanda, i motivi e le fonti ›</span></summary>${scenariHTML(t)}</details>`}
+  return `<details class="tl-scen"><summary><span class="scm-h"><span class="ic" aria-hidden="true">📊</span>Come può andare${sc.orizzonte?` entro il ${esc(fmtDM(sc.orizzonte))}`:""}<small>stima dell'agente, non un fatto</small></span>${v.map(x=>`<span class="scm-r">${esc(x.titolo)} ·<b>${esc(x.prob)}%</b><span class="scm-bar"><i style="width:${Math.max(0,Math.min(100,+x.prob||0))}%"></i></span></span>`).join("")}<span class="scm-more">Tocca per la domanda, i motivi e le fonti ›</span><span class="scm-x">Chiudi ▴</span></summary>${scenariHTML(t)}</details>`}
 function yr(q){const m=String(q||"").match(/\d{4}/g);return m?m[m.length-1]:String(q||"")}
 function dShort(iso){const d=new Date(iso+"T12:00:00");return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}${d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():""}`}
 function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.events.forEach(e=>byId[e.id]=e);
