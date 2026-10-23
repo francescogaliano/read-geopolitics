@@ -5346,6 +5346,8 @@ const st=document.createElement("style");st.textContent=`.pod-bar{display:flex;f
 })();
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
+/* link diretto a un dossier (es. dal canale Telegram): #dossier=<id>. I dossier arrivano con l'ultimo blocco dei dati: aspetta fino a 20 s. */
+{const m=/^#dossier=([A-Za-z0-9_.~-]+)$/.exec(location.hash||"");if(m){const id=decodeURIComponent(m[1]);let n=0;const tick=()=>{if(S.dossier&&S.dossier[id]&&S.dossier[id].stato==="pronto"){try{openDossier(id)}catch(e){}return}if(++n<40)setTimeout(tick,500)};setTimeout(tick,600)}}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
 setTimeout(()=>{try{updNav()}catch(_){}},0);
 /* ---------- Archivio ridisegnato: prima la ricerca, poi i giorni con dentro le notizie, poi «Da rileggere» ---------- */

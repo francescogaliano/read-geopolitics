@@ -1,6 +1,7 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v44: pannello, bozze: in alto solo quelle di oggi e quelle aperte; le altre in un archivio per mese e settimana, chiuso, che carica immagini e video solo quando apri un contenuto.
+// v45: Telegram «Nuovo dossier» quando /v1/batch riceve un dossier pronto che il sito non aveva (interruttore nel pannello).
 // v41: «Oggi sui canali» nel pannello (anteprima, modifica, stop per oggi). Canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
 // v43: pannello, pulsante «Copia» sotto ogni didascalia (Instagram, TikTok, Threads); «Oggi sui canali» apribile, chiuso di default, con riassunto degli orari.
 // v40: etichette delle statistiche per il sito installabile (app-*).
@@ -818,7 +819,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <details class="chr" id="tgc"><summary><span class="ic">TG</span><div class="cht"><b>Telegram</b><div class="s"><span class="dot" id="tgdot"></span><span id="tgs">carico…</span></div></div><span class="tg" id="tgtag"></span></summary>
 <div class="set"><div class="row"><span>Canale</span><input id="tgchat" placeholder="@readgeopolitics" style="max-width:180px"></div>
 <label><input type="checkbox" id="tgm"> ogni mattina: 60 secondi e puntata, alle <input type="time" id="tgora" value="08:00" style="width:auto"></label>
-<label><input type="checkbox" id="tgp"> anche i post di Instagram, quando escono</label> <label><input type="checkbox" id="tgdv"> «Le fonti non sono d&#39;accordo», alle 12:30, solo nei giorni in cui c&#39;è una divergenza vera</label> <label><input type="checkbox" id="tgbl"> «Com&#39;è andata», la domenica alle 18: il bilancio dei segnali della settimana</label>
+<label><input type="checkbox" id="tgp"> anche i post di Instagram, quando escono</label> <label><input type="checkbox" id="tgdv"> «Le fonti non sono d&#39;accordo», alle 12:30, solo nei giorni in cui c&#39;è una divergenza vera</label> <label><input type="checkbox" id="tgbl"> «Com&#39;è andata», la domenica alle 18: il bilancio dei segnali della settimana</label> <label><input type="checkbox" id="tgdz"> il nuovo dossier, appena è sul sito</label>
 <div class="row"><button class="g" id="tgsv" type="button">Salva</button><button class="g" id="tgnow" type="button">Invia ora il mattino</button></div><div class="sub" id="tgmsg"></div></div></details>
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
@@ -981,7 +982,7 @@ function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},
  const ta=!!(T.settings&&T.settings.auto);g("tttag").textContent=T.collegato?(ta?"auto dopo IG":"manuale"):"";g("tttag").className="tg"+(ta?"":" off");
  const G=d.telegram||{},GS=G.settings||{};g("tgdot").className="dot "+(!G.configurato||!GS.chat?"y":G.errore?"r":"g");g("tgs").textContent=!G.configurato?"manca TG_BOT_TOKEN nel Worker":!GS.chat?"canale da impostare":GS.chat+(G.oggi?" · mattino inviato":"")+(G.errore?" · errore: "+G.errore:"");if(G.errore)iss.push("Telegram");
  g("tgtag").textContent=G.configurato&&GS.chat?(GS.mattino?"mattino "+GS.ora:"")+(GS.post?(GS.mattino?" + post":"post"):""):"";g("tgtag").className="tg";
- if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post;g("tgdv").checked=GS.divergenze!==false;g("tgbl").checked=GS.bilancio!==false}
+ if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post;g("tgdv").checked=GS.divergenze!==false;g("tgbl").checked=GS.bilancio!==false;g("tgdz").checked=GS.dossier!==false}
  g("thdot").className="dot "+(!H.collegato?"y":H.scaduto?"r":"g");if(H.scaduto)iss.push("Threads da ricollegare");
  const ha=!!(H.settings&&H.settings.auto);g("thtag").textContent=H.collegato?(ha?"auto dopo IG":"manuale"):"";g("thtag").className="tg"+(ha?"":" off");
  const f=S.formats.daily||{};g("ussum").textContent=(S.paused?"in pausa · ":"")+(f.mode==="auto"?"pubblica da solo":"chiedi approvazione")+" · alle "+(f.time||"");g("usd").className="dot "+(S.paused?"y":"g");if(S.paused)iss.push("pubblicazione in pausa");
@@ -1138,7 +1139,7 @@ document.getElementById("usc").onclick=()=>{
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
 document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!confirm("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
-document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
+document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked,dossier:document.getElementById("tgdz").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
 document.getElementById("tgnow").onclick=async e=>{if(!confirm("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
 document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
 document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
@@ -2153,7 +2154,7 @@ async function thPanelApi(env, b) {
 // ============ TELEGRAM (v33): canale con il mattino (60 secondi + puntata) e i post di Instagram ============
 // Secret TG_BOT_TOKEN (da @BotFather). Il bot è amministratore del canale; il nome del canale (@...) si imposta dal pannello.
 const RG_ORIGIN = "https://rg-api.briefinghub.workers.dev";
-const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", bilancio: true, ora_bil: "18:00" };
+const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", bilancio: true, ora_bil: "18:00", dossier: true };
 async function tgSettings(env) { return { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; }
 async function tgCall(env, method, body) {
   if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
@@ -2241,6 +2242,19 @@ async function tgDivergenza(env, force) {
   msg += "\n\n<a href=\"" + link + "\">La storia con tutte le fonti</a>";
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
   await kvSet(env, "tg_d:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
+  return { ok: true };
+}
+async function tgDossier(env, id, d) { // v45: messaggio sul canale quando un dossier nuovo arriva sul sito
+  const st = await tgSettings(env);
+  if (!st.chat || !env.TG_BOT_TOKEN || st.dossier === false) return null;
+  if (await kvGet(env, "tg_dz:" + id)) return null;
+  const lead = String(d.in_breve || "").replace(/\s*\[\d+\]/g, "").replace(/\s+/g, " ").trim();
+  const link = "https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=dossier#dossier=" + encodeURIComponent(id);
+  let msg = "<b>🧭 Nuovo dossier · " + esc(tgClip(d.titolo || "", 120)) + "</b>\n\n" + esc(tgClip(lead, 420));
+  msg += "\n\nDa dove nasce, chi sono gli attori e cosa vogliono, le versioni a confronto, i numeri, gli scenari.";
+  msg += "\n\n<a href=\"" + link + "\">Leggi il dossier</a>";
+  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
+  await kvSet(env, "tg_dz:" + id, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
 }
 async function bilancioData(env, day) { // i segnali risolti nella settimana (dalle «verifiche» quotidiane dei briefing)
@@ -2351,6 +2365,7 @@ async function tgPanelApi(env, b) {
     if (typeof b.post === "boolean") cur.post = b.post;
     if (typeof b.divergenze === "boolean") cur.divergenze = b.divergenze;
     if (typeof b.bilancio === "boolean") cur.bilancio = b.bilancio;
+    if (typeof b.dossier === "boolean") cur.dossier = b.dossier;
     if (/^\d{2}:\d{2}$/.test(b.ora || "")) cur.ora = b.ora;
     await kvSet(env, "tg_settings", cur);
     return { ok: true, telegram: await tgPanelInfo(env) };
@@ -2795,7 +2810,18 @@ async function route(request, env) {
           return fail(422, "bad_item", "ogni elemento: {type,key,data:{...}}");
         checkTypeKey(it.type, it.key);
       }
-      return json({ ok: true, ...(await putMany(env, items)) });
+      const dz = items.filter((it) => it.type === "dossier" && it.data.stato === "pronto");
+      let nuovi = [];
+      if (dz.length) {
+        const ph = dz.map((_, i) => "?" + (i + 1)).join(",");
+        const { results } = await env.DB.prepare("SELECT key FROM docs WHERE type='dossier' AND key IN (" + ph + ")").bind(...dz.map((x) => x.key)).all();
+        const ex = new Set((results || []).map((r) => r.key));
+        nuovi = dz.filter((x) => !ex.has(x.key));
+      }
+      const out = await putMany(env, items);
+      let tg_dossier = null;
+      for (const x of nuovi) { try { tg_dossier = await tgDossier(env, x.key, x.data); } catch (e) { tg_dossier = { ok: false, error: String(e && e.message || e) }; } }
+      return json({ ok: true, ...out, ...(nuovi.length ? { dossier_nuovi: nuovi.map((x) => x.key), tg_dossier } : {}) });
     }
 
     m = p.match(/^\/v1\/doc\/([^/]+)\/([^/]+)(\/archive)?$/);
