@@ -1,5 +1,7 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
+// v48: esito degli scenari: /v1/batch salva esito e probabilità accanto ai voti (polls); «Com'è andata» con gli scenari chiusi; pannello «Chi ci ha preso».
+// v47: previsioni dei lettori (g: sì/no sui segnali, c: scelta dello scenario) oltre alle tesi; copia di ogni sondaggio (tabella polls); pannello «Voti dei lettori · solo per te»; «Com'è andata» con la percentuale dei lettori.
 // v44: pannello, bozze: in alto solo quelle di oggi e quelle aperte; le altre in un archivio per mese e settimana, chiuso, che carica immagini e video solo quando apri un contenuto.
 // v46: /api/vote e /api/votes, voti anonimi dei lettori sulle due tesi della storia principale (conteggi visibili da 20 voti).
 // v45: Telegram «Nuovo dossier» quando /v1/batch riceve un dossier pronto che il sito non aveva (interruttore nel pannello).
@@ -631,6 +633,7 @@ async function panelApi(env, origin, b) {
     return { ok: true, scelte: sc };
   }
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
+  if (act === "vote_stats") return { ok: true, v: await voteStats(env) };
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
@@ -798,6 +801,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dr{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:14px}.dr .ic{width:22px;height:22px;font-size:10.5px;border-radius:6px}.dr .st{font-size:12.5px;color:#8FA0AE}.dr a{font-size:13.5px;text-decoration:none}
 .sm{border:1px solid #3A4C5C;background:transparent;color:#E4EAEF;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
 .lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
+#st .vtd{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}#st .vtd div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8FA0AE}#st .vtd i{display:block;width:100%;background:#86B4EA;border-radius:3px 3px 1px 1px}#st .vti{display:grid;gap:6px;margin-top:12px;font-size:13px;color:#C9D4DC}#st .vti b{display:block;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase}#st .vtl{margin-top:8px;display:grid;gap:10px}#st .vtk{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase;margin-top:16px}#st .vts2{display:grid;gap:4px;margin-top:6px;font-size:12.5px}#st .vts2 div{display:grid;grid-template-columns:1fr auto auto;gap:10px}#st .vts2 b{font-weight:600;color:#86B4EA}#st .vts2 em{font-style:normal;color:#8FA0AE}#st .vtp{border-top:1px solid #27353F;padding-top:9px;min-width:0}#st .vth{display:flex;gap:8px;align-items:baseline;font-size:13.5px}#st .vth span{font:600 11px ui-monospace,monospace;color:#8FA0AE;flex:none}#st .vth b{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .vth em{font-style:normal;font-size:12px;color:#8FA0AE;flex:none}#st .vtb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:6px}#st .vtg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#8FA0AE;margin-top:5px}#st .vtg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 #st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
 #cnl .cit{border-top:1px solid #27353F;padding:11px 0 6px}#cnl .cit:first-of-type{margin-top:8px}#cnl .cih{display:flex;align-items:center;gap:8px}#cnl .cih b{flex:1;font-size:14.5px}#cnl .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px system-ui;background:#1E2A33;flex:none}#cnl .cp{font:600 11px ui-monospace,monospace;border-radius:999px;padding:2px 8px;white-space:nowrap}#cnl .cp.wait{color:#F2B84B;border:1px solid #5A4A22}#cnl .cp.ok{color:#7BD39A;border:1px solid #2F5F4B}#cnl .cp.no{color:#8FA0AE;border:1px solid #27353F}#cnl .cp.bad{color:#FF9A9A;border:1px solid #5A3434}#cnl .cpv{margin:8px 0 0 32px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.45;color:#DCE4EA}#cnl .cta{margin:8px 0 0 32px;width:calc(100% - 32px)}#cnl .cwh{margin:6px 0 2px 32px;font-size:12.5px;color:#8FA0AE}#cnl .cwh a{color:#86B4EA}#cnl .cac{display:flex;gap:8px;margin:8px 0 4px 32px}#cnl .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}#cnl .sm.d{color:#FF9A9A;border-color:#5A3434}
 </style>
@@ -1161,7 +1165,7 @@ function stLi(lab,n){return '<div class="li"><span>'+esc(lab)+'</span><span>'+st
 async function loadStats(force){const el=document.getElementById("st");el.innerHTML='<div class="card sub">Carico le statistiche da GoatCounter…</div>';
  const r=await api({action:"stats",days:STP,force:!!force});
  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche non disponibili</b><div class="err" style="margin-top:6px">'+esc(r.detail||r.error||"errore")+'</div>'+(r.error==="gc_missing"?'<div class="sub" style="margin-top:6px">In Cloudflare: rg-api → Settings → Variables and Secrets → aggiungi il secret GC_TOKEN con la chiave API di GoatCounter (permessi di sola lettura).</div>':'')+'</div>';return}
- stRender(r.stats)}
+ stRender(r.stats);vtStats()}
 function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
  if(W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
   h+='<div class="card pp"><div class="ppl">Il numero della settimana · nuovi iscritti</div><div class="ppb">'+cur.n+'<small>finora · settimana dal '+fd(cur.da)+'</small></div><div class="ppw">'+W.map((w,i)=>'<div class="'+(i===W.length-1?'cur':'')+'"><b>'+w.n+'</b><i style="height:'+Math.max(3,Math.round(w.n/mx*80))+'px"></i>dal '+fd(w.da)+'</div>').join("")+'</div>'+(F.length?'<div class="ppi">Da dove sono arrivati '+(cur.n?'questa settimana':'la settimana scorsa')+': '+F.slice(0,4).map((x,i)=>i?esc(x.name)+' '+x.n:'<b>'+esc(x.name)+' '+x.n+'</b>').join(" · ")+'</div>':'')+'</div>'}
@@ -1170,6 +1174,23 @@ function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/
  const I=s.iscritti;if(I&&I.tot){const ft=Math.max(1,I.f1+I.f2+I.f4);
   h+='<div class="card pp"><div class="ppl">Iscritti · chi è entrato con l&#39;email</div><div class="ppt"><div><b>'+stN(I.tot)+'</b><span>in tutto</span></div><div><b>'+stN(I.att)+'</b><span>passati in '+s.days+' gg</span></div><div><b class="dw">'+stN(I.spar)+'</b><span>spariti 14+ gg</span></div></div><div class="pps" style="margin-top:12px">Quanti giorni sono venuti, da quando sono iscritti</div><div class="ppbar"><i style="flex:'+I.f1+';background:#3A5A7A"></i><i style="flex:'+I.f2+';background:#86B4EA"></i><i style="flex:'+I.f4+';background:#F2B84B"></i></div><div class="ppg"><span><i style="background:#3A5A7A"></i>1 giorno · '+I.f1+'</span><span><i style="background:#86B4EA"></i>2–3 giorni · '+I.f2+'</span><span><i style="background:#F2B84B"></i>4 o più · '+I.f4+'</span></div>'+(I.f1*2>ft?'<div class="ppi">Più di metà degli iscritti è venuta <b>un giorno solo</b>: l&#39;email del mattino è il modo per riportarli.</div>':I.torn?'<div class="ppi"><b>'+I.torn+'</b> iscritti di prima sono tornati negli ultimi '+s.days+' giorni.</div>':'')+'</div>'}
  return h}
+async function vtStats(){const el=document.getElementById("st");if(!el)return;const r=await api({action:"vote_stats"});if(!r.ok||!r.v)return;const V=r.v;
+ const fd=d=>(+String(d).slice(8,10))+"/"+(+String(d).slice(5,7));const pc=(x,t)=>t?Math.round(100*x/t):0;
+ let h='<div class="card pp vts"><div class="ppl">Voti dei lettori · solo per te</div>';
+ if(!V.voti){h+='<div class="sub" style="margin-top:8px">Ancora nessun voto. Il primo sondaggio è sotto le due posizioni della storia principale del giorno.</div></div>'}
+ else{h+='<div class="ppt"><div><b>'+stN(V.voti)+'</b><span>voti</span></div><div><b>'+stN(V.dispositivi)+'</b><span>dispositivi diversi</span></div><div><b>'+stN(V.ricorrenti)+'</b><span>hanno votato 2+ volte</span></div></div>';
+  const G=V.giorni||[];if(G.length){const mx=Math.max(1,...G.map(g=>g.n));h+='<div class="vtd">'+G.map(g=>'<div title="'+fd(g.g)+': '+g.n+' voti"><i style="height:'+Math.max(3,Math.round(46*g.n/mx))+'px"></i><span>'+fd(g.g)+'</span></div>').join("")+'</div>'}
+  const L=(V.polls||[]).filter(p=>p.tot>0&&(p.tipo||"tesi")==="tesi");
+  if(L.length>=2){const div=L.filter(p=>p.a+p.b>0).map(p=>({p,m:Math.abs(p.a-p.b)/(p.a+p.b)})).sort((x,y)=>x.m-y.m);const nso=Math.round(L.reduce((s,p)=>s+pc(p.n,p.tot),0)/L.length);const wa=L.filter(p=>p.a>p.b).length,wb=L.filter(p=>p.b>p.a).length;
+   h+='<div class="vti"><div><b>Più divisa</b>'+(div[0]?esc(div[0].p.titolo||div[0].p.storia_id)+' · '+pc(div[0].p.a,div[0].p.tot)+'% contro '+pc(div[0].p.b,div[0].p.tot)+'%':'—')+'</div><div><b>Più netta</b>'+(div.length>1?esc(div[div.length-1].p.titolo||div[div.length-1].p.storia_id)+' · '+pc(Math.max(div[div.length-1].p.a,div[div.length-1].p.b),div[div.length-1].p.tot)+'% da una parte':'—')+'</div><div><b>«Non so» in media</b>'+nso+'%</div><div><b>Maggioranza</b>con la prima tesi in '+wa+' sondaggi, con la seconda in '+wb+'</div></div>'}
+  const PT=(V.polls||[]).filter(p=>(p.tipo||"tesi")==="tesi"),PG=(V.polls||[]).filter(p=>p.tipo==="segnale"),PC=(V.polls||[]).filter(p=>p.tipo==="scenario");
+  if(PT.length)h+='<div class="vtk">Quale tesi convince</div><div class="vtl">'+PT.map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.data||"")+'</span><b>'+esc(p.titolo||p.storia_id||p.poll)+'</b><em>'+p.tot+' voti'+(p.tot<V.min?' · sotto soglia sul sito':'')+'</em></div>'+(p.tot?'<div class="vtb"><i style="flex:'+(p.a||0.001)+';background:#6FCB9F"></i><i style="flex:'+(p.b||0.001)+';background:#E891B3"></i><i style="flex:'+(p.n||0.001)+';background:#3A4A57"></i></div>':'')+'<div class="vtg"><span><i style="background:#6FCB9F"></i>'+esc(p.la||"Tesi A")+' · '+p.a+'</span><span><i style="background:#E891B3"></i>'+esc(p.lb||"Tesi B")+' · '+p.b+'</span><span>Non so '+p.n+'</span></div></div>').join("")+'</div>';
+  if(PG.length)h+='<div class="vtk">Previsioni sui segnali</div><div class="vtl">'+PG.map(p=>{const si=(p.c&&p.c.si)||0,no=(p.c&&p.c.no)||0;return '<div class="vtp"><div class="vth"><span>'+fd(p.data||"")+'</span><b title="'+esc(p.testo||"")+'">'+esc(p.testo||p.poll)+'</b><em>'+p.tot+' voti</em></div>'+(p.tot?'<div class="vtb"><i style="flex:'+(si||0.001)+';background:#86B4EA"></i><i style="flex:'+(no||0.001)+';background:#3A4A57"></i></div>':'')+'<div class="vtg"><span><i style="background:#86B4EA"></i>Sì · '+si+'</span><span>No · '+no+'</span><span>'+esc(p.titolo||"")+'</span></div></div>'}).join("")+'</div>';
+  if(PC.length){const done=PC.filter(p=>p.esito_i>=0&&(p.voci||[]).length);const top=a=>a.indexOf(Math.max(...a));
+   const ag=done.filter(p=>top(p.voci.map(v=>v.prob))===p.esito_i).length,rd=done.filter(p=>p.tot>0&&top(p.voci.map((v,k)=>(p.c&&p.c[String(k)])||0))===p.esito_i).length,rdn=done.filter(p=>p.tot>0).length;
+   h+='<div class="vtk">Scenari: lettori e agente</div>'+(done.length?'<div class="vti"><div><b>Chi ci ha preso</b>Agente: '+ag+' su '+done.length+' · Lettori: '+rd+' su '+rdn+' <span style="color:#8FA0AE">(quante volte lo scenario indicato come più probabile si è avverato)</span></div></div>':'')+'<div class="vtl">'+PC.map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.orizzonte||"")+'</span><b>'+esc(p.titolo||p.filone_id||p.poll)+'</b><em>'+p.tot+' voti</em></div>'+(p.esito_titolo?'<div class="sub" style="margin-top:4px">È andata: <b style="color:#7BD39A">'+esc(p.esito_titolo)+'</b>'+(p.nota_esito?' · '+esc(p.nota_esito):'')+'</div>':'')+'<div class="vts2">'+(p.voci||[]).map((v,k)=>{const n=(p.c&&p.c[String(k)])||0;return '<div'+(k===p.esito_i?' style="color:#7BD39A"':'')+'><span>'+(k===p.esito_i?'✓ ':'')+esc(v.titolo)+'</span><b>lettori '+pc(n,p.tot)+'%</b><em>agente '+v.prob+'%</em></div>'}).join("")+'</div></div>').join("")+'</div>'}
+  h+='<div class="sub" style="margin-top:10px">Tutti i voti, anche sotto i '+V.min+' che servono per mostrarli sul sito. Voti anonimi: un codice casuale per dispositivo, mai collegato all&#39;email. Le previsioni sui segnali e sugli scenari si confrontano con l&#39;esito quando arriva la verifica o la scadenza.</div></div>'}
+ const last=[...el.querySelectorAll(".card.pp")].pop();if(last)last.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h)}
 function stRender(s){const el=document.getElementById("st");const E=s.events||{};const ev=k=>E[k]||0;
  const ch=s.prev_visits?Math.round((s.visits-s.prev_visits)/s.prev_visits*100):null;
  const dn=["dom","lun","mar","mer","gio","ven","sab"];
@@ -2248,34 +2269,94 @@ async function tgDivergenza(env, force) {
 /* v46: voti anonimi dei lettori (quale tesi convince di più). Un voto per dispositivo (impronta del dispositivo cifrata), modificabile.
    I conteggi si mostrano solo da VOTE_MIN voti in su: sotto la soglia l'API risponde solo «sotto soglia». */
 const VOTE_MIN = 20;
-const VOTE_RE = /^t:s-\d{8}-\d{2}$/;
+/* tre tipi di sondaggio: t: tesi della storia principale (a, b, n); g: un segnale da osservare (si, no); c: gli scenari di un tema (indice dello scenario) */
+const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] } };
+const voteKind = (poll) => { const k = String(poll).slice(0, 1); const K = VOTE_KIND[k]; return K && K.re.test(poll) ? k : ""; };
 let VOTE_T = false;
-async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); VOTE_T = true; }
-async function voteCounts(env, polls) {
-  await voteTable(env); const out = {};
-  if (!polls.length) return out;
+async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); await env.DB.prepare("CREATE TABLE IF NOT EXISTS polls (poll TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT NOT NULL)").run(); VOTE_T = true; }
+const sidDay = (sid) => sid.slice(2, 6) + "-" + sid.slice(6, 8) + "-" + sid.slice(8, 10);
+async function docData(env, type, key) { const r = await env.DB.prepare("SELECT data FROM docs WHERE type=?1 AND key=?2 AND status='published'").bind(type, key).first(); if (!r) return null; try { return JSON.parse(r.data) || {}; } catch (e) { return {}; } }
+async function pollSnap(env, poll, kind, ctx) { // copia del sondaggio accanto ai voti, così l'analisi resta leggibile anche se il contenuto cambia
+  if (await env.DB.prepare("SELECT 1 FROM polls WHERE poll=?1").bind(poll).first()) return;
+  let snap = null;
+  if (kind === "t") {
+    const s = ctx.s, b = (await docData(env, "briefings", ctx.day)) || {};
+    const so = (b.sondaggio && b.sondaggio.storia_id === ctx.sid) ? b.sondaggio : {};
+    snap = { tipo: "tesi", data: ctx.day, storia_id: ctx.sid, titolo: s.titolo || "", domanda: so.domanda || "Quale tesi ti convince di più?", a: so.a || "Chi sostiene", b: so.b || "Chi si oppone", tesi_a: (s.pro && s.pro.tesi) || "", tesi_b: (s.contro && s.contro.tesi) || "", attori_a: (s.pro && s.pro.attori) || "", attori_b: (s.contro && s.contro.attori) || "", paesi: s.paesi || [], filone_id: s.filone_id || "" };
+  } else if (kind === "g") {
+    const s = ctx.s;
+    snap = { tipo: "segnale", data: ctx.day, storia_id: ctx.sid, i: ctx.i, titolo: s.titolo || "", testo: (s.segnali || [])[ctx.i - 1] || "", paesi: s.paesi || [], filone_id: s.filone_id || "" };
+  } else {
+    const sc = ctx.th.scenari || {};
+    snap = { tipo: "scenario", data: new Date().toISOString().slice(0, 10), filone_id: ctx.tid, titolo: ctx.th.titolo || "", orizzonte: ctx.oriz, domanda: sc.domanda || "", voci: (sc.voci || []).map((v) => ({ id: v.id || "", titolo: v.titolo || "", prob: +v.prob || 0 })), paesi: ctx.th.paesi || [] };
+  }
+  await env.DB.prepare("INSERT OR IGNORE INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3)").bind(poll, JSON.stringify(snap), new Date().toISOString()).run();
+}
+async function pollEsito(env, tid, sc) { // v48: quando la routine chiude gli scenari di un tema, l'esito resta accanto ai voti (anche se poi il tema apre scenari nuovi)
+  if (!sc || sc.stato !== "chiuso" || !sc.esito || !/^\d{4}-\d{2}-\d{2}$/.test(sc.orizzonte || "")) return;
+  const poll = "c:" + tid + ":" + sc.orizzonte;
+  await voteTable(env);
+  const voci = (sc.voci || []).map((v) => ({ id: v.id || "", titolo: v.titolo || "", prob: +v.prob || 0 }));
+  const i = voci.findIndex((v) => v.id && v.id === sc.esito);
+  const r = await env.DB.prepare("SELECT data FROM polls WHERE poll=?1").bind(poll).first();
+  let d = {}; if (r) { try { d = JSON.parse(r.data) || {}; } catch (e) {} } else d = { tipo: "scenario", data: sc.orizzonte, filone_id: tid, titolo: "", orizzonte: sc.orizzonte, domanda: sc.domanda || "", voci };
+  if (d.esito_id === sc.esito) return;
+  Object.assign(d, { esito_id: sc.esito, esito_i: i, esito_titolo: i >= 0 ? voci[i].titolo : "", esito_prob: i >= 0 ? ((((d.voci || []).find((v) => v.id === sc.esito)) || {}).prob ?? ((((sc.voci[i] || {}).storico || [])[0] || {}).p ?? voci[i].prob)) : null, nota_esito: sc.nota_esito || "", esito_il: romeToday() });
+  await env.DB.prepare("INSERT INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3) ON CONFLICT(poll) DO UPDATE SET data=?2").bind(poll, JSON.stringify(d), new Date().toISOString()).run();
+}
+function voteShape(poll, raw, all) { // conteggi per scelta; sotto soglia solo «sotto soglia», tranne che per il pannello (all)
+  const kind = voteKind(poll); const c = {}; for (const ch of VOTE_KIND[kind].ch) c[ch] = 0;
+  for (const [ch, n] of Object.entries(raw || {})) if (ch in c) c[ch] = n;
+  const tot = Object.values(c).reduce((a, b) => a + b, 0);
+  if (!all && tot < VOTE_MIN) return { sotto_soglia: true, min: VOTE_MIN };
+  if (kind === "t") return { tot, a: c.a, b: c.b, n: c.n };
+  if (kind === "c") { const k = Object.keys(c).filter((x) => c[x] > 0 || +x < 3); const o = {}; for (const x of k) o[x] = c[x]; return { tot, c: o }; }
+  return { tot, c };
+}
+async function voteCounts(env, polls, all) {
+  await voteTable(env); const out = {}; if (!polls.length) return out;
   const { results } = await env.DB.prepare("SELECT poll, choice, COUNT(*) AS n FROM votes WHERE poll IN (" + polls.map((_, i) => "?" + (i + 1)).join(",") + ") GROUP BY poll, choice").bind(...polls).all();
-  for (const pl of polls) out[pl] = { a: 0, b: 0, n: 0 };
-  for (const r of results || []) if (out[r.poll] && r.choice in out[r.poll]) out[r.poll][r.choice] = r.n;
-  for (const pl of polls) { const c = out[pl], tot = c.a + c.b + c.n; out[pl] = tot >= VOTE_MIN ? { tot, a: c.a, b: c.b, n: c.n } : { sotto_soglia: true, min: VOTE_MIN }; }
+  const raw = {}; for (const r of results || []) (raw[r.poll] ||= {})[r.choice] = r.n;
+  for (const pl of polls) out[pl] = voteShape(pl, raw[pl], all);
   return out;
+}
+async function voteStats(env) { // per il pannello: tutti i sondaggi con i conteggi veri (anche sotto soglia) e qualche misura aggregata
+  await voteTable(env);
+  const P = (await env.DB.prepare("SELECT poll, data, created_at FROM polls ORDER BY created_at DESC LIMIT 150").all()).results || [];
+  const C = (await env.DB.prepare("SELECT poll, choice, COUNT(*) AS n FROM votes GROUP BY poll, choice").all()).results || [];
+  const T = await env.DB.prepare("SELECT COUNT(*) AS v, COUNT(DISTINCT dev) AS d FROM votes").first();
+  const R2 = await env.DB.prepare("SELECT COUNT(*) AS n FROM (SELECT dev FROM votes GROUP BY dev HAVING COUNT(DISTINCT poll) >= 2)").first();
+  const G = (await env.DB.prepare("SELECT substr(at,1,10) AS g, COUNT(*) AS n FROM votes WHERE at >= ?1 GROUP BY g ORDER BY g").bind(new Date(Date.now() - 14 * 86400000).toISOString()).all()).results || [];
+  const raw = {}; for (const r of C) (raw[r.poll] ||= {})[r.choice] = r.n;
+  const polls = P.filter((r) => voteKind(r.poll)).map((r) => { let d = {}; try { d = JSON.parse(r.data); } catch (e) {} const sh = voteShape(r.poll, raw[r.poll], true); return { poll: r.poll, ...d, la: d.a, lb: d.b, ...sh }; });
+  return { min: VOTE_MIN, voti: (T && T.v) || 0, dispositivi: (T && T.d) || 0, ricorrenti: (R2 && R2.n) || 0, giorni: G, polls };
 }
 async function voteApi(request, env) {
   let b = null; try { b = JSON.parse((await request.text()).slice(0, 2000)); } catch (e) {}
   const poll = String((b && b.poll) || ""), choice = String((b && b.choice) || ""), dev = String((b && b.dev) || "");
-  if (!VOTE_RE.test(poll) || !["a", "b", "n"].includes(choice) || !/^[A-Za-z0-9_-]{12,64}$/.test(dev)) return fail(422, "bad_vote");
-  const sid = poll.slice(2);
-  const st = await env.DB.prepare("SELECT published_at FROM docs WHERE type='stories' AND key=?1 AND status='published'").bind(sid).first();
-  if (!st) return fail(404, "no_story");
-  const day = sid.slice(2, 6) + "-" + sid.slice(6, 8) + "-" + sid.slice(8, 10);
-  if (Date.now() - Date.parse(day + "T00:00:00Z") > 3 * 86400000) return fail(410, "closed");
+  const kind = voteKind(poll);
+  if (!kind || !VOTE_KIND[kind].ch.includes(choice) || !/^[A-Za-z0-9_-]{12,64}$/.test(dev)) return fail(422, "bad_vote");
+  let ctx = null;
+  if (kind === "t" || kind === "g") {
+    const sid = poll.slice(2, 15); const s = await docData(env, "stories", sid); if (!s) return fail(404, "no_story");
+    const day = sidDay(sid); if (Date.now() - Date.parse(day + "T00:00:00Z") > (kind === "t" ? 3 : 8) * 86400000) return fail(410, "closed");
+    ctx = { sid, s, day };
+    if (kind === "g") { ctx.i = +poll.split(":")[2]; if (!(s.segnali || [])[ctx.i - 1]) return fail(404, "no_signal"); }
+  } else {
+    const [, tid, oriz] = poll.split(":"); const th = await docData(env, "threads", tid); if (!th) return fail(404, "no_theme");
+    const sc = th.scenari || {}; if (sc.orizzonte !== oriz || sc.stato === "chiuso") return fail(410, "closed");
+    if (+choice >= (sc.voci || []).length) return fail(422, "bad_vote");
+    if (Date.now() > Date.parse(oriz + "T23:59:59Z")) return fail(410, "closed");
+    ctx = { tid, oriz, th };
+  }
   await voteTable(env);
+  await pollSnap(env, poll, kind, ctx);
   const h = await sha256("rg-vote|" + dev);
   await env.DB.prepare("INSERT INTO votes (poll, dev, choice, at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(poll, dev) DO UPDATE SET choice=?3, at=?4").bind(poll, h, choice, new Date().toISOString()).run();
   return json({ ok: true, ...(await voteCounts(env, [poll])) }, 200, CORS);
 }
 async function votesApi(url, env) {
-  const polls = String(url.searchParams.get("p") || "").split(",").filter((x) => VOTE_RE.test(x)).slice(0, 10);
+  const polls = [...new Set(String(url.searchParams.get("p") || "").split(","))].filter(voteKind).slice(0, 40);
   return json({ ok: true, polls: await voteCounts(env, polls) }, 200, { ...CORS, "cache-control": "public, max-age=60" });
 }
 async function tgDossier(env, id, d) { // v45: messaggio sul canale quando un dossier nuovo arriva sul sito
@@ -2308,12 +2389,29 @@ async function bilancioData(env, day) { // i segnali risolti nella settimana (da
   }
   for (const r of results || []) if (r.key === last) { try { open = (JSON.parse(r.data).verifiche || []).filter((v) => v && v.esito === "non ancora").length; } catch (e) {} }
   const done = [...seen.values()].filter((v) => v.giorno >= from);
-  return { ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
+  try { // v47: cosa avevano previsto i lettori (sì/no sui segnali), solo con almeno VOTE_MIN voti
+    await voteTable(env);
+    const P = (await env.DB.prepare("SELECT poll, data FROM polls WHERE poll LIKE 'g:%' AND created_at >= ?1").bind(new Date(Date.now() - 40 * 86400000).toISOString()).all()).results || [];
+    const byTxt = new Map(); for (const r of P) { try { const d = JSON.parse(r.data); if (d.testo) byTxt.set(String(d.testo).trim().toLowerCase(), r.poll); } catch (e) {} }
+    const want = done.map((v) => byTxt.get(String(v.segnale).trim().toLowerCase())).filter(Boolean);
+    const C = want.length ? await voteCounts(env, want) : {};
+    for (const v of done) { const pl = byTxt.get(String(v.segnale).trim().toLowerCase()); const c = pl && C[pl]; if (c && c.tot) v.lettori = Math.round(100 * c.c.si / c.tot); }
+  } catch (e) {}
+  let scen = [];
+  try {
+    await voteTable(env);
+    const P = (await env.DB.prepare("SELECT poll, data FROM polls WHERE poll LIKE 'c:%'").all()).results || [];
+    const cl = P.map((r) => { try { return { poll: r.poll, ...JSON.parse(r.data) }; } catch (e) { return null; } }).filter((d) => d && d.esito_il && d.esito_il >= from && d.esito_il <= day);
+    const C = cl.length ? await voteCounts(env, cl.map((d) => d.poll)) : {};
+    scen = cl.map((d) => { const c = C[d.poll]; return { ...d, lettori: c && c.tot && d.esito_i >= 0 ? Math.round(100 * ((c.c || {})[String(d.esito_i)] || 0) / c.tot) : null }; });
+  } catch (e) {}
+  return { scen, ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
 }
 function bilancioText(B) {
   const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
   let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(B.ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + B.no.length + " no" + (B.open ? "; " + pl(B.open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
-  msg += [...B.ok, ...B.no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "")).join("\n\n");
+  msg += [...B.ok, ...B.no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "") + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
+  if ((B.scen || []).length) msg += "\n\n<b>Gli scenari</b>\n" + B.scen.slice(0, 4).map((s) => "📊 " + esc(tgClip(s.domanda || s.titolo || "", 160)) + "\nÈ andata: <b>" + esc(tgClip(s.esito_titolo || "—", 120)) + "</b>" + (s.esito_prob != null ? "\n<i>L'agente gli dava il " + s.esito_prob + "%" + (s.lettori != null ? ", i lettori il " + s.lettori + "%" : "") + "</i>" : "")).join("\n\n");
   return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
 }
 async function tgBilancio(env, force) {
@@ -2321,7 +2419,7 @@ async function tgBilancio(env, force) {
   if (!st.chat || !env.TG_BOT_TOKEN) return null;
   if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
   const B = await bilancioData(env, day);
-  if (!B.ok.length && !B.no.length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  if (!B.ok.length && !B.no.length && !(B.scen || []).length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: bilancioText(B), parse_mode: "HTML", disable_web_page_preview: true });
   await kvSet(env, "tg_b:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
@@ -2855,6 +2953,7 @@ async function route(request, env) {
         nuovi = dz.filter((x) => !ex.has(x.key));
       }
       const out = await putMany(env, items);
+      for (const it of items) if (it.type === "threads" && it.data.scenari && it.data.scenari.stato === "chiuso") { try { await pollEsito(env, it.key, it.data.scenari); } catch (e) {} }
       let tg_dossier = null;
       for (const x of nuovi) { try { tg_dossier = await tgDossier(env, x.key, x.data); } catch (e) { tg_dossier = { ok: false, error: String(e && e.message || e) }; } }
       return json({ ok: true, ...out, ...(nuovi.length ? { dossier_nuovi: nuovi.map((x) => x.key), tg_dossier } : {}) });
