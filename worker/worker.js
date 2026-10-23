@@ -1185,7 +1185,9 @@ async function vtStats(){const el=document.getElementById("st");if(!el)return;co
   const PT=(V.polls||[]).filter(p=>(p.tipo||"tesi")==="tesi"),PG=(V.polls||[]).filter(p=>p.tipo==="segnale"),PC=(V.polls||[]).filter(p=>p.tipo==="scenario");
   if(PT.length)h+='<div class="vtk">Quale tesi convince</div><div class="vtl">'+PT.map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.data||"")+'</span><b>'+esc(p.titolo||p.storia_id||p.poll)+'</b><em>'+p.tot+' voti'+(p.tot<V.min?' · sotto soglia sul sito':'')+'</em></div>'+(p.tot?'<div class="vtb"><i style="flex:'+(p.a||0.001)+';background:#6FCB9F"></i><i style="flex:'+(p.b||0.001)+';background:#E891B3"></i><i style="flex:'+(p.n||0.001)+';background:#3A4A57"></i></div>':'')+'<div class="vtg"><span><i style="background:#6FCB9F"></i>'+esc(p.la||"Tesi A")+' · '+p.a+'</span><span><i style="background:#E891B3"></i>'+esc(p.lb||"Tesi B")+' · '+p.b+'</span><span>Non so '+p.n+'</span></div></div>').join("")+'</div>';
   if(PG.length)h+='<div class="vtk">Previsioni sui segnali</div><div class="vtl">'+PG.map(p=>{const si=(p.c&&p.c.si)||0,no=(p.c&&p.c.no)||0;return '<div class="vtp"><div class="vth"><span>'+fd(p.data||"")+'</span><b title="'+esc(p.testo||"")+'">'+esc(p.testo||p.poll)+'</b><em>'+p.tot+' voti</em></div>'+(p.tot?'<div class="vtb"><i style="flex:'+(si||0.001)+';background:#86B4EA"></i><i style="flex:'+(no||0.001)+';background:#3A4A57"></i></div>':'')+'<div class="vtg"><span><i style="background:#86B4EA"></i>Sì · '+si+'</span><span>No · '+no+'</span><span>'+esc(p.titolo||"")+'</span></div></div>'}).join("")+'</div>';
-  if(PC.length)h+='<div class="vtk">Scenari: lettori e agente</div><div class="vtl">'+PC.map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.orizzonte||"")+'</span><b>'+esc(p.titolo||p.filone_id||p.poll)+'</b><em>'+p.tot+' voti</em></div><div class="vts2">'+(p.voci||[]).map((v,k)=>{const n=(p.c&&p.c[String(k)])||0;return '<div><span>'+esc(v.titolo)+'</span><b>lettori '+pc(n,p.tot)+'%</b><em>agente '+v.prob+'%</em></div>'}).join("")+'</div></div>').join("")+'</div>';
+  if(PC.length){const done=PC.filter(p=>p.esito_i>=0&&(p.voci||[]).length);const top=a=>a.indexOf(Math.max(...a));
+   const ag=done.filter(p=>top(p.voci.map(v=>v.prob))===p.esito_i).length,rd=done.filter(p=>p.tot>0&&top(p.voci.map((v,k)=>(p.c&&p.c[String(k)])||0))===p.esito_i).length,rdn=done.filter(p=>p.tot>0).length;
+   h+='<div class="vtk">Scenari: lettori e agente</div>'+(done.length?'<div class="vti"><div><b>Chi ci ha preso</b>Agente: '+ag+' su '+done.length+' · Lettori: '+rd+' su '+rdn+' <span style="color:#8FA0AE">(quante volte lo scenario indicato come più probabile si è avverato)</span></div></div>':'')+'<div class="vtl">'+PC.map(p=>'<div class="vtp"><div class="vth"><span>'+fd(p.orizzonte||"")+'</span><b>'+esc(p.titolo||p.filone_id||p.poll)+'</b><em>'+p.tot+' voti</em></div>'+(p.esito_titolo?'<div class="sub" style="margin-top:4px">È andata: <b style="color:#7BD39A">'+esc(p.esito_titolo)+'</b>'+(p.nota_esito?' · '+esc(p.nota_esito):'')+'</div>':'')+'<div class="vts2">'+(p.voci||[]).map((v,k)=>{const n=(p.c&&p.c[String(k)])||0;return '<div'+(k===p.esito_i?' style="color:#7BD39A"':'')+'><span>'+(k===p.esito_i?'✓ ':'')+esc(v.titolo)+'</span><b>lettori '+pc(n,p.tot)+'%</b><em>agente '+v.prob+'%</em></div>'}).join("")+'</div></div>').join("")+'</div>'}
   h+='<div class="sub" style="margin-top:10px">Tutti i voti, anche sotto i '+V.min+' che servono per mostrarli sul sito. Voti anonimi: un codice casuale per dispositivo, mai collegato all&#39;email. Le previsioni sui segnali e sugli scenari si confrontano con l&#39;esito quando arriva la verifica o la scadenza.</div></div>'}
  const last=[...el.querySelectorAll(".card.pp")].pop();if(last)last.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h)}
 function stRender(s){const el=document.getElementById("st");const E=s.events||{};const ev=k=>E[k]||0;
@@ -2285,9 +2287,21 @@ async function pollSnap(env, poll, kind, ctx) { // copia del sondaggio accanto a
     snap = { tipo: "segnale", data: ctx.day, storia_id: ctx.sid, i: ctx.i, titolo: s.titolo || "", testo: (s.segnali || [])[ctx.i - 1] || "", paesi: s.paesi || [], filone_id: s.filone_id || "" };
   } else {
     const sc = ctx.th.scenari || {};
-    snap = { tipo: "scenario", data: new Date().toISOString().slice(0, 10), filone_id: ctx.tid, titolo: ctx.th.titolo || "", orizzonte: ctx.oriz, domanda: sc.domanda || "", voci: (sc.voci || []).map((v) => ({ titolo: v.titolo || "", prob: +v.prob || 0 })), paesi: ctx.th.paesi || [] };
+    snap = { tipo: "scenario", data: new Date().toISOString().slice(0, 10), filone_id: ctx.tid, titolo: ctx.th.titolo || "", orizzonte: ctx.oriz, domanda: sc.domanda || "", voci: (sc.voci || []).map((v) => ({ id: v.id || "", titolo: v.titolo || "", prob: +v.prob || 0 })), paesi: ctx.th.paesi || [] };
   }
   await env.DB.prepare("INSERT OR IGNORE INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3)").bind(poll, JSON.stringify(snap), new Date().toISOString()).run();
+}
+async function pollEsito(env, tid, sc) { // v48: quando la routine chiude gli scenari di un tema, l'esito resta accanto ai voti (anche se poi il tema apre scenari nuovi)
+  if (!sc || sc.stato !== "chiuso" || !sc.esito || !/^\d{4}-\d{2}-\d{2}$/.test(sc.orizzonte || "")) return;
+  const poll = "c:" + tid + ":" + sc.orizzonte;
+  await voteTable(env);
+  const voci = (sc.voci || []).map((v) => ({ id: v.id || "", titolo: v.titolo || "", prob: +v.prob || 0 }));
+  const i = voci.findIndex((v) => v.id && v.id === sc.esito);
+  const r = await env.DB.prepare("SELECT data FROM polls WHERE poll=?1").bind(poll).first();
+  let d = {}; if (r) { try { d = JSON.parse(r.data) || {}; } catch (e) {} } else d = { tipo: "scenario", data: sc.orizzonte, filone_id: tid, titolo: "", orizzonte: sc.orizzonte, domanda: sc.domanda || "", voci };
+  if (d.esito_id === sc.esito) return;
+  Object.assign(d, { esito_id: sc.esito, esito_i: i, esito_titolo: i >= 0 ? voci[i].titolo : "", esito_prob: i >= 0 ? voci[i].prob : null, nota_esito: sc.nota_esito || "", esito_il: romeToday() });
+  await env.DB.prepare("INSERT INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3) ON CONFLICT(poll) DO UPDATE SET data=?2").bind(poll, JSON.stringify(d), new Date().toISOString()).run();
 }
 function voteShape(poll, raw, all) { // conteggi per scelta; sotto soglia solo «sotto soglia», tranne che per il pannello (all)
   const kind = voteKind(poll); const c = {}; for (const ch of VOTE_KIND[kind].ch) c[ch] = 0;
@@ -2382,12 +2396,21 @@ async function bilancioData(env, day) { // i segnali risolti nella settimana (da
     const C = want.length ? await voteCounts(env, want) : {};
     for (const v of done) { const pl = byTxt.get(String(v.segnale).trim().toLowerCase()); const c = pl && C[pl]; if (c && c.tot) v.lettori = Math.round(100 * c.c.si / c.tot); }
   } catch (e) {}
-  return { ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
+  let scen = [];
+  try {
+    await voteTable(env);
+    const P = (await env.DB.prepare("SELECT poll, data FROM polls WHERE poll LIKE 'c:%'").all()).results || [];
+    const cl = P.map((r) => { try { return { poll: r.poll, ...JSON.parse(r.data) }; } catch (e) { return null; } }).filter((d) => d && d.esito_il && d.esito_il >= from && d.esito_il <= day);
+    const C = cl.length ? await voteCounts(env, cl.map((d) => d.poll)) : {};
+    scen = cl.map((d) => { const c = C[d.poll]; return { ...d, lettori: c && c.tot && d.esito_i >= 0 ? Math.round(100 * ((c.c || {})[String(d.esito_i)] || 0) / c.tot) : null }; });
+  } catch (e) {}
+  return { scen, ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
 }
 function bilancioText(B) {
   const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
   let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(B.ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + B.no.length + " no" + (B.open ? "; " + pl(B.open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
   msg += [...B.ok, ...B.no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "") + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
+  if ((B.scen || []).length) msg += "\n\n<b>Gli scenari</b>\n" + B.scen.slice(0, 4).map((s) => "📊 " + esc(tgClip(s.domanda || s.titolo || "", 160)) + "\nÈ andata: <b>" + esc(tgClip(s.esito_titolo || "—", 120)) + "</b>" + (s.esito_prob != null ? "\n<i>L'agente gli dava il " + s.esito_prob + "%" + (s.lettori != null ? ", i lettori il " + s.lettori + "%" : "") + "</i>" : "")).join("\n\n");
   return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
 }
 async function tgBilancio(env, force) {
@@ -2395,7 +2418,7 @@ async function tgBilancio(env, force) {
   if (!st.chat || !env.TG_BOT_TOKEN) return null;
   if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
   const B = await bilancioData(env, day);
-  if (!B.ok.length && !B.no.length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
+  if (!B.ok.length && !B.no.length && !(B.scen || []).length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: bilancioText(B), parse_mode: "HTML", disable_web_page_preview: true });
   await kvSet(env, "tg_b:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
@@ -2929,6 +2952,7 @@ async function route(request, env) {
         nuovi = dz.filter((x) => !ex.has(x.key));
       }
       const out = await putMany(env, items);
+      for (const it of items) if (it.type === "threads" && it.data.scenari && it.data.scenari.stato === "chiuso") { try { await pollEsito(env, it.key, it.data.scenari); } catch (e) {} }
       let tg_dossier = null;
       for (const x of nuovi) { try { tg_dossier = await tgDossier(env, x.key, x.data); } catch (e) { tg_dossier = { ok: false, error: String(e && e.message || e) }; } }
       return json({ ok: true, ...out, ...(nuovi.length ? { dossier_nuovi: nuovi.map((x) => x.key), tg_dossier } : {}) });
