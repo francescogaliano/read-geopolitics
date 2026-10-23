@@ -1,5 +1,6 @@
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
+// v44: pannello, bozze: in alto solo quelle di oggi e quelle aperte; le altre in un archivio per mese e settimana, chiuso, che carica immagini e video solo quando apri un contenuto.
 // v41: «Oggi sui canali» nel pannello (anteprima, modifica, stop per oggi). Canali: Telegram «Le fonti non sono d'accordo» (briefing.tg_divergenza) e «Com'è andata» la domenica (dalle verifiche dei segnali dei briefing); Threads, domanda del giorno (draft.th_domanda).
 // v43: pannello, pulsante «Copia» sotto ogni didascalia (Instagram, TikTok, Threads); «Oggi sui canali» apribile, chiuso di default, con riassunto degli orari.
 // v40: etichette delle statistiche per il sito installabile (app-*).
@@ -785,7 +786,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .tg{font:600 11px ui-monospace,monospace;border:1px solid #3A4C5C;color:#86B4EA;border-radius:999px;padding:2px 8px;white-space:nowrap}.tg.off{color:#8FA0AE;border-color:#27353F}.tg:empty{display:none}.gear{color:#8FA0AE;font-size:16px}
 .set{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px;font-size:14px}.set .row{margin:0}
 .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.tab{flex:none;border-radius:999px;padding:8px 14px}
-.dc .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.dc .dh b{font-size:16px;display:block;overflow-wrap:anywhere}
+.arc{padding:0}.arc>summary,.arw>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 14px}.arc>summary::-webkit-details-marker,.arw>summary::-webkit-details-marker{display:none}.arc>summary b{flex:1}.arw>summary span:first-child{flex:1;font-weight:600;font-size:14px}.arw{border-top:1px solid #27353F}.arw>summary{padding:10px 14px}.arc[open]>summary .chev,.arw[open]>summary .chev,.orow.on .ohd .chev{transform:rotate(180deg)}.orow{border-top:1px solid #1E2A33}.ohd{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 14px}.oic{width:22px;text-align:center;color:#8FA0AE;flex:none}.otx{flex:1;min-width:0}.otx b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.otx .sub{font-size:12px}.obody{padding:0 8px 10px}.obody .card{margin:0}.dc .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.dc .dh b{font-size:16px;display:block;overflow-wrap:anywhere}
 .pill{flex:none;font:700 10.5px ui-monospace,monospace;border-radius:6px;padding:3px 7px;letter-spacing:.05em;background:#27353F;color:#C5D0D8}.p-bozza{background:#5A4A22;color:#F2B84B}.p-pubblicata{background:#1F4A2E;color:#7BD39A}.p-errore{background:#4A2222;color:#FF9A9A}.p-in_elaborazione,.p-in_pubblicazione{background:#22364A;color:#86B4EA}
 .dc .pri{display:flex;gap:8px;align-items:center;margin-top:10px}.btn.main{flex:1;background:#F2B84B;color:#16120A;font-weight:700}.btn.more{width:46px;padding-left:0;padding-right:0;background:#27353F;color:#E4EAEF}
 .menu{margin-top:8px;background:#0E151B;border:1px solid #27353F;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}.menu[hidden]{display:none!important}.mi{background:transparent;color:#E4EAEF;text-align:left;border:0;border-top:1px solid #27353F;border-radius:0;padding:11px 12px;font-weight:500}.mi:first-child{border-top:0}.mi.d{color:#FF9A9A}
@@ -863,7 +864,7 @@ document.addEventListener("click",e=>{const im=e.target.closest(".strip img,.ed-
  const b=document.getElementById("lb");if(!b.classList.contains("on"))return;
  if(e.target.closest(".p"))lbMove(-1);else if(e.target.closest(".f"))lbMove(1);else if(e.target.tagName!=="IMG")b.classList.remove("on")});
 document.addEventListener("keydown",e=>{const b=document.getElementById("lb");if(!b.classList.contains("on"))return;if(e.key==="Escape")b.classList.remove("on");if(e.key==="ArrowLeft")lbMove(-1);if(e.key==="ArrowRight")lbMove(1)});
-const EDIT={};let D=null,WOFF=0,WED=null,TAB="list";
+const EDIT={};let D=null,WOFF=0,WED=null,TAB="list";const OPENG={},OPENC={};
 
 const LK=[
  {t:"Profilo Instagram",d:"I link del profilo, in quest&#39;ordine. Instagram ne accetta fino a 5.",r:[
@@ -901,6 +902,10 @@ const STL={bozza:"DA APPROVARE",pubblicata:"PUBBLICATA",errore:"ERRORE",in_elabo
 const DNS=["dom","lun","mar","mer","gio","ven","sab"];
 let MAILERR=false;
 const NL=String.fromCharCode(10);
+function arcRow(x){const tt=(D.tt||{})[x.id],th=(D.th||{})[x.id],tg=(D.tg||{})[x.id];
+ const ch=[[x.status==="pubblicata","IG"],[tt&&tt.status==="pubblicato","TikTok"],[th&&th.status==="pubblicato","Threads"],[tg&&tg.status==="inviato","Telegram"]].filter(z=>z[0]).map(z=>z[1]);
+ const st=x.status==="pubblicata"?"":'<span class="pill p-'+x.status+'">'+esc(STL[x.status]||x.status.toUpperCase())+'</span>';
+ return '<div class="orow" data-oid="'+x.id+'"><button type="button" class="ohd"><span class="oic">'+(x.type==="reel"?"▶":x.type==="story"?"◔":"▦")+'</span><span class="otx"><b>'+esc(dTitle(x))+'</b><span class="sub">'+dSub(x)+(ch.length?' · uscito su '+ch.join(", "):'')+'</span></span>'+st+'<span class="chev">▾</span></button><div class="obody" hidden></div></div>'}
 function dTitle(x){const l=(String(x.caption||"").split(NL).find(s=>s.trim())||x.format||"").trim();return l.length>70?l.slice(0,68)+"…":l}
 function dSub(x){const s=String(x.date||"");const d=new Date(s+"T12:00:00Z");const ds=isNaN(d)?esc(s):DNS[d.getUTCDay()]+" "+(+s.slice(8))+"/"+(+s.slice(5,7));const n=(x.type!=="reel"&&x.image_urls&&x.image_urls.length)?" · "+x.image_urls.length+(x.image_urls.length===1?" immagine":" carte"):"";return ds+" · "+(TYL[x.type]||esc(x.type||""))+n}
 function nTags(s){return String(s||"").split(NL).join(" ").split(" ").filter(w=>w.charAt(0)==="#"&&w.length>1).length}
@@ -1016,7 +1021,7 @@ async function load(){
  D=d;chUpd(d);cnlRender(d.canali);renderWeek();renderReq();
  const L=document.getElementById("list");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
- VPRE=0;L.innerHTML=d.drafts.map(x=>{
+ const cardOf=x=>{
   const open=x.status==="bozza"||x.status==="errore";const m=menuHtml(x);
   const tm=x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
   const pl=x.status==="bozza"?(x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
@@ -1028,8 +1033,26 @@ async function load(){
   +(m?'<div class="menu" hidden>'+m+'</div>':'')
   +(open?capsHtml(x):'<details class="capd"><summary class="sub">Didascalie</summary>'+capsHtml(x)+'</details>')
   +(rows?'<div class="dist"><div class="lab">'+(x.status==="pubblicata"?"Canali":"Dopo Instagram")+'</div>'+rows+'</div>':'')
-  +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'}).join("");
- L.querySelectorAll(".card[data-id]").forEach(c=>{const id=c.dataset.id;const q=s=>c.querySelector(s);
+  +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'};
+ const isNew=x=>x.status==="bozza"||x.status==="errore"||x.status==="in_elaborazione"||x.status==="in_pubblicazione"||String(x.date||"")>=String(d.today||"")||!!EDIT[x.id];
+ const NW=d.drafts.filter(isNew),OL=d.drafts.filter(x=>!isNew(x));
+ VPRE=0;let h=NW.length?NW.map(cardOf).join(""):'<div class="card sub">Niente da approvare: le bozze di oggi non sono ancora arrivate.</div>';
+ if(OL.length){const MS=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const wk=s=>{const x=new Date(s+"T12:00:00Z");const g=(x.getUTCDay()+6)%7;const a=new Date(x.getTime()-g*864e5),b=new Date(a.getTime()+6*864e5);return {k:a.toISOString().slice(0,10),l:a.getUTCDate()+(a.getUTCMonth()!==b.getUTCMonth()?" "+MS[a.getUTCMonth()].slice(0,3):"")+"–"+b.getUTCDate()+" "+MS[b.getUTCMonth()].slice(0,3)}};
+  const MO={};OL.forEach(x=>{const s=String(x.date||"").slice(0,10);if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s))return;const m=s.slice(0,7),w=wk(s);(MO[m]=MO[m]||{});(MO[m][w.k]=MO[m][w.k]||{l:w.l,it:[]}).it.push(x)});
+  h+='<div class="lab" style="margin:18px 2px 8px">Archivio · '+OL.length+' contenuti</div>';
+  Object.keys(MO).sort().reverse().forEach((m,mi)=>{const W=MO[m],n=Object.values(W).reduce((a,w)=>a+w.it.length,0);const mo=OPENG[m]!=null?OPENG[m]:mi===0;
+   h+='<details class="card arc" data-g="'+m+'"'+(mo?' open':'')+'><summary><b>'+MS[+m.slice(5)-1].replace(/^./,c=>c.toUpperCase())+' '+m.slice(0,4)+'</b><span class="sub">'+n+'</span><span class="chev">▾</span></summary>';
+   Object.keys(W).sort().reverse().forEach(k=>{const w=W[k];h+='<details class="arw" data-g="'+k+'"'+(OPENG[k]?' open':'')+'><summary><span>Settimana '+w.l+'</span><span class="sub">'+w.it.length+'</span><span class="chev">▾</span></summary>'+w.it.map(arcRow).join("")+'</details>'});
+   h+='</details>'})}
+ L.innerHTML=h;
+ L.querySelectorAll("details[data-g]").forEach(e=>e.addEventListener("toggle",()=>{OPENG[e.dataset.g]=e.open}));
+ L.querySelectorAll(".orow").forEach(r=>{const id=r.dataset.oid;const X=d.drafts.find(z=>z.id===id);const bd=r.querySelector(".obody");
+  const show=()=>{if(!bd.firstChild){bd.innerHTML=cardOf(X);const c=bd.querySelector(".card[data-id]");if(c)wire(c)}bd.hidden=false;r.classList.add("on")};
+  r.querySelector(".ohd").onclick=()=>{if(bd.hidden){OPENC[id]=1;show()}else{delete OPENC[id];bd.hidden=true;r.classList.remove("on")}};
+  if(OPENC[id])show()});
+ L.querySelectorAll(":scope>.card[data-id]").forEach(c=>wire(c));
+ function wire(c){const id=c.dataset.id;const q=s=>c.querySelector(s);
   if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
   const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
@@ -1063,7 +1086,7 @@ async function load(){
   if(q(".thsd"))q(".thsd").onclick=async e=>{if(!confirm("Pubblicare subito su Threads? Su Threads esce davvero, non come bozza."))return;e.target.disabled=true;e.target.textContent="Pubblico…";if(q(".thcap"))await api({action:"th_caption",id,caption:q(".thcap").value});const r=await api({action:"th_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.th&&r.th.status==="errore")alert(r.th.error);load()};
   if(q(".thsv"))q(".thsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"th_caption",id,caption:q(".thcap").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
   if(q(".thk"))q(".thk").onclick=async e=>{e.target.disabled=true;await api({action:"th_check",id});load()};
-  if(q(".res"))q(".res").onclick=async()=>{await api({action:"restore",id});load()}})}
+  if(q(".res"))q(".res").onclick=async()=>{await api({action:"restore",id});load()}}}
 async function loadMail(){
  const d=await api({action:"mail_get"});
  if(!d.ok){document.getElementById("mlst").textContent="errore";return}
