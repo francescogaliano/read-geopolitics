@@ -2133,7 +2133,7 @@ async function thPublic(request, env, p, url) {
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "th_state", { state, exp: Date.now() + 10 * 60000 });
     // v31: threads.net (l'indirizzo storico): da threads.com il passaggio al login può perdere i parametri («No app ID was sent»)
-    return Response.redirect("https://threads.net/oauth/authorize?" + new URLSearchParams({ client_id: thId(env), redirect_uri: redirect, scope: "threads_basic,threads_content_publish,threads_keyword_search", response_type: "code", state }), 302);
+    return Response.redirect("https://threads.net/oauth/authorize?" + new URLSearchParams({ client_id: thId(env), redirect_uri: redirect, scope: "threads_basic,threads_content_publish,threads_keyword_search,threads_manage_replies", response_type: "code", state }), 302);
   }
   if (p === "/th/callback") {
     const err = url.searchParams.get("error_description") || url.searchParams.get("error");
