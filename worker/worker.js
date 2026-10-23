@@ -2301,7 +2301,7 @@ async function pollEsito(env, tid, sc) { // v48: quando la routine chiude gli sc
   const r = await env.DB.prepare("SELECT data FROM polls WHERE poll=?1").bind(poll).first();
   let d = {}; if (r) { try { d = JSON.parse(r.data) || {}; } catch (e) {} } else d = { tipo: "scenario", data: sc.orizzonte, filone_id: tid, titolo: "", orizzonte: sc.orizzonte, domanda: sc.domanda || "", voci };
   if (d.esito_id === sc.esito) return;
-  Object.assign(d, { esito_id: sc.esito, esito_i: i, esito_titolo: i >= 0 ? voci[i].titolo : "", esito_prob: i >= 0 ? voci[i].prob : null, nota_esito: sc.nota_esito || "", esito_il: romeToday() });
+  Object.assign(d, { esito_id: sc.esito, esito_i: i, esito_titolo: i >= 0 ? voci[i].titolo : "", esito_prob: i >= 0 ? ((((d.voci || []).find((v) => v.id === sc.esito)) || {}).prob ?? ((((sc.voci[i] || {}).storico || [])[0] || {}).p ?? voci[i].prob)) : null, nota_esito: sc.nota_esito || "", esito_il: romeToday() });
   await env.DB.prepare("INSERT INTO polls (poll, data, created_at) VALUES (?1, ?2, ?3) ON CONFLICT(poll) DO UPDATE SET data=?2").bind(poll, JSON.stringify(d), new Date().toISOString()).run();
 }
 function voteShape(poll, raw, all) { // conteggi per scelta; sotto soglia solo «sotto soglia», tranne che per il pannello (all)
