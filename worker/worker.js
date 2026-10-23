@@ -745,7 +745,8 @@ async function panelApi(env, origin, b) {
 }
 const PANEL_PAGE = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pannello Instagram</title><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Serif:wght@600&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}
+:root{color-scheme:dark}*{box-sizing:border-box}.dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}.dlb{background:#16212B;border:1px solid #2A3946;color:#E4EAEF;max-width:440px;width:100%;border-radius:12px;padding:18px 18px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5)}.dlb p{margin:0 0 14px;white-space:pre-line;line-height:1.45}.dli{width:100%;margin:0 0 14px;padding:8px 10px;border-radius:8px;border:1px solid #2A3946;background:#0E151B;color:inherit;font:inherit}.dla{display:flex;gap:8px;justify-content:flex-end}.dla button{padding:8px 16px;border-radius:8px;border:1px solid #2A3946;background:transparent;color:inherit;font:inherit;cursor:pointer}.dla .dly{background:#3B82F6;border-color:#3B82F6;color:#fff;font-weight:600}.dlo{margin-top:10px;font-size:12px;color:#8A9AA8}.dlo summary{cursor:pointer}
+
 body{margin:0;background:#0E151B;color:#E4EAEF;font:16px/1.45 system-ui,sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px}
 h1{font:600 22px Georgia,serif;margin:6px 0 2px}.sub{color:#8FA0AE;font-size:14px}
@@ -867,6 +868,13 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row" style="margin-top:10px"><button class="g" id="ml-s">Salva</button><button class="g" id="ml-pv">Anteprima</button><button class="g" id="ml-t1">Invia prova a me</button></div>
 <div id="ml-m" class="sub" style="margin-top:8px"></div><div id="ml-l" class="sub" style="margin-top:4px"></div></div></div></main><div id="lb"><button class="x" aria-label="Chiudi">×</button><button class="a p" aria-label="Precedente">‹</button><img alt=""><button class="a f" aria-label="Successiva">›</button><div class="n"></div></div>
 <script>
+function ask(m,v,one){return new Promise(res=>{const o=document.createElement("div");o.className="dlg";o.innerHTML='<div class="dlb" role="dialog" aria-modal="true"><p></p>'+(v!==undefined?'<input class="dli">':'')+'<div class="dla">'+(one?'':'<button class="dln">Annulla</button>')+'<button class="dly">OK</button></div><details class="dlo"><summary>Dettagli</summary><span></span></details></div>';
+ o.querySelector("p").textContent=String(m);o.querySelector(".dlo span").textContent="Messaggio del pannello · "+location.host;const inp=o.querySelector(".dli");if(inp)inp.value=v||"";
+ const end=r=>{document.removeEventListener("keydown",kd,true);o.remove();res(r)};const ok=()=>end(inp?inp.value:true),no=()=>end(inp?null:false);
+ const kd=e=>{if(e.key==="Escape"){e.preventDefault();no()}else if(e.key==="Enter"&&e.target.tagName!=="BUTTON"){e.preventDefault();ok()}};
+ o.querySelector(".dly").onclick=ok;if(o.querySelector(".dln"))o.querySelector(".dln").onclick=no;o.onclick=e=>{if(e.target===o)no()};
+ document.addEventListener("keydown",kd,true);document.body.appendChild(o);if(inp){inp.focus();inp.select()}else o.querySelector(".dly").focus()})}
+function say(m){return ask(m,undefined,1)}
 const K=new URLSearchParams(location.search).get("k");
 let LB={u:[],i:0};
 function lbShow(){const b=document.getElementById("lb");b.classList.add("on");b.querySelector("img").src=LB.u[LB.i];b.querySelector(".n").textContent=(LB.i+1)+" / "+LB.u.length}
@@ -985,7 +993,7 @@ document.getElementById("cnl").addEventListener("click",async e=>{const b=e.targ
  b.disabled=true;let r=null;
  if(b.dataset.cv)r=await api({action:"canali_set",which:k,testo:it.querySelector("textarea").value});
  else if(b.dataset.cs)r=await api({action:"canali_set",which:k,skip:b.dataset.v==="1"});
- if(r&&r.ok){D.canali=r.canali;cnlRender(r.canali)}else{b.disabled=false;alert("Errore: "+((r&&(r.detail||r.error))||""))}});
+ if(r&&r.ok){D.canali=r.canali;cnlRender(r.canali)}else{b.disabled=false;say("Errore: "+((r&&(r.detail||r.error))||""))}});
 function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},S=d.settings||{formats:{daily:{}}};const g=id=>document.getElementById(id);
  if(A){g("igs").textContent="@"+A.username+" · valido "+A.days_left+" giorni";g("igd").className="dot "+(A.days_left<7?"y":"g");if(A.days_left<7)iss.push("token Instagram in scadenza")}else{g("igs").textContent="non collegato";g("igd").className="dot r";iss.push("Instagram non collegato")}
  g("ttdot").className="dot "+(!T.collegato?"y":T.scaduto?"r":"g");if(T.scaduto)iss.push("TikTok da ricollegare");
@@ -1067,35 +1075,35 @@ async function load(){
   if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
   const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
-  if(q(".tgs"))q(".tgs").onclick=async e=>{if(!confirm("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")alert(r.tg.error);load()};
+  if(q(".tgs"))q(".tgs").onclick=async e=>{if(!await ask("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")say(r.tg.error);load()};
   autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");
-  if(q(".pub"))q(".pub").onclick=async e=>{if(!confirm("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
-    if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok&&r.draft&&r.draft.error)alert("Errore: "+r.draft.error);load()};
+  if(q(".pub"))q(".pub").onclick=async e=>{if(!await ask("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
+    if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok&&r.draft&&r.draft.error)say("Errore: "+r.draft.error);load()};
   const X=d.drafts.find(z=>z.id===id);
   if(q(".ed"))q(".ed").onclick=()=>{EDIT[id]=X.image_urls.slice();load()};
   if(EDIT[id]){
    const L=EDIT[id];
    c.querySelectorAll(".up").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(i>0){[L[i-1],L[i]]=[L[i],L[i-1]];load()}});
    c.querySelectorAll(".dn").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(i<L.length-1){[L[i+1],L[i]]=[L[i],L[i+1]];load()}});
-   c.querySelectorAll(".rm").forEach(b=>b.onclick=()=>{if(L.length<=2){alert("Servono almeno 2 immagini.");return}L.splice(+b.dataset.i,1);load()});
+   c.querySelectorAll(".rm").forEach(b=>b.onclick=()=>{if(L.length<=2){say("Servono almeno 2 immagini.");return}L.splice(+b.dataset.i,1);load()});
    if(q(".cn"))q(".cn").onclick=()=>{delete EDIT[id];load()};
    if(q(".rs"))q(".rs").onclick=()=>{EDIT[id]=(X.original_urls||X.image_urls).slice();load()};
-   if(q(".file"))q(".file").onchange=async e=>{const fs=[...e.target.files];for(const f of fs){if(L.length>=10){alert("Massimo 10 immagini.");break}try{const r=await api({action:"addimage",id,data_base64:await toJpeg(f)});if(r.ok)L.push(r.url);else alert("Errore: "+JSON.stringify(r))}catch(err){alert("Immagine non caricata: "+err)}}load()};
-   if(q(".sv"))q(".sv").onclick=async e=>{e.target.disabled=true;e.target.textContent="Salvo…";const r=await api({action:"images",id,urls:L});if(!r.ok){alert("Errore: "+JSON.stringify(r))}else delete EDIT[id];load()};
+   if(q(".file"))q(".file").onchange=async e=>{const fs=[...e.target.files];for(const f of fs){if(L.length>=10){say("Massimo 10 immagini.");break}try{const r=await api({action:"addimage",id,data_base64:await toJpeg(f)});if(r.ok)L.push(r.url);else say("Errore: "+JSON.stringify(r))}catch(err){say("Immagine non caricata: "+err)}}load()};
+   if(q(".sv"))q(".sv").onclick=async e=>{e.target.disabled=true;e.target.textContent="Salvo…";const r=await api({action:"images",id,urls:L});if(!r.ok){say("Errore: "+JSON.stringify(r))}else delete EDIT[id];load()};
   }
-  if(q(".fin"))q(".fin").onclick=async e=>{e.target.disabled=true;e.target.textContent="Controllo…";const r=await api({action:"finish",id});if(!r.ok&&r.draft&&r.draft.error)alert("Errore: "+r.draft.error);load()};
+  if(q(".fin"))q(".fin").onclick=async e=>{e.target.disabled=true;e.target.textContent="Controllo…";const r=await api({action:"finish",id});if(!r.ok&&r.draft&&r.draft.error)say("Errore: "+r.draft.error);load()};
   if(q(".savecap"))q(".savecap").onclick=async()=>{await api({action:"caption",id,caption:q(".cap").value});load()};
-  if(q(".dis"))q(".dis").onclick=async()=>{if(confirm("Scartare questa bozza?")){await api({action:"discard",id});load()}};
-  if(q(".rst"))q(".rst").onclick=async()=>{if(confirm("Rimettere questa bozza in stato bozza? Fallo solo se la pubblicazione è bloccata e hai controllato su Instagram che il post NON sia già uscito: altrimenti rischi di pubblicarlo due volte.")){const r=await api({action:"draft_reset",id});if(!r.ok)alert("Reset non riuscito: "+(r.error||""));load()}};
-  if(q(".tts"))q(".tts").onclick=async e=>{e.target.disabled=true;e.target.textContent="Invio…";if(q(".ttcap"))await api({action:"tt_caption",id,caption:q(".ttcap").value});const r=await api({action:"tt_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.tt&&r.tt.status==="errore")alert(r.tt.error);load()};
-  if(q(".ttsv"))q(".ttsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"tt_caption",id,caption:q(".ttcap").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
-  if(q(".ttc"))q(".ttc").onclick=async e=>{const X=D.drafts.find(z=>z.id===id);const v=q(".ttcap")?q(".ttcap").value:((X&&X.tt_cap)||"");try{await navigator.clipboard.writeText(v);e.target.textContent="Copiata ✓"}catch(err){prompt("Copia la didascalia:",v)}setTimeout(()=>{e.target.textContent="Copia didascalia"},1800)};
-  if(q(".ttm"))q(".ttm").onclick=async e=>{const l=prompt("Link del post su TikTok (facoltativo: in TikTok tocca Condividi, poi Copia link):","");if(l===null)return;e.target.disabled=true;await api({action:"tt_mark",id,link:l});load()};
-  if(q(".ttl"))q(".ttl").onclick=async e=>{const l=prompt("Link del post su TikTok (in TikTok tocca Condividi, poi Copia link):","");if(!l)return;await api({action:"tt_mark",id,link:l});load()};
+  if(q(".dis"))q(".dis").onclick=async()=>{if(await ask("Scartare questa bozza?")){await api({action:"discard",id});load()}};
+  if(q(".rst"))q(".rst").onclick=async()=>{if(await ask("Rimettere questa bozza in stato bozza? Fallo solo se la pubblicazione è bloccata e hai controllato su Instagram che il post NON sia già uscito: altrimenti rischi di pubblicarlo due volte.")){const r=await api({action:"draft_reset",id});if(!r.ok)say("Reset non riuscito: "+(r.error||""));load()}};
+  if(q(".tts"))q(".tts").onclick=async e=>{e.target.disabled=true;e.target.textContent="Invio…";if(q(".ttcap"))await api({action:"tt_caption",id,caption:q(".ttcap").value});const r=await api({action:"tt_send",id,force:true});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.tt&&r.tt.status==="errore")say(r.tt.error);load()};
+  if(q(".ttsv"))q(".ttsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"tt_caption",id,caption:q(".ttcap").value});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
+  if(q(".ttc"))q(".ttc").onclick=async e=>{const X=D.drafts.find(z=>z.id===id);const v=q(".ttcap")?q(".ttcap").value:((X&&X.tt_cap)||"");try{await navigator.clipboard.writeText(v);e.target.textContent="Copiata ✓"}catch(err){ask("Copia la didascalia:",v)}setTimeout(()=>{e.target.textContent="Copia didascalia"},1800)};
+  if(q(".ttm"))q(".ttm").onclick=async e=>{const l=await ask("Link del post su TikTok (facoltativo: in TikTok tocca Condividi, poi Copia link):","");if(l===null)return;e.target.disabled=true;await api({action:"tt_mark",id,link:l});load()};
+  if(q(".ttl"))q(".ttl").onclick=async e=>{const l=await ask("Link del post su TikTok (in TikTok tocca Condividi, poi Copia link):","");if(!l)return;await api({action:"tt_mark",id,link:l});load()};
   if(q(".ttk"))q(".ttk").onclick=async e=>{e.target.disabled=true;await api({action:"tt_check",id});load()};
-  if(q(".ttf"))q(".ttf").onclick=async e=>{if(!confirm("Reinviare? Il contenuto precedente resta comunque nella casella di TikTok finché non lo elimini dall'app."))return;e.target.disabled=true;const r=await api({action:"tt_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
-  if(q(".thsd"))q(".thsd").onclick=async e=>{if(!confirm("Pubblicare subito su Threads? Su Threads esce davvero, non come bozza."))return;e.target.disabled=true;e.target.textContent="Pubblico…";if(q(".thcap"))await api({action:"th_caption",id,caption:q(".thcap").value});const r=await api({action:"th_send",id,force:true});if(!r.ok)alert("Errore: "+(r.detail||r.error));else if(r.th&&r.th.status==="errore")alert(r.th.error);load()};
-  if(q(".thsv"))q(".thsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"th_caption",id,caption:q(".thcap").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
+  if(q(".ttf"))q(".ttf").onclick=async e=>{if(!await ask("Reinviare? Il contenuto precedente resta comunque nella casella di TikTok finché non lo elimini dall'app."))return;e.target.disabled=true;const r=await api({action:"tt_send",id,force:true});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
+  if(q(".thsd"))q(".thsd").onclick=async e=>{if(!await ask("Pubblicare subito su Threads? Su Threads esce davvero, non come bozza."))return;e.target.disabled=true;e.target.textContent="Pubblico…";if(q(".thcap"))await api({action:"th_caption",id,caption:q(".thcap").value});const r=await api({action:"th_send",id,force:true});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.th&&r.th.status==="errore")say(r.th.error);load()};
+  if(q(".thsv"))q(".thsv").onclick=async e=>{e.target.disabled=true;const r=await api({action:"th_caption",id,caption:q(".thcap").value});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
   if(q(".thk"))q(".thk").onclick=async e=>{e.target.disabled=true;await api({action:"th_check",id});load()};
   if(q(".res"))q(".res").onclick=async()=>{await api({action:"restore",id});load()}}}
 async function loadMail(){
@@ -1147,22 +1155,22 @@ document.getElementById("usc").onclick=()=>{
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="iscritti-read-geopolitics.csv";a.click();
 };
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
-document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!confirm("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
+document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!await ask("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
 document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked,dossier:document.getElementById("tgdz").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
-document.getElementById("tgnow").onclick=async e=>{if(!confirm("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
+document.getElementById("tgnow").onclick=async e=>{if(!await ask("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
 document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
 async function thrSearch(){const L=document.getElementById("thrl");L.innerHTML='<div class="sub">Cerco…</div>';const r=await api({action:"th_search",q:document.getElementById("thrq").value,type:document.getElementById("thrt").value});
  if(!r.ok){L.innerHTML='<div class="err">'+esc(r.detail||r.error)+(String(r.error||"").indexOf("threads_")===0?'<br>Se dice che manca il permesso, premi «Ricollega Threads» qui sopra.':'')+'</div>';return}
  if(!r.posts.length){L.innerHTML='<div class="sub">Nessun post trovato.</div>';return}
  L.innerHTML='<div class="sub">Risposte oggi: <b id="thrn">'+r.oggi+'</b>/'+r.max+'</div>'+r.posts.map(p=>'<div class="thp" data-id="'+esc(p.id)+'"><div class="thu">@'+esc(p.user||"?")+(p.at?' · '+esc(when(p.at)):'')+(p.link?' · <a href="'+esc(p.link)+'" target="_blank" rel="noopener">Apri ›</a>':'')+'</div><div class="tht">'+esc(p.text)+'</div>'+(p.risposto?'<div class="sub">Hai già risposto ✓</div>':'<textarea rows="3" maxlength="500" placeholder="La tua risposta: un fatto e la fonte, senza prendere posizione"></textarea><div class="row" style="margin-top:6px"><button class="sm p thrs" type="button">Rispondi</button><span class="sub thrc">0/500</span></div>')+'</div>').join("");
  L.querySelectorAll(".thp textarea").forEach(ta=>ta.oninput=()=>{ta.parentNode.querySelector(".thrc").textContent=ta.value.length+"/500"});
- L.querySelectorAll(".thrs").forEach(bt=>bt.onclick=async()=>{const c=bt.closest(".thp");const tx=c.querySelector("textarea").value.trim();if(tx.length<5){alert("Scrivi prima la risposta.");return}if(!confirm("Pubblicare questa risposta su Threads? Esce davvero, sotto il post."))return;bt.disabled=true;bt.textContent="Pubblico…";
-  const x=await api({action:"th_reply",id:c.dataset.id,text:tx});if(!x.ok){alert("Errore: "+(x.detail||x.error));bt.disabled=false;bt.textContent="Rispondi";return}
+ L.querySelectorAll(".thrs").forEach(bt=>bt.onclick=async()=>{const c=bt.closest(".thp");const tx=c.querySelector("textarea").value.trim();if(tx.length<5){say("Scrivi prima la risposta.");return}if(!await ask("Pubblicare questa risposta su Threads? Esce davvero, sotto il post."))return;bt.disabled=true;bt.textContent="Pubblico…";
+  const x=await api({action:"th_reply",id:c.dataset.id,text:tx});if(!x.ok){say("Errore: "+(x.detail||x.error));bt.disabled=false;bt.textContent="Rispondi";return}
   c.querySelector("textarea").remove();bt.parentNode.innerHTML='<span class="sub">Risposta pubblicata ✓'+(x.link?' · <a href="'+esc(x.link)+'" target="_blank" rel="noopener">Apri ›</a>':'')+'</span>';const n=document.getElementById("thrn");if(n)n.textContent=x.oggi})}
 document.getElementById("thrgo").onclick=thrSearch;
 document.getElementById("thtsv").onclick=async()=>{await api({action:"th_settings",topic:document.getElementById("thtopic").value});load()};
-document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)alert("Errore: "+(r.detail||r.error));load()};
+document.getElementById("ttvs").onclick=async()=>{const r=await api({action:"tt_verify",name:document.getElementById("ttvn").value,content:document.getElementById("ttvc").value});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
 document.getElementById("pause").onchange=async e=>{await api({action:"settings",paused:e.target.checked});load()};
 
 const DN=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
@@ -1298,10 +1306,10 @@ function renderWeek(){
     const dd=c.dataset.date;
     if(q(".pp"))q(".pp").onclick=()=>{POPEN=(POPEN===dd?null:dd);renderWeek()};
     if(q(".prf"))q(".prf").onclick=ev=>{ev.preventDefault();loadProp(true)};
-    c.querySelectorAll(".pr").forEach(o=>o.onclick=async()=>{const v=o.dataset.v;const r=await api({action:"scelta_set",date:dd,kind:SK[D.plan[dow-1].template],value:v||null,label:o.dataset.l});if(r.ok)PSC=r.scelte;else alert("Errore: "+(r.detail||r.error));renderWeek()});
+    c.querySelectorAll(".pr").forEach(o=>o.onclick=async()=>{const v=o.dataset.v;const r=await api({action:"scelta_set",date:dd,kind:SK[D.plan[dow-1].template],value:v||null,label:o.dataset.l});if(r.ok)PSC=r.scelte;else say("Errore: "+(r.detail||r.error));renderWeek()});
     if(q(".f-c"))q(".f-c").onclick=()=>{WED=null;renderWeek()};
     if(q(".f-t"))q(".f-t").onchange=ev=>{const t=tplOf(ev.target.value);if(t)q(".f-f").value=t.formato};
-    if(q(".f-s"))q(".f-s").onclick=async ev=>{ev.target.disabled=true;const r=await api({action:"plan_set",dow,entry:{rubrica:q(".f-r").value,template:q(".f-t").value,formato:q(".f-f").value,ora:q(".f-o").value,auto:q(".f-a").checked,note:q(".f-n").value}});if(!r.ok){alert("Errore: "+JSON.stringify(r));ev.target.disabled=false;return}WED=null;load()}});
+    if(q(".f-s"))q(".f-s").onclick=async ev=>{ev.target.disabled=true;const r=await api({action:"plan_set",dow,entry:{rubrica:q(".f-r").value,template:q(".f-t").value,formato:q(".f-f").value,ora:q(".f-o").value,auto:q(".f-a").checked,note:q(".f-n").value}});if(!r.ok){say("Errore: "+JSON.stringify(r));ev.target.disabled=false;return}WED=null;load()}});
 }
 function renderReq(){
   if(!D)return;const el=document.getElementById("rq");
@@ -1331,7 +1339,7 @@ function renderReq(){
    box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{document.getElementById("r-p").value=b.dataset.v;box.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b))})};
   const upd=()=>{const t=tplOf(sel.value);document.getElementById("r-d").textContent=t?t.desc:"";document.getElementById("r-pl").hidden=!(t&&t.param);if(t&&t.param)document.getElementById("r-pt").textContent=t.param;sug()};
   sel.onchange=upd;upd();
-  document.getElementById("r-go").onclick=async e=>{e.target.disabled=true;const r=await api({action:"req_create",template:sel.value,param:document.getElementById("r-p").value,note:document.getElementById("r-n").value,forza:document.getElementById("r-f").checked});if(!r.ok){alert("Errore: "+JSON.stringify(r));e.target.disabled=false;return}load()};
+  document.getElementById("r-go").onclick=async e=>{e.target.disabled=true;const r=await api({action:"req_create",template:sel.value,param:document.getElementById("r-p").value,note:document.getElementById("r-n").value,forza:document.getElementById("r-f").checked});if(!r.ok){say("Errore: "+JSON.stringify(r));e.target.disabled=false;return}load()};
   el.querySelectorAll(".cx").forEach(b=>b.onclick=async()=>{await api({action:"req_cancel",id:b.closest(".day").dataset.id});load()});
 }
 setTab("list");
@@ -1347,7 +1355,7 @@ load().then(()=>{
 // ---------- Podcast: puntata del giorno e storia Instagram (disegnata qui, nel telefono) ----------
 let POD=null,POD_GEN=false,POD_BLOB=null,POD_IMG=null,POD_T=null;
 function podCopy(btn,txt){const done=()=>{const o=btn.textContent;btn.textContent="Copiato ✓";setTimeout(()=>{btn.textContent=o},1500)};
- if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,()=>{prompt("Copia:",txt)});else prompt("Copia:",txt)}
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,()=>{ask("Copia:",txt)});else ask("Copia:",txt)}
 const podCut=s=>String(s||"").split(/[,;·]|[.] | [/] /).map(x=>x.trim().replace(/[./]+$/,"").trim()).filter(Boolean).map(x=>x.charAt(0).toUpperCase()+x.slice(1));
 function podTemi(ep){
  // temi per esteso e brevi: dai capitoli inviati dal task; se mancano, dalla descrizione e dal titolo
