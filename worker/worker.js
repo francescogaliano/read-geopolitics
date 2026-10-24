@@ -979,10 +979,10 @@ function cnlIt(k,ic,tit,x,why){let h='<div class="cit" data-k="'+k+'"><div class
  return h+'</div>'}
 function cnlSum(x,tg){if(!x||!x.on)return '';if(x.stato==="uscito")return tg+' ✓';if(x.skip||x.stato==="fermato"||x.stato==="assente"||!x.testo)return '';if(x.stato==="errore")return tg+' errore';return tg+' '+x.ora}
 function cnlRender(c){const el=document.getElementById("cnl");if(!el)return;if(!c){el.hidden=true;return}el.hidden=false;
- const sm=[cnlSum(c.div,"Fonti"),cnlSum(c.dom,"Domanda"),c.bil&&c.bil.domenica&&c.bil.stato!=="assente"?(c.bil.stato==="uscito"?"Com&#39;è andata ✓":"Com&#39;è andata "+c.bil.ora):""].filter(Boolean);document.getElementById("cnlsum").innerHTML=sm.length?sm.join(" · "):"niente in uscita";
+ const sm=[cnlSum(c.div,c.div&&c.div.titolo&&c.div.titolo.indexOf("ufficiali")>0?"Versioni":"Fonti"),cnlSum(c.dom,"Domanda"),c.bil&&c.bil.domenica&&c.bil.stato!=="assente"?(c.bil.stato==="uscito"?"Com&#39;è andata ✓":"Com&#39;è andata "+c.bil.ora):""].filter(Boolean);document.getElementById("cnlsum").innerHTML=sm.length?sm.join(" · "):"niente in uscita";
  const dv=c.div,dm=c.dom;const td=new Date();
  let h='<div class="row" style="justify-content:space-between"><span class="sub">Escono da soli: puoi correggerli o fermarli per oggi.</span></div>';
- h+=cnlIt("div","TG","Le fonti non sono d&#39;accordo",dv,dv.testo?(dv.fonti&&dv.fonti.length?esc(dv.fonti.join(" · ")):""):(!dv.briefing?"Il briefing di oggi non è ancora pronto.":"Nessuna divergenza che cambi la lettura dei fatti: oggi non esce."));
+ h+=cnlIt("div","TG",esc(dv.titolo||"Le fonti non sono d'accordo"),dv,dv.testo?(dv.fonti&&dv.fonti.length?esc(dv.fonti.join(" · ")):""):(!dv.briefing?"Il briefing di oggi non è ancora pronto.":"Nessuna divergenza che cambi la lettura dei fatti: oggi non esce."));
  h+=cnlIt("dom","TH","Domanda del giorno",dm,dm.testo?(dm.stato==="errore"?esc(dm.errore||""):dm.post!=="pubblicata"&&dm.stato!=="uscito"?"Parte solo se pubblichi il post di oggi su Instagram.":""):(dm.post?"La bozza di oggi non ha una domanda: oggi non esce.":"La bozza di oggi non c&#39;è ancora."));
  if(c.bil){const b=c.bil;h+='<div class="cit"><div class="cih"><span class="ic">TG</span><b>Com&#39;è andata</b>'+(b.stato==="uscito"?'<span class="cp ok">uscito ✓</span>':b.stato==="assente"?'<span class="cp no">niente da dire</span>':'<span class="cp '+(b.domenica?'wait':'no')+'">'+(b.domenica?'esce alle '+esc(b.ora):'domenica alle '+esc(b.ora))+'</span>')+'</div>';
   h+='<div class="cpv">'+b.ok+' segnali avverati, '+b.no+' no'+(b.open?', '+b.open+' ancora aperti':'')+(b.righe.length?'<br><br>'+b.righe.map(esc).join("<br>")+(b.altri?'<br><i>… altri '+b.altri+'</i>':''):'')+'</div>';
@@ -2320,6 +2320,8 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
 // Threads: una domanda al giorno (draft.th_domanda), solo se il post del giorno è uscito su Instagram.
 const romeHM = () => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
 async function tgBriefing(env, day) { const b = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1 AND status='published'").bind(day).first(); return b ? JSON.parse(b.data) : null; }
+// «parti»: a non coincidere sono le dichiarazioni ufficiali delle parti in causa; «fonti» (o assente): i resoconti dei media
+const divTitolo = (tipo) => (tipo === "parti" ? "Le versioni ufficiali non coincidono" : "Le fonti non sono d'accordo");
 async function tgDivergenza(env, force) {
   const st = await tgSettings(env); const day = romeToday();
   if (!st.chat || !env.TG_BOT_TOKEN) return null;
@@ -2330,7 +2332,7 @@ async function tgDivergenza(env, force) {
   const dv = br && br.tg_divergenza ? { ...br.tg_divergenza, ...(ov.testo ? { testo: ov.testo } : {}) } : null;
   if (!dv || !dv.testo) { if (!force && (!br || romeHM() >= "14:00")) await kvSet(env, "tg_d:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const link = "https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=divergenza#briefing";
-  let msg = "<b>Le fonti non sono d'accordo</b>\n\n" + esc(tgClip(dv.testo, 600));
+  let msg = "<b>" + divTitolo(dv.tipo) + "</b>\n\n" + esc(tgClip(dv.testo, 600));
   if (Array.isArray(dv.fonti) && dv.fonti.length) msg += "\n\n<i>" + esc(dv.fonti.slice(0, 4).join(" · ")) + "</i>";
   msg += "\n\n<a href=\"" + link + "\">La storia con tutte le fonti</a>";
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: msg, parse_mode: "HTML", disable_web_page_preview: true });
@@ -2505,7 +2507,7 @@ async function canaliInfo(env) {
   const tgD = await kvGet(env, "tg_d:" + day), thQ = await kvGet(env, "thq:" + day);
   const dv = br && br.tg_divergenza;
   const out = {
-    div: { on: tg.divergenze !== false && !!tg.chat, ora: tg.ora_div || "12:30", briefing: !!br, testo: (ov.div && ov.div.testo) || (dv && dv.testo) || "", fonti: (dv && dv.fonti) || [], modificato: !!(ov.div && ov.div.testo), skip: !!(ov.div && ov.div.skip),
+    div: { on: tg.divergenze !== false && !!tg.chat, ora: tg.ora_div || "12:30", briefing: !!br, testo: (ov.div && ov.div.testo) || (dv && dv.testo) || "", fonti: (dv && dv.fonti) || [], titolo: divTitolo(dv && dv.tipo), modificato: !!(ov.div && ov.div.testo), skip: !!(ov.div && ov.div.skip),
       stato: tgD ? (tgD.msg ? "uscito" : tgD.skip ? "fermato" : "assente") : null, link: tgD && tgD.msg && chan ? "https://t.me/" + chan + "/" + tgD.msg : null },
     dom: { on: th.domanda !== false, ora: th.ora_dom || "18:00", testo: (ov.dom && ov.dom.testo) || (d && d.th_domanda) || "", modificato: !!(ov.dom && ov.dom.testo), skip: !!(ov.dom && ov.dom.skip), post: d ? d.status : null,
       stato: thQ ? (thQ.status === "pubblicato" ? "uscito" : thQ.skip ? "fermato" : thQ.status === "errore" ? "errore" : "assente") : null, link: thQ && thQ.link ? thQ.link : null, errore: thQ && thQ.error ? thQ.error : null },
