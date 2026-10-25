@@ -2657,7 +2657,7 @@ async function bilancioData(env, day) { // i segnali risolti nella settimana (da
 }
 function bilancioText(B) {
   const n = (x) => (x || []).length;
-  let msg = "<b>Com'è andata la settimana</b>\nSotto ogni storia indichiamo cosa osservare: fatti che, se accadono, spostano la storia. Non sono previsioni: anche quando va diversamente è un'informazione.\n\n" +
+  let msg = "<b>Com'è andata la settimana</b>\nSotto ogni storia indichiamo cosa osservare: i fatti che dicono da che parte andrà. Ecco da che parte sono andati.\n\n" +
     "Questa settimana " + (n(B.ok) + n(B.alt) + n(B.fermi)) + " segnali sono arrivati a scadenza:\n🟢 " + n(B.ok) + " sono successi · 🔀 " + n(B.alt) + " sono andati diversamente · ⚪ " + n(B.fermi) + " non si sono mossi" + (B.open ? "\n(" + B.open + " sono ancora aperti)" : "");
   const S = B.scelti || [];
   if (S.length) msg += "\n\n<b>Da ricordare</b>\n" + S.map((v) => (v.esito === "avvenuto" ? "🟢 " : "🔀 ") + (v.tema ? "<b>" + esc(v.tema) + "</b> · " : "") + esc(tgClip(v.nota || v.segnale, 200)) + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
