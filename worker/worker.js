@@ -3,7 +3,7 @@
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
 // v51: svolte e aggiornamenti. Routine «aggiornamenti» (11:52, 15:52, 19:52): documenti «aggiornamenti» sul sito (fascia «Dalle ultime ore» e riquadro nella storia), proposte di svolta (/v1/svolte) da approvare nel pannello, avviso nella chat privata col bot, /v1/giro. Richieste: modulo senza riquadri con temi suggeriti; reel «Spiegato in 40 secondi» (kit spiegato.mjs).
 // v52: «Com'è andata la settimana» riscritto: tre esiti neutri (successi / andati diversamente / fermi), doppioni tolti, 4 voci da ricordare con il tema del filone.
-// v53: Telegram, tetto di 3 messaggi al giorno (divergenza saltata se è uscita una svolta; divergenza e riepilogo saltati oltre il tetto); riepilogo serale «Dalle ultime ore» alle 20:15 (dopo l'ultimo giro), solo se ci sono aggiornamenti non già mandati come svolta. Prova nella chat privata: azione tg_sera_prova.
+// v54: il riepilogo serale non conta più il tetto. v53: Telegram, tetto di 3 messaggi al giorno (divergenza saltata se è uscita una svolta; divergenza e riepilogo saltati oltre il tetto); riepilogo serale «Dalle ultime ore» alle 20:15 (dopo l'ultimo giro), solo se ci sono aggiornamenti non già mandati come svolta. Prova nella chat privata: azione tg_sera_prova.
 // v49: newsletter con la domanda del giorno (pulsanti che aprono il sito e registrano il voto); domanda di Threads con il link al sito.
 // v48: esito degli scenari: /v1/batch salva esito e probabilità accanto ai voti (polls); «Com'è andata» con gli scenari chiusi; pannello «Chi ci ha preso».
 // v47: previsioni dei lettori (g: sì/no sui segnali, c: scelta dello scenario) oltre alle tesi; copia di ogni sondaggio (tabella polls); pannello «Voti dei lettori · solo per te»; «Com'è andata» con la percentuale dei lettori.
@@ -2415,7 +2415,7 @@ async function tgCall(env, method, body) {
   try { if (/^send/.test(method) && body && body.chat_id) { const st = await tgSettings(env); if (st.chat && String(body.chat_id) === String(st.chat)) { const k = "tg_n:" + romeToday(); const L = (await kvGet(env, k)) || []; L.push({ m: method, at: new Date().toISOString() }); await kvSet(env, k, L); } } } catch (e) {} // v53: messaggi sul canale oggi
   return j.result;
 }
-const TG_TETTO = 3; // v53: tetto di messaggi al giorno sul canale per divergenza e riepilogo serale (mattino, svolte, dossier e bilancio non si fermano)
+const TG_TETTO = 3; // v53: tetto di messaggi al giorno sul canale, vale solo per la divergenza (v54: il riepilogo serale esce sempre se ci sono aggiornamenti: è il messaggio che chiude la giornata)
 async function tgOggi(env) { const day = romeToday(); const n = ((await kvGet(env, "tg_n:" + day)) || []).length;
   const svolta = (await svList(env)).some((x) => x.tg_msg && x.tg_at && new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(x.tg_at)) === day);
   return { n, svolta }; }
@@ -2509,7 +2509,6 @@ async function tgSera(env, force) {
   }
   const ov = ((await kvGet(env, "ch_ov:" + day)) || {}).sera || {};
   if (ov.skip && !force) { await kvSet(env, "tg_s:" + day, { skip: true, at: new Date().toISOString() }); return null; }
-  if (!force) { const O = await tgOggi(env); if (O.n >= TG_TETTO) { await kvSet(env, "tg_s:" + day, { skip: "tetto", at: new Date().toISOString() }); return null; } }
   const A = await tgSeraData(env, day);
   if (!A.length) { if (!force) await kvSet(env, "tg_s:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: tgSeraText(A, day), parse_mode: "HTML", disable_web_page_preview: true });
