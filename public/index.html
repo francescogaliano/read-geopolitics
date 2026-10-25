@@ -570,6 +570,20 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .tr .td{font-family:var(--mono);font-size:12.5px;color:var(--accent);margin-right:8px;white-space:nowrap}
 .tr .tb{padding:0 0 12px;font-size:13.5px;color:var(--muted)}
 .tr .tb .corr{margin:0 0 6px}
+.tm-cur{margin:4px 0 6px -22px;padding:0 0 4px;position:relative;z-index:1;background:var(--surface)}
+.tm-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tm-n{font:600 12.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}.tm-live{font-size:11px;color:var(--mid);margin-left:8px;letter-spacing:.06em}
+.tm-c{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.tm-s{margin:6px 0 4px;font-size:14.5px;line-height:1.5;color:var(--ink)}
+.tm-k{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.tm-k span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 9px;color:var(--muted)}
+.tm-all{margin:2px 0 0}.tm-all>summary{list-style:none;cursor:pointer;font-size:13.5px;color:var(--accent);padding:6px 0 8px;margin-left:-22px;position:relative;z-index:1;background:var(--surface)}.tm-all>summary::-webkit-details-marker{display:none}.tm-all>summary::before{content:"▸ ";}.tm-all[open]>summary::before{content:"▾ "}
+.tm-arch{margin-top:18px}.tm-lab{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.tm{border:1px solid var(--line);border-radius:12px;margin:0 0 10px;background:var(--surface-2)}
+.tm>summary{list-style:none;cursor:pointer;display:block;padding:11px 14px 10px}.tm>summary::-webkit-details-marker{display:none}
+.tm-o{display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);font-size:13.5px;color:var(--accent)}.tm-o::after{content:"›";transition:transform .15s}.tm[open]>summary .tm-o::after{transform:rotate(90deg)}
+.tm[open]{border-color:var(--accent)}.tm>.tl{margin:0 14px 10px 14px}
+.ty{border-style:dashed}.ty-b{padding:0 10px 4px}
+.tm-roots{margin-top:16px}
 .tr .tb .linkbtn{font-size:13px}
 .tr .tb a{color:var(--muted)}
 .tr.rt::before{background:var(--faint)}
@@ -2586,25 +2600,48 @@ function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.e
   const sts=(t.storie||[]).map(x=>S.stories[x.id]?{...x,titolo:S.stories[x.id].titolo}:x);
   const dz=dosForThread(t.id);
   let out=`${t.descrizione?`<p class="th-ds">${esc(t.descrizione)}</p>`:""}${dosStripHTML(dz,"Questo tema ha un dossier a 360°")}
-  <details class="th-more"><summary>👤 Persone e 📰 storie del tema · ${sts.length}</summary>${threadActorsHTML(t)}${sts.length?`<ol style="margin:8px 0 0;padding-left:20px">${sts.sort((a,b)=>a.data.localeCompare(b.data)).map(s=>`<li><span class="muted" style="font-family:var(--mono);font-size:12px">${fmtDate(s.data)}</span> · ${S.stories[s.id]?`<button class="linkbtn" data-story="${esc(s.id)}">${esc(s.titolo)}</button>`:esc(s.titolo||s.id)}</li>`).join("")}</ol>`:""}</details><div class="tl tl-arc">`;
-  if(dz&&dz.radici&&(dz.radici.tappe||[]).length){const tp=dz.radici.tappe;
-    out+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce · dal dossier: ${esc(clip(dosPlain(dz.radici.sommario||""),80))}</summary><div class="tb"><ol class="apos rt">${tp.map(x=>`<li><span class="d">${esc(x.quando||"")}</span><div>${dosRef(x.testo,dz)}</div></li>`).join("")}</ol><button class="linkbtn" data-open-dos="${esc(dz.id)}">Il dossier completo: attori, nodi, narrazioni, scenari ›</button></div></details>`}
-  else if(t.radici&&(t.radici.tappe||[]).length){const r=t.radici,tp=r.tappe;
-    out+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce: ${esc(r.parole||clip(r.sommario||"",80))}</summary><div class="tb">${rootsBody(t)}</div></details>`}
+  <details class="th-more"><summary>👤 Persone e 📰 storie del tema · ${sts.length}</summary>${threadActorsHTML(t)}${sts.length?`<ol style="margin:8px 0 0;padding-left:20px">${sts.sort((a,b)=>a.data.localeCompare(b.data)).map(s=>`<li><span class="muted" style="font-family:var(--mono);font-size:12px">${fmtDate(s.data)}</span> · ${S.stories[s.id]?`<button class="linkbtn" data-story="${esc(s.id)}">${esc(s.titolo)}</button>`:esc(s.titolo||s.id)}</li>`).join("")}</ol>`:""}</details>`;
+  /* v53: per mese. Il mese in corso è aperto (ultimi 3 fatti, gli altri dietro «Tutti i fatti»); i mesi passati sono schede chiuse con sintesi e parole chiave (thread.mesi), gli anni oltre i 12 mesi si raccolgono sotto l'anno (thread.anni). */
   const past=S.events.filter(e=>e.filone_id===t.id&&e.data<=todayIso&&evOk(e)).sort((a,b)=>a.data.localeCompare(b.data)||String(a.id).localeCompare(String(b.id)));
-  if(!past.length)out+=`<p class="muted tl-note" style="margin:10px 0">${nf?"Nessun evento di questo tema con i filtri scelti.":"Nessun evento registrato per ora."}</p>`;
-  past.forEach(e=>{
+  const evRow=e=>{let out="";
     const meta=[...(e.paesi||[]).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`),...(e.storia_id&&S.stories[e.storia_id]?[`<button class="linkbtn" data-story="${esc(e.storia_id)}">leggi la storia</button>`]:[])];
     out+=`<details class="tr" id="ev-${esc(e.id)}"><summary><span class="td">${esc(dShort(e.data))}</span>${esc(e.testo)}</summary><div class="tb">
     ${(e.correlazioni||[]).length?`<div class="corr">${e.correlazioni.map(c=>{const x=byId[c.event_id];return x?`<button data-event="${esc(x.id)}">↳ <span class="ctype">${esc(CORR[c.tipo]||c.tipo)}</span><span class="ctext">${esc(clip(x.testo,88))}</span></button>`:""}).join("")}</div>`:""}
-    ${meta.join(" · ")}${e.esempio?' <span class="chip sample">esempio</span>':""}</div></details>`});
+    ${meta.join(" · ")}${e.esempio?' <span class="chip sample">esempio</span>':""}</div></details>`;return out};
+  const curM=todayIso.slice(0,7),byM={};past.forEach(e=>{(byM[e.data.slice(0,7)]=byM[e.data.slice(0,7)]||[]).push(e)});
+  const mName=m=>MONTHS[+m.slice(5,7)-1].replace(/^./,c=>c.toUpperCase())+" "+m.slice(0,4);
+  const MS=t.mesi||{},AN=t.anni||{};
+  const sint=m=>{const x=MS[m]||{};return `${x.sintesi?`<p class="tm-s">${esc(x.sintesi)}</p>`:""}${(x.parole||[]).length?`<div class="tm-k">${x.parole.slice(0,4).map(w=>`<span>${esc(w)}</span>`).join("")}</div>`:""}`};
+  const nF=n=>n+" "+(n===1?"fatto":"fatti");
+  out+=`<div class="tl tl-arc">`;
+  if(!past.length)out+=`<p class="muted tl-note" style="margin:10px 0">${nf?"Nessun evento di questo tema con i filtri scelti.":"Nessun evento registrato per ora."}</p>`;
+  const cm=byM[curM]||[];
+  if(cm.length){out+=`<div class="tm-cur"><div class="tm-h"><span class="tm-n">${esc(mName(curM))}<span class="tm-live">● in corso</span></span><span class="tm-c">${nF(cm.length)}</span></div>${sint(curM)}</div>`;
+    const last=cm.slice(-3),prev=cm.slice(0,-3);
+    if(prev.length)out+=`<details class="tm-all"><summary>Tutti i ${cm.length} fatti di ${esc(MONTHS[+curM.slice(5,7)-1])}</summary>${prev.map(evRow).join("")}</details>`;
+    out+=last.map(evRow).join("")}
   const td=new Date(todayIso+"T12:00:00");
   out+=`<div class="tl-now"><b>OGGI · ${td.getDate()} ${MONTHS[td.getMonth()].slice(0,3).toUpperCase()}</b></div>`;
   out+=scenMiniHTML(t);
   const up=S.agenda.filter(a=>a.filone_id===t.id&&(a.data_fine||a.data)>=todayIso).sort((a,b)=>a.data.localeCompare(b.data));
   if(!up.length)out+=`<p class="muted tl-note" style="margin:8px 0">Nessuna scadenza con data certa per questo tema.</p>`;
   out+=up.map(a=>`<details class="tr fu${(a.importanza||2)>=3?" k":""}"><summary><span class="td">${esc(fmtShort(a))}</span>${esc(a.titolo)}<span class="cdn">${esc(countdown(a,todayIso))}</span></summary><div class="tb">${[...(a.paesi||[]).filter(p=>/^[A-Z]{3}$/.test(p)).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`),srcA(a.fonte)].filter(Boolean).join(" · ")}</div></details>`).join("");
-  return out+`</div><button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`}
+  out+=`</div>`;
+  const pm=Object.keys(byM).filter(m=>m<curM).sort().reverse();
+  const card=m=>`<details class="tm"><summary><span class="tm-h"><span class="tm-n">${esc(mName(m))}</span><span class="tm-c">${nF(byM[m].length)}</span></span>${sint(m)}<span class="tm-o">Giorno per giorno</span></summary><div class="tl">${byM[m].map(evRow).join("")}</div></details>`;
+  if(pm.length){const cy=curM.slice(0,4),span=pm.length>11;
+    out+=`<div class="tm-arch"><div class="tm-lab">Mesi precedenti</div>`;
+    const yrs=[...new Set(pm.map(m=>m.slice(0,4)))];
+    for(const y of yrs){const ms=pm.filter(m=>m.slice(0,4)===y);
+      if(span&&y<cy){const n=ms.reduce((k,m)=>k+byM[m].length,0);out+=`<details class="tm ty"><summary><span class="tm-h"><span class="tm-n">${esc(y)} · ${ms.length} ${ms.length===1?"mese":"mesi"}</span><span class="tm-c">${nF(n)}</span></span>${(AN[y]||{}).sintesi?`<p class="tm-s">${esc(AN[y].sintesi)}</p>`:""}<span class="tm-o">I mesi</span></summary><div class="ty-b">${ms.map(card).join("")}</div></details>`}
+      else out+=ms.map(card).join("")}
+    out+=`</div>`}
+  if(true){let rr="";  if(dz&&dz.radici&&(dz.radici.tappe||[]).length){const tp=dz.radici.tappe;
+    rr+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce · dal dossier: ${esc(clip(dosPlain(dz.radici.sommario||""),80))}</summary><div class="tb"><ol class="apos rt">${tp.map(x=>`<li><span class="d">${esc(x.quando||"")}</span><div>${dosRef(x.testo,dz)}</div></li>`).join("")}</ol><button class="linkbtn" data-open-dos="${esc(dz.id)}">Il dossier completo: attori, nodi, narrazioni, scenari ›</button></div></details>`}
+  else if(t.radici&&(t.radici.tappe||[]).length){const r=t.radici,tp=r.tappe;
+    rr+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce: ${esc(r.parole||clip(r.sommario||"",80))}</summary><div class="tb">${rootsBody(t)}</div></details>`}
+if(rr)out+=`<div class="tl tm-roots">${rr}</div>`}
+  return out+`<button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`}
 function themeCard(t,sel,evOk,nf){const l=thLast(t),n=thNext(t),today=isoDay(new Date());
   const star=S.owner&&!S.static?`<button type="button" class="th-star" data-star="${esc(t.id)}" aria-pressed="${prefs().seguiti.includes(t.id)}" title="Segui questo tema: avviso in cima al briefing quando si muove">${prefs().seguiti.includes(t.id)?"★":"☆"}</button>`:"";
   const cat=thCat(t),tens=TCAT_T.has(cat),lv=tens?thLv(t):0,ci=(TCAT.find(x=>x[0]===cat)||TCAT[6])[1];
@@ -2661,6 +2698,7 @@ function flashEvent(id){
   let el=document.getElementById("ev-"+id);
   if(!el){const ev=S.events.find(x=>x.id===id);S.flt={r:"",t:"",f:ev?ev.filone_id||"":"",a:""};S.tlMode="temi";renderTimeline();el=document.getElementById("ev-"+id)}
   if(el&&el.tagName==="DETAILS")el.open=true;
+  {let p=el&&el.parentElement;while(p){if(p.tagName==="DETAILS")p.open=true;p=p.parentElement}} /* v53: il fatto può stare in un mese chiuso */
   if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1600);
 }
 
