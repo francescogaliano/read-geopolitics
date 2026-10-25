@@ -268,6 +268,33 @@ main{padding-block:24px 64px}
 .agg-rr,.agg-r>summary{display:grid;grid-template-columns:52px minmax(0,1fr) 14px;gap:9px;padding:7px 0;font-size:14.5px;line-height:20px;align-items:center;list-style:none}.agg-sc .agg-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agg-sc details[open]>summary .agg-t{white-space:normal}.agg-r>summary::-webkit-details-marker,.agg-s>summary::-webkit-details-marker{display:none}
 .agg-ch{color:var(--sample-ink);font-size:13px;line-height:1.6;transition:transform .15s}details[open]>summary .agg-ch{transform:rotate(90deg)}details[open]>summary .agg-t{font-weight:600}
 .agg-sc{position:relative;overflow-y:auto;margin-top:2px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--sample-line) transparent}.agg-sc>.agg-r:first-child{border-top:0}.agg-sc.agg-lim{max-height:69px}
+.aggc{background:none;border:0;padding:0 0 14px;position:relative;margin-bottom:12px}
+.aggc-card{position:relative;z-index:3;display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--sample);border:1px solid var(--sample-line);border-radius:12px;padding:11px 14px 10px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.aggc-card:active{transform:scale(.99)}
+.aggc.aggc-m::before,.aggc.aggc-m2::after{content:"";position:absolute;left:10px;right:10px;bottom:8px;height:14px;border:1px solid var(--sample-line);border-top:0;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--sample) 80%,var(--bg));z-index:2}
+.aggc.aggc-m2::after{left:20px;right:20px;bottom:2px;z-index:1;background:color-mix(in srgb,var(--sample) 55%,var(--bg))}
+.aggc-meta{display:flex;align-items:center;gap:8px;min-width:0}.aggc-meta .agg-o{padding:2px 7px}
+.aggc-tag{font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--sample-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aggc-lab{margin-left:auto;white-space:nowrap;color:var(--sample-ink);opacity:.8}
+.aggc-t{font-weight:600;font-size:15.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.aggc-f{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}.aggc-go{color:var(--accent);font-weight:600}
+.ags{position:fixed;inset:0;z-index:300}.ags[hidden]{display:none}
+.ags-dim{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .25s}.ags.on .ags-dim{opacity:1}
+.ags-p{position:absolute;left:0;right:0;bottom:0;max-height:88vh;max-height:88dvh;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border-radius:18px 18px 0 0;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.3);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.ags.on .ags-p{transform:none}
+.ags-hd{padding:6px 18px 10px;border-bottom:1px solid var(--line);touch-action:none}.ags-grab{display:block;width:42px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
+.ags-hr{display:flex;justify-content:space-between;align-items:center;gap:12px}.ags-t{font:600 19px/1.2 var(--serif,Georgia),serif}.ags-d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.ags-x{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+.ags-l{overflow-y:auto;overscroll-behavior:contain;padding:4px 18px 8px 22px;flex:1}
+.ags-i{position:relative;padding:14px 4px 16px 22px;border-left:2px solid var(--line)}
+.ags-i::before{content:"";position:absolute;left:-7px;top:19px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.ags-i.ags-hl{background:linear-gradient(90deg,color-mix(in srgb,var(--mid) 14%,transparent),transparent);border-radius:0 10px 10px 0}.ags-i.ags-hl::before{background:var(--mid)}
+.ags-m{display:flex;gap:8px;align-items:center}.ags-m .agg-o{padding:2px 7px}.ags-sv{color:var(--mid)}
+.ags-i h4{margin:7px 0 5px;font-size:16px;line-height:1.3}.ags-i p{margin:0 0 6px;font-size:14.5px;line-height:1.5}
+.ags-b{display:inline-flex;align-items:center;min-height:42px;margin-top:8px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font:600 14px system-ui,sans-serif;cursor:pointer}
+.ags-tg{padding:10px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);font-size:13px}.ags-tg a{color:var(--accent)}
+@media (min-width:900px){.ags-p{left:auto;top:0;bottom:0;width:440px;max-height:none;border-radius:0;border-top:0;border-left:1px solid var(--line);box-shadow:-16px 0 40px rgba(0,0,0,.3);transform:translateX(100%)}.ags-grab{display:none}.ags-hd{padding-top:16px}}
+@media (prefers-reduced-motion:reduce){.ags-p,.ags-dim{transition:none}}
 .agg-n{font:600 11px ui-monospace,monospace;background:var(--sample-line);color:var(--sample-ink);border-radius:99px;padding:1px 7px;margin-left:8px;letter-spacing:0}.agg-h .agg-tgl{font-size:12.5px;color:var(--accent);white-space:nowrap}
 .agg-fd{position:relative;height:0}.agg-fd::before{content:"";position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(transparent,var(--sample));pointer-events:none}.agg-fd[hidden]{display:none}
 .agg-more{display:block;width:100%;background:none;border:0;color:var(--sample-ink);font:12.5px system-ui,sans-serif;padding:4px 0 2px;cursor:pointer}.agg-more[hidden]{display:none}
@@ -1689,21 +1716,38 @@ function aggForStory(s){const L=S.briefings[0];if(!s||!L||s.data!==L.data)return
 function aggTit(x){const t=x.titolo||String(x.testo||"");return t.length>110?t.slice(0,107).replace(/\s+\S*$/,"")+"…":t}
 function aggSrc(x,sep){return (x.fonti||[]).slice(0,4).map(f=>f&&f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome||"fonte")}</a>`:esc(f&&f.nome||f)).join(sep)}
 S.aggOpen=S.aggOpen||new Set();
-function aggHTML(b){const A=aggDopo(b);if(!A.length)return"";const th=id=>S.threads[id];
- return `<section class="agg" id="aggiornamenti" aria-label="Dalle ultime ore"><div class="agg-h"><span class="label">Dalle ultime ore${A.length>1?`<span class="agg-n">${Math.min(A.length,20)}</span>`:""}</span><a class="agg-tgl" href="https://t.me/readgeopolitics" target="_blank" rel="noopener">anche su Telegram ›</a></div><div class="agg-sc${A.length>2?" agg-lim":""}" id="aggSc">${A.slice(0,20).map(x=>{const t=th(x.filone_id);const st0=x.storia_id&&S.stories[x.storia_id];const st=st0&&!aggLocked(st0.id)?st0:null;const head=`<span class="agg-o${x.tipo==="svolta"?" agg-sv":""}">${esc(x.ora||"")}</span><span class="agg-t">${x.tipo==="svolta"?"<b>Svolta · </b>":""}${esc(aggTit(x))}</span>`;
-  return `<details class="agg-r" data-agg-ban="${esc(x.id||"")}"${S.aggBan===x.id?" open":""}><summary>${head}<span class="agg-ch" aria-hidden="true">▸</span></summary><div class="agg-x">${esc(x.testo)}<span class="agg-l">${st?`<button type="button" class="linkbtn" data-agg-go="${esc(x.id||"")}" data-agg-st="${esc(st.id)}">nella storia ↓</button>`:t?`<button class="linkbtn" data-thread="${esc(t.id)}">${esc(thShort(t))} ›</button>`:""}${(x.fonti||[]).length?` <span class="agg-f">${st||t?"· ":""}${aggSrc(x,", ")}</span>`:""}</span></div></details>`}).join("")}</div><div class="agg-fd"${A.length>2?"":" hidden"}></div>${(setTimeout(aggFit,0),"")}</section>`}
+function aggTag(x){const t=S.threads[x.filone_id];return t?(t.breve||thShort(t)):""}
+function aggHTML(b){const A=aggDopo(b);if(!A.length)return"";const x=A[0],n=A.length-1;
+ return `<section class="agg aggc${n?" aggc-m":""}${n>1?" aggc-m2":""}" id="aggiornamenti" aria-label="Dalle ultime ore"><button type="button" class="aggc-card" data-agg-open="${esc(x.id||"")}"><span class="aggc-meta"><span class="agg-o${x.tipo==="svolta"?" agg-sv":""}">${esc(x.ora||"")}</span>${aggTag(x)?`<span class="aggc-tag">${esc(aggTag(x))}</span>`:""}<span class="label aggc-lab">Dalle ultime ore</span></span><span class="aggc-t">${x.tipo==="svolta"?"<b>Svolta · </b>":""}${esc(aggTit(x))}</span><span class="aggc-f"><span>${n?`+${n} ${n===1?"aggiornamento":"aggiornamenti"} oggi`:"Dopo il briefing del mattino"}</span><span class="aggc-go">Apri ›</span></span></button></section>`}
 function aggStoryHTML(s){const A=aggForStory(s);if(!A.length)return"";return A.map(x=>`<details class="agg-s" id="ags-${esc(x.id||"")}" data-agg-id="${esc(x.id||"")}"${S.aggOpen.has(x.id)?" open":""}><summary><span><span class="label">Dopo il briefing · ${esc(x.ora||"")}</span><br><span class="agg-t">${x.tipo==="svolta"?"<b>Svolta · </b>":""}${esc(aggTit(x))}</span></span><span class="agg-ch" aria-hidden="true">▸</span></summary><p>${esc(x.testo)}</p>${(x.fonti||[]).length?`<span class="agg-f">${aggSrc(x," · ")}</span>`:""}</details>`).join("")}
 /* v52d: un ospite non può aprire le storie oltre le prime 3 del Mondo: per quelle l'aggiornamento si apre sul posto invece di portare a una storia chiusa */
 function aggLocked(id){if(!S.guest)return false;const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;return !(mi>=0&&mi<3)}
-/* v52c: riquadro di due righe (altezza decisa dal CSS, quindi la pagina non salta all'apertura); le altre si scorrono dentro. Una riga aperta allarga il riquadro finché resta aperta. */
-function aggFit(){const sc=document.getElementById("aggSc");if(!sc||sc.dataset.on)return;sc.dataset.on=1;const fd=sc.parentNode.querySelector(".agg-fd");
- const upd=()=>{if(fd)fd.hidden=!sc.classList.contains("agg-lim")||!!sc.querySelector("details[open]")||sc.scrollHeight-sc.clientHeight-sc.scrollTop<=4};
- const fit=(d,smooth)=>{if(!sc.classList.contains("agg-lim"))return;sc.style.maxHeight=Math.max(69,d.offsetHeight)+"px";sc.scrollTo({top:d.offsetTop,behavior:smooth?"smooth":"auto"})};
- /* la pagina si ridisegna quando arrivano dati nuovi: riprende la riga aperta e il punto di scorrimento */
- const o=sc.querySelector("details[open]");if(o)fit(o,false);else if(S.aggTop)sc.scrollTop=S.aggTop;
- sc.addEventListener("scroll",()=>{if(!sc.querySelector("details[open]"))S.aggTop=sc.scrollTop;upd()},{passive:true});
- sc.addEventListener("toggle",e=>{const d=e.target;if(d.open){S.aggBan=d.dataset.aggBan||null;sc.querySelectorAll("details[open]").forEach(x=>{if(x!==d)x.open=false});fit(d,true)}else if(!sc.querySelector("details[open]")){S.aggBan=null;sc.style.maxHeight="";if(S.aggTop)sc.scrollTop=S.aggTop}upd()},true);
- upd()}
+/* v52f: pannello «Dalle ultime ore»: dal basso sul telefono, da destra sul computer. Si chiude con ×, tocco fuori, Esc, trascinando giù o col tasto indietro. */
+const AGS={el:null,open:false,pushed:false,skipPop:false};
+function agsEl(){if(AGS.el)return AGS.el;const w=document.createElement("div");w.id="aggSheet";w.className="ags";w.hidden=true;
+ w.innerHTML=`<div class="ags-dim" data-ags-x></div><div class="ags-p" role="dialog" aria-modal="true" aria-labelledby="agsT"><div class="ags-hd"><span class="ags-grab" aria-hidden="true"></span><div class="ags-hr"><div><div class="ags-t" id="agsT">Dalle ultime ore</div><div class="ags-d"></div></div><button type="button" class="ags-x" data-ags-x aria-label="Chiudi">×</button></div></div><div class="ags-l"></div><div class="ags-tg"><a href="https://t.me/readgeopolitics" target="_blank" rel="noopener">Le svolte arrivano anche sul canale Telegram ›</a></div></div>`;
+ document.body.appendChild(w);AGS.el=w;
+ w.addEventListener("click",e=>{if(e.target.closest("[data-ags-x]")){agsClose();return}const g=e.target.closest("[data-agg-go],[data-thread]");if(g)agsClose(true)});
+ /* trascinare giù l'intestazione chiude (telefono) */
+ const hd=w.querySelector(".ags-hd"),pn=w.querySelector(".ags-p");let y0=null,dy=0;
+ hd.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;dy=0;pn.style.transition="none"},{passive:true});
+ hd.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);pn.style.transform=`translateY(${dy}px)`},{passive:true});
+ hd.addEventListener("touchend",()=>{pn.style.transition="";pn.style.transform="";if(dy>90)agsClose();y0=null});
+ return w}
+function agsOpen(id){const b=S.briefings[0];const A=aggDopo(b);if(!A.length)return;const w=agsEl();
+ const d=new Date((A[0].data||b.data)+"T12:00:00");w.querySelector(".ags-d").textContent=d.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})+" · "+A.length+" "+(A.length===1?"aggiornamento":"aggiornamenti")+" dopo il briefing";
+ w.querySelector(".ags-l").innerHTML=A.map(x=>{const st0=x.storia_id&&S.stories[x.storia_id];const st=st0&&!aggLocked(st0.id)?st0:null;const t=S.threads[x.filone_id];
+  return `<article class="ags-i${x.id===id?" ags-hl":""}" data-ags-id="${esc(x.id||"")}"><div class="ags-m"><span class="agg-o${x.tipo==="svolta"?" agg-sv":""}">${esc(x.ora||"")}</span>${aggTag(x)?`<span class="aggc-tag">${esc(aggTag(x))}</span>`:""}${x.tipo==="svolta"?`<span class="aggc-tag ags-sv">Svolta</span>`:""}</div><h4>${esc(x.titolo||aggTit(x))}</h4><p>${esc(x.testo)}</p>${(x.fonti||[]).length?`<div class="agg-f">${aggSrc(x," · ")}</div>`:""}${st?`<button type="button" class="ags-b" data-agg-go="${esc(x.id||"")}" data-agg-st="${esc(st.id)}">Vai alla storia ›</button>`:t?`<button type="button" class="ags-b" data-thread="${esc(t.id)}">Il tema: ${esc(t.titolo||thShort(t))} ›</button>`:""}</article>`}).join("");
+ AGS.y=window.scrollY;w.hidden=false;document.body.style.overflow="hidden";AGS.open=true;
+ if(!AGS.pushed){try{history.pushState({ags:1},"",location.href);AGS.pushed=true}catch(e){}}
+ requestAnimationFrame(()=>{w.classList.add("on");const l=w.querySelector(".ags-l"),hl=w.querySelector(".ags-hl");l.scrollTop=hl&&hl.previousElementSibling?hl.offsetTop-l.offsetTop-8:0;const x=w.querySelector(".ags-x");try{x.focus({preventScroll:true})}catch(e){}})}
+function agsClose(nav){if(!AGS.open)return;AGS.open=false;const w=AGS.el;w.classList.remove("on");document.body.style.overflow="";setTimeout(()=>{if(!AGS.open)w.hidden=true},260);
+ if(AGS.pushed){AGS.pushed=false;if(!nav){AGS.skipPop=true;try{history.back()}catch(e){AGS.skipPop=false}}}}
+/* il tasto indietro chiude il pannello; questo ascoltatore viene prima degli altri e li ferma, così la pagina non torna in cima */
+const agsKeepY=()=>{const y=AGS.y||0;window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y));setTimeout(()=>window.scrollTo(0,y),60)}; /* il browser, tornando indietro, rimetterebbe una vecchia posizione di scorrimento */
+window.addEventListener("popstate",e=>{if(AGS.skipPop){AGS.skipPop=false;e.stopImmediatePropagation();agsKeepY();return}if(AGS.open){AGS.pushed=false;agsClose();e.stopImmediatePropagation();agsKeepY()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&AGS.open)agsClose()});
+document.addEventListener("click",e=>{const o=e.target.closest("[data-agg-open]");if(o){e.preventDefault();agsOpen(o.dataset.aggOpen)}});
 document.addEventListener("click",e=>{const g=e.target.closest("[data-agg-go]");if(!g)return;e.preventDefault();if(g.dataset.aggGo)S.aggOpen.add(g.dataset.aggGo);openStory(g.dataset.aggSt)});
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("agg-s")&&d.dataset.aggId){d.open?S.aggOpen.add(d.dataset.aggId):S.aggOpen.delete(d.dataset.aggId)}},true);
 function storyHTML(s,rank){
