@@ -1079,10 +1079,20 @@ async function sndDrawR(c,q){const g=c.getContext("2d");await sndFonts();sndBg(g
   g.fillStyle="#F2D58A";g.font="500 24px 'IBM Plex Mono'";g.fillText("DA IERI A OGGI",130,y+28);g.font="400 36px 'IBM Plex Sans'";let yy=y+70;for(const ln of L){sndLine(g,ln,130,yy,"#EEF2F6","#EEF2F6");yy+=50}y+=h}
  g.textAlign="center";g.fillStyle="#86B4EA";g.font="500 24px 'IBM Plex Mono'";podSpaced(g,(q.scadenza?"IL "+sndMesi(q.scadenza).toUpperCase()+" VEDIAMO CHI CI HA PRESO":"READGEOPOLITICS.COM"),540,Math.min(1560,Math.max(y+40,1420)),4);
  g.fillStyle="#FFFFFF";g.font="600 46px 'IBM Plex Sans'";g.fillText("Oggi altre domande sul sito",540,1640);g.fillStyle="#B9C4CF";g.font="400 34px 'IBM Plex Sans'";g.fillText("tocca il link qui sotto ↓",540,1704)}
+function sndCta(g){g.textAlign="center";g.fillStyle="#FFFFFF";g.font="600 46px 'IBM Plex Sans'";g.fillText("Oggi altre domande sul sito",540,1640);g.fillStyle="#B9C4CF";g.font="400 34px 'IBM Plex Sans'";g.fillText("tocca il link qui sotto ↓",540,1704);g.textAlign="left"}
+async function sndDrawV(c,q){const g=c.getContext("2d");await sndFonts();sndBg(g);let y=280;const si=q.esito==="sì";
+ sndKick(g,"Il verdetto"+(q.tema?" · "+q.tema:""),y);y+=66;g.fillStyle="#B9C4CF";g.font="400 36px 'IBM Plex Sans'";g.fillText("Il "+sndMesi(q.day)+" vi abbiamo chiesto:",96,y);y+=64;
+ g.font="600 64px 'IBM Plex Serif'";for(const ln of sndWrap(g,sndToks(String(q.titolo||q.sticker).split("*").join("")),888).slice(0,4)){sndLine(g,ln,96,y,"#EEF2F6","#EEF2F6");y+=74}
+ y+=40;g.fillStyle="#EEF2F6";g.font="600 54px 'IBM Plex Sans'";g.fillText("È andata:",96,y+50);g.fillStyle="#E8B050";g.font="600 150px 'IBM Plex Serif'";g.fillText((si?(q.a||"Sì"):(q.b||"No")).toUpperCase(),380,y);y+=190;
+ if(q.riga){g.font="400 34px 'IBM Plex Sans'";const L=sndWrap(g,sndToks(q.riga),820).slice(0,3);const h=40+L.length*48;g.fillStyle="#2a2412";g.strokeStyle="#6E5A26";g.lineWidth=2;g.beginPath();g.roundRect(96,y,888,h,22);g.fill();g.stroke();let yy=y+22;for(const ln of L){sndLine(g,ln,130,yy,"#EEF2F6","#EEF2F6");yy+=48}y+=h+40}
+ const row=(lab,txt,ok)=>{g.fillStyle="#8fa0bd";g.font="500 26px 'IBM Plex Mono'";g.fillText(lab,96,y+8);g.fillStyle="#EEF2F6";g.font="400 38px 'IBM Plex Sans'";g.fillText(txt,330,y);if(ok!=null){g.fillStyle=ok?"#7FD1A0":"#E58A8A";g.font="600 38px 'IBM Plex Sans'";g.textAlign="right";g.fillText(ok?"✓ presa":"✗ mancata",984,y);g.textAlign="left"}y+=76};
+ const n=q.num;if(n){const p=n.si;const said=p>50?"sì":p<50?"no":"";row("I LETTORI",(p>=50?p:100-p)+"% diceva "+(p>=50?(q.a||"sì"):(q.b||"no")).toLowerCase(),said?said===q.esito:null)}
+ if(q.attesa){const said=q.attesa==="probabile"?"sì":q.attesa==="improbabile"?"no":"";row("L'AGENTE",said?"diceva "+(said==="sì"?(q.a||"sì"):(q.b||"no")).toLowerCase()+" ("+q.attesa+")":"non si sbilanciava (incerto)",said?said===q.esito:null)}
+ sndCta(g)}
 async function sndCanvas(id,fn,q,arg,name){const c=document.getElementById(id);if(!c)return;await fn(c,q,arg);const bl=await new Promise(r=>c.toBlob(r,"image/png"));SND_BLOB[id]=bl;const a=document.querySelector('[data-snd-dl="'+id+'"]');if(a){if(a.href&&a.href.startsWith("blob:"))URL.revokeObjectURL(a.href);a.href=URL.createObjectURL(bl);a.download=name}}
 function sndCp(lab,v,show){return '<div class="sndc"><span class="sndl">'+lab+'</span><span class="sndv">'+esc(show||v)+'</span><button type="button" class="sm" data-snd-cp="'+esc(v)+'">Copia</button></div>'}
 function sndRender(s){SND=s;const el=document.getElementById("snd");if(!el)return;if(!s){el.hidden=true;return}el.hidden=false;const q=s.oggi,qi=s.ieri;
- document.getElementById("sndsum").textContent=q?(q.pub?"pubblicata ✓":"da pubblicare"):"non ancora pronta";
+ document.getElementById("sndsum").textContent=((s.verdetti||[]).length?"verdetto · ":"")+(q?(q.pub?"pubblicata ✓":"da pubblicare"):"non ancora pronta");
  let h="";const n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null;
  if(q){h+='<div class="sndp"><canvas id="sndq" width="1080" height="1920"></canvas><div class="sndf">'+sndCp("Sticker",q.sticker||"")+'<div class="sndab">'+sndCp("Risposta 1",q.a||"Sì")+sndCp("Risposta 2",q.b||"No")+'</div>'
   +'<div class="row"><a class="g sndd" data-snd-dl="sndq">⬇ Scarica l&#39;immagine</a>'+(q.pub?'<button type="button" class="sm" data-snd-pub="0">Pubblicata ✓</button>':'<button type="button" class="sm" data-snd-pub="1">Segna come pubblicata</button>')+'</div>'
@@ -1094,13 +1104,15 @@ function sndRender(s){SND=s;const el=document.getElementById("snd");if(!el)retur
   h+='<div class="sub">Li trovi su Instagram: storia di ieri › Attività. Con i numeri la storia di oggi mostra il risultato in alto, e c&#39;è anche una storia del risultato a parte, se vuoi.</div>';
   if(n)h+='<div class="sndp sndr"><canvas id="sndr" width="1080" height="1920"></canvas><div class="sndf"><a class="g sndd" data-snd-dl="sndr">⬇ Storia del risultato</a>'+sndCp("Link","https://www.readgeopolitics.com/?utm_source=instagram&utm_campaign=storia-risultato#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'<div class="sub">Facoltativa: mettila prima della domanda di oggi, con lo sticker link nello spazio in basso. Il link apre sul sito il percorso di voto.</div></div></div>';
   h+='</div>'}
+ (s.verdetti||[]).forEach((v,i)=>{h+='<div class="sndi"><div class="lab">Verdetto · domanda del '+esc(sndMesi(v.day))+': '+esc(v.esito==="sì"?(v.a||"Sì"):(v.b||"No"))+'</div><div class="sndp sndr"><canvas id="sndv'+i+'" width="1080" height="1920"></canvas><div class="sndf"><a class="g sndd" data-snd-dl="sndv'+i+'">⬇ Storia del verdetto</a>'+sndCp("Link","https://www.readgeopolitics.com/?utm_source=instagram&utm_campaign=storia-verdetto#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'<div class="sub">È il momento «chi ci ha preso»: pubblicala prima della domanda di oggi.'+(v.num?'':' Mancano i numeri del sondaggio di quel giorno: la riga dei lettori non c&#39;è.')+(v.fonte&&v.fonte.url?' Fonte: <a href="'+esc(v.fonte.url)+'" target="_blank" rel="noopener">'+esc(v.fonte.nome||"fonte")+'</a>.':'')+'</div></div></div></div>'});
  const W=s.sett.filter(x=>x.n&&x.n.visti);const pr=x=>x.n&&x.n.visti?Math.round(100*x.n.votanti/x.n.visti):null;
  h+='<div class="sndw"><div class="lab" style="display:flex;justify-content:space-between"><span>Funziona?</span><span>votanti su chi ha visto</span></div><div class="sndb">'+s.sett.map(x=>{const p=pr(x);const d=new Date(x.d+"T12:00:00");return '<div><i style="height:'+(p==null?3:Math.max(4,Math.min(60,p*1.2)))+'px'+(p==null?';background:#27353F':'')+'"></i>'+(p==null?'—':p+'%')+'<br>'+["dom","lun","mar","mer","gio","ven","sab"][d.getDay()]+'</div>'}).join("")+'</div>';
  const avg=W.length?Math.round(100*W.reduce((a,x)=>a+x.n.votanti,0)/W.reduce((a,x)=>a+x.n.visti,0)):null;
  h+='<div class="sub">'+(avg==null?'Dopo una settimana di numeri decidiamo: se vota almeno 1 su 4 di chi guarda, si passa al FantaRead.':'Media: '+avg+'% su '+W.length+(W.length===1?' giorno':' giorni')+'. La soglia: 25%.')+'</div></div>';
  document.getElementById("sndb").innerHTML=h;
  if(q)sndCanvas("sndq",sndDrawQ,q,n?{t:qi.sticker||"",r:(qi.a||"Sì")+" "+n.si+"% · "+(qi.b||"No")+" "+(100-n.si)+"% · "+n.votanti+" risposte"}:null,"storia_domanda_"+s.day+".png");
- if(qi&&n)sndCanvas("sndr",sndDrawR,qi,null,"storia_risultato_"+qi.day+".png")}
+ if(qi&&n)sndCanvas("sndr",sndDrawR,qi,null,"storia_risultato_"+qi.day+".png");
+ (s.verdetti||[]).forEach((v,i)=>sndCanvas("sndv"+i,sndDrawV,v,null,"storia_verdetto_"+v.day+".png"))}
 document.getElementById("snd").addEventListener("click",async e=>{const cp=e.target.closest("[data-snd-cp]");if(cp){let ok=false;try{await navigator.clipboard.writeText(cp.dataset.sndCp);ok=true}catch(err){}cp.textContent=ok?"Copiato ✓":"Non riesco";setTimeout(()=>{cp.textContent="Copia"},1600);return}
  const pb=e.target.closest("[data-snd-pub]");if(pb){pb.disabled=true;const r=await api({action:"sond_set",day:SND.day,pub:pb.dataset.sndPub==="1"});if(r&&r.ok)sndRender(r.sond);else pb.disabled=false;return}
  if(e.target.id==="snsv"){const v=document.getElementById("snv").value,t=document.getElementById("snt").value,s=document.getElementById("sns").value;e.target.disabled=true;const r=await api({action:"sond_set",day:SND.ieri.day,visti:v,votanti:t,si:s});if(r&&r.ok)sndRender(r.sond);else{e.target.disabled=false;say("Controlla i numeri: "+((r&&r.error)||""))}}});
@@ -2818,7 +2830,9 @@ async function sondInfo(env) {
   const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
   const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
   const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
-  return { day, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
+  const V = Array.isArray(br && br.storia_ig_verdetti) ? br.storia_ig_verdetti.filter((v) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "")).slice(0, 3) : [];
+  const verdetti = (await Promise.all(V.map(async (v) => { const [b0, n0] = await Promise.all([tgBriefing(env, v.data), kvGet(env, "sond:" + v.data)]); const q0 = b0 && b0.storia_ig; return q0 ? { ...q0, day: v.data, num: n0 && n0.votanti != null ? n0 : null, esito: v.esito === "sì" || v.esito === "si" ? "sì" : "no", riga: v.riga || "", fonte: v.fonte || null } : null; }))).filter(Boolean);
+  return { day, verdetti, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
 }
 async function sondSet(env, b) {
   const day = /^\d{4}-\d{2}-\d{2}$/.test(b.day || "") ? b.day : romeToday();
