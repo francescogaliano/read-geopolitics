@@ -2575,7 +2575,7 @@ function voteShape(poll, raw, all) { // conteggi per scelta; sotto soglia solo �
   const kind = voteKind(poll); const c = {}; for (const ch of VOTE_KIND[kind].ch) c[ch] = 0;
   for (const [ch, n] of Object.entries(raw || {})) if (ch in c) c[ch] = n;
   const tot = Object.values(c).reduce((a, b) => a + b, 0);
-  if (!all && tot < VOTE_MIN) return { sotto_soglia: true, min: VOTE_MIN };
+  if (!all && tot < VOTE_MIN) return { sotto_soglia: true, min: VOTE_MIN, n: tot }; // v57: quanti hanno votato (solo il numero), per «sei tra i primi N»
   if (kind === "t") return { tot, a: c.a, b: c.b, n: c.n };
   if (kind === "c") { const k = Object.keys(c).filter((x) => c[x] > 0 || +x < 3); const o = {}; for (const x of k) o[x] = c[x]; return { tot, c: o }; }
   return { tot, c };

@@ -646,6 +646,7 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .sto .sx{margin:10px 0 0}
 .sto .sx>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;font-size:15px;font-weight:600;color:var(--bg);background:var(--accent)}
 .sto .sx>summary .sx-t small{display:block;font-weight:400;font-size:12.5px;opacity:.85}
+.sx-vote{margin-left:auto;flex:0 0 auto;font:600 12.5px var(--sans);background:var(--bg);color:var(--accent);border-radius:99px;padding:4px 10px;white-space:nowrap}.sx-vote.done{color:var(--ok)}.sto .sx>summary .sx-vote+.sx-f{margin-left:0}
 .sto .sx>summary .sx-f{color:var(--bg);font-weight:500}.sto .sx>summary .sx-f .dots{background:var(--surface);border-radius:99px;padding:3px 6px}
 .sto .sx>summary .sx-f::after{content:"▾";font-size:15px}.sto .sx[open]>summary .sx-f::after{content:"▴"}
 .sto .sx>summary::-webkit-details-marker{display:none}
@@ -698,7 +699,7 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .sx-act{display:flex;gap:8px;padding:12px 14px 10px}
 .sx-act .askbtn{flex:1;padding:8px 0;font-size:14px}
 @media (max-width:560px){.sto-h{grid-template-columns:22px minmax(0,1fr);padding:11px 12px}.sto-h h3{font-size:17px}.sto-b,.sx-b{padding-left:12px;padding-right:12px}}
-@media (max-width:560px){.sx-b>.sx-idx{margin-left:-12px;margin-right:-12px}.sx-b>.sxs{margin-left:0;margin-right:0}}
+@media (max-width:560px){.sto .sx>summary .sx-vote+.sx-f{font-size:0;gap:4px}.sto .sx>summary .sx-vote+.sx-f::after{font-size:15px}.sx-b>.sx-idx{margin-left:-12px;margin-right:-12px}.sx-b>.sxs{margin-left:0;margin-right:0}}
 @media (hover:none) and (pointer:coarse){.pp-l{display:none!important}}
 .acc{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:8px;overflow:hidden;transition:box-shadow .2s,border-color .2s}
 .acc .thc{border:0;border-radius:0;margin:0;background:transparent}
@@ -1831,7 +1832,7 @@ function storyHTML(s,rank){
     <div class="block pc"><span class="label tag-interp"><span class="ic" aria-hidden="true">💡</span>Perché conta · interpretazione</span><p>${refText(s.perche_conta,s.fonti)}</p></div>${corrHTML(s)}
     ${dosStripHTML(dosForStory(s))}
   </div>
-  <details class="sx"><summary><span class="sx-t">Approfondisci<small>posizioni, sintesi, segnali e fonti</small></span><span class="sx-f">${nf} fonti <span class="dots">${dots}</span></span></summary>
+  <details class="sx"><summary><span class="sx-t">Approfondisci<small>posizioni, sintesi, segnali e fonti</small></span>${voteTag(s,th)}<span class="sx-f">${nf} fonti <span class="dots">${dots}</span></span></summary>
     <div class="sx-b">${sxBody(s,th,hasSc,conf,prev)}</div>
   </details>
 </article>`;
@@ -1944,7 +1945,29 @@ function vtRes(P){const c=S.votes[P.id];const m=vtMine(P.id);if(!m)return "";if(
   return `<p class="vt-t">${c.tot} voti</p>${vtBar(c,P)}<p class="vt-note">Non è un sondaggio rappresentativo: dice cosa pensa chi legge Read, non gli italiani.</p>`}
 function voteHTML(s){const P=pollFor(S.briefings[0]);if(!P||P.sid!==s.id)return "";const m=vtMine(P.id);
   return `<div class="vt" data-poll="${esc(P.id)}"><div class="vt-q">${esc(P.domanda)}</div><div class="vt-b">${[["a",P.a],["b",P.b],["n","Non so"]].map(([k,l])=>`<button type="button" class="vc-${k}" data-vt="${k}" aria-pressed="${m===k}">${esc(l)}</button>`).join("")}</div><div class="vt-r">${vtRes(P)}</div>${m?"":`<p class="vt-note">Anonimo: contiamo solo i voti, non chi vota.</p>`}</div>`}
-function vtFill(){const P=pollFor(S.briefings[0]);if(!P)return;document.querySelectorAll('.vt[data-poll="'+P.id+'"]').forEach(el=>{const m=vtMine(P.id);el.querySelectorAll("[data-vt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vt===m)));el.querySelector(".vt-r").innerHTML=vtRes(P);const n=el.querySelector(":scope>.vt-note");if(n&&m)n.remove()})}
+/* v57: «La domanda del giorno», il voto sulle tesi della storia scelta portato in superficie sotto «In 60 secondi». Stesso voto della storia: i voti si sommano. */
+/* v57: sulla linguetta «Approfondisci» un'etichetta dice se nella storia c'è qualcosa da votare; toccandola si arriva lì */
+function voteTag(s,th){const P=pollFor(S.briefings[0]);if(P&&P.sid===s.id){const m=vtMine(P.id);return `<span class="sx-vote${m?" done":""}" data-vgo="pos" role="button">${m?"✓ Votato":"🗳️ Vota"}</span>`}
+  const sg=(s.segnali||[]).some((x,i)=>{const g=S.segnali[s.id+"-"+(i+1)];return (!g||g.stato==="aperto")&&gsHTML(s,i)});if(sg)return `<span class="sx-vote" data-vgo="oss" role="button">🗳️ Vota</span>`;
+  if(th&&svHTML(th))return `<span class="sx-vote" data-vgo="scn" role="button">🗳️ Vota</span>`;return""}
+document.addEventListener("click",e=>{const v=e.target.closest("[data-vgo]");if(!v)return;e.preventDefault();e.stopPropagation();const art=v.closest("article.sto");if(!art)return;const d=art.querySelector("details.sx");if(d&&!d.open)d.open=true;
+  setTimeout(()=>{const t=art.querySelector(`[data-sxk="${v.dataset.vgo}"]`);if(!t)return;const pc=t.closest(".ags-l");const ix=art.querySelector(".sx-idx");if(pc){pc.scrollTo({top:pc.scrollTop+t.getBoundingClientRect().top-pc.getBoundingClientRect().top-(ix?ix.offsetHeight:0)-8,behavior:"smooth"});return}
+    const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+(ix?ix.offsetHeight:0)+8;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})},80)},true);
+function dayLines(P){const b=S.briefings[0],so=(b&&b.sondaggio)||{},st=S.stories[P.sid]||{};return {a:so.a_testo||"",b:so.b_testo||"",tit:st.titolo||""}}
+function dayVoteHTML(b){if(!b||b!==S.briefings[0])return"";const P=pollFor(b);if(!P||!S.stories[P.sid])return"";const L=dayLines(P),m=vtMine(P.id);
+  const tag=(L.tit.split(":")[0]||"").trim();const q=(tag&&tag.length<=28&&tag.length<L.tit.length?tag+": ":"")+P.domanda.replace(/^./,c=>c.toLowerCase()).replace(/^q/,"q");
+  return `<section class="vt vt-day${m?" voted":""}" data-poll="${esc(P.id)}" aria-label="La domanda del giorno"><div class="vd-k"><span>🗳️ La domanda del giorno</span><span class="vd-n"></span></div><div class="vd-q">${esc(q.replace(/^./,c=>c.toUpperCase()))}</div>
+  <div class="vd-o"><button type="button" class="vd-a" data-vt="a" aria-pressed="${m==="a"}"><b>${esc(P.a)}</b>${L.a?`<span>${esc(L.a)}</span>`:""}</button><button type="button" class="vd-b" data-vt="b" aria-pressed="${m==="b"}"><b>${esc(P.b)}</b>${L.b?`<span>${esc(L.b)}</span>`:""}</button>
+  <div class="vd-f"><button type="button" class="vd-ns" data-vt="n" aria-pressed="${m==="n"}">Non so</button><span>Vota e scopri <b>come la pensano gli altri</b></span></div></div>
+  <div class="vt-r"></div><button type="button" class="linkbtn vd-go" data-vd-story="${esc(P.sid)}">Leggi le due posizioni complete ›</button></section>`}
+function dayRes(P,el){const c=S.votes[P.id]||{},m=vtMine(P.id);const nEl=el.querySelector(".vd-n");if(nEl)nEl.textContent=c.tot?c.tot+" voti":c.n?c.n+" voti":"anonima";if(!m)return"";
+  const lab={a:P.a,b:P.b,n:"Non so"};
+  if(!c.tot){const n=c.n||0;return `<div class="vd-me"><span>✓ Hai votato: <b>${esc(lab[m])}</b></span><button type="button" class="linkbtn vd-ch">Cambia</button></div>${n?`<p class="vd-p">Sei tra i <b>primi ${n}</b> a votare. Il risultato si vede da ${VT_MIN} voti.</p><div class="vd-bar"><i style="width:${Math.min(100,Math.round(100*n/VT_MIN))}%"></i></div><div class="vd-bl"><span>${n}</span><span>${VT_MIN}</span></div>`:`<p class="vd-p">Il risultato si vede da ${VT_MIN} voti.</p>`}`}
+  const pc=k=>Math.round(100*(c[k]||0)/c.tot);
+  return [["a",P.a,"var(--amb-eco)"],["b",P.b,"var(--amb-soc)"],["n","Non so","var(--faint)"]].map(([k,l,col])=>`<div class="vd-rl"><span>${esc(l)}${m===k?'<span class="vd-you">TU</span>':""}</span><b>${pc(k)}%</b></div><div class="vd-rb"><i style="width:${pc(k)}%;background:${col}"></i></div>`).join("")+`<p class="vt-note">Non è un sondaggio rappresentativo: dice cosa pensa chi legge Read. <button type="button" class="linkbtn vd-ch">Cambia voto</button></p>`}
+document.addEventListener("click",e=>{const ch=e.target.closest(".vd-ch");if(ch){const el=ch.closest(".vt-day");el.classList.remove("voted");return}
+  const g=e.target.closest("[data-vd-story]");if(g){const a=document.getElementById("st-"+g.dataset.vdStory);if(S.sub!=="mondo"&&typeof setSub==="function")setSub("mondo");const go=()=>{const a=document.getElementById("st-"+g.dataset.vdStory);if(!a)return;const d=a.querySelector("details.sx");if(d)d.open=true;setTimeout(()=>{const t=a.querySelector('[data-sxk="pos"]')||a;const ix=a.querySelector(".sx-idx");const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+(ix?ix.offsetHeight:0)+8;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})},80)};a?go():requestAnimationFrame(go)}});
+function vtFill(){const P=pollFor(S.briefings[0]);if(!P)return;{const m=vtMine(P.id);document.querySelectorAll('[id="st-'+P.sid+'"] .sx-vote[data-vgo="pos"]').forEach(x=>{x.textContent=m?"✓ Votato":"🗳️ Vota";x.classList.toggle("done",!!m)})}document.querySelectorAll('.vt-day[data-poll="'+P.id+'"]').forEach(el=>{const m=vtMine(P.id);el.querySelectorAll("[data-vt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vt===m)));if(m)el.classList.add("voted");el.querySelector(".vt-r").innerHTML=dayRes(P,el)});document.querySelectorAll('.vt:not(.vt-day)[data-poll="'+P.id+'"]').forEach(el=>{const m=vtMine(P.id);el.querySelectorAll("[data-vt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vt===m)));el.querySelector(".vt-r").innerHTML=vtRes(P);const n=el.querySelector(":scope>.vt-note");if(n&&m)n.remove()})}
 /* voto arrivato da un link (newsletter): ?poll=t:s-…&voto=a|b|n. Si salva subito, si registra quando il briefing è pronto (anche dopo l'accesso). */
 {try{const q=new URLSearchParams(location.search),pl=q.get("poll"),vo=q.get("voto");if(pl&&/^t:s-\d{8}-\d{2}$/.test(pl)&&["a","b","n"].includes(vo)){localStorage.setItem("rg-vt-pend",JSON.stringify({poll:pl,ch:vo}));q.delete("poll");q.delete("voto");const s=q.toString();history.replaceState(null,"",location.pathname+(s?"?"+s:"")+location.hash)}}catch(e){}}
 let VT_PEND_DONE=false;function vtPend(){if(VT_PEND_DONE)return;let pd=null;try{pd=JSON.parse(localStorage.getItem("rg-vt-pend")||"null")}catch(e){}if(!pd||!pd.poll)return;const P=pollFor(S.briefings[0]);if(!P)return;VT_PEND_DONE=true;try{localStorage.removeItem("rg-vt-pend")}catch(e){}
@@ -1964,7 +1987,23 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-vt]");if(!
 .vt-b .vc-a{border-color:color-mix(in srgb,var(--amb-eco) 55%,transparent)}.vt-b .vc-b{border-color:color-mix(in srgb,var(--amb-soc) 55%,transparent)}.vt-b .vc-n{flex:.6;color:var(--muted)}
 .vt-b button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
 .vt-r:empty{display:none}.vt-r{margin-top:10px}.vt-t{font-size:12.5px;color:var(--muted);margin:0 0 6px}.vt-bar{display:flex;height:24px;border-radius:7px;overflow:hidden;font:600 12px var(--sans)}.vt-bar i{display:flex;align-items:center;padding:0 8px;font-style:normal;color:#0E151B;min-width:0}.vt-bar i.vn{background:var(--line);color:var(--ink)}
-.vt-lg{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}.vt-note{font-size:12px;color:var(--faint);margin:8px 0 0}`;document.head.appendChild(st)}
+.vt-lg{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-top:6px}.vt-note{font-size:12px;color:var(--faint);margin:8px 0 0}
+.vt-day{margin:14px 0 4px;padding:14px;border:1.5px solid var(--accent);border-radius:14px;background:var(--surface)}
+.vd-k{display:flex;justify-content:space-between;font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}.vd-n{color:var(--muted);font-weight:500;letter-spacing:.04em;text-transform:none;font-size:12px}
+.vd-q{font:600 19px/1.3 var(--serif,Georgia),serif;margin:8px 0 12px}
+.vd-o>button:not(.vd-ns){display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--surface-2);color:var(--ink);cursor:pointer;font:inherit}
+.vd-o b{display:block;font-size:15px}.vd-o button>span{display:block;font-size:13px;color:var(--muted);line-height:1.35;margin-top:2px}
+.vd-a{border-left:4px solid var(--amb-eco)!important}.vd-b{border-left:4px solid var(--amb-soc)!important}
+.vd-o button:hover{border-color:var(--accent)}
+.vd-f{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}.vd-f b{color:var(--mid)}
+.vd-ns{white-space:nowrap;border:1px solid var(--line);border-radius:99px;padding:5px 12px;background:none;color:var(--muted);cursor:pointer;font:inherit;font-size:13px}
+.vt-day.voted .vd-o{display:none}.vt-day:not(.voted) .vt-r{display:none}
+.vd-me{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14.5px}
+.vd-p{font-size:14px;margin:10px 0 6px}.vd-p b{color:var(--mid)}
+.vd-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.vd-bar i{display:block;height:100%;background:var(--accent)}.vd-bl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:3px}
+.vd-rl{display:flex;justify-content:space-between;font-size:14px;margin-top:8px}.vd-rl b{font-family:var(--mono)}.vd-you{font:600 10.5px var(--mono);color:var(--bg);background:var(--accent);border-radius:99px;padding:1px 7px;margin-left:6px}
+.vd-rb{height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin-top:4px}.vd-rb i{display:block;height:100%}
+.vd-go{display:block;margin-top:12px;font-size:14px;font-weight:600}`;document.head.appendChild(st)}
 {const _rb4=renderBriefing;renderBriefing=function(){const r=_rb4.apply(this,arguments);try{vtLoad();vtFill()}catch(e){}return r}}
 
 /* ---------- previsioni dei lettori (v47): sì/no sui segnali da osservare, scelta dello scenario. Stesse regole dei voti sulle tesi ---------- */
@@ -2377,6 +2416,7 @@ function renderBriefing(){
   <p class="hint">Tocca le parole sottolineate a puntini per sapere chi o cosa sono. Seleziona una frase o tocca «Fai una domanda» per approfondire con il tuo Claude.</p>
   ${latest?aggHTML(b):""}
   <div class="in60"><span class="label"><span class="ic" aria-hidden="true">⚡</span>In 60 secondi</span><ol>${(b.in60||[]).map((x,i)=>{const ids=((b.in60_storie||[])[i]||[]).filter(id=>S.stories[id]);const refs=ids.map(id=>{const im=ita.findIndex(s=>s.id===id),mm=mondo.findIndex(s=>s.id===id);if(im<0&&mm<0)return"";const lab=im>=0?`Italia ${String(im+1).padStart(2,"0")}`:`Mondo ${String(mm+1).padStart(2,"0")}`;return `<button class="in60-ref" data-story="${esc(id)}" title="Vai alla storia">${lab} ↓</button>`}).join("");return `<li><span>${esc(typeof x==="string"?x:x.testo)}${refs?` <span class="in60-refs">${refs}</span>`:""}</span></li>`}).join("")}</ol></div>
+  ${dayVoteHTML(b)}
   ${sinceHTML(b)}
   <nav class="subtabs" role="tablist" aria-label="Sezioni del briefing" id="subtabs">${tabs.map(([k,l,n])=>`<button role="tab" id="sub-${k}" data-sub="${k}" aria-selected="${S.sub===k}">${SUBICO[k]?`<span class="ic" aria-hidden="true">${SUBICO[k]}</span>`:""}${esc(l)}${n!=null?`<span class="n">${n}</span>`:""}</button>`).join("")}</nav>
   ${panel("mondo",`<div class="section-h first"><span class="label">${mondo.length} storie · per impatto</span><span class="tools"><button class="linkbtn" data-expand="1">Apri tutte</button></span></div>${mondoShown.map((s,i)=>storyHTML(s,i+1)).join("")}${lockM}`)}
