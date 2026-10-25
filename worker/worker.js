@@ -2602,7 +2602,8 @@ async function voteApi(request, env) {
   let b = null; try { b = JSON.parse((await request.text()).slice(0, 2000)); } catch (e) {}
   const poll = String((b && b.poll) || ""), choice = String((b && b.choice) || ""), dev = String((b && b.dev) || "");
   const kind = voteKind(poll);
-  if (!kind || !VOTE_KIND[kind].ch.includes(choice) || !/^[A-Za-z0-9_-]{12,64}$/.test(dev)) return fail(422, "bad_vote");
+  const del = choice === "x"; // v58: «Togli il voto»
+  if (!kind || (!del && !VOTE_KIND[kind].ch.includes(choice)) || !/^[A-Za-z0-9_-]{12,64}$/.test(dev)) return fail(422, "bad_vote");
   let ctx = null;
   if (kind === "t" || kind === "g") {
     const sid = poll.slice(2, 15); const s = await docData(env, "stories", sid); if (!s) return fail(404, "no_story");
@@ -2612,13 +2613,14 @@ async function voteApi(request, env) {
   } else {
     const [, tid, oriz] = poll.split(":"); const th = await docData(env, "threads", tid); if (!th) return fail(404, "no_theme");
     const sc = th.scenari || {}; if (sc.orizzonte !== oriz || sc.stato === "chiuso") return fail(410, "closed");
-    if (+choice >= (sc.voci || []).length) return fail(422, "bad_vote");
+    if (!del && +choice >= (sc.voci || []).length) return fail(422, "bad_vote");
     if (Date.now() > Date.parse(oriz + "T23:59:59Z")) return fail(410, "closed");
     ctx = { tid, oriz, th };
   }
   await voteTable(env);
-  await pollSnap(env, poll, kind, ctx);
   const h = await sha256("rg-vote|" + dev);
+  if (del) { await env.DB.prepare("DELETE FROM votes WHERE poll=?1 AND dev=?2").bind(poll, h).run(); return json({ ok: true, ...(await voteCounts(env, [poll])) }, 200, CORS); }
+  await pollSnap(env, poll, kind, ctx);
   await env.DB.prepare("INSERT INTO votes (poll, dev, choice, at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(poll, dev) DO UPDATE SET choice=?3, at=?4").bind(poll, h, choice, new Date().toISOString()).run();
   return json({ ok: true, ...(await voteCounts(env, [poll])) }, 200, CORS);
 }
