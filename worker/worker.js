@@ -2686,7 +2686,10 @@ async function bilancioData(env, day) { // i segnali risolti nella settimana (da
     for (const v of done) { const st = SM[v.storia_id]; const k = st && st.filone ? st.filone + "|" + v.esito + "|" + v.giorno : "s|" + String(v.segnale).toLowerCase(); if (seenK.has(k)) continue; seenK.add(k); uniq.push({ ...v, tema: lab(v), filone: st ? st.filone : "", rango: parseInt(String(v.storia_id || "").split("-").pop(), 10) || 9 }); }
   } catch (e) {}
   const ok = uniq.filter((v) => v.esito === "avvenuto"), alt = uniq.filter((v) => v.esito === "smentito"), fermi = uniq.filter((v) => v.esito === "scaduto");
-  const score = (v) => v.rango + (v.esito === "smentito" ? -2 : 0);
+  // v55: un fatto raccontato con date tutte precedenti alla settimana (es. «Il 12 ottobre l'UE…») passa in fondo: il segnale si è chiuso ora, ma il fatto è vecchio
+  const yr = day.slice(0, 4);
+  const vecchio = (v) => { const D = [...String(v.nota || "").matchAll(/\b(\d{1,2})(?:°|º)?\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\b/gi)].map((m) => yr + "-" + String(IT_MM.indexOf(m[2].toLowerCase()) + 1).padStart(2, "0") + "-" + m[1].padStart(2, "0")); return D.length > 0 && D.every((d) => d < from); };
+  const score = (v) => v.rango + (v.esito === "smentito" ? -2 : 0) + (vecchio(v) ? 100 : 0);
   const pick = []; const usati = new Set();
   const take = (L, n) => { for (const v of [...L].filter((x) => x.nota).sort((a, z) => score(a) - score(z) || String(z.giorno).localeCompare(String(a.giorno)))) { if (pick.length >= 4 || n <= 0) break; if (v.filone && usati.has(v.filone)) continue; pick.push(v); if (v.filone) usati.add(v.filone); n--; } };
   take(alt, 2); take(ok, 4 - pick.length); take(alt, 4 - pick.length);
