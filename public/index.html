@@ -1960,50 +1960,106 @@ function voteHTML(s){const P=pollForStory(s);if(!P)return "";const m=vtMine(P.id
 /* v57: «La domanda del giorno», il voto sulle tesi della storia scelta portato in superficie sotto «In 60 secondi». Stesso voto della storia: i voti si sommano. */
 /* v57: sulla linguetta «Approfondisci» un'etichetta dice se nella storia c'è qualcosa da votare; toccandola si arriva lì */
 function voteK(s,th){if(pollForStory(s))return "pos";return predK(s)}
-/* v59: dopo il voto del giorno, «Continua a votare»: un percorso una storia alla volta, opinione e previsione (prima erano etichette con il nome di ogni storia) */
+/* v59: «Vota le storie di oggi». Dopo il voto del giorno un pulsante apre un percorso a schede, una storia alla volta: contesto in breve, la storia da leggere senza uscire, due domande numerate (opinione e previsione), il voto scelto sempre in evidenza, si passa da una storia all'altra scorrendo col pollice. Alla fine il riepilogo dei propri voti. */
 function vqList(){const b=S.briefings[0];if(!b)return[];const M=b.storie_mondo||[],I=b.storie_italia||[];const out=[];
   M.concat(I).forEach((id,j)=>{const s=S.stories[id];if(!s)return;if(S.guest&&!(j<M.length&&j<3))return;const P=pollForStory(s),k=predK(s);if(!P&&!k)return;out.push({id,it:j>=M.length,P,k})});return out}
-function vqPredId(x){const s=S.stories[x.id];if(x.k==="scn"){const sc=S.threads[s.filone_id].scenari;return "c:"+s.filone_id+":"+sc.orizzonte}if(x.k==="oss")return "g:"+s.id+":"+(predSig(s)+1);return ""}
+function vqPredId(x){const s=S.stories[x.id];if(x.k==="scn")return "c:"+s.filone_id+":"+S.threads[s.filone_id].scenari.orizzonte;if(x.k==="oss")return "g:"+s.id+":"+(predSig(s)+1);return ""}
 function vqState(x){const o=x.P?!!vtMine(x.P.id):true,p=x.k?!!vtMine(vqPredId(x)):true;return o&&p?"done":(x.P&&vtMine(x.P.id))||(x.k&&vtMine(vqPredId(x)))?"half":""}
-function moreVotesHTML(P){const L=vqList();if(L.length<2)return"";const n=L.filter(x=>vqState(x)==="done").length;
-  return `<button type="button" class="vq-go" data-vq><span><b>${n>=L.length?"✓ Hai votato tutte le storie di oggi":"Continua a votare"}</b><small>${n>=L.length?"Rivedi o cambia i tuoi voti":`${L.length} storie di oggi · opinione e previsione${n?` · ${n} fatte`:""}`}</small></span><span aria-hidden="true">›</span></button>`}
-const VQ={i:0,L:[]};
-function vqOpen(){const L=vqList();if(!L.length)return;VQ.L=L;const k=L.findIndex(x=>vqState(x)!=="done");VQ.i=k<0?0:k;const w=agsEl();w.dataset.mode="quiz";w.querySelector(".ags-t").textContent="Le storie di oggi";w.querySelector(".ags-cal").innerHTML="";
+function vqTxt(t,n){t=String(t||"").replace(/\s*(\[\d+\])+/g,"").replace(/\s+/g," ").trim();const m=t.match(/^.{50,}?[.;](?=\s|$)/);let r=m&&m[0].length<=n?m[0]:t;if(r.length>n)r=r.slice(0,n-1).replace(/[\s,;:]+\S*$/,"")+"…";return r.replace(/;$/,".")}
+function vqTag(s){const th=S.threads[s.filone_id];if(th)return th.breve||thShort(th);const t=String(s.titolo||""),i=t.indexOf(":");return i>0&&i<=24?t.slice(0,i):""}
+/* le domande di una storia: opinione (tesi) e previsione (scenario oppure il primo segnale aperto) */
+function vqQs(x){const s=S.stories[x.id],Q=[];
+  if(x.P){const P=x.P,b0=S.briefings[0],so=(b0&&b0.sondaggio&&b0.sondaggio.storia_id===s.id)?b0.sondaggio:{};
+    Q.push({id:P.id,kind:"t",q:P.domanda,o:[["a",P.a,so.a_testo||vqTxt(s.pro&&s.pro.tesi,150),vqTxt(s.pro&&s.pro.attori,70)],["b",P.b,so.b_testo||vqTxt(s.contro&&s.contro.tesi,150),vqTxt(s.contro&&s.contro.attori,70)],["n","Non so","",""]]})}
+  if(x.k==="scn"){const sc=S.threads[s.filone_id].scenari;Q.push({id:vqPredId(x),kind:"c",q:"Secondo te come va a finire?",sub:sc.domanda||"",note:`Il ${fmtDM(sc.orizzonte)} vediamo chi ci ha preso: i lettori o la stima dell'agente.`,o:sc.voci.slice(0,8).map((v,k)=>[String(k),v.titolo,"",""])})}
+  else if(x.k==="oss"){const i=predSig(s);Q.push({id:vqPredId(x),kind:"g",q:"Secondo te succederà?",sub:s.segnali[i],note:"Lo verifichiamo alla scadenza, in «Com'è andata».",o:[["si","Sì","",""],["no","No","",""]]})}
+  return Q}
+function moreVotesHTML(P){const L=vqList();if(L.length<2)return"";const n=L.filter(x=>vqState(x)==="done").length,all=n>=L.length;
+  return `<button type="button" class="vq-go" data-vq><span class="vq-gt"><b>${all?"✓ Hai votato tutte le storie di oggi":"Vota anche le altre storie"}</b><small>${all?"Rivedi i tuoi voti":`${L.length} storie · due domande ciascuna · circa un minuto`}</small><span class="vq-dots" aria-hidden="true">${L.map(x=>`<i class="${vqState(x)}"></i>`).join("")}</span></span><span class="vq-ar" aria-hidden="true">›</span></button>`}
+const VQ={i:0,L:[],read:false,adv:0};
+function vqOpen(){const L=vqList();if(!L.length)return;VQ.L=L;VQ.read=false;const k=L.findIndex(x=>vqState(x)!=="done");VQ.i=k<0?L.length:k;const w=agsEl();w.dataset.mode="quiz";w.querySelector(".ags-t").textContent="Vota le storie di oggi";w.querySelector(".ags-cal").innerHTML="";
   AGS.y=window.scrollY;w.hidden=false;document.body.style.overflow="hidden";AGS.open=true;if(!AGS.pushed){try{history.pushState({ags:1},"",location.href);AGS.pushed=true}catch(e){}}
-  vqRender();requestAnimationFrame(()=>w.classList.add("on"));try{track("quiz-voti")}catch(_){}}
-function vqRender(){const w=AGS.el,L=VQ.L;if(!w||w.dataset.mode!=="quiz")return;const done=VQ.i>=L.length;
-  w.querySelector(".ags-d").textContent=done?"Fatto":`${VQ.i+1} di ${L.length}`;
-  const bar=`<div class="vq-bar">${L.map((x,k)=>`<button type="button" class="${vqState(x)}${k===VQ.i?" cur":""}" data-vq-i="${k}" aria-label="Storia ${k+1}"></button>`).join("")}</div>`;
-  if(done){const n=L.filter(x=>vqState(x)==="done").length;w.querySelector(".ags-l").innerHTML=`${bar}<div class="vq-end"><div class="vq-big">${n}<small>/${L.length}</small></div><p><b>Hai votato ${n} ${n===1?"storia":"storie"} su ${L.length}.</b></p><p class="muted">Quando i voti arrivano a ${VT_MIN} vedi cosa pensano gli altri lettori. Le previsioni le verifichiamo alla scadenza: in «Com'è andata» vedi chi ci ha preso.</p></div>`;
-    w.querySelector(".ags-tg").innerHTML=`<div class="vq-ft"><button type="button" class="vq-sk" data-vq-i="0">‹ Ricomincia</button><button type="button" class="vq-nx on" data-ags-x>Chiudi</button></div>`;return}
-  const x=L[VQ.i],s=S.stories[x.id],th=S.threads[s.filone_id];const tt=String(s.titolo||"");const tag=th&&th.breve?th.breve:th?thShort(th):"";
-  let op="";if(x.P){const m=vtMine(x.P.id);op=`<div class="vq-s"><div class="vq-k">La tua opinione · ${esc(x.P.domanda)}</div><div class="vq-op" data-vq-poll="${esc(x.P.id)}">${[["a",x.P.a],["b",x.P.b],["n","Non so"]].map(([k,l])=>`<button type="button" class="vc-${k}" data-vqt="${k}" aria-pressed="${m===k}">${esc(l)}</button>`).join("")}</div></div>`}
-  let pr="";if(x.k==="scn")pr=`<div class="vq-s"><div class="vq-k">La tua previsione · Come va a finire?</div>${th.scenari.domanda?`<p class="vq-sg">${esc(th.scenari.domanda)}</p>`:""}${svHTML(th)}</div>`;
-  else if(x.k==="oss"){const i=predSig(s);pr=`<div class="vq-s"><div class="vq-k">La tua previsione · Succederà?</div><p class="vq-sg">${esc(s.segnali[i])}</p>${gsHTML(s,i)}</div>`}
-  w.querySelector(".ags-l").innerHTML=`${bar}<div class="vq-st">${tag?`<span class="aggc-tag">${esc(tag)}</span>`:""}<button type="button" class="vq-t" data-vq-open="${esc(s.id)}">${esc(tt)} <span>Leggi ›</span></button></div>${op}${pr}`;
-  const last=VQ.i===L.length-1;w.querySelector(".ags-tg").innerHTML=`<div class="vq-ft"><button type="button" class="vq-sk" data-vq-nx>Salta</button><button type="button" class="vq-nx${vqState(x)==="done"?" on":""}" data-vq-nx>${last?"Fine":"Avanti"} ›</button></div>`;
-  w.querySelector(".ags-l").scrollTop=0;try{gvLoad()}catch(e){}}
-document.addEventListener("click",e=>{if(e.target.closest("[data-vq]")){e.preventDefault();vqOpen();return}
-  if(!AGS.el||AGS.el.dataset.mode!=="quiz"||!AGS.el.contains(e.target))return;
-  const t=e.target.closest("[data-vqt]");if(t){const el=t.closest("[data-vq-poll]"),id=el.dataset.vqPoll;let ch=t.dataset.vqt;if(vtMine(id)===ch)ch="x";vtSend(id,ch,()=>{vqMark();try{vtFill()}catch(_){}});try{track(ch==="x"?"voto-tolto":"voto-tesi")}catch(_){}return}
-  if(e.target.closest("[data-vq-nx]")){VQ.i++;vqRender();return}
-  const j=e.target.closest("[data-vq-i]");if(j){VQ.i=+j.dataset.vqI;vqRender();return}
-  const o=e.target.closest("[data-vq-open]");if(o){agsClose(true);openStory(o.dataset.vqOpen)}});
-/* dopo ogni voto nel percorso aggiorna pulsanti e barra senza ridisegnare (i risultati arrivano da gvFill) */
-function vqMark(){const w=AGS.el;if(!w||w.dataset.mode!=="quiz")return;w.querySelectorAll("[data-vq-poll]").forEach(el=>{const m=vtMine(el.dataset.vqPoll);el.querySelectorAll("[data-vqt]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vqt===m)))});
-  const x=VQ.L[VQ.i];if(!x)return;w.querySelectorAll(".vq-bar button").forEach((b,k)=>{b.className=vqState(VQ.L[k])+(k===VQ.i?" cur":"")});const n=w.querySelector(".vq-nx");if(n)n.classList.toggle("on",vqState(x)==="done")}
-{const _gf=gvFill;gvFill=function(){const r=_gf.apply(this,arguments);try{vqMark()}catch(e){}return r}}
-{const _ac=agsClose;agsClose=function(nav){const q=AGS.el&&AGS.el.dataset.mode==="quiz";const r=_ac.apply(this,arguments);if(q)setTimeout(()=>{try{vtFill()}catch(e){}},0);return r}}
-{const st=document.createElement("style");st.textContent=`.vq-go{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);font:600 15px var(--sans);text-align:left;cursor:pointer}.vq-go span{display:flex;flex-direction:column;gap:2px}.vq-go small{font:400 12.5px var(--sans);color:var(--muted)}.vq-go>span[aria-hidden]{font-size:22px}
-.vq-bar{display:flex;gap:4px;margin:6px 0 14px}.vq-bar button{flex:1;height:5px;padding:0;border:0;border-radius:3px;background:var(--line);cursor:pointer}.vq-bar .half{background:color-mix(in srgb,var(--accent) 45%,var(--line))}.vq-bar .done{background:var(--accent)}.vq-bar .cur{outline:2px solid var(--ink);outline-offset:1px}
-.vq-st{margin-bottom:14px}.vq-t{display:block;margin-top:8px;background:none;border:0;padding:0;text-align:left;font:600 18px/1.3 var(--serif,Georgia),serif;color:var(--ink);cursor:pointer}.vq-t span{font:600 13px var(--sans);color:var(--accent);white-space:nowrap}
-.vq-s{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--surface-2)}.vq-k{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
-.vq-op{display:flex;gap:8px;flex-wrap:wrap}.vq-op button{flex:1 1 0;min-width:0;font:600 13.5px/1.3 var(--sans);padding:10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}.vq-op .vc-a{border-color:color-mix(in srgb,var(--amb-eco) 55%,transparent)}.vq-op .vc-b{border-color:color-mix(in srgb,var(--amb-soc) 55%,transparent)}.vq-op .vc-n{flex:.6;color:var(--muted)}.vq-op button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
-.vq-sg{margin:0 0 8px;font-size:15px;line-height:1.45}.vq-s .gs{margin:0}.vq-s .gs .q{display:none}.vq-s .gs button[data-gv]{padding:7px 20px;font-size:13.5px}.vq-s .sv{margin:0;border:0;padding:0}.vq-s .sv .t{display:none}
-.vq-ft{display:flex;justify-content:space-between;align-items:center;gap:10px}.vq-sk{background:none;border:0;padding:8px 0;color:var(--muted);font:500 14px var(--sans);cursor:pointer}.vq-nx{min-height:42px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:600 14.5px var(--sans);cursor:pointer}.vq-nx.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
-.vq-end{text-align:center;padding:24px 8px}.vq-big{font:600 48px/1 var(--serif,Georgia),serif}.vq-big small{font-size:22px;color:var(--muted)}.vq-end p{margin:10px 0 0;font-size:14.5px;line-height:1.5}
-.gs-to{display:block;margin:6px 0 2px;font-size:13px;text-align:left}
-@media (max-width:899px){.ags[data-mode="quiz"] .ags-p{height:min(88dvh,780px)}}@media (min-width:900px){.ags[data-mode="quiz"] .ags-p{width:500px}}`;document.head.appendChild(st)}
+  vqBind(w);vqRender(0);requestAnimationFrame(()=>w.classList.add("on"));try{track("quiz-voti")}catch(_){}}
+function vqHead(){const w=AGS.el,L=VQ.L,n=L.filter(x=>vqState(x)==="done").length;w.querySelector(".ags-d").textContent=(VQ.i>=L.length?"Riepilogo":`Storia ${VQ.i+1} di ${L.length}`)+` · ${n} ${n===1?"votata":"votate"}`}
+function vqBar(){return `<div class="vq-bar">${VQ.L.map((x,k)=>`<button type="button" class="${vqState(x)}${k===VQ.i?" cur":""}" data-vq-i="${k}" aria-label="Storia ${k+1}"></button>`).join("")}</div>`}
+function vqRender(dir){clearTimeout(VQ.adv);const w=AGS.el,L=VQ.L;if(!w||w.dataset.mode!=="quiz")return;VQ.read=false;vqHead();const l=w.querySelector(".ags-l");
+  if(VQ.i>=L.length){const n=L.filter(x=>vqState(x)==="done").length;
+    l.innerHTML=`${vqBar()}<div class="vq-card vq-end${dir?" in"+(dir>0?"r":"l"):""}"><div class="vq-big">${n}<small>/${L.length}</small></div><p class="vq-et">${n>=L.length?"Hai votato tutte le storie di oggi.":`Hai votato ${n} ${n===1?"storia":"storie"} su ${L.length}.`}</p><p class="muted vq-en">Da ${VT_MIN} voti vedi cosa pensano gli altri lettori. Le previsioni le verifichiamo alla scadenza, in «Com'è andata».</p>
+      <div class="vq-sum">${L.map((x,k)=>{const s=S.stories[x.id];const Q=vqQs(x);const ans=Q.map(q=>{const m=vtMine(q.id);const o=q.o.find(o=>o[0]===m);return `<span class="${m?"":"vq-miss"}"><em>${q.kind==="t"?"Opinione":"Previsione"}</em>${m?esc(o?o[1]:m):"da votare"}</span>`}).join("");
+        return `<button type="button" class="vq-sr ${vqState(x)}" data-vq-i="${k}"><span class="vq-srt">${vqTag(s)?`<b>${esc(vqTag(s))}</b> · `:""}${esc(clip(s.titolo||"",80))}</span>${ans}</button>`}).join("")}</div></div>`;
+    w.querySelector(".ags-tg").innerHTML=`<div class="vq-ft"><button type="button" class="vq-pv" data-vq-go="-1" aria-label="Storia precedente">‹</button><span class="vq-hint"></span><button type="button" class="vq-nx on" data-ags-x>Chiudi</button></div>`;l.scrollTop=0;return}
+  const x=L[VQ.i],s=S.stories[x.id],Q=vqQs(x),tag=vqTag(s);
+  l.innerHTML=`${vqBar()}<div class="vq-card${dir?" in"+(dir>0?"r":"l"):""}"><div class="vq-st">${tag?`<span class="aggc-tag">${esc(tag)}</span>`:""}<h3 class="vq-t">${esc(s.titolo||"")}</h3>${s.perche_conta?`<p class="vq-ctx">${esc(vqTxt(s.perche_conta,190))}</p>`:""}<button type="button" class="vq-read" data-vq-read><span aria-hidden="true">📖</span> Leggi la storia <span class="muted">· poi torni qui</span> ›</button></div>
+    ${Q.map((q,j)=>`<section class="vq-q" data-vq-poll="${esc(q.id)}" data-vq-kind="${q.kind}"><h4><span class="vq-n">${j+1}</span><span>${esc(q.q)}<small>${q.kind==="t"?"La tua opinione":"La tua previsione"}</small></span></h4>${q.sub?`<p class="vq-sub">${esc(q.sub)}</p>`:""}<div class="vq-opts${q.kind==="g"?" vq-yn":""}${q.kind==="t"?" vq-th":""}">${q.o.map(o=>`<button type="button" class="vq-o vq-o-${o[0]}" data-vq-c="${esc(o[0])}" aria-pressed="false"><i class="vq-r" aria-hidden="true"></i><span class="vq-ol"><b>${esc(o[1])}</b>${o[2]?`<small>${esc(o[2])}</small>`:""}${o[3]?`<small class="vq-who">${esc(o[3])}</small>`:""}</span><em class="vq-pc"></em></button>`).join("")}</div><p class="vq-fb"></p>${q.note?`<p class="vq-note">${esc(q.note)}</p>`:""}</section>`).join("")}
+    <div class="vq-ok" hidden>✓ Storia votata</div></div>`;
+  w.querySelector(".ags-tg").innerHTML=`<div class="vq-ft"><button type="button" class="vq-pv" data-vq-go="-1" aria-label="Storia precedente"${VQ.i?"":" disabled"}>‹</button><span class="vq-hint">${VQ.i===0?"Scorri per cambiare storia":""}</span><button type="button" class="vq-nx" data-vq-go="1"></button></div>`;
+  l.scrollTop=0;vqUpd();const ids=Q.map(q=>q.id).filter(id=>!S.votes[id]);if(ids.length&&typeof RG_API!=="undefined")fetch(RG_API+"/api/votes?p="+encodeURIComponent(ids.join(","))).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.polls){Object.assign(S.votes,j.polls);vqUpd()}}).catch(()=>{})}
+/* stato della scheda: scelta evidenziata, frase di conferma, percentuali dei lettori quando ci sono */
+function vqUpd(){const w=AGS.el;if(!w||w.dataset.mode!=="quiz"||VQ.read)return;const x=VQ.L[VQ.i];if(!x)return;vqHead();
+  w.querySelectorAll(".vq-q").forEach(el=>{const id=el.dataset.vqPoll,k=el.dataset.vqKind,m=vtMine(id),c=S.votes[id]||{};const tot=c.tot||0;el.classList.toggle("has",!!m);
+    el.querySelectorAll(".vq-o").forEach(b=>{const ch=b.dataset.vqC,on=ch===m;b.setAttribute("aria-pressed",String(on));const n=k==="t"?c[ch]:(c.c||{})[ch];const p=m&&tot?Math.round(100*(n||0)/tot):null;b.querySelector(".vq-pc").textContent=p==null?"":p+"%";b.style.setProperty("--p",p==null?"0%":p+"%");b.classList.toggle("res",p!=null)});
+    const lab=(el.querySelector(`.vq-o[data-vq-c="${m}"] b`)||{}).textContent||"";const fb=el.querySelector(".vq-fb");
+    fb.innerHTML=!m?"":`<b>✓ Il tuo voto: ${esc(lab)}</b> · ${tot?`${tot} voti dei lettori`:c.sotto_soglia&&c.n?`sei tra i primi ${c.n}, i risultati da ${VT_MIN} voti`:`i risultati da ${VT_MIN} voti`} · <button type="button" class="linkbtn" data-vq-x>togli</button>`});
+  const st=vqState(x),ok=w.querySelector(".vq-ok");if(ok)ok.hidden=st!=="done";
+  w.querySelectorAll(".vq-bar button").forEach((b,k)=>{b.className=vqState(VQ.L[k])+(k===VQ.i?" cur":"")});
+  const nx=w.querySelector('.vq-nx[data-vq-go]');if(nx){const last=VQ.i===VQ.L.length-1;nx.textContent=st==="done"?(last?"Vedi i tuoi voti ›":"Prossima storia ›"):(last?"Riepilogo ›":"Salta ›");nx.classList.toggle("on",st==="done")}}
+function vqGo(d){const n=VQ.i+d;if(n<0||n>VQ.L.length)return;VQ.i=n;vqRender(d)}
+function vqVote(el,ch){const id=el.dataset.vqPoll;if(vtMine(id)===ch)ch="x";const x=VQ.L[VQ.i],was=vqState(x);
+  vtSend(id,ch,()=>{vqUpd();try{vtFill()}catch(_){}try{gvFill()}catch(_){}});try{track(ch==="x"?"voto-tolto":id[0]==="t"?"voto-tesi":id[0]==="g"?"voto-segnale":"voto-scenario")}catch(_){}
+  /* completata la storia, dopo un attimo passa alla successiva; qualsiasi tocco annulla */
+  if(ch!=="x"&&was!=="done"&&vqState(x)==="done"){const i0=VQ.i;VQ.adv=setTimeout(()=>{if(VQ.i===i0&&!VQ.read&&AGS.open)vqGo(1)},1300);const ok=AGS.el.querySelector(".vq-ok");if(ok)ok.textContent="✓ Storia votata · passo alla prossima…"}
+  else if(ch!=="x"){const q=el.nextElementSibling;const nq=el.parentElement.querySelectorAll(".vq-q")[1];if(nq&&nq!==el&&!vtMine(nq.dataset.vqPoll)){const l=AGS.el.querySelector(".ags-l");setTimeout(()=>{const r=nq.getBoundingClientRect(),lr=l.getBoundingClientRect();if(r.bottom>lr.bottom)l.scrollTo({top:l.scrollTop+r.top-lr.top-12,behavior:"smooth"})},250)}}}
+function vqReadOpen(){const x=VQ.L[VQ.i];if(!x)return;clearTimeout(VQ.adv);VQ.read=true;const w=AGS.el,s=S.stories[x.id];const b=S.briefings[0];const rank=((b.storie_mondo||[]).indexOf(x.id)>=0?(b.storie_mondo||[]).indexOf(x.id):(b.storie_italia||[]).indexOf(x.id))+1;
+  const l=w.querySelector(".ags-l");l.innerHTML=`<div class="ags-story vq-rd">${storyHTML(s,rank)}</div>`;const d=l.querySelector("details.sx");if(d)d.open=true;
+  w.querySelector(".ags-tg").innerHTML=`<div class="vq-ft"><span class="vq-hint">Stai leggendo la storia ${VQ.i+1} di ${VQ.L.length}</span><button type="button" class="vq-nx on" data-vq-back>‹ Torna al voto</button></div>`;l.scrollTop=0;try{vtLoad();vtFill();gvLoad();ppFit()}catch(e){}}
+function vqBind(w){if(w._vq)return;w._vq=1;const l=w.querySelector(".ags-l");
+  w.addEventListener("click",e=>{if(w.dataset.mode!=="quiz")return;if(!e.target.closest("[data-vq-c]"))clearTimeout(VQ.adv);
+    const c=e.target.closest("[data-vq-c]");if(c){vqVote(c.closest(".vq-q"),c.dataset.vqC);return}
+    const xx=e.target.closest("[data-vq-x]");if(xx){vqVote(xx.closest(".vq-q"),"x");return}
+    const g=e.target.closest("[data-vq-go]");if(g){vqGo(+g.dataset.vqGo);return}
+    const j=e.target.closest("[data-vq-i]");if(j){const d=+j.dataset.vqI-VQ.i;VQ.i=+j.dataset.vqI;vqRender(d>0?1:d<0?-1:0);return}
+    if(e.target.closest("[data-vq-read]")){vqReadOpen();return}
+    if(e.target.closest("[data-vq-back]")){vqRender(0);return}});
+  l.addEventListener("scroll",()=>{if(w.dataset.mode==="quiz"&&VQ.read)try{sxSpy()}catch(e){}},{passive:true});
+  /* scorrere col pollice: a sinistra la storia dopo, a destra quella prima */
+  let x0=null,y0=0,dx=0,hz=null,card=null;
+  l.addEventListener("touchstart",e=>{if(w.dataset.mode!=="quiz"||VQ.read||e.touches.length>1)return;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;hz=null;card=l.querySelector(".vq-card");clearTimeout(VQ.adv)},{passive:true});
+  l.addEventListener("touchmove",e=>{if(x0==null||!card)return;const mx=e.touches[0].clientX-x0,my=e.touches[0].clientY-y0;if(hz==null&&(Math.abs(mx)>8||Math.abs(my)>8))hz=Math.abs(mx)>Math.abs(my)*1.2;if(!hz)return;e.preventDefault();dx=mx;const edge=(VQ.i===0&&dx>0)||(VQ.i>=VQ.L.length&&dx<0);card.style.transition="none";card.style.transform=`translateX(${edge?dx/4:dx}px)`;card.style.opacity=String(1-Math.min(.5,Math.abs(dx)/600))},{passive:false});
+  l.addEventListener("touchend",()=>{if(x0==null)return;x0=null;if(!card||!hz)return;const d=dx<-70?1:dx>70?-1:0;const ok=d&&VQ.i+d>=0&&VQ.i+d<=VQ.L.length;
+    if(ok){card.style.transition="transform .18s ease,opacity .18s";card.style.transform=`translateX(${d>0?-110:110}%)`;card.style.opacity="0";setTimeout(()=>vqGo(d),170)}else{card.style.transition="transform .2s ease,opacity .2s";card.style.transform="";card.style.opacity=""}});
+  document.addEventListener("keydown",e=>{if(!AGS.open||w.dataset.mode!=="quiz"||VQ.read)return;if(e.key==="ArrowRight")vqGo(1);if(e.key==="ArrowLeft")vqGo(-1)})}
+document.addEventListener("click",e=>{if(e.target.closest("[data-vq]")){e.preventDefault();vqOpen()}});
+{const _ac=agsClose;agsClose=function(nav){const q=AGS.el&&AGS.el.dataset.mode==="quiz";clearTimeout(VQ.adv);const r=_ac.apply(this,arguments);if(q)setTimeout(()=>{try{vtFill()}catch(e){}},0);return r}}
+{const st=document.createElement("style");st.textContent=`.vq-go{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink);text-align:left;cursor:pointer;font:inherit}.vq-gt{display:flex;flex-direction:column;gap:3px}.vq-gt b{font:600 15px var(--sans);color:var(--accent)}.vq-gt small{font-size:12.5px;color:var(--muted)}.vq-ar{font-size:24px;color:var(--accent)}
+.vq-dots{display:flex;gap:4px;margin-top:5px}.vq-dots i{width:14px;height:4px;border-radius:2px;background:var(--line)}.vq-dots .half{background:color-mix(in srgb,var(--accent) 45%,var(--line))}.vq-dots .done{background:var(--accent)}
+.ags[data-mode="quiz"] .ags-l{touch-action:pan-y;overflow-x:hidden;padding:0 16px 16px}
+.vq-bar{display:flex;gap:4px;padding:8px 0 12px;position:sticky;top:0;z-index:2;background:var(--surface)}.vq-bar button{flex:1;height:6px;padding:0;border:0;border-radius:3px;background:var(--line);cursor:pointer;position:relative}.vq-bar button::after{content:"";position:absolute;inset:-9px 0}.vq-bar .half{background:color-mix(in srgb,var(--accent) 45%,var(--line))}.vq-bar .done{background:var(--accent)}.vq-bar .cur{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)}
+.vq-card{will-change:transform}.vq-card.inr{animation:vqR .22s ease}.vq-card.inl{animation:vqL .22s ease}@keyframes vqR{from{transform:translateX(48px);opacity:0}}@keyframes vqL{from{transform:translateX(-48px);opacity:0}}
+.vq-st{margin-bottom:14px}.vq-t{margin:8px 0 6px;font:600 19px/1.3 var(--serif,Georgia),serif}.vq-ctx{margin:0 0 10px;font-size:14.5px;line-height:1.5;color:var(--muted)}
+.vq-read{display:flex;align-items:center;gap:6px;width:100%;min-height:42px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font:600 14px var(--sans);cursor:pointer;text-align:left}.vq-read .muted{font-weight:400;flex:1}
+.vq-q{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;transition:border-color .2s}.vq-q.has{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.vq-q h4{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;font:600 15.5px/1.35 var(--sans)}.vq-q h4 small{display:block;font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.vq-n{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font:600 12.5px var(--sans)}.vq-q.has .vq-n{background:var(--accent);border-color:var(--accent);color:var(--bg)}.vq-q.has .vq-n{font-size:0}.vq-q.has .vq-n::after{content:"✓";font-size:13px}
+.vq-sub{margin:-2px 0 10px 34px;font-size:14.5px;line-height:1.45}
+.vq-opts{display:flex;flex-direction:column;gap:8px}.vq-yn{flex-direction:row}.vq-yn .vq-o{flex:1;justify-content:center}
+.vq-o{position:relative;display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:10px 12px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink);text-align:left;cursor:pointer;font:inherit;overflow:hidden;isolation:isolate}
+.vq-o::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--p,0%);background:color-mix(in srgb,var(--accent) 14%,transparent);z-index:-1;transition:width .4s}
+.vq-r{flex:0 0 auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--faint,var(--muted));display:grid;place-items:center}
+.vq-ol{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.vq-ol b{font:600 14.5px/1.3 var(--sans)}.vq-ol small{font-size:13px;line-height:1.4;color:var(--muted)}.vq-ol .vq-who{font-size:11.5px;opacity:.85}
+.vq-pc{font:600 13px var(--mono);font-style:normal;color:var(--muted)}
+.vq-o[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface-2))}.vq-o[aria-pressed="true"] .vq-r{border-color:var(--accent);background:var(--accent)}.vq-o[aria-pressed="true"] .vq-r::after{content:"✓";color:var(--bg);font:700 12px var(--sans)}.vq-o[aria-pressed="true"] .vq-pc{color:var(--accent)}
+.vq-q.has .vq-o[aria-pressed="false"]{opacity:.62}.vq-o-n{min-height:40px}.vq-th .vq-o-n b{font-weight:500;color:var(--muted)}
+.vq-fb{margin:8px 0 0;font-size:13px;color:var(--muted)}.vq-fb:empty{display:none}.vq-fb b{color:var(--accent);font-weight:600}.vq-note{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.vq-ok{margin:4px 0 8px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font:600 14px var(--sans);text-align:center}
+.vq-ft{display:flex;justify-content:space-between;align-items:center;gap:10px}.vq-hint{flex:1;font-size:12.5px;color:var(--muted);text-align:center}
+.vq-pv{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:22px;cursor:pointer}.vq-pv:disabled{opacity:.3;cursor:default}
+.vq-nx{min-height:44px;padding:0 18px;border-radius:11px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:600 14.5px var(--sans);cursor:pointer}.vq-nx.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.vq-rd{margin:0 -6px}
+.gs-to{display:block;margin:8px 0 2px;font-size:13.5px;text-align:left!important}
+.vq-end{text-align:center;padding-top:10px}.vq-big{font:600 46px/1 var(--serif,Georgia),serif}.vq-big small{font-size:22px;color:var(--muted)}.vq-et{margin:10px 0 4px;font:600 16px var(--sans)}.vq-en{margin:0 0 16px;font-size:13.5px;line-height:1.5}
+.vq-sum{display:flex;flex-direction:column;gap:8px;text-align:left}.vq-sr{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);text-align:left;cursor:pointer;font:inherit}.vq-sr.done{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.vq-srt{font-size:14px;line-height:1.35}.vq-srt b{color:var(--accent);font-weight:600}.vq-sr>span:not(.vq-srt){font-size:13px;color:var(--ink)}.vq-sr em{font-style:normal;font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:6px}.vq-sr .vq-miss{color:var(--accent)}
+@media (max-width:899px){.ags[data-mode="quiz"] .ags-p{height:min(90dvh,820px)}}@media (min-width:900px){.ags[data-mode="quiz"] .ags-p{width:520px}}`;document.head.appendChild(st)}
 function voteTag(s,th){const P=pollForStory(s);if(P){const m=vtMine(P.id);return `<span class="sx-vote${m?" done":""}" data-vgo="pos" role="button">${m?"✓ Votato":"🗳️ Vota"}</span>`}
   const k=predK(s);return k?`<span class="sx-vote" data-vgo="${k}" role="button">🗳️ Vota</span>`:""}
 document.addEventListener("click",e=>{const v=e.target.closest("[data-vgo]");if(!v)return;e.preventDefault();e.stopPropagation();const art=v.closest("article.sto");if(!art)return;const d=art.querySelector("details.sx");if(d&&!d.open)d.open=true;if(v.dataset.vgo==="scn"){const sd=art.querySelector('[data-sxk="scn"] details.tl-scen');if(sd&&!sd.open)sd.open=true}
