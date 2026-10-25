@@ -2,6 +2,7 @@
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
 // v51: svolte e aggiornamenti. Routine «aggiornamenti» (11:52, 15:52, 19:52): documenti «aggiornamenti» sul sito (fascia «Dalle ultime ore» e riquadro nella storia), proposte di svolta (/v1/svolte) da approvare nel pannello, avviso nella chat privata col bot, /v1/giro. Richieste: modulo senza riquadri con temi suggeriti; reel «Spiegato in 40 secondi» (kit spiegato.mjs).
+// v52: «Com'è andata la settimana» riscritto: tre esiti neutri (successi / andati diversamente / fermi), doppioni tolti, 4 voci da ricordare con il tema del filone.
 // v49: newsletter con la domanda del giorno (pulsanti che aprono il sito e registrano il voto); domanda di Threads con il link al sito.
 // v48: esito degli scenari: /v1/batch salva esito e probabilità accanto ai voti (polls); «Com'è andata» con gli scenari chiusi; pannello «Chi ci ha preso».
 // v47: previsioni dei lettori (g: sì/no sui segnali, c: scelta dello scenario) oltre alle tesi; copia di ogni sondaggio (tabella polls); pannello «Voti dei lettori · solo per te»; «Com'è andata» con la percentuale dei lettori.
@@ -1000,7 +1001,7 @@ function cnlRender(c){const el=document.getElementById("cnl");if(!el)return;if(!
  h+=cnlIt("div","TG",esc(dv.titolo||"Le fonti non sono d'accordo"),dv,dv.testo?(dv.fonti&&dv.fonti.length?esc(dv.fonti.join(" · ")):""):(!dv.briefing?"Il briefing di oggi non è ancora pronto.":"Nessuna divergenza che cambi la lettura dei fatti: oggi non esce."));
  h+=cnlIt("dom","TH","Domanda del giorno",dm,dm.testo?(dm.stato==="errore"?esc(dm.errore||""):dm.post!=="pubblicata"&&dm.stato!=="uscito"?"Parte solo se pubblichi il post di oggi su Instagram.":""):(dm.post?"La bozza di oggi non ha una domanda: oggi non esce.":"La bozza di oggi non c&#39;è ancora."));
  if(c.bil){const b=c.bil;h+='<div class="cit"><div class="cih"><span class="ic">TG</span><b>Com&#39;è andata</b>'+(b.stato==="uscito"?'<span class="cp ok">uscito ✓</span>':b.stato==="assente"?'<span class="cp no">niente da dire</span>':'<span class="cp '+(b.domenica?'wait':'no')+'">'+(b.domenica?'esce alle '+esc(b.ora):'domenica alle '+esc(b.ora))+'</span>')+'</div>';
-  h+='<div class="cpv">'+b.ok+' segnali avverati, '+b.no+' no'+(b.open?', '+b.open+' ancora aperti':'')+(b.righe.length?'<br><br>'+b.righe.map(esc).join("<br>")+(b.altri?'<br><i>… altri '+b.altri+'</i>':''):'')+'</div>';
+  h+='<div class="cpv">&#128994; '+b.ok+' successi &#183; &#128256; '+(b.alt||0)+' andati diversamente &#183; &#9898; '+(b.fermi||0)+' fermi'+(b.open?' &#183; '+b.open+' aperti':'')+(b.righe.length?'<br><br>'+b.righe.map(esc).join("<br>")+(b.altri?'<br><i>… altri '+b.altri+'</i>':''):'')+'</div>';
   if(!b.domenica)h+='<div class="cwh">Anteprima con le verifiche fin qui: si completa domenica mattina.</div>';
   if(b.link)h+='<div class="cwh"><a href="'+esc(b.link)+'" target="_blank" rel="noopener">Apri il messaggio ›</a></div>';h+='</div>'}
  document.getElementById("cnlb").innerHTML=h}
@@ -2634,12 +2635,32 @@ async function bilancioData(env, day) { // i segnali risolti nella settimana (da
     const C = cl.length ? await voteCounts(env, cl.map((d) => d.poll)) : {};
     scen = cl.map((d) => { const c = C[d.poll]; return { ...d, lettori: c && c.tot && d.esito_i >= 0 ? Math.round(100 * ((c.c || {})[String(d.esito_i)] || 0) / c.tot) : null }; });
   } catch (e) {}
-  return { scen, ok: done.filter((v) => v.esito === "avvenuto"), no: done.filter((v) => v.esito === "smentito" || v.esito === "scaduto"), open };
+  // v52: tema di ogni segnale (dalla storia che lo indicava), doppioni tolti (stesso tema, stesso esito, stesso giorno di verifica), 4 voci scelte da ricordare
+  let uniq = done;
+  try {
+    const ids = [...new Set(done.map((v) => v.storia_id).filter(Boolean))];
+    const SM = {}, TM = {};
+    for (let i = 0; i < ids.length; i += 80) { const part = ids.slice(i, i + 80); const ph = part.map((_, j) => "?" + (j + 1)).join(",");
+      for (const r of ((await env.DB.prepare("SELECT key, data FROM docs WHERE type='stories' AND key IN (" + ph + ")").bind(...part).all()).results || [])) { try { const d = JSON.parse(r.data); SM[r.key] = { titolo: d.titolo || "", filone: d.filone_id || "" }; } catch (e) {} } }
+    const fil = [...new Set(Object.values(SM).map((x) => x.filone).filter(Boolean))];
+    if (fil.length) { const ph = fil.map((_, j) => "?" + (j + 1)).join(","); for (const r of ((await env.DB.prepare("SELECT key, data FROM docs WHERE type='threads' AND key IN (" + ph + ")").bind(...fil).all()).results || [])) { try { { const t = JSON.parse(r.data); TM[r.key] = t.breve || (String(t.titolo || "").length <= 28 ? t.titolo : ""); } } catch (e) {} } }
+    const lab = (v) => { const st = SM[v.storia_id]; const t = st && TM[st.filone]; if (t) return t; const a = st && String(st.titolo).split(":")[0].trim(); return a && a.length <= 28 && a.length < String(st.titolo).length ? a : ""; };
+    const seenK = new Set(); uniq = [];
+    for (const v of done) { const st = SM[v.storia_id]; const k = st && st.filone ? st.filone + "|" + v.esito + "|" + v.giorno : "s|" + String(v.segnale).toLowerCase(); if (seenK.has(k)) continue; seenK.add(k); uniq.push({ ...v, tema: lab(v), filone: st ? st.filone : "", rango: parseInt(String(v.storia_id || "").split("-").pop(), 10) || 9 }); }
+  } catch (e) {}
+  const ok = uniq.filter((v) => v.esito === "avvenuto"), alt = uniq.filter((v) => v.esito === "smentito"), fermi = uniq.filter((v) => v.esito === "scaduto");
+  const score = (v) => v.rango + (v.esito === "smentito" ? -2 : 0);
+  const pick = []; const usati = new Set();
+  const take = (L, n) => { for (const v of [...L].filter((x) => x.nota).sort((a, z) => score(a) - score(z) || String(z.giorno).localeCompare(String(a.giorno)))) { if (pick.length >= 4 || n <= 0) break; if (v.filone && usati.has(v.filone)) continue; pick.push(v); if (v.filone) usati.add(v.filone); n--; } };
+  take(alt, 2); take(ok, 4 - pick.length); take(alt, 4 - pick.length);
+  return { scen, ok, alt, fermi, no: alt.concat(fermi), scelti: pick, open };
 }
 function bilancioText(B) {
-  const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
-  let msg = "<b>Com'è andata</b>\nOgni giorno, sotto ogni storia, indichiamo cosa osservare. Questa settimana " + pl(B.ok.length, "segnale si è avverato", "segnali si sono avverati") + ", " + B.no.length + " no" + (B.open ? "; " + pl(B.open, "è ancora aperto", "sono ancora aperti") : "") + ".\n\n";
-  msg += [...B.ok, ...B.no].slice(0, 8).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + esc(tgClip(v.segnale, 200)) + (v.nota ? "\n<i>" + esc(tgClip(v.nota, 220)) + "</i>" : "") + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
+  const n = (x) => (x || []).length;
+  let msg = "<b>Com'è andata la settimana</b>\nSotto ogni storia indichiamo cosa osservare: fatti che, se accadono, spostano la storia. Non sono previsioni: anche quando va diversamente è un'informazione.\n\n" +
+    "Questa settimana " + (n(B.ok) + n(B.alt) + n(B.fermi)) + " segnali sono arrivati a scadenza:\n🟢 " + n(B.ok) + " sono successi · 🔀 " + n(B.alt) + " sono andati diversamente · ⚪ " + n(B.fermi) + " non si sono mossi" + (B.open ? "\n(" + B.open + " sono ancora aperti)" : "");
+  const S = B.scelti || [];
+  if (S.length) msg += "\n\n<b>Da ricordare</b>\n" + S.map((v) => (v.esito === "avvenuto" ? "🟢 " : "🔀 ") + (v.tema ? "<b>" + esc(v.tema) + "</b> · " : "") + esc(tgClip(v.nota || v.segnale, 200)) + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
   if ((B.scen || []).length) msg += "\n\n<b>Gli scenari</b>\n" + B.scen.slice(0, 4).map((s) => "📊 " + esc(tgClip(s.domanda || s.titolo || "", 160)) + "\nÈ andata: <b>" + esc(tgClip(s.esito_titolo || "—", 120)) + "</b>" + (s.esito_prob != null ? "\n<i>L'agente gli dava il " + s.esito_prob + "%" + (s.lettori != null ? ", i lettori il " + s.lettori + "%" : "") + "</i>" : "")).join("\n\n");
   return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
 }
@@ -2670,7 +2691,7 @@ async function canaliInfo(env) {
   };
   const dow = romeDow(day);
   if (dow >= 6 && tg.bilancio !== false && tg.chat) { const B = await bilancioData(env, day); const tgB = dow === 7 ? await kvGet(env, "tg_b:" + day) : null;
-    out.bil = { ora: tg.ora_bil || "18:00", domenica: dow === 7, ok: B.ok.length, no: B.no.length, open: B.open, righe: [...B.ok, ...B.no].slice(0, 3).map((v) => (v.esito === "avvenuto" ? "✅ " : "❌ ") + String(v.segnale)), altri: Math.max(0, B.ok.length + B.no.length - 3),
+    out.bil = { ora: tg.ora_bil || "18:00", domenica: dow === 7, ok: B.ok.length, alt: (B.alt || []).length, fermi: (B.fermi || []).length, no: B.no.length, open: B.open, righe: (B.scelti || []).map((v) => (v.esito === "avvenuto" ? "🟢 " : "🔀 ") + (v.tema ? v.tema + " · " : "") + String(v.nota || v.segnale)), altri: 0,
       stato: tgB ? (tgB.msg ? "uscito" : "assente") : null, link: tgB && tgB.msg && chan ? "https://t.me/" + chan + "/" + tgB.msg : null }; }
   return out;
 }
