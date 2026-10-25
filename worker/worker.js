@@ -831,6 +831,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .ogc{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:2px solid #3A4C5C;background:transparent;color:#C5D0D8;font:700 14px system-ui;cursor:pointer}.ogs.done .ogc{background:#7FD1A0;border-color:#7FD1A0;color:#0B1830}.ogs.done .ogtt b{color:#8FA0AE}
 .ogb{display:none;padding:0 14px 14px;gap:8px}.ogs.open .ogb{display:grid}
 .ogsr{display:flex;gap:12px;align-items:flex-start}.ogth{flex:0 0 108px;width:108px;height:192px;border-radius:10px;border:1px solid #27353F;background:#0a0f1c}
+.ogalt{border-top:1px solid #27353F;padding-top:8px}.ogalt>summary{cursor:pointer;color:#86B4EA;font-weight:600;font-size:14px;padding:4px 0}.ogal{display:grid;gap:6px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px;margin-top:8px}.ogal .g{justify-self:start}
 .ogsh{width:100%;min-height:44px;border:0;border-radius:10px;background:linear-gradient(90deg,#f58529,#dd2a7b,#8134af);color:#fff;font:700 14.5px system-ui;cursor:pointer}.ogdl{justify-self:center;text-align:center}
 #snd{padding:0}#snd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px}#snd>summary::-webkit-details-marker{display:none}#snd[open]>summary .chev{transform:rotate(180deg)}#sndb{padding:0 14px 12px}
 .sndp{display:flex;gap:14px;align-items:flex-start;margin-top:4px}.sndp canvas{flex:0 0 120px;width:120px;height:213px;border-radius:10px;border:1px solid #27353F}.sndf{flex:1;min-width:0;display:grid;gap:8px}
@@ -1111,11 +1112,13 @@ function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n
  (s.verdetti||[]).forEach((v,i)=>St.push({k:"ver"+v.day,ic:"⚖️",t:"Il verdetto: domanda del "+sndMesi(v.day),w:"subito dopo il podcast",done:!!T["ver"+v.day],body:'<div class="ogsr"><canvas class="ogth" id="sndv'+i+'" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndv"+i)+sndCp("Link",OG_LINK+"storia-verdetto#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'<div class="sub">È andata: <b>'+esc(v.esito==="sì"?(v.a||"Sì"):(v.b||"No"))+'</b>. Sticker link nello spazio in basso.'+(v.num?'':' Mancano i numeri del sondaggio di quel giorno: la riga dei lettori non c&#39;è.')+(v.fonte&&v.fonte.url?' <a href="'+esc(v.fonte.url)+'" target="_blank" rel="noopener">Fonte ›</a>':'')+'</div></div></div>'}));
  if(qi)St.push({k:"ieri",ic:"📊",t:"I numeri del sondaggio di ieri",w:"prima della domanda nuova",done:!!n,auto:true,body:'<div class="sub">Instagram › la storia di ieri › Attività: quante persone l&#39;hanno vista, quante hanno votato, la percentuale di «'+esc(qi.a||"Sì")+'». «'+esc(qi.sticker||"")+'»</div><div class="sndn"><label>Hanno visto<input type="number" inputmode="numeric" min="0" id="snv" value="'+(n?n.visti:"")+'"></label><label>Hanno votato<input type="number" inputmode="numeric" min="0" id="snt" value="'+(n?n.votanti:"")+'"></label><label>'+esc(qi.a||"Sì")+' (%)<input type="number" inputmode="numeric" min="0" max="100" id="sns" value="'+(n?n.si:"")+'"></label><button type="button" class="g" id="snsv">'+(n?"Aggiorna":"Salva")+'</button></div>'
   +(n?'<div class="ogsr" style="margin-top:10px"><canvas class="ogth" id="sndr" width="1080" height="1920"></canvas><div class="sndf"><div class="sub"><b>Facoltativa</b>: la storia del risultato, da mettere prima della domanda.</div>'+ogShareBtn("sndr")+sndCp("Link",OG_LINK+"storia-risultato#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'</div></div>':'<div class="sub">Con i numeri, la storia della domanda mostra in alto com&#39;è andata ieri.</div>')});
- St.push({k:"dom",ic:"🗳️",t:"La domanda di oggi",w:"subito dopo, con lo sticker sondaggio",done:!!T.dom,body:!q?'<div class="sub">Arriva con il briefing delle 06:45.</div>':'<div class="ogsr"><canvas class="ogth" id="sndq" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndq")+sndCp("Sticker",q.sticker||"")+'<div class="sndab">'+sndCp("Risposta 1",q.a||"Sì")+sndCp("Risposta 2",q.b||"No")+'</div><div class="sub">'+(q.perche?'Perché questa: '+esc(q.perche)+' ':'')+'Si verifica entro il '+esc(sndMesi(q.scadenza||oggi))+(q.fonte&&q.fonte.url?' · <a href="'+esc(q.fonte.url)+'" target="_blank" rel="noopener">'+esc(q.fonte.nome||"fonte")+'</a>':'')+'.'+(qi&&!n?' <b>Prima inserisci i numeri di ieri</b>, così in alto compare il risultato.':'')+'</div></div></div>'});
+ St.push({k:"dom",ic:"🗳️",t:"La domanda di oggi",w:"subito dopo, con lo sticker sondaggio",done:!!T.dom,body:!q?'<div class="sub">Arriva con il briefing delle 06:45.</div>':'<div class="ogsr"><canvas class="ogth" id="sndq" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndq")+sndCp("Sticker",q.sticker||"")+'<div class="sndab">'+sndCp("Risposta 1",q.a||"Sì")+sndCp("Risposta 2",q.b||"No")+'</div><div class="sub">'+(q.perche?'Perché questa: '+esc(q.perche)+' ':'')+'Si verifica entro il '+esc(sndMesi(q.scadenza||oggi))+(q.fonte&&q.fonte.url?' · <a href="'+esc(q.fonte.url)+'" target="_blank" rel="noopener">'+esc(q.fonte.nome||"fonte")+'</a>':'')+'.'+(qi&&!n?' <b>Prima inserisci i numeri di ieri</b>, così in alto compare il risultato.':'')+'</div></div></div>'+ogAlt(s)});
  const x=ogTodayDraft();const tm=x&&x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
  St.push({k:"ig",ic:"📸",t:"Il post di Instagram",w:x&&x.status==="bozza"&&x.mode==="auto"&&tm?"esce da solo alle "+tm:"da approvare",done:!!(x&&x.status==="pubblicata"),auto:true,body:!x?'<div class="sub">La bozza di oggi non c&#39;è ancora.</div>':'<div class="sub">'+esc(dTitle(x))+'</div><div class="row"><button type="button" class="g" data-og-go="'+esc(x.id)+'">Apri la bozza ›</button></div>'});
  if(x&&ttOk(x)){const t=(D.tt||{})[x.id];St.push({k:"tt",ic:"🎵",t:"TikTok",w:x.type==="reel"?"a mano: suono e didascalia":"dopo Instagram",done:!!(t&&t.status==="pubblicato"),auto:true,body:'<div class="sub">'+(t?esc(t.status==="nella_casella"?"È nella casella di TikTok: scegli il suono, incolla la didascalia e pubblica.":t.status==="errore"?"Non inviato: riprova dalla bozza.":t.status):"Si invia dopo Instagram.")+'</div>'+(x.tt_cap?sndCp("Didascalia",x.tt_cap,clip(x.tt_cap,60)):'')+'<div class="row"><button type="button" class="g" data-og-go="'+esc(x.id)+'">Apri la bozza ›</button>'+(t&&t.status==="nella_casella"?'<button type="button" class="sm ogttm" data-id="'+esc(x.id)+'">Fatto</button>':'')+'</div>'})}
  return St}
+function ogAlt(s){const L=(s.scelte||[]).filter(x=>x.n!==s.scelta);if(!L.length)return '<div class="sub">Oggi l&#39;agente ha proposto una sola domanda.</div>';
+ return '<details class="ogalt"'+(OG_OPEN.alt?' open':'')+'><summary>Non ti convince? Altre '+L.length+' proposte ›</summary>'+L.map(x=>'<div class="ogal"><div class="sndl">'+esc(x.tema||"")+'</div><b>'+esc(x.sticker)+'</b>'+(x.perche?'<div class="sub">'+esc(x.perche)+'</div>':'')+'<button type="button" class="g" data-og-pick="'+x.n+'">Usa questa</button></div>').join("")+'<div class="sub">Quella che scegli è l&#39;unica che conta: risultato e verdetto seguono lei. '+((s.todo||{}).dom?'Hai già segnato la storia come pubblicata: se cambi, ripubblica quella nuova.':'')+'</div></details>'}
 function clip(s,n){s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s}
 function ogRender(){const el=document.getElementById("og");if(!el)return;const s=SND;if(!s){el.innerHTML='<div class="card sub">Carico…</div>';return}
  const St=ogSteps();const nd=St.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b)b.innerHTML='Oggi <span class="ogn'+(nd===St.length?' ok':'')+'">'+nd+'/'+St.length+'</span>';
@@ -1140,6 +1143,7 @@ document.getElementById("og").addEventListener("click",async e=>{const cp=e.targ
  const ck=e.target.closest("[data-og-ck]");if(ck){const k=ck.dataset.ogCk;if(ck.dataset.auto){const c=ck.closest(".ogs");OG_OPEN[k]=true;c.classList.add("open");return}const v=!(SND.todo||{})[k];ck.disabled=true;const r=await api({action:"todo_set",k:k,v:v});if(r&&r.ok){SND=r.sond;OG_OPEN[k]=!v;const nx=ogSteps().find(x=>!x.done);if(v&&nx)OG_OPEN[nx.k]=true;ogRender()}else ck.disabled=false;return}
  const go=e.target.closest("[data-og-go]");if(go){setTab("list");setTimeout(()=>{const c=document.querySelector('.dc[data-id="'+go.dataset.ogGo+'"]');if(c)c.scrollIntoView({behavior:"smooth",block:"start"})},120);return}
  const tm=e.target.closest(".ogttm");if(tm){const c=document.querySelector('.dc[data-id="'+tm.dataset.id+'"] .ttm');if(c)c.click();else setTab("list");return}
+ const pk=e.target.closest("[data-og-pick]");if(pk){pk.disabled=true;const r=await api({action:"sond_pick",n:+pk.dataset.ogPick});if(r&&r.ok){SND=r.sond;OG_OPEN.alt=false;OG_OPEN.dom=true;ogRender()}else{pk.disabled=false;say("Non riesco a cambiare: "+((r&&r.error)||""))}return}
  if(e.target.id==="snsv"){const v=document.getElementById("snv").value,t=document.getElementById("snt").value,s=document.getElementById("sns").value;e.target.disabled=true;const r=await api({action:"sond_set",day:SND.ieri.day,visti:v,votanti:t,si:s});if(r&&r.ok){SND=r.sond;OG_OPEN.ieri=false;OG_OPEN.dom=true;ogRender()}else{e.target.disabled=false;say("Controlla i numeri: "+((r&&r.error)||""))}}});
 document.addEventListener("touchend",e=>{const b=document.getElementById("lb");if(tx===null||!b.classList.contains("on"))return;const d=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(d)>50)lbMove(d>0?-1:1)});
 const api=async(o)=>{const r=await fetch("/ig/api",{method:"POST",body:JSON.stringify(Object.assign({k:K},o))});if(r.status===401){location.href="/ig/panel";return {ok:false,error:"unauthorized"}}return r.json()};
@@ -1392,7 +1396,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="og"){ogRender();ogPod()}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["og","list","wk","rq","ut","pd","st","lk"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["og","list","wk","rq","ut","pd","st","lk"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
@@ -2851,14 +2855,25 @@ async function canaliSet(env, b) {
 async function sondInfo(env) {
   const day = romeToday(), ieri = romeYesterday();
   const [br, bi] = await Promise.all([tgBriefing(env, day), tgBriefing(env, ieri)]);
-  const q = br && br.storia_ig, qi = bi && bi.storia_ig;
+  const SC = (await kvGet(env, "sond_scelte")) || {};
+  const cands = (b) => (b && b.storia_ig ? [b.storia_ig].concat(Array.isArray(b.storia_ig_alt) ? b.storia_ig_alt.slice(0, 2) : []) : []);
+  const pick = (b, d) => { const c = cands(b); const n = Math.min(c.length - 1, Math.max(0, SC[d] || 0)); return c.length ? { ...c[n], n } : null; };
+  const q = pick(br, day), qi = pick(bi, ieri);
+  const scelte = cands(br).map((x, i) => ({ n: i, tema: x.tema || "", sticker: x.sticker || "", titolo: x.titolo || "", perche: x.perche || "" }));
   const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
   const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
   const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
-  const V = Array.isArray(br && br.storia_ig_verdetti) ? br.storia_ig_verdetti.filter((v) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "")).slice(0, 3) : [];
-  const verdetti = (await Promise.all(V.map(async (v) => { const [b0, n0] = await Promise.all([tgBriefing(env, v.data), kvGet(env, "sond:" + v.data)]); const q0 = b0 && b0.storia_ig; return q0 ? { ...q0, day: v.data, num: n0 && n0.votanti != null ? n0 : null, esito: v.esito === "sì" || v.esito === "si" ? "sì" : "no", riga: v.riga || "", fonte: v.fonte || null } : null; }))).filter(Boolean);
+  const V = Array.isArray(br && br.storia_ig_verdetti) ? br.storia_ig_verdetti.filter((v) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "") && (v.n || 0) === (SC[v.data] || 0)).slice(0, 3) : [];
+  const verdetti = (await Promise.all(V.map(async (v) => { const [b0, n0] = await Promise.all([tgBriefing(env, v.data), kvGet(env, "sond:" + v.data)]); const q0 = cands(b0)[v.n || 0]; return q0 ? { ...q0, day: v.data, num: n0 && n0.votanti != null ? n0 : null, esito: v.esito === "sì" || v.esito === "si" ? "sì" : "no", riga: v.riga || "", fonte: v.fonte || null } : null; }))).filter(Boolean);
   const todo = (await kvGet(env, "todo:" + day)) || {};
-  return { day, todo, verdetti, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
+  return { day, todo, verdetti, scelte, scelta: q ? q.n : 0, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
+}
+async function sondPick(env, b) {
+  const day = romeToday(); const br = await tgBriefing(env, day); const c = br && br.storia_ig ? 1 + (Array.isArray(br.storia_ig_alt) ? Math.min(2, br.storia_ig_alt.length) : 0) : 0;
+  const n = parseInt(b.n, 10); if (!(n >= 0 && n < c)) return { ok: false, error: "scelta non valida" };
+  const SC = (await kvGet(env, "sond_scelte")) || {}; SC[day] = n;
+  const lim = new Date(Date.parse(day + "T12:00:00Z") - 90 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(SC)) if (d < lim) delete SC[d];
+  await kvSet(env, "sond_scelte", SC); return { ok: true, sond: await sondInfo(env) };
 }
 async function todoSet(env, b) {
   const day = romeToday(); const t = (await kvGet(env, "todo:" + day)) || {}; const k = String(b.k || "").slice(0, 40);
@@ -2914,6 +2929,7 @@ async function tgPanelApi(env, b) {
   if (act === "canali_set") return await canaliSet(env, b);
   if (act === "sond_set") return await sondSet(env, b);
   if (act === "todo_set") return await todoSet(env, b);
+  if (act === "sond_pick") return await sondPick(env, b);
   if (act === "tg_priv_code") { // chat privata con il bot, per gli avvisi delle svolte: un codice da mandare con /start
     const me = await tgCall(env, "getMe", {});
     const code = "rg" + rid().slice(0, 8);
@@ -3233,6 +3249,7 @@ async function route(request, env) {
   }
 
   // ---------- LETTURE PUBBLICHE ----------
+  if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
   if (method === "POST" && p === "/api/vote") return await voteApi(request, env);
