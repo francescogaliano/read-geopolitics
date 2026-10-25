@@ -5769,6 +5769,8 @@ const st=document.createElement("style");st.textContent=`.pod-bar{display:flex;f
 setTimeout(()=>{try{renderPulse()}catch(_){}},0);
 {const h=(location.hash||"").slice(1);if(h==="calendario"||h==="osservazione")setTimeout(()=>show(h,false),0)}
 /* link diretto a un dossier (es. dal canale Telegram): #dossier=<id>. I dossier arrivano con l'ultimo blocco dei dati: aspetta fino a 20 s. */
+/* v59c: #vota apre il percorso «Vota le storie di oggi» (link della storia Instagram del risultato) */
+{if((location.hash||"")==="#vota"){let n=0;const tick=()=>{if(S.briefings&&S.briefings[0]&&typeof vqList==="function"&&vqList().length){try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}vqOpen()}else if(++n<40)setTimeout(tick,250)};setTimeout(tick,400)}}
 {const m=/^#dossier=([A-Za-z0-9_.~-]+)$/.exec(location.hash||"");if(m){const id=decodeURIComponent(m[1]);let n=0;const tick=()=>{if(S.dossier&&S.dossier[id]&&S.dossier[id].stato==="pronto"){try{openDossier(id)}catch(e){}return}if(++n<40)setTimeout(tick,500)};setTimeout(tick,600)}}
 window.addEventListener("popstate",()=>setTimeout(()=>{const h=(location.hash||"").slice(1);if((h==="calendario"||h==="osservazione")&&S.view!==h)show(h,false);try{updNav()}catch(_){}},0));
 setTimeout(()=>{try{updNav()}catch(_){}},0);
