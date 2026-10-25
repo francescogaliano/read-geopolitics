@@ -663,14 +663,14 @@ async function panelApi(env, origin, b) {
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
-    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows, canali, svAll, giri] = await Promise.all([
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows, canali, svAll, giri, sond] = await Promise.all([
       igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
-      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40), canaliInfo(env).catch(() => null), svList(env).catch(() => []), kvGet(env, "giri:" + romeToday()),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40), canaliInfo(env).catch(() => null), svList(env).catch(() => []), kvGet(env, "giri:" + romeToday()), sondInfo(env).catch(() => null),
     ]);
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
     const ieri = romeYesterday();
-    return { ok: true, svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
+    return { ok: true, svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
   }
 
   if (act === "users") {
@@ -825,6 +825,12 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 #st .vtd{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}#st .vtd div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8FA0AE}#st .vtd i{display:block;width:100%;background:#86B4EA;border-radius:3px 3px 1px 1px}#st .vti{display:grid;gap:6px;margin-top:12px;font-size:13px;color:#C9D4DC}#st .vti b{display:block;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase}#st .vtl{margin-top:8px;display:grid;gap:10px}#st .vtk{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase;margin-top:16px}#st .vts2{display:grid;gap:4px;margin-top:6px;font-size:12.5px}#st .vts2 div{display:grid;grid-template-columns:1fr auto auto;gap:10px}#st .vts2 b{font-weight:600;color:#86B4EA}#st .vts2 em{font-style:normal;color:#8FA0AE}#st .vtp{border-top:1px solid #27353F;padding-top:9px;min-width:0}#st .vth{display:flex;gap:8px;align-items:baseline;font-size:13.5px}#st .vth span{font:600 11px ui-monospace,monospace;color:#8FA0AE;flex:none}#st .vth b{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .vth em{font-style:normal;font-size:12px;color:#8FA0AE;flex:none}#st .vtb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:6px}#st .vtg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#8FA0AE;margin-top:5px}#st .vtg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 #st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
 #cnl .cit{border-top:1px solid #27353F;padding:11px 0 6px}#cnl .cit:first-of-type{margin-top:8px}#cnl .cih{display:flex;align-items:center;gap:8px}#cnl .cih b{flex:1;font-size:14.5px}#cnl .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px system-ui;background:#1E2A33;flex:none}#cnl .cp{font:600 11px ui-monospace,monospace;border-radius:999px;padding:2px 8px;white-space:nowrap}#cnl .cp.wait{color:#F2B84B;border:1px solid #5A4A22}#cnl .cp.ok{color:#7BD39A;border:1px solid #2F5F4B}#cnl .cp.no{color:#8FA0AE;border:1px solid #27353F}#cnl .cp.bad{color:#FF9A9A;border:1px solid #5A3434}#cnl .cpv{margin:8px 0 0 32px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.45;color:#DCE4EA}#cnl .cta{margin:8px 0 0 32px;width:calc(100% - 32px)}#cnl .cwh{margin:6px 0 2px 32px;font-size:12.5px;color:#8FA0AE}#cnl .cwh a{color:#86B4EA}#cnl .cac{display:flex;gap:8px;margin:8px 0 4px 32px}#cnl .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}#cnl .sm.d{color:#FF9A9A;border-color:#5A3434}
+#snd{padding:0}#snd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px}#snd>summary::-webkit-details-marker{display:none}#snd[open]>summary .chev{transform:rotate(180deg)}#sndb{padding:0 14px 12px}
+.sndp{display:flex;gap:14px;align-items:flex-start;margin-top:4px}.sndp canvas{flex:0 0 120px;width:120px;height:213px;border-radius:10px;border:1px solid #27353F}.sndf{flex:1;min-width:0;display:grid;gap:8px}
+.sndc{display:flex;align-items:center;gap:8px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:7px 8px 7px 10px}.sndl{font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase;flex:0 0 auto}.sndv{flex:1;min-width:0;font-size:14.5px;font-weight:600}
+.sndab{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sndab .sndl{display:none}.sndd{text-decoration:none;display:inline-flex;align-items:center}
+.sndi{border-top:1px solid #27353F;margin-top:14px;padding-top:12px;display:grid;gap:8px}.sndn{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sndn label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8FA0AE}.sndn input{width:92px}.sndr canvas{flex-basis:100px;width:100px;height:178px}
+.sndw{border-top:1px solid #27353F;margin-top:14px;padding-top:12px}.sndb{display:flex;gap:6px;align-items:flex-end;height:96px;margin:8px 0}.sndb div{flex:1;text-align:center;font-size:11px;color:#8FA0AE;line-height:1.3}.sndb i{display:block;width:70%;margin:0 auto 4px;background:#86B4EA;border-radius:4px 4px 0 0}
 </style>
 <main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
 <details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
@@ -853,6 +859,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="chr chs" id="mbar" style="cursor:pointer"><span class="ic">✉</span><div class="cht"><b>Email del mattino</b><div class="s"><span class="dot" id="mbd"></span><span id="mbt">carico…</span></div></div><span class="gear">›</span></div>
 </details>
 <div class="card" id="svb" hidden><div class="svh"><span class="lab">Svolte da approvare</span><span class="svn" id="svn" hidden></span></div><div id="svl"></div><div class="svg" id="svg" hidden></div></div>
+<details class="card" id="snd" open hidden><summary><span class="lab">Storia IG · domanda di oggi</span><span class="chsum" id="sndsum"></span><span class="chev">▾</span></summary><div id="sndb"></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
 <div class="tabs"><button class="tab on" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div><div id="list"></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
@@ -1040,6 +1047,62 @@ function stripHtml(x){
 }
 async function toJpeg(file){const bmp=await createImageBitmap(file);const W=1080,H=1350;const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");g.fillStyle="#0E151B";g.fillRect(0,0,W,H);const s=Math.max(W/bmp.width,H/bmp.height);const w=bmp.width*s,h=bmp.height*s;g.drawImage(bmp,(W-w)/2,(H-h)/2,w,h);let q=.9,d;do{d=c.toDataURL("image/jpeg",q);q-=.1}while(d.length>1400000&&q>.3);return d.split(",")[1]}
 let tx=null;document.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});
+/* v60: storia Instagram con la domanda di previsione. L'immagine si disegna qui (1080x1920), lo sticker sondaggio lo mette Francesco */
+const SND_KICK="La domanda di oggi";
+let SND=null,SND_BLOB={};
+function sndMesi(iso){const m=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];const d=new Date(iso+"T12:00:00");return d.getDate()+" "+m[d.getMonth()]}
+function sndToks(s){const out=[];String(s||"").split("*").forEach((p,i)=>{p.split(" ").filter(Boolean).forEach(w=>{const L=out[out.length-1];if(L&&/^[€%]/.test(w)&&L.g===(i%2===1))L.w+=" "+w;else out.push({w,g:i%2===1})})});return out}
+function sndFit(g,t,maxW){if(g.measureText(t).width<=maxW)return t;while(t.length>4&&g.measureText(t+"…").width>maxW)t=t.slice(0,-1);return t.trim()+"…"}
+function sndWrap(g,toks,maxW){const L=[];let cur=[],w=0;const sp=g.measureText(" ").width;for(const t of toks){const tw=g.measureText(t.w).width;if(cur.length&&w+sp+tw>maxW){L.push(cur);cur=[];w=0}if(cur.length)w+=sp;cur.push(t);w+=tw}if(cur.length)L.push(cur);return L}
+function sndLine(g,line,x,y,col,gold){const sp=g.measureText(" ").width;for(const t of line){g.fillStyle=t.g?gold:col;g.fillText(t.w,x,y);x+=g.measureText(t.w).width+sp}}
+async function sndFonts(){try{await Promise.all(["600 80px 'IBM Plex Serif'","400 38px 'IBM Plex Sans'","600 38px 'IBM Plex Sans'","500 28px 'IBM Plex Mono'"].map(f=>document.fonts.load(f)))}catch(e){}}
+function sndBg(g){const bg=g.createRadialGradient(540,700,0,540,700,1300);bg.addColorStop(0,"#14213f");bg.addColorStop(.6,"#0a0f1c");bg.addColorStop(1,"#0a0f1c");g.fillStyle=bg;g.fillRect(0,0,1080,1920);g.textBaseline="top";g.textAlign="left";
+ g.fillStyle="#EEF2F6";g.font="600 34px 'IBM Plex Serif'";g.fillText("READ GEOPOLITICS",96,120)}
+function sndKick(g,txt,y){g.fillStyle="#E8B050";g.font="500 30px 'IBM Plex Mono'";let x=96;for(const c of txt.toUpperCase()){g.fillText(c,x,y);x+=g.measureText(c).width+6}}
+async function sndDrawQ(c,q,band){const g=c.getContext("2d");await sndFonts();sndBg(g);let y=260;
+ if(band){g.fillStyle="#2a2412";g.strokeStyle="#6E5A26";g.lineWidth=2;g.beginPath();g.roundRect(96,y,888,150,24);g.fill();g.stroke();
+  g.fillStyle="#F2D58A";g.font="500 24px 'IBM Plex Mono'";g.fillText(sndFit(g,("IERI · "+band.t).toUpperCase(),820),130,y+30);
+  g.fillStyle="#EEF2F6";g.font="600 38px 'IBM Plex Sans'";g.fillText(band.r,130,y+76);y+=200}else y+=100;
+ sndKick(g,SND_KICK+(q.tema?" · "+q.tema:""),y);y+=70;
+ const toks=sndToks(q.titolo||q.sticker);let fs=96,L;for(;fs>=60;fs-=4){g.font="600 "+fs+"px 'IBM Plex Serif'";L=sndWrap(g,toks,888);if(L.length<=(band?4:5))break}
+ const lh=Math.round(fs*1.1);for(const ln of L){sndLine(g,ln,96,y,"#EEF2F6","#E8B050");y+=lh}
+ if(q.contesto){y+=34;g.font="400 38px 'IBM Plex Sans'";for(const ln of sndWrap(g,sndToks(q.contesto),888).slice(0,3)){sndLine(g,ln,96,y,"#B9C4CF","#B9C4CF");y+=52}}
+ g.textAlign="center";g.fillStyle="#DCE3EA";g.font="400 38px 'IBM Plex Sans'";g.fillText("Domani il risultato. Il "+sndMesi(q.scadenza||SND.day),540,1580);g.fillText("vediamo chi ci ha preso.",540,1634);
+ g.fillStyle="#86B4EA";g.font="500 26px 'IBM Plex Mono'";podSpaced(g,"READGEOPOLITICS.COM",540,1780,6);return Math.max(y,0)}
+async function sndDrawR(c,q){const g=c.getContext("2d");await sndFonts();sndBg(g);const n=q.num,a=q.a||"Sì",b=q.b||"No";let y=330;
+ sndKick(g,"Ieri vi abbiamo chiesto"+(q.tema?" · "+q.tema:""),y);y+=70;g.font="600 76px 'IBM Plex Serif'";for(const ln of sndWrap(g,sndToks(String(q.titolo||q.sticker).split("*").join("")),888).slice(0,4)){sndLine(g,ln,96,y,"#EEF2F6","#EEF2F6");y+=84}
+ y=Math.max(y+60,820);const maj=n.si>=50;g.fillStyle="#E8B050";g.font="600 230px 'IBM Plex Serif'";g.fillText((maj?n.si:100-n.si)+"%",96,y);y+=250;
+ g.fillStyle="#B9C4CF";g.font="400 40px 'IBM Plex Sans'";g.fillText("dice "+(maj?a:b).toLowerCase()+" · avete risposto in "+n.votanti,96,y);y+=90;
+ g.fillStyle="#1d2a3d";g.beginPath();g.roundRect(96,y,888,68,34);g.fill();g.save();g.beginPath();g.roundRect(96,y,888,68,34);g.clip();g.fillStyle="#E8B050";g.fillRect(96,y,888*n.si/100,68);g.restore();
+ g.font="600 32px 'IBM Plex Sans'";g.fillStyle="#15202B";if(n.si>=18)g.fillText(a+" "+n.si+"%",124,y+16);g.fillStyle="#B9C4CF";g.textAlign="right";if(n.si<=82)g.fillText(b+" "+(100-n.si)+"%",956,y+16);g.textAlign="left";y+=140;
+ if(q.riga&&q.riga.riga){g.fillStyle="#2a2412";g.strokeStyle="#6E5A26";g.lineWidth=2;g.font="400 36px 'IBM Plex Sans'";const L=sndWrap(g,sndToks(q.riga.riga),820).slice(0,3);const h=90+L.length*50;g.beginPath();g.roundRect(96,y,888,h,24);g.fill();g.stroke();
+  g.fillStyle="#F2D58A";g.font="500 24px 'IBM Plex Mono'";g.fillText("DA IERI A OGGI",130,y+28);g.font="400 36px 'IBM Plex Sans'";let yy=y+70;for(const ln of L){sndLine(g,ln,130,yy,"#EEF2F6","#EEF2F6");yy+=50}}
+ g.textAlign="center";g.fillStyle="#86B4EA";g.font="500 26px 'IBM Plex Mono'";podSpaced(g,(q.scadenza?"IL "+sndMesi(q.scadenza).toUpperCase()+" VEDIAMO CHI CI HA PRESO":"READGEOPOLITICS.COM"),540,1790,5)}
+async function sndCanvas(id,fn,q,arg,name){const c=document.getElementById(id);if(!c)return;await fn(c,q,arg);const bl=await new Promise(r=>c.toBlob(r,"image/png"));SND_BLOB[id]=bl;const a=document.querySelector('[data-snd-dl="'+id+'"]');if(a){if(a.href&&a.href.startsWith("blob:"))URL.revokeObjectURL(a.href);a.href=URL.createObjectURL(bl);a.download=name}}
+function sndCp(lab,v){return '<div class="sndc"><span class="sndl">'+lab+'</span><span class="sndv">'+esc(v)+'</span><button type="button" class="sm" data-snd-cp="'+esc(v)+'">Copia</button></div>'}
+function sndRender(s){SND=s;const el=document.getElementById("snd");if(!el)return;if(!s){el.hidden=true;return}el.hidden=false;const q=s.oggi,qi=s.ieri;
+ document.getElementById("sndsum").textContent=q?(q.pub?"pubblicata ✓":"da pubblicare"):"non ancora pronta";
+ let h="";const n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null;
+ if(q){h+='<div class="sndp"><canvas id="sndq" width="1080" height="1920"></canvas><div class="sndf">'+sndCp("Sticker",q.sticker||"")+'<div class="sndab">'+sndCp("Risposta 1",q.a||"Sì")+sndCp("Risposta 2",q.b||"No")+'</div>'
+  +'<div class="row"><a class="g sndd" data-snd-dl="sndq">⬇ Scarica l&#39;immagine</a>'+(q.pub?'<button type="button" class="sm" data-snd-pub="0">Pubblicata ✓</button>':'<button type="button" class="sm" data-snd-pub="1">Segna come pubblicata</button>')+'</div>'
+  +(q.perche?'<div class="sub">Perché questa: '+esc(q.perche)+'</div>':'')+'<div class="sub">Si verifica entro il '+esc(sndMesi(q.scadenza||s.day))+(q.fonte&&q.fonte.url?' · <a href="'+esc(q.fonte.url)+'" target="_blank" rel="noopener">'+esc(q.fonte.nome||"fonte")+'</a>':'')+'. Va subito dopo la storia del podcast.</div>'
+  +(n?'<div class="sub">In alto c&#39;è la striscia con il risultato di ieri.</div>':'')+'</div></div>'}
+ else h+='<div class="sub">La domanda di oggi arriva con il briefing delle 06:45'+(s.day?'':'')+'.</div>';
+ if(qi){h+='<div class="sndi"><div class="lab">Ieri · '+esc(qi.sticker||"")+'</div>';
+  h+='<div class="sndn"><label>Hanno visto la storia<input type="number" min="0" id="snv" value="'+(n?n.visti:"")+'"></label><label>Hanno votato<input type="number" min="0" id="snt" value="'+(n?n.votanti:"")+'"></label><label>'+esc(qi.a||"Sì")+' (%)<input type="number" min="0" max="100" id="sns" value="'+(n?n.si:"")+'"></label><button type="button" class="g" id="snsv">'+(n?"Aggiorna":"Salva")+'</button></div>';
+  h+='<div class="sub">Li trovi su Instagram: storia di ieri › Attività. Con i numeri la storia di oggi mostra il risultato in alto, e c&#39;è anche una storia del risultato a parte, se vuoi.</div>';
+  if(n)h+='<div class="sndp sndr"><canvas id="sndr" width="1080" height="1920"></canvas><div class="sndf"><a class="g sndd" data-snd-dl="sndr">⬇ Storia del risultato</a><div class="sub">Facoltativa: se la usi, mettila prima della domanda di oggi.</div></div></div>';
+  h+='</div>'}
+ const W=s.sett.filter(x=>x.n&&x.n.visti);const pr=x=>x.n&&x.n.visti?Math.round(100*x.n.votanti/x.n.visti):null;
+ h+='<div class="sndw"><div class="lab" style="display:flex;justify-content:space-between"><span>Funziona?</span><span>votanti su chi ha visto</span></div><div class="sndb">'+s.sett.map(x=>{const p=pr(x);const d=new Date(x.d+"T12:00:00");return '<div><i style="height:'+(p==null?3:Math.max(4,Math.min(60,p*1.2)))+'px'+(p==null?';background:#27353F':'')+'"></i>'+(p==null?'—':p+'%')+'<br>'+["dom","lun","mar","mer","gio","ven","sab"][d.getDay()]+'</div>'}).join("")+'</div>';
+ const avg=W.length?Math.round(100*W.reduce((a,x)=>a+x.n.votanti,0)/W.reduce((a,x)=>a+x.n.visti,0)):null;
+ h+='<div class="sub">'+(avg==null?'Dopo una settimana di numeri decidiamo: se vota almeno 1 su 4 di chi guarda, si passa al FantaRead.':'Media: '+avg+'% su '+W.length+(W.length===1?' giorno':' giorni')+'. La soglia: 25%.')+'</div></div>';
+ document.getElementById("sndb").innerHTML=h;
+ if(q)sndCanvas("sndq",sndDrawQ,q,n?{t:qi.sticker||"",r:(qi.a||"Sì")+" "+n.si+"% · "+(qi.b||"No")+" "+(100-n.si)+"% · "+n.votanti+" risposte"}:null,"storia_domanda_"+s.day+".png");
+ if(qi&&n)sndCanvas("sndr",sndDrawR,qi,null,"storia_risultato_"+qi.day+".png")}
+document.getElementById("snd").addEventListener("click",async e=>{const cp=e.target.closest("[data-snd-cp]");if(cp){let ok=false;try{await navigator.clipboard.writeText(cp.dataset.sndCp);ok=true}catch(err){}cp.textContent=ok?"Copiato ✓":"Non riesco";setTimeout(()=>{cp.textContent="Copia"},1600);return}
+ const pb=e.target.closest("[data-snd-pub]");if(pb){pb.disabled=true;const r=await api({action:"sond_set",day:SND.day,pub:pb.dataset.sndPub==="1"});if(r&&r.ok)sndRender(r.sond);else pb.disabled=false;return}
+ if(e.target.id==="snsv"){const v=document.getElementById("snv").value,t=document.getElementById("snt").value,s=document.getElementById("sns").value;e.target.disabled=true;const r=await api({action:"sond_set",day:SND.ieri.day,visti:v,votanti:t,si:s});if(r&&r.ok)sndRender(r.sond);else{e.target.disabled=false;say("Controlla i numeri: "+((r&&r.error)||""))}}});
 document.addEventListener("touchend",e=>{const b=document.getElementById("lb");if(tx===null||!b.classList.contains("on"))return;const d=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(d)>50)lbMove(d>0?-1:1)});
 const api=async(o)=>{const r=await fetch("/ig/api",{method:"POST",body:JSON.stringify(Object.assign({k:K},o))});if(r.status===401){location.href="/ig/panel";return {ok:false,error:"unauthorized"}}return r.json()};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1082,7 +1145,7 @@ async function load(){
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
- D=d;chUpd(d);cnlRender(d.canali);svRender(d);tgPv(d);renderWeek();renderReq();
+ D=d;chUpd(d);cnlRender(d.canali);sndRender(d.sond);svRender(d);tgPv(d);renderWeek();renderReq();
  const L=document.getElementById("list");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
  const cardOf=x=>{
@@ -2746,6 +2809,25 @@ async function canaliSet(env, b) {
   if (b.skip === false) { const k = (w === "dom" ? "thq:" : "tg_d:") + day; const s = await kvGet(env, k); if (s && s.skip) await kvDel(env, k); }
   return { ok: true, canali: await canaliInfo(env) };
 }
+// v60: storia Instagram con la domanda di previsione (briefing.storia_ig): immagine, testi da copiare, numeri dello sticker inseriti a mano
+async function sondInfo(env) {
+  const day = romeToday(), ieri = romeYesterday();
+  const [br, bi] = await Promise.all([tgBriefing(env, day), tgBriefing(env, ieri)]);
+  const q = br && br.storia_ig, qi = bi && bi.storia_ig;
+  const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
+  const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
+  const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
+  return { day, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
+}
+async function sondSet(env, b) {
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(b.day || "") ? b.day : romeToday();
+  const cur = (await kvGet(env, "sond:" + day)) || {};
+  const int = (v, max) => { const n = parseInt(v, 10); return Number.isFinite(n) && n >= 0 && n <= max ? n : null; };
+  if (b.pub !== undefined) cur.pub = !!b.pub;
+  if (b.visti !== undefined) { const v = int(b.visti, 1e6), t = int(b.votanti, 1e6), s = int(b.si, 100); if (v == null || t == null || s == null || t > v) return { ok: false, error: "numeri non validi" }; Object.assign(cur, { visti: v, votanti: t, si: s, at: new Date().toISOString() }); }
+  await kvSet(env, "sond:" + day, cur);
+  return { ok: true, sond: await sondInfo(env) };
+}
 async function thDomanda(env, force) {
   const st = await thSettings(env); const day = romeToday();
   if (!(await kvGet(env, "th_token"))) return null;
@@ -2783,6 +2865,7 @@ async function tgPanelInfo(env) {
 async function tgPanelApi(env, b) {
   const act = b.action;
   if (act === "canali_set") return await canaliSet(env, b);
+  if (act === "sond_set") return await sondSet(env, b);
   if (act === "tg_priv_code") { // chat privata con il bot, per gli avvisi delle svolte: un codice da mandare con /start
     const me = await tgCall(env, "getMe", {});
     const code = "rg" + rid().slice(0, 8);
