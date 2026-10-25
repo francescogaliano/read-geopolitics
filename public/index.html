@@ -292,6 +292,10 @@ main{padding-block:24px 64px}
 .ags-m{display:flex;gap:8px;align-items:center}.ags-m .agg-o{padding:2px 7px}.ags-sv{color:var(--mid)}
 .ags-i h4{margin:7px 0 5px;font-size:16px;line-height:1.3}.ags-i p{margin:0 0 6px;font-size:14.5px;line-height:1.5}
 .ags-b{display:inline-flex;align-items:center;min-height:42px;margin-top:8px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font:600 14px system-ui,sans-serif;cursor:pointer}
+.ags-hr .ags-cal:empty{display:none}.ags-hx{flex:1;min-width:0}.ags[data-mode="story"] .ags-hr{justify-content:flex-start}
+.ags[data-mode="story"] .ags-l{padding:8px 10px 12px}.ags-story>.sto{margin:0}.ags .sx-idx{top:0}
+.ags[data-mode="story"] .ags-tg{display:flex;justify-content:space-between;align-items:center;gap:10px}.ags-now{font-size:12.5px;color:var(--muted)}.ags-day{background:none;border:0;padding:6px 0;font:600 14px var(--sans);color:var(--accent);cursor:pointer;text-align:right}
+@media (min-width:900px){.ags[data-mode="story"] .ags-p{width:640px}}
 .ags-tg{padding:10px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);font-size:13px}.ags-tg a{color:var(--accent)}
 @media (min-width:900px){.ags-p{left:auto;top:0;bottom:0;width:440px;max-height:none;border-radius:0;border-top:0;border-left:1px solid var(--line);box-shadow:-16px 0 40px rgba(0,0,0,.3);transform:translateX(100%)}.ags-grab{display:none}.ags-hd{padding-top:16px}}
 @media (prefers-reduced-motion:reduce){.ags-p,.ags-dim{transition:none}}
@@ -1768,23 +1772,36 @@ function aggLocked(id){if(!S.guest)return false;const b0=S.briefings[0];const mi
 /* v52f: pannello «Dalle ultime ore»: dal basso sul telefono, da destra sul computer. Si chiude con ×, tocco fuori, Esc, trascinando giù o col tasto indietro. */
 const AGS={el:null,open:false,pushed:false,skipPop:false};
 function agsEl(){if(AGS.el)return AGS.el;const w=document.createElement("div");w.id="aggSheet";w.className="ags";w.hidden=true;
- w.innerHTML=`<div class="ags-dim" data-ags-x></div><div class="ags-p" role="dialog" aria-modal="true" aria-labelledby="agsT"><div class="ags-hd"><span class="ags-grab" aria-hidden="true"></span><div class="ags-hr"><div><div class="ags-t" id="agsT">Dalle ultime ore</div><div class="ags-d"></div></div><button type="button" class="ags-x" data-ags-x aria-label="Chiudi">×</button></div></div><div class="ags-l"></div><div class="ags-tg"><a href="https://t.me/readgeopolitics" target="_blank" rel="noopener">Le svolte arrivano anche sul canale Telegram ›</a></div></div>`;
+ w.innerHTML=`<div class="ags-dim" data-ags-x></div><div class="ags-p" role="dialog" aria-modal="true" aria-labelledby="agsT"><div class="ags-hd"><span class="ags-grab" aria-hidden="true"></span><div class="ags-hr"><span class="ags-cal"></span><div class="ags-hx"><div class="ags-t" id="agsT">Dalle ultime ore</div><div class="ags-d"></div></div><button type="button" class="ags-x" data-ags-x aria-label="Chiudi">×</button></div></div><div class="ags-l"></div><div class="ags-tg"></div></div>`;
  document.body.appendChild(w);AGS.el=w;
- w.addEventListener("click",e=>{if(e.target.closest("[data-ags-x]")){agsClose();return}const g=e.target.closest("[data-agg-go],[data-thread]");if(g)agsClose(true)});
+ w.addEventListener("click",e=>{if(e.target.closest("[data-ags-x]")){agsClose();return}const g=e.target.closest("[data-agg-go],[data-thread],[data-story],[data-country],[data-actor],[data-open-dos],[data-roots]");if(g){agsClose(true);return}const od=e.target.closest("[data-open-day]");if(od){agsClose(true);const st=od.dataset.openDay;S.briefId=st;S.sub="mondo";renderBriefing();show("briefing");requestAnimationFrame(()=>window.scrollTo({top:0}))}});
+ w.querySelector(".ags-l").addEventListener("scroll",()=>{if(w.dataset.mode==="story")sxSpy()},{passive:true});
  /* trascinare giù l'intestazione chiude (telefono) */
  const hd=w.querySelector(".ags-hd"),pn=w.querySelector(".ags-p");let y0=null,dy=0;
  hd.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;dy=0;pn.style.transition="none"},{passive:true});
  hd.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);pn.style.transform=`translateY(${dy}px)`},{passive:true});
  hd.addEventListener("touchend",()=>{pn.style.transition="";pn.style.transform="";if(dy>90)agsClose();y0=null});
  return w}
-function agsOpen(id){const b=S.briefings[0];const A=aggDopo(b);if(!A.length)return;const w=agsEl();
+function agsOpen(id){const b=S.briefings[0];const A=aggDopo(b);if(!A.length)return;const w=agsEl();w.dataset.mode="agg";w.querySelector(".ags-t").textContent="Dalle ultime ore";w.querySelector(".ags-cal").innerHTML="";w.querySelector(".ags-tg").innerHTML=`<a href="https://t.me/readgeopolitics" target="_blank" rel="noopener">Le svolte arrivano anche sul canale Telegram ›</a>`;
  const d=new Date((A[0].data||b.data)+"T12:00:00");w.querySelector(".ags-d").textContent=d.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})+" · "+A.length+" "+(A.length===1?"aggiornamento":"aggiornamenti")+" dopo il briefing";
  w.querySelector(".ags-l").innerHTML=A.map(x=>{const st0=x.storia_id&&S.stories[x.storia_id];const st=st0&&!aggLocked(st0.id)?st0:null;const t=S.threads[x.filone_id];
   return `<article class="ags-i${x.id===id?" ags-hl":""}" data-ags-id="${esc(x.id||"")}"><div class="ags-m"><span class="agg-o${x.tipo==="svolta"?" agg-sv":""}">${esc(x.ora||"")}</span>${aggTag(x)?`<span class="aggc-tag">${esc(aggTag(x))}</span>`:""}${x.tipo==="svolta"?`<span class="aggc-tag ags-sv">Svolta</span>`:""}</div><h4>${esc(x.titolo||aggTit(x))}</h4><p>${esc(x.testo)}</p>${(x.fonti||[]).length?`<div class="agg-f">${aggSrc(x," · ")}</div>`:""}${st?`<button type="button" class="ags-b" data-agg-go="${esc(x.id||"")}" data-agg-st="${esc(st.id)}">Vai alla storia ›</button>`:t?`<button type="button" class="ags-b" data-thread="${esc(t.id)}">Il tema: ${esc(t.titolo||thShort(t))} ›</button>`:""}</article>`}).join("");
  AGS.y=window.scrollY;w.hidden=false;document.body.style.overflow="hidden";AGS.open=true;
  if(!AGS.pushed){try{history.pushState({ags:1},"",location.href);AGS.pushed=true}catch(e){}}
  requestAnimationFrame(()=>{w.classList.add("on");const l=w.querySelector(".ags-l"),hl=w.querySelector(".ags-hl");l.scrollTop=hl&&hl.previousElementSibling?hl.offsetTop-l.offsetTop-8:0;const x=w.querySelector(".ags-x");try{x.focus({preventScroll:true})}catch(e){}})}
-function agsClose(nav){if(!AGS.open)return;AGS.open=false;const w=AGS.el;w.classList.remove("on");document.body.style.overflow="";setTimeout(()=>{if(!AGS.open)w.hidden=true},260);
+/* v57: una storia di un altro giorno si apre nel pannello, senza cambiare giorno; «Tutto il briefing del …» porta in cima a quel giorno, dove c'è già il riquadro «Torna a oggi» */
+function agsStory(id,b){const s=S.stories[id];if(!s)return false;const w=agsEl();w.dataset.mode="story";
+  const list=(b.storie_mondo||[]).concat(b.storie_italia||[]);const rank=((b.storie_mondo||[]).indexOf(id)>=0?(b.storie_mondo||[]).indexOf(id):(b.storie_italia||[]).indexOf(id))+1;
+  const d=new Date(b.data+"T12:00:00"),today=new Date(isoDay(new Date())+"T12:00:00");const n=Math.round((today-d)/864e5);
+  w.querySelector(".ags-cal").innerHTML=`<span class="cx-cal"><b>${d.getDate()}</b><span>${MONTHS[d.getMonth()].slice(0,3)}</span></span>`;
+  w.querySelector(".ags-t").textContent=n===1?"Dal briefing di ieri":n>1&&n<7?`Dal briefing di ${n} giorni fa`:"Da un briefing passato";
+  w.querySelector(".ags-d").textContent=d.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})+(n>=7?" "+d.getFullYear():"")+` · storia ${rank} di ${list.length}`;
+  w.querySelector(".ags-l").innerHTML=`<div class="ags-story">${storyHTML(s,rank)}</div>`;
+  w.querySelector(".ags-tg").innerHTML=`<span class="ags-now">Sei sempre su oggi</span><button type="button" class="ags-day" data-open-day="${esc(b.id)}">Tutto il briefing del ${d.getDate()} ${MONTHS[d.getMonth()]} ›</button>`;
+  AGS.y=window.scrollY;w.hidden=false;document.body.style.overflow="hidden";AGS.open=true;
+  if(!AGS.pushed){try{history.pushState({ags:1},"",location.href);AGS.pushed=true}catch(e){}}
+  requestAnimationFrame(()=>{w.classList.add("on");w.querySelector(".ags-l").scrollTop=0;try{vtLoad();vtFill()}catch(e){}try{ppFit()}catch(e){}try{w.querySelector(".ags-x").focus({preventScroll:true})}catch(e){}});return true}
+function agsClose(nav){if(!AGS.open)return;AGS.open=false;const w=AGS.el;w.classList.remove("on");document.body.style.overflow="";setTimeout(()=>{if(!AGS.open){w.hidden=true;if(w.dataset.mode==="story")w.querySelector(".ags-l").innerHTML=""}},260);
  if(AGS.pushed){AGS.pushed=false;if(!nav){AGS.skipPop=true;try{history.back()}catch(e){AGS.skipPop=false}}}}
 /* il tasto indietro chiude il pannello; questo ascoltatore viene prima degli altri e li ferma, così la pagina non torna in cima */
 const agsKeepY=()=>{const y=AGS.y||0;window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y));setTimeout(()=>window.scrollTo(0,y),60)}; /* il browser, tornando indietro, rimetterebbe una vecchia posizione di scorrimento */
@@ -1819,9 +1836,9 @@ function storyHTML(s,rank){
   </details>
 </article>`;
 }
-document.addEventListener("click",e=>{const g=e.target.closest("[data-sx-go]");if(g){e.preventDefault();const t=document.getElementById(g.dataset.sxGo);if(t){const ix=t.closest(".sx-b")&&t.closest(".sx-b").querySelector(".sx-idx");const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+(ix?ix.offsetHeight:0)+8;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
+document.addEventListener("click",e=>{const g=e.target.closest("[data-sx-go]");if(g){e.preventDefault();const t=document.getElementById(g.dataset.sxGo);if(t){const pc=t.closest(".ags-l");if(pc){const ix2=t.closest(".sx-b")&&t.closest(".sx-b").querySelector(".sx-idx");pc.scrollTo({top:pc.scrollTop+t.getBoundingClientRect().top-pc.getBoundingClientRect().top-(ix2?ix2.offsetHeight:0)-8,behavior:"smooth"});return}const ix=t.closest(".sx-b")&&t.closest(".sx-b").querySelector(".sx-idx");const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+(ix?ix.offsetHeight:0)+8;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}return}
   const c=e.target.closest("[data-sx-close]");if(c){e.preventDefault();const st=document.getElementById("st-"+c.dataset.sxClose);if(!st)return;const d=st.querySelector("details.sx");if(d)d.open=false;const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+8;window.scrollTo({top:st.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}});
-document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains("sx")||!d.open||S.sxAll)return;document.querySelectorAll("#briefing details.sx[open]").forEach(x=>{if(x!==d)x.open=false})},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains("sx")||!d.open||S.sxAll||!d.closest("#briefing"))return;document.querySelectorAll("#briefing details.sx[open]").forEach(x=>{if(x!==d)x.open=false})},true);
 function isoDay(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function agendaHTML(b){
   const from=b.data;const end=new Date(b.data+"T12:00:00");end.setDate(end.getDate()+21);const to=isoDay(end);
@@ -2030,7 +2047,7 @@ function ppHTML(list,title){if(!list.length)return"";
 function threadActorsHTML(t){const cnt={};(t.storie||[]).forEach(x=>{const st=S.stories[x.id];const ids=st?actorsOfStory(st):Object.values(S.attori).filter(a=>(a.storie||[]).includes(x.id)).map(a=>a.id);ids.forEach(id=>cnt[id]=(cnt[id]||0)+1)});const L=Object.keys(cnt).filter(id=>S.attori[id]).sort((a,b)=>cnt[b]-cnt[a]).slice(0,12).map(id=>S.attori[id]);return ppHTML(L,"Chi conta")}
 /* v55: indice della storia, la linguetta segue la lettura */
 function sxSpy(){const nav=[...document.querySelectorAll("details.sx[open] .sx-idx")];if(!nav.length)return;const top=(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hdr"))||96)+(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--subh"))||0)+60;
-  nav.forEach(n=>{const b=n.closest(".sx-b");const ss=[...b.querySelectorAll(".sxs")];let cur=ss[0];for(const x of ss){if(x.getBoundingClientRect().top<=top+4)cur=x}if(!cur)return;ss.forEach(x=>x.classList.toggle("sx-cur",x===cur));
+  nav.forEach(n=>{const b=n.closest(".sx-b");const pc=n.closest(".ags-l");const top2=pc?pc.getBoundingClientRect().top+n.offsetHeight+8:top;const ss=[...b.querySelectorAll(".sxs")];let cur=ss[0];for(const x of ss){if(x.getBoundingClientRect().top<=top2+4)cur=x}if(!cur)return;ss.forEach(x=>x.classList.toggle("sx-cur",x===cur));
     n.querySelectorAll("[data-sxt]").forEach(t=>{const on=t.dataset.sxt===cur.dataset.sxk;if(on&&t.getAttribute("aria-current")!=="true"){t.setAttribute("aria-current","true");const sc=n.querySelector(".sx-idx-s");sc.scrollTo({left:t.offsetLeft-sc.clientWidth/2+t.offsetWidth/2,behavior:"smooth"})}else if(!on)t.removeAttribute("aria-current")});
     const sc=n.querySelector(".sx-idx-s");n.classList.toggle("at-end",sc.scrollLeft+sc.clientWidth>=sc.scrollWidth-4)})}
 let sxT=0;window.addEventListener("scroll",()=>{if(sxT)return;sxT=requestAnimationFrame(()=>{sxT=0;sxSpy()})},{passive:true});
@@ -2402,6 +2419,7 @@ function setSub(k,scroll){
 function openStory(id){
   if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;const ok=b0&&mi>=0&&mi<3;if(!ok){showLock({what:"storie"});return}}
   const b=S.briefings.find(x=>(x.storie_mondo||[]).concat(x.storie_italia||[]).includes(id));
+  {const L=S.briefings[0],cur=S.briefId||(L&&L.id);if(b&&L&&b.id!==L.id&&b.id!==cur){if(agsStory(id,b))return}}
   if(b){S.briefId=b.id;S.sub=(b.storie_italia||[]).includes(id)?"italia":"mondo";renderBriefing();show("briefing");requestAnimationFrame(()=>{const el=document.getElementById("st-"+id);if(!el)return;
     /* v52: prima apre la storia (e chiude le altre, che cambia l'altezza della pagina), poi scorre; dopo lo scorrimento ricontrolla e corregge se qualcosa sopra ha cambiato altezza (mappe, dettagli chiusi). Se la persona tocca o scorre, smette. */
     const d=el.querySelector("details.sx");if(d&&!d.open)d.open=true;
