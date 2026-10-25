@@ -3,7 +3,7 @@
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
 // v51: svolte e aggiornamenti. Routine «aggiornamenti» (11:52, 15:52, 19:52): documenti «aggiornamenti» sul sito (fascia «Dalle ultime ore» e riquadro nella storia), proposte di svolta (/v1/svolte) da approvare nel pannello, avviso nella chat privata col bot, /v1/giro. Richieste: modulo senza riquadri con temi suggeriti; reel «Spiegato in 40 secondi» (kit spiegato.mjs).
 // v52: «Com'è andata la settimana» riscritto: tre esiti neutri (successi / andati diversamente / fermi), doppioni tolti, 4 voci da ricordare con il tema del filone.
-// v53: Telegram, riepilogo serale «Dalle ultime ore» alle 20:15 (dopo l'ultimo giro), solo se ci sono aggiornamenti non già mandati come svolta. Prova nella chat privata: azione tg_sera_prova.
+// v53: Telegram, tetto di 3 messaggi al giorno (divergenza saltata se è uscita una svolta; divergenza e riepilogo saltati oltre il tetto); riepilogo serale «Dalle ultime ore» alle 20:15 (dopo l'ultimo giro), solo se ci sono aggiornamenti non già mandati come svolta. Prova nella chat privata: azione tg_sera_prova.
 // v49: newsletter con la domanda del giorno (pulsanti che aprono il sito e registrano il voto); domanda di Threads con il link al sito.
 // v48: esito degli scenari: /v1/batch salva esito e probabilità accanto ai voti (polls); «Com'è andata» con gli scenari chiusi; pannello «Chi ci ha preso».
 // v47: previsioni dei lettori (g: sì/no sui segnali, c: scelta dello scenario) oltre alle tesi; copia di ogni sondaggio (tabella polls); pannello «Voti dei lettori · solo per te»; «Com'è andata» con la percentuale dei lettori.
@@ -987,14 +987,14 @@ function capsHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=
  if(ttOk(x)){const ed=!(t&&t.status==="pubblicato");s+='<div class="cp" data-cp="tt" hidden><textarea rows="5" class="ttcap"'+(ed?'':' readonly')+'>'+esc(x.tt_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span>'+(x.type==="reel"?'per i reel va incollata a mano':nTags(x.tt_cap)+' hashtag')+'</span><button type="button" class="cpy">Copia</button></div></div>'}
  if(thOk(x)){const ed=!(h&&h.status==="pubblicato");s+='<div class="cp" data-cp="th" hidden><textarea rows="5" maxlength="500" class="thcap"'+(ed?'':' readonly')+'>'+esc(x.th_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span class="thn">'+String(x.th_cap||"").length+'/500</span><button type="button" class="cpy">Copia</button></div></div>'}
  return s}
-function cnlSt(x,ora){if(!x.on)return '<span class="cp no">spento</span>';if(x.stato==="uscito")return '<span class="cp ok">uscito ✓</span>';if(x.skip||x.stato==="fermato")return '<span class="cp no">fermato per oggi</span>';if(x.stato==="errore")return '<span class="cp bad">errore</span>';if(x.stato==="assente")return '<span class="cp no">oggi non c&#39;è</span>';return '<span class="cp wait">esce alle '+esc(ora)+'</span>'}
+function cnlSt(x,ora){if(!x.on)return '<span class="cp no">spento</span>';if(x.stato==="uscito")return '<span class="cp ok">uscito ✓</span>';if(x.stato==="saltato")return '<span class="cp no">saltato: '+esc(x.motivo||'')+'</span>';if(x.skip||x.stato==="fermato")return '<span class="cp no">fermato per oggi</span>';if(x.stato==="errore")return '<span class="cp bad">errore</span>';if(x.stato==="assente")return '<span class="cp no">oggi non c&#39;è</span>';return '<span class="cp wait">esce alle '+esc(ora)+'</span>'}
 function cnlIt(k,ic,tit,x,why){let h='<div class="cit" data-k="'+k+'"><div class="cih"><span class="ic">'+ic+'</span><b>'+tit+'</b>'+cnlSt(x,x.ora)+'</div>';
  if(x.testo){h+='<div class="cpv">'+esc(x.testo).split(NL).join("<br>")+'</div>';if(x.modificato)h+='<div class="cwh">Testo modificato da te.</div>'}
  if(why)h+='<div class="cwh">'+why+'</div>';
  if(x.link)h+='<div class="cwh"><a href="'+esc(x.link)+'" target="_blank" rel="noopener">Apri il messaggio ›</a></div>';
  if(x.on&&x.testo&&x.stato!=="uscito")h+='<div class="cac"><button class="sm" data-ce="'+k+'">Modifica</button>'+(x.skip?'<button class="sm" data-cs="'+k+'" data-v="0">Riattiva</button>':'<button class="sm d" data-cs="'+k+'" data-v="1">Non inviare oggi</button>')+'</div>';
  return h+'</div>'}
-function cnlSum(x,tg){if(!x||!x.on)return '';if(x.stato==="uscito")return tg+' ✓';if(x.skip||x.stato==="fermato"||x.stato==="assente"||!x.testo)return '';if(x.stato==="errore")return tg+' errore';return tg+' '+x.ora}
+function cnlSum(x,tg){if(!x||!x.on)return '';if(x.stato==="uscito")return tg+' ✓';if(x.skip||x.stato==="fermato"||x.stato==="saltato"||x.stato==="assente"||!x.testo)return '';if(x.stato==="errore")return tg+' errore';return tg+' '+x.ora}
 function cnlRender(c){const el=document.getElementById("cnl");if(!el)return;if(!c){el.hidden=true;return}el.hidden=false;
  const sm=[cnlSum(c.div,c.div&&c.div.titolo&&c.div.titolo.indexOf("ufficiali")>0?"Versioni":"Fonti"),cnlSum(c.dom,"Domanda"),c.bil&&c.bil.domenica&&c.bil.stato!=="assente"?(c.bil.stato==="uscito"?"Com&#39;è andata ✓":"Com&#39;è andata "+c.bil.ora):""].filter(Boolean);document.getElementById("cnlsum").innerHTML=sm.length?sm.join(" · "):"niente in uscita";
  const dv=c.div,dm=c.dom;const td=new Date();
@@ -2412,8 +2412,13 @@ async function tgCall(env, method, body) {
   const r = await fetch("https://api.telegram.org/bot" + String(env.TG_BOT_TOKEN).trim() + "/" + method, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const j = await gj(r);
   if (!j.ok) throw { status: 502, code: "telegram_" + (j.error_code || r.status), detail: "Telegram: " + (j.description || "HTTP " + r.status) };
+  try { if (/^send/.test(method) && body && body.chat_id) { const st = await tgSettings(env); if (st.chat && String(body.chat_id) === String(st.chat)) { const k = "tg_n:" + romeToday(); const L = (await kvGet(env, k)) || []; L.push({ m: method, at: new Date().toISOString() }); await kvSet(env, k, L); } } } catch (e) {} // v53: messaggi sul canale oggi
   return j.result;
 }
+const TG_TETTO = 3; // v53: tetto di messaggi al giorno sul canale per divergenza e riepilogo serale (mattino, svolte, dossier e bilancio non si fermano)
+async function tgOggi(env) { const day = romeToday(); const n = ((await kvGet(env, "tg_n:" + day)) || []).length;
+  const svolta = (await svList(env)).some((x) => x.tg_msg && x.tg_at && new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(x.tg_at)) === day);
+  return { n, svolta }; }
 const tgClip = (s, n) => { s = String(s || ""); return s.length <= n ? s : s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…"; };
 const IT_GG = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
 const IT_MM = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
@@ -2504,6 +2509,7 @@ async function tgSera(env, force) {
   }
   const ov = ((await kvGet(env, "ch_ov:" + day)) || {}).sera || {};
   if (ov.skip && !force) { await kvSet(env, "tg_s:" + day, { skip: true, at: new Date().toISOString() }); return null; }
+  if (!force) { const O = await tgOggi(env); if (O.n >= TG_TETTO) { await kvSet(env, "tg_s:" + day, { skip: "tetto", at: new Date().toISOString() }); return null; } }
   const A = await tgSeraData(env, day);
   if (!A.length) { if (!force) await kvSet(env, "tg_s:" + day, { none: true, at: new Date().toISOString() }); return null; }
   const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: tgSeraText(A, day), parse_mode: "HTML", disable_web_page_preview: true });
@@ -2513,7 +2519,8 @@ async function tgSera(env, force) {
 async function tgDivergenza(env, force) {
   const st = await tgSettings(env); const day = romeToday();
   if (!st.chat || !env.TG_BOT_TOKEN) return null;
-  if (!force) { if (!st.divergenze || (await kvGet(env, "tg_d:" + day)) || romeHM() < (st.ora_div || "12:30")) return null; }
+  if (!force) { if (!st.divergenze || (await kvGet(env, "tg_d:" + day)) || romeHM() < (st.ora_div || "12:30")) return null;
+    const O = await tgOggi(env); if (O.svolta || O.n >= TG_TETTO) { await kvSet(env, "tg_d:" + day, { skip: O.svolta ? "svolta" : "tetto", at: new Date().toISOString() }); return null; } }
   const ov = ((await kvGet(env, "ch_ov:" + day)) || {}).div || {};
   if (ov.skip) { if (!force) await kvSet(env, "tg_d:" + day, { skip: true, at: new Date().toISOString() }); return null; }
   const br = await tgBriefing(env, day);
@@ -2716,7 +2723,7 @@ async function canaliInfo(env) {
   const dv = br && br.tg_divergenza;
   const out = {
     div: { on: tg.divergenze !== false && !!tg.chat, ora: tg.ora_div || "12:30", briefing: !!br, testo: (ov.div && ov.div.testo) || (dv && dv.testo) || "", fonti: (dv && dv.fonti) || [], titolo: divTitolo(dv && dv.tipo), modificato: !!(ov.div && ov.div.testo), skip: !!(ov.div && ov.div.skip),
-      stato: tgD ? (tgD.msg ? "uscito" : tgD.skip ? "fermato" : "assente") : null, link: tgD && tgD.msg && chan ? "https://t.me/" + chan + "/" + tgD.msg : null },
+      stato: tgD ? (tgD.msg ? "uscito" : tgD.skip === "svolta" || tgD.skip === "tetto" ? "saltato" : tgD.skip ? "fermato" : "assente") : null, motivo: tgD && tgD.skip === "svolta" ? "oggi è già uscita una svolta" : tgD && tgD.skip === "tetto" ? "raggiunto il tetto di 3 messaggi" : "", link: tgD && tgD.msg && chan ? "https://t.me/" + chan + "/" + tgD.msg : null },
     dom: { on: th.domanda !== false, ora: th.ora_dom || "18:00", testo: (ov.dom && ov.dom.testo) || (d && d.th_domanda) || "", modificato: !!(ov.dom && ov.dom.testo), skip: !!(ov.dom && ov.dom.skip), post: d ? d.status : null,
       stato: thQ ? (thQ.status === "pubblicato" ? "uscito" : thQ.skip ? "fermato" : thQ.status === "errore" ? "errore" : "assente") : null, link: thQ && thQ.link ? thQ.link : null, errore: thQ && thQ.error ? thQ.error : null },
   };
