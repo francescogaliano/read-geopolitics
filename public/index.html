@@ -513,7 +513,8 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .tl-scen>summary{list-style:none;cursor:pointer;padding:11px 14px;display:block}
 .tl-scen>summary::-webkit-details-marker{display:none}
 .scm-h{display:block;font-weight:600;font-size:14.5px;margin-bottom:6px}
-.scm-h small{font-weight:400;color:var(--muted);font-size:12px;margin-left:4px}
+.scm-h small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin:3px 0 0}.scm-h small b{color:var(--ink);font-weight:600}
+.tl-scen:not([open])>summary{position:relative;padding-right:30px}.tl-scen:not([open])>summary::after{content:"›";position:absolute;right:14px;top:12px;font-size:18px;color:var(--accent)}
 .scm-r{display:block;font-size:14px;margin-top:6px}
 .scm-r b{font-family:var(--mono);font-weight:500;font-size:13px;margin-left:4px}
 .scm-bar{display:block;height:6px;background:color-mix(in srgb,var(--surface-2) 70%,transparent);border-radius:3px;margin-top:4px;overflow:hidden}
@@ -570,20 +571,23 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .tr .td{font-family:var(--mono);font-size:12.5px;color:var(--accent);margin-right:8px;white-space:nowrap}
 .tr .tb{padding:0 0 12px;font-size:13.5px;color:var(--muted)}
 .tr .tb .corr{margin:0 0 6px}
-.tm-cur{margin:4px 0 6px -22px;padding:0 0 4px;position:relative;z-index:1;background:var(--surface)}
+.tm-sec{display:flex;align-items:center;gap:8px;margin:18px 0 8px;font:600 11.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.tm-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.tm-in{padding:11px 14px 4px}.tm-now>.tl,.tm-up>.tl,.tm-all>.tl{margin:0 14px 0 14px}
+.tm-up{padding:2px 0}.tm-up .tr:last-child,.tm-now>.tl .tr:last-child{border-bottom:0}
+.tm-all{border-top:1px solid var(--line)}.tm-all>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;padding:10px 14px;font-size:13.5px;color:var(--accent)}.tm-all>summary::-webkit-details-marker{display:none}.tm-all>summary::after{content:"›";transition:transform .15s}.tm-all[open]>summary::after{transform:rotate(90deg)}
+.tm-sec+.tl-scen,.tm-up+.tl-scen{margin-top:8px}
 .tm-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .tm-n{font:600 12.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}.tm-live{font-size:11px;color:var(--mid);margin-left:8px;letter-spacing:.06em}
 .tm-c{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .tm-s{margin:6px 0 4px;font-size:14.5px;line-height:1.5;color:var(--ink)}
 .tm-k{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.tm-k span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 9px;color:var(--muted)}
-.tm-all{margin:2px 0 0}.tm-all>summary{list-style:none;cursor:pointer;font-size:13.5px;color:var(--accent);padding:6px 0 8px;margin-left:-22px;position:relative;z-index:1;background:var(--surface)}.tm-all>summary::-webkit-details-marker{display:none}.tm-all>summary::before{content:"▸ ";}.tm-all[open]>summary::before{content:"▾ "}
-.tm-arch{margin-top:18px}.tm-lab{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.tm-arch{margin-top:0}
 .tm{border:1px solid var(--line);border-radius:12px;margin:0 0 10px;background:var(--surface-2)}
 .tm>summary{list-style:none;cursor:pointer;display:block;padding:11px 14px 10px}.tm>summary::-webkit-details-marker{display:none}
 .tm-o{display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);font-size:13.5px;color:var(--accent)}.tm-o::after{content:"›";transition:transform .15s}.tm[open]>summary .tm-o::after{transform:rotate(90deg)}
 .tm[open]{border-color:var(--accent)}.tm>.tl{margin:0 14px 10px 14px}
 .ty{border-style:dashed}.ty-b{padding:0 10px 4px}
-.tm-roots{margin-top:16px}
+
 .tr .tb .linkbtn{font-size:13px}
 .tr .tb a{color:var(--muted)}
 .tr.rt::before{background:var(--faint)}
@@ -645,10 +649,14 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .sxs{padding:12px 14px;border-bottom:1px solid var(--line)}
 .sxs h4{margin:0 0 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .sxs h4 i{font-style:normal;color:var(--faint);text-transform:none;letter-spacing:0;font-family:var(--sans);font-size:12px}
-.sx-ctx{display:grid;gap:6px;font-size:13.8px}
-.sx-ctx>div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:baseline}
-.sx-ctx b{font-weight:500;color:var(--muted);font-size:12.5px}
-.sx-ctx .linkbtn{font-size:13.8px}
+.sx-ctx{font-size:14px}
+.cx-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cx-chip{display:inline-flex;align-items:center;gap:4px;font:500 14px/1.2 var(--sans);border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--surface-2);color:var(--accent);cursor:pointer;text-align:left}
+.cx-chip.cx-p{color:var(--ink)}.cx-tag{display:inline-flex;align-items:center;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted)}
+.cx-lab{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.cx-date{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface-2);margin-bottom:6px;line-height:1.35}
+.cx-cal{flex:0 0 48px;text-align:center;border-radius:8px;background:var(--sample);border:1px solid var(--sample-line);padding:3px 0;color:var(--sample-ink)}.cx-cal b{display:block;font:600 19px/1.15 var(--serif,Georgia),serif}.cx-cal span{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.cx-prev{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);color:var(--accent);font:500 14.5px/1.4 var(--sans);cursor:pointer}.cx-prev>span:first-child{font-size:17px;line-height:1.2}
 .sx-cd{color:var(--mid);font-family:var(--mono);font-size:11.5px;white-space:nowrap}
 .sx-pos{display:grid;gap:8px}
 .pv{border-radius:8px;padding:9px 12px;font-size:14.5px;line-height:1.5;background:var(--surface-2)}
@@ -1107,6 +1115,7 @@ body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],bod
 .scv-b ul{margin:4px 0 0;padding-left:18px}
 .scen-n{font-size:12.5px;color:var(--muted);margin:8px 0 0}
 .scen-src{margin-top:6px}.scen-src summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+.scen-why{margin:10px 0 2px;border-top:1px solid var(--line);padding-top:8px}.scen-why>summary{list-style:none;cursor:pointer;font-size:13.5px;color:var(--accent);display:flex;justify-content:space-between}.scen-why>summary::-webkit-details-marker{display:none}.scen-why>summary::after{content:"›";transition:transform .15s}.scen-why[open]>summary::after{transform:rotate(90deg)}
 .scv-p .up,.scv-p .dn{color:var(--muted)}
 @media (max-width:560px){.scv>summary{grid-template-columns:minmax(0,1fr) 62px}.scv-bar{grid-column:1/-1;grid-row:2}}
 /* persone e organizzazioni */
@@ -1704,11 +1713,12 @@ const SGI={aperto:"☐",avvenuto:"✅",smentito:"✖️",scaduto:"⌛"};
 function sxBody(s,th,hasSc,conf,prev){
   const id=s.id;const sec=(k,ic,t,sub,body)=>`<section class="sxs" id="sx-${esc(id)}-${k}"><h4><span><span class="ic" aria-hidden="true">${ic}</span>${t}</span>${sub?`<i>${sub}</i>`:""}</h4>${body}</section>`;
   const up=s.filone_id?upcomingFrom(s.data).filter(a=>a.filone_id===s.filone_id).slice(0,2):[];const today=isoDay(new Date());
-  const ctx=[th?`<div><b>Tema</b><span><button class="linkbtn" data-thread="${esc(th.id)}"><span class="fl">${thFlags(th)}</span> ${esc(thShort(th))} ›</button>${dosForThread(th.id)?` · <button class="linkbtn" data-open-dos="${esc(dosForThread(th.id).id)}">🧭 Dossier a 360°</button>`:th.radici?` · <button class="linkbtn" data-roots="${esc(th.id)}">🏛️ Da dove nasce</button>`:""}</span></div>`:"",
-    up.length?`<div><b>Prossime date</b><span>${up.map(a=>`${esc(fmtShort(a))} · ${esc(a.titolo)} <span class="sx-cd">${esc(countdown(a,today))}</span>`).join("<br>")}</span></div>`:"",
-    `<div><b>Paesi</b><span>${(s.paesi||[]).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${esc(cname(p))}</button>`).join(" · ")}</span></div>`,
-    storyAmb(s).length?`<div><b>Ambiti</b><span>${storyAmb(s).map(a=>AMBITI[a]?esc(AMBITI[a].n):"").filter(Boolean).join(" · ")}</span></div>`:"",
-    prev?`<div><b>Puntata precedente</b><span><button class="linkbtn" data-story="${esc(prev.id)}">${esc(prev.titolo)}</button> · ${fmtDate(prev.data)}</span></div>`:""].join("");
+  /* v54: contesto come pulsanti, calendario e rimando (prima una tabella che spezzava i titoli lunghi) */
+  const cal=d=>{const x=new Date(d+"T12:00:00");return `<span class="cx-cal"><b>${x.getDate()}</b><span>${MONTHS[x.getMonth()].slice(0,3)}</span></span>`};
+  const ctx=[th?`<div class="cx-chips"><button class="cx-chip" data-thread="${esc(th.id)}"><span class="fl">${thFlags(th)}</span> Tema: ${esc(thShort(th))} ›</button>${dosForThread(th.id)?`<button class="cx-chip" data-open-dos="${esc(dosForThread(th.id).id)}">🧭 Dossier a 360° ›</button>`:th.radici?`<button class="cx-chip" data-roots="${esc(th.id)}">🏛️ Da dove nasce ›</button>`:""}</div>`:"",
+    up.length?`<div class="cx-lab">${up.length===1?"Prossima data":"Prossime date"}</div>${up.map(a=>`<div class="cx-date">${cal(a.data)}<div><div>${esc(a.titolo)}</div><span class="sx-cd">${a.data_fine&&a.data_fine!==a.data?esc(fmtShort(a))+" · ":""}${esc(countdown(a,today))}</span></div></div>`).join("")}`:"",
+    prev?`<div class="cx-lab">Puntata precedente · ${esc(fmtDM(prev.data))}</div><button class="cx-prev" data-story="${esc(prev.id)}"><span aria-hidden="true">←</span><span>${esc(prev.titolo)}</span></button>`:"",
+    `<div class="cx-lab">${storyAmb(s).length?"Paesi e ambiti":"Paesi"}</div><div class="cx-chips">${(s.paesi||[]).map(p=>`<button class="cx-chip cx-p" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`).join("")}${storyAmb(s).map(a=>AMBITI[a]?`<span class="cx-tag">${esc(AMBITI[a].n)}</span>`:"").join("")}</div>`].join("");
   let syn=String(s.sintesi||""),dec="";const m=syn.match(/(?:^|[.;]\s+)((?:Decisiv[oa]|Cosa deciderà|A decidere|Il fatto che deciderà|Deciderà)[^]*)$/);if(m){dec=m[1];syn=syn.slice(0,syn.length-m[1].length).trim()}
   const segs=(s.segnali||[]).map((x,i)=>{const g=S.segnali[s.id+"-"+(i+1)];const st=(g&&g.stato)||"aperto";return `<div class="ck ck-${esc(st)}"><span aria-hidden="true">${SGI[st]||"☐"}</span><span>${esc(x)}</span><span class="ck-t">${sgTag(g)}</span></div>${st==="aperto"?gsHTML(s,i):""}`}).join("");
   const ids=actorsOfStory(s);const d=divInfo(s.fonti);
@@ -1925,7 +1935,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-vt]");if(!
 function gsHTML(s,i){if(!s||!/^s-\d{8}-\d{2}$/.test(s.id||""))return "";const d=s.id.slice(2,6)+"-"+s.id.slice(6,8)+"-"+s.id.slice(8,10);if((Date.now()-new Date(d+"T00:00:00Z").getTime())>7*864e5)return "";
   const id="g:"+s.id+":"+(i+1);return `<div class="gs" data-poll="${esc(id)}"><span class="q">Succederà?</span><button type="button" data-gv="si">Sì</button><button type="button" data-gv="no">No</button><span class="r"></span></div>`}
 function svHTML(t){const sc=t&&t.scenari;if(!t||!t.id||!sc||sc.stato==="chiuso"||!/^\d{4}-\d{2}-\d{2}$/.test(sc.orizzonte||"")||!(sc.voci||[]).length)return "";if(new Date(sc.orizzonte+"T23:59:59Z").getTime()<Date.now())return "";
-  const id="c:"+t.id+":"+sc.orizzonte;return `<div class="sv" data-poll="${esc(id)}"><div class="t">Secondo te come va a finire?</div>${sc.voci.slice(0,8).map((v,k)=>`<button type="button" class="svo" data-gv="${k}"><i aria-hidden="true"></i><span>${esc(v.titolo)}</span><small></small></button>`).join("")}<p class="vt-note">Il ${esc(fmtDM(sc.orizzonte))} vediamo chi ci ha preso: i lettori o la stima dell&#39;agente. Voto anonimo.</p></div>`}
+  const id="c:"+t.id+":"+sc.orizzonte;const sh=sc.voci.every(v=>v.breve&&String(v.breve).length<=22); /* v54: pulsanti brevi solo se ogni scenario ha la sua versione breve, altrimenti titoli interi uno sotto l'altro */
+  return `<div class="sv${sh?" sv-c":""}" data-poll="${esc(id)}"><div class="t">Secondo te come va a finire?</div>${sh?`<div class="sv-r">`:""}${sc.voci.slice(0,8).map((v,k)=>`<button type="button" class="svo" data-gv="${k}" title="${esc(v.titolo)}"><i aria-hidden="true"></i><span>${esc(sh?v.breve:v.titolo)}</span><small></small></button>`).join("")}${sh?`</div>`:""}<p class="vt-note">Il ${esc(fmtDM(sc.orizzonte))} vediamo chi ci ha preso: i lettori o la stima dell&#39;agente. Voto anonimo.</p></div>`}
 function srHTML(t){const sc=t&&t.scenari;if(!sc||!sc.esito||!(sc.voci||[]).length||!/^\d{4}-\d{2}-\d{2}$/.test(sc.orizzonte||""))return "";if(Date.now()-new Date(sc.orizzonte+"T12:00:00Z").getTime()>21*864e5)return "";
   const i=sc.voci.findIndex(v=>v.id===sc.esito);if(i<0)return "";const v=sc.voci[i];
   return `<div class="tl-scen scr" data-poll="${esc("c:"+t.id+":"+sc.orizzonte)}" data-i="${i}"><div class="sr-k"><span aria-hidden="true">📊</span> Com&#39;è andata</div><div class="sr-n">${esc(sc.domanda||"")}</div><div class="sr-t">È andata: <b>${esc(v.titolo)}</b></div><div class="sr-n">Quando abbiamo aperto la domanda l&#39;agente gli dava il ${esc((v.storico&&v.storico.length&&v.storico[0].p!=null)?v.storico[0].p:v.prob)}%<span class="sr-l"></span>.${sc.nota_esito?" "+esc(sc.nota_esito):""}</div></div>`}
@@ -1948,6 +1959,7 @@ document.addEventListener("toggle",e=>{if(e.target&&e.target.matches&&e.target.m
 .sv{display:grid;gap:6px;margin:12px 14px 14px}.sv .t{font-size:13.5px;font-weight:600;margin-bottom:2px}
 .sv .svo{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:13.5px;background:var(--surface-2);color:var(--ink);cursor:pointer}
 .sv .svo i{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex:none}.sv .svo.on{border-color:var(--accent)}.sv .svo.on i{border-color:var(--accent);background:radial-gradient(var(--accent) 42%,transparent 48%)}
+.sv-r{display:flex;flex-wrap:wrap;gap:8px}.sv-c .svo{border-radius:999px;padding:7px 12px;flex:0 1 auto}.sv-c .svo i{display:none}.sv-c .svo.on{background:var(--accent);color:var(--bg)}.sv-c .svo.on small{color:var(--bg)}
 .sv .svo span{flex:1;min-width:0}.sv .svo small{font:600 12px var(--mono);color:var(--muted);white-space:nowrap}.sv .svo small:empty{display:none}`;document.head.appendChild(st)}
 {const _rb5=renderBriefing;renderBriefing=function(){const r=_rb5.apply(this,arguments);try{setTimeout(gvLoad,0)}catch(e){}return r}}
 
@@ -1977,8 +1989,7 @@ function scenariHTML(th){
   return `<div class="scen"><div class="scen-h"><span class="label tag-interp"><span class="ic" aria-hidden="true">📊</span>Scenari · stima dell'agente, non un fatto</span><span class="scen-m">${sc.orizzonte?`entro ${esc(fmtDate(sc.orizzonte))}`:""}${sc.aggiornato?` · aggiornati ${esc(fmtDate(sc.aggiornato))}`:""}</span></div>
   ${sc.domanda?`<p class="scen-q">${esc(sc.domanda)}</p>`:""}
   ${voci.map(v=>{const h=v.storico||[];const prev=h.length>1?h[h.length-2].p:null;const dl=prev==null?0:v.prob-prev;return `<details class="scv"><summary><span class="scv-t">${esc(v.titolo)}</span><span class="scv-bar"><i style="width:${Math.max(0,Math.min(100,+v.prob||0))}%"></i></span><span class="scv-p">${esc(v.prob)}%${dl?`<small class="${dl>0?"up":"dn"}">${dl>0?"▲":"▼"}${Math.abs(dl)}</small>`:""}</span></summary><div class="scv-b"><p>${refText(v.descrizione,sc.fonti)}</p>${(v.spinte||[]).length?`<span class="label">Cosa la renderebbe più probabile</span><ul>${v.spinte.map(x=>`<li>${refText(x,sc.fonti)}</li>`).join("")}</ul>`:""}</div></details>`}).join("")}
-  ${sc.nota?`<p class="scen-n">${esc(sc.nota)}</p>`:""}
-  ${(sc.fonti||[]).length?`<details class="scen-src"><summary>Fonti degli scenari</summary>${srcList(sc.fonti)}</details>`:""}</div>`;
+  ${sc.nota||(sc.fonti||[]).length?`<details class="scen-why"><summary>Perché queste stime e le fonti</summary>${sc.nota?`<p class="scen-n">${esc(sc.nota)}</p>`:""}${(sc.fonti||[]).length?`<div class="scen-src">${srcList(sc.fonti)}</div>`:""}</details>`:""}</div>`;
 }
 
 /* ---------- persone e organizzazioni ---------- */
@@ -2592,8 +2603,9 @@ function countdown(a,today){const s=daysTo(a.data,today),e=daysTo(a.data_fine||a
 function agFlag(a){const p=(a.paesi||[]).filter(x=>/^[A-Z]{3}$/.test(x));if(p.length)return p.slice(0,2).map(flag).join("");if(/BCE|Consiglio europeo|UE\b|europe/i.test(a.titolo||""))return"🇪🇺";return AG_ICO[a.categoria]||"🗓️"}
 function srcA(f){return f&&f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome||"fonte")} ↗</a>${f.raggiunta===false?' <span class="muted">(data da confermare)</span>':""}`:""}
 function scenMiniHTML(t){const sc=t&&t.scenari;if(sc&&sc.stato==="chiuso")return srHTML(t);if(!sc||!(sc.voci||[]).length)return"";
-  const v=sc.voci.slice().sort((a,b)=>b.prob-a.prob);
-  return `<details class="tl-scen"><summary><span class="scm-h"><span class="ic" aria-hidden="true">📊</span>Come può andare${sc.orizzonte?` entro il ${esc(fmtDM(sc.orizzonte))}`:""}<small>stima dell'agente, non un fatto</small></span>${v.map(x=>`<span class="scm-r">${esc(x.titolo)} ·<b>${esc(x.prob)}%</b><span class="scm-bar"><i style="width:${Math.max(0,Math.min(100,+x.prob||0))}%"></i></span></span>`).join("")}<span class="scm-more">Tocca per la domanda, i motivi e le fonti ›</span><span class="scm-x">Chiudi ▴</span></summary>${scenariHTML(t)}${svHTML(t)}</details>`}
+  const v=sc.voci.slice().sort((a,b)=>b.prob-a.prob)[0];
+  /* v54: chiuso è una riga sola con la stima principale; aperto mostra ipotesi e voto, il ragionamento resta dietro «Perché queste stime» */
+  return `<details class="tl-scen"><summary><span class="scm-h"><span class="ic" aria-hidden="true">📊</span>Come può andare${sc.orizzonte?` entro il ${esc(fmtDM(sc.orizzonte))}`:""}<small>stima dell'agente, non un fatto · più probabile: <b>${esc(v.breve||v.titolo)}</b>, ${esc(v.prob)}%</small></span><span class="scm-bar"><i style="width:${Math.max(0,Math.min(100,+v.prob||0))}%"></i></span><span class="scm-x">Chiudi ▴</span></summary>${scenariHTML(t)}${svHTML(t)}</details>`}
 function yr(q){const m=String(q||"").match(/\d{4}/g);return m?m[m.length-1]:String(q||"")}
 function dShort(iso){const d=new Date(iso+"T12:00:00");return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}${d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():""}`}
 function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.events.forEach(e=>byId[e.id]=e);
@@ -2613,24 +2625,21 @@ function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.e
   const MS=t.mesi||{},AN=t.anni||{};
   const sint=m=>{const x=MS[m]||{};return `${x.sintesi?`<p class="tm-s">${esc(x.sintesi)}</p>`:""}${(x.parole||[]).length?`<div class="tm-k">${x.parole.slice(0,4).map(w=>`<span>${esc(w)}</span>`).join("")}</div>`:""}`};
   const nF=n=>n+" "+(n===1?"fatto":"fatti");
-  out+=`<div class="tl tl-arc">`;
+  /* v54: tre blocchi con un titolo: Questo mese (fatti dal più recente), In arrivo (scadenze e scenari chiusi in una riga), Mesi precedenti; poi Da dove nasce */
+  const SEC=t=>`<div class="tm-sec">${t}</div>`;
+  const cm=(byM[curM]||[]).slice().reverse();
   if(!past.length)out+=`<p class="muted tl-note" style="margin:10px 0">${nf?"Nessun evento di questo tema con i filtri scelti.":"Nessun evento registrato per ora."}</p>`;
-  const cm=byM[curM]||[];
-  if(cm.length){out+=`<div class="tm-cur"><div class="tm-h"><span class="tm-n">${esc(mName(curM))}<span class="tm-live">● in corso</span></span><span class="tm-c">${nF(cm.length)}</span></div>${sint(curM)}</div>`;
-    const last=cm.slice(-3),prev=cm.slice(0,-3);
-    if(prev.length)out+=`<details class="tm-all"><summary>Tutti i ${cm.length} fatti di ${esc(MONTHS[+curM.slice(5,7)-1])}</summary>${prev.map(evRow).join("")}</details>`;
-    out+=last.map(evRow).join("")}
-  const td=new Date(todayIso+"T12:00:00");
-  out+=`<div class="tl-now"><b>OGGI · ${td.getDate()} ${MONTHS[td.getMonth()].slice(0,3).toUpperCase()}</b></div>`;
-  out+=scenMiniHTML(t);
+  if(cm.length){out+=SEC("Questo mese")+`<div class="tm tm-now"><div class="tm-in"><div class="tm-h"><span class="tm-n">${esc(mName(curM))}<span class="tm-live">● in corso</span></span><span class="tm-c">${nF(cm.length)}</span></div>${sint(curM)}</div><div class="tl">${cm.slice(0,3).map(evRow).join("")}</div>`;
+    if(cm.length>3)out+=`<details class="tm-all"><summary><span>Tutti i ${cm.length} fatti di ${esc(MONTHS[+curM.slice(5,7)-1])}</span></summary><div class="tl">${cm.slice(3).map(evRow).join("")}</div></details>`;
+    out+=`</div>`}
+  const scm=scenMiniHTML(t);
   const up=S.agenda.filter(a=>a.filone_id===t.id&&(a.data_fine||a.data)>=todayIso).sort((a,b)=>a.data.localeCompare(b.data));
-  if(!up.length)out+=`<p class="muted tl-note" style="margin:8px 0">Nessuna scadenza con data certa per questo tema.</p>`;
-  out+=up.map(a=>`<details class="tr fu${(a.importanza||2)>=3?" k":""}"><summary><span class="td">${esc(fmtShort(a))}</span>${esc(a.titolo)}<span class="cdn">${esc(countdown(a,todayIso))}</span></summary><div class="tb">${[...(a.paesi||[]).filter(p=>/^[A-Z]{3}$/.test(p)).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`),srcA(a.fonte)].filter(Boolean).join(" · ")}</div></details>`).join("");
-  out+=`</div>`;
+  const upH=up.map(a=>`<details class="tr fu${(a.importanza||2)>=3?" k":""}"><summary><span class="td">${esc(fmtShort(a))}</span>${esc(a.titolo)}<span class="cdn">${esc(countdown(a,todayIso))}</span></summary><div class="tb">${[...(a.paesi||[]).filter(p=>/^[A-Z]{3}$/.test(p)).map(p=>`<button class="linkbtn" data-country="${esc(p)}">${flag(p)?`<span class="fl">${flag(p)}</span> `:""}${esc(cname(p))}</button>`),srcA(a.fonte)].filter(Boolean).join(" · ")}</div></details>`).join("");
+  if(up.length||scm)out+=SEC("In arrivo")+`${up.length?`<div class="tm tm-up"><div class="tl">${upH}</div></div>`:""}${scm}`;
   const pm=Object.keys(byM).filter(m=>m<curM).sort().reverse();
   const card=m=>`<details class="tm"><summary><span class="tm-h"><span class="tm-n">${esc(mName(m))}</span><span class="tm-c">${nF(byM[m].length)}</span></span>${sint(m)}<span class="tm-o">Giorno per giorno</span></summary><div class="tl">${byM[m].map(evRow).join("")}</div></details>`;
   if(pm.length){const cy=curM.slice(0,4),span=pm.length>11;
-    out+=`<div class="tm-arch"><div class="tm-lab">Mesi precedenti</div>`;
+    out+=SEC("Mesi precedenti")+`<div class="tm-arch">`;
     const yrs=[...new Set(pm.map(m=>m.slice(0,4)))];
     for(const y of yrs){const ms=pm.filter(m=>m.slice(0,4)===y);
       if(span&&y<cy){const n=ms.reduce((k,m)=>k+byM[m].length,0);out+=`<details class="tm ty"><summary><span class="tm-h"><span class="tm-n">${esc(y)} · ${ms.length} ${ms.length===1?"mese":"mesi"}</span><span class="tm-c">${nF(n)}</span></span>${(AN[y]||{}).sintesi?`<p class="tm-s">${esc(AN[y].sintesi)}</p>`:""}<span class="tm-o">I mesi</span></summary><div class="ty-b">${ms.map(card).join("")}</div></details>`}
@@ -2640,7 +2649,7 @@ function themeArc(t,evOk,nf){const todayIso=isoDay(new Date());const byId={};S.e
     rr+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce · dal dossier: ${esc(clip(dosPlain(dz.radici.sommario||""),80))}</summary><div class="tb"><ol class="apos rt">${tp.map(x=>`<li><span class="d">${esc(x.quando||"")}</span><div>${dosRef(x.testo,dz)}</div></li>`).join("")}</ol><button class="linkbtn" data-open-dos="${esc(dz.id)}">Il dossier completo: attori, nodi, narrazioni, scenari ›</button></div></details>`}
   else if(t.radici&&(t.radici.tappe||[]).length){const r=t.radici,tp=r.tappe;
     rr+=`<details class="tr rt"><summary><span class="td">${esc(yr(tp[0].quando))}→${esc(yr(tp[tp.length-1].quando))}</span>Da dove nasce: ${esc(r.parole||clip(r.sommario||"",80))}</summary><div class="tb">${rootsBody(t)}</div></details>`}
-if(rr)out+=`<div class="tl tm-roots">${rr}</div>`}
+if(rr)out+=SEC("Da dove nasce")+`<div class="tm tm-up"><div class="tl">${rr}</div></div>`}
   return out+`<button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`}
 function themeCard(t,sel,evOk,nf){const l=thLast(t),n=thNext(t),today=isoDay(new Date());
   const star=S.owner&&!S.static?`<button type="button" class="th-star" data-star="${esc(t.id)}" aria-pressed="${prefs().seguiti.includes(t.id)}" title="Segui questo tema: avviso in cima al briefing quando si muove">${prefs().seguiti.includes(t.id)?"★":"☆"}</button>`:"";
