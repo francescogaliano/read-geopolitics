@@ -935,7 +935,7 @@ body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],bod
 .subtabs .n{font-family:var(--mono);font-size:11px;background:var(--surface-2);color:var(--muted);border-radius:999px;padding:0 6px}
 .subtabs button[aria-selected="true"] .n{background:var(--accent-soft);color:var(--accent)}
 .section-h.first{margin-top:10px}
-.in60-refs{white-space:nowrap}
+.in60-refs{white-space:normal}.in60-ref{white-space:nowrap;display:inline-block;margin-top:3px}
 .in60-ref{background:var(--accent-soft);color:var(--accent);border:0;border-radius:999px;padding:0 8px;font-family:var(--mono);font-size:11px;line-height:1.7;cursor:pointer;margin-left:2px;vertical-align:1px}
 .in60-ref:hover{background:var(--accent);color:var(--bg)}
 .sub-next{display:flex;justify-content:flex-end;margin:22px 0 4px}
@@ -2266,7 +2266,12 @@ function setSub(k,scroll){
 function openStory(id){
   if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;const ok=b0&&mi>=0&&mi<3;if(!ok){showLock({what:"storie"});return}}
   const b=S.briefings.find(x=>(x.storie_mondo||[]).concat(x.storie_italia||[]).includes(id));
-  if(b){S.briefId=b.id;S.sub=(b.storie_italia||[]).includes(id)?"italia":"mondo";renderBriefing();show("briefing");requestAnimationFrame(()=>{const el=document.getElementById("st-"+id);if(el){const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+10;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"});const d=el.querySelector("details");if(d)d.open=true}})}
+  if(b){S.briefId=b.id;S.sub=(b.storie_italia||[]).includes(id)?"italia":"mondo";renderBriefing();show("briefing");requestAnimationFrame(()=>{const el=document.getElementById("st-"+id);if(!el)return;
+    /* v52: prima apre la storia (e chiude le altre, che cambia l'altezza della pagina), poi scorre; dopo lo scorrimento ricontrolla e corregge se qualcosa sopra ha cambiato altezza (mappe, dettagli chiusi). Se la persona tocca o scorre, smette. */
+    const d=el.querySelector("details.sx");if(d&&!d.open)d.open=true;
+    let stop=false;const halt=()=>{stop=true};["touchstart","wheel","keydown"].forEach(t=>window.addEventListener(t,halt,{once:true,passive:true}));
+    const go=beh=>{if(stop)return;const off=document.querySelector("header.top").offsetHeight+((document.getElementById("subtabs")||{}).offsetHeight||0)+10;const dy=el.getBoundingClientRect().top-off;if(Math.abs(dy)>3)window.scrollTo({top:window.scrollY+dy,behavior:beh})};
+    requestAnimationFrame(()=>{go("smooth");setTimeout(()=>go("auto"),800);setTimeout(()=>go("auto"),1600)})})}
 }
 
 /* ---------- map ---------- */
