@@ -2523,7 +2523,7 @@ async function richiesteTemi(env) { // suggerimenti per il modulo Richieste: agg
 // Secret TG_BOT_TOKEN (da @BotFather). Il bot è amministratore del canale; il nome del canale (@...) si imposta dal pannello.
 const RG_ORIGIN = "https://rg-api.briefinghub.workers.dev";
 const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", sera: true, ora_sera: "20:15", bilancio: true, ora_bil: "10:00", dossier: true };
-async function tgSettings(env) { return { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; }
+async function tgSettings(env) { const st = { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; if (st.ora_bil === "18:00") st.ora_bil = "10:00"; return st; } // v61: «Com'è andata» passa alla domenica mattina (l'orario salvato era quello vecchio predefinito)
 async function tgCall(env, method, body) {
   if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
   const r = await fetch("https://api.telegram.org/bot" + String(env.TG_BOT_TOKEN).trim() + "/" + method, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
