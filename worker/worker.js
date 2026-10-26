@@ -1084,7 +1084,7 @@ async function sndDrawQ(c,q,band){const g=c.getContext("2d");await sndFonts();sn
 async function sndDrawR(c,q){const g=c.getContext("2d");await sndFonts();sndBg(g);const n=q.num,a=q.a||"Sì",b=q.b||"No";let y=330;
  sndKick(g,"Ieri vi abbiamo chiesto"+(q.tema?" · "+q.tema:""),y);y+=70;g.font="600 76px 'IBM Plex Serif'";for(const ln of sndWrap(g,sndToks(String(q.titolo||q.sticker).split("*").join("")),888).slice(0,4)){sndLine(g,ln,96,y,"#EEF2F6","#EEF2F6");y+=84}
  y=Math.max(y+60,820);const maj=n.si>=50;g.fillStyle="#E8B050";g.font="600 230px 'IBM Plex Serif'";g.fillText((maj?n.si:100-n.si)+"%",96,y);y+=250;
- g.fillStyle="#B9C4CF";g.font="400 40px 'IBM Plex Sans'";g.fillText("dice "+(maj?a:b).toLowerCase()+" · avete risposto in "+n.votanti,96,y);y+=90;
+ g.fillStyle="#B9C4CF";g.font="400 40px 'IBM Plex Sans'";g.fillText("dice "+(maj?a:b).toLowerCase()+(n.votanti>=10?" · avete risposto in "+n.votanti:""),96,y); /* sotto i 10 voti il numero non si mostra */y+=90;
  g.fillStyle="#1d2a3d";g.beginPath();g.roundRect(96,y,888,68,34);g.fill();g.save();g.beginPath();g.roundRect(96,y,888,68,34);g.clip();g.fillStyle="#E8B050";g.fillRect(96,y,888*n.si/100,68);g.restore();
  g.font="600 32px 'IBM Plex Sans'";g.fillStyle="#15202B";if(n.si>=18)g.fillText(a+" "+n.si+"%",124,y+16);g.fillStyle="#B9C4CF";g.textAlign="right";if(n.si<=82)g.fillText(b+" "+(100-n.si)+"%",956,y+16);g.textAlign="left";y+=140;
  if(q.riga&&q.riga.riga){g.fillStyle="#2a2412";g.strokeStyle="#6E5A26";g.lineWidth=2;g.font="400 36px 'IBM Plex Sans'";const L=sndWrap(g,sndToks(q.riga.riga),820).slice(0,3);const h=90+L.length*50;g.beginPath();g.roundRect(96,y,888,h,24);g.fill();g.stroke();
@@ -1127,6 +1127,19 @@ function scnBlock(g,q,y,cp){const e=q.voci.find(v=>v.id===q.esito);const d0=(e.s
  y+=cp?50:62;g.font="400 "+(cp?30:34)+"px 'IBM Plex Sans'";for(const ln of sndWrap(g,sndToks(scnLine(q)),888).slice(0,3)){sndLine(g,ln,96,y,"#DCE3EA","#DCE3EA");y+=cp?42:48}
  const vt=q.voti;if(vt&&vt.tot>=5){const ix=q.voci.findIndex(v=>v.id===q.esito);const p=Math.round(100*((vt.c||{})[ix]||0)/vt.tot);g.fillStyle="#B9C4CF";g.fillText("I lettori: il "+p+"% aveva scelto questa ipotesi ("+vt.tot+" voti).",96,y+6);y+=48}
  return y}
+/* v61: la domenica, «I verdetti della settimana»: tutte le domande e gli scenari chiusi in 7 giorni, lettori contro agente, e la classifica che cresce */
+async function sndDrawW(c,w){const g=c.getContext("2d");await sndFonts();sndBg(g);let y=250;
+ sndKick(g,"I verdetti della settimana",y);y+=56;g.fillStyle="#B9C4CF";g.font="400 34px 'IBM Plex Sans'";g.fillText(w.periodo||"",96,y);y+=70;
+ g.fillStyle="#EEF2F6";g.font="600 76px 'IBM Plex Serif'";g.fillText("Lettori contro AI",96,y);y+=120;
+ const box=(x,lab,n,tot,gold)=>{g.fillStyle=gold?"#2a2412":"#141d2e";g.strokeStyle=gold?"#6E5A26":"#27353F";g.lineWidth=2;g.beginPath();g.roundRect(x,y,424,230,26);g.fill();g.stroke();
+  g.fillStyle=gold?"#F2D58A":"#8fa0bd";g.font="500 26px 'IBM Plex Mono'";g.fillText(lab,x+34,y+30);g.fillStyle=gold?"#E8B050":"#EEF2F6";g.font="600 120px 'IBM Plex Serif'";g.fillText(String(n),x+34,y+70);const nw=g.measureText(String(n)).width;g.fillStyle="#8fa0bd";g.font="400 40px 'IBM Plex Sans'";g.fillText("su "+tot,x+44+nw,y+140)};
+ box(96,"I LETTORI",w.lettori,w.ln,w.lettori>=w.agente);box(560,"L'AGENTE AI",w.agente,w.an,w.agente>w.lettori);y+=270;
+ g.fillStyle="#B9C4CF";g.font="400 32px 'IBM Plex Sans'";g.fillText("In totale, da quando giochiamo: lettori "+w.tl+" · agente "+w.ta,96,y);y+=76;
+ for(const r of (w.righe||[]).slice(0,5)){g.strokeStyle="#27353F";g.lineWidth=2;g.beginPath();g.moveTo(96,y);g.lineTo(984,y);g.stroke();y+=24;
+  g.fillStyle="#E8B050";g.font="500 22px 'IBM Plex Mono'";g.fillText((r.tema||"").toUpperCase(),96,y);g.fillStyle="#EEF2F6";g.font="600 30px 'IBM Plex Sans'";const L=sndWrap(g,sndToks(r.q),620).slice(0,2);let yy=y+34;for(const ln of L){sndLine(g,ln,96,yy,"#EEF2F6","#EEF2F6");yy+=40}
+  g.textAlign="right";g.fillStyle="#E8B050";g.font="600 34px 'IBM Plex Serif'";g.fillText(r.esito.toUpperCase(),984,y+4);g.font="500 24px 'IBM Plex Mono'";
+  const mk=(lab,ok,x)=>{g.fillStyle=ok==null?"#6b7a8c":ok?"#7FD1A0":"#E58A8A";g.fillText(lab+(ok==null?" –":ok?" ✓":" ✗"),x,y+56)};mk("L",r.l,868);mk("AI",r.a,984);g.textAlign="left";y=Math.max(yy,y+96)+14}
+ sndCta(g)}
 async function sndDrawC(c,q){const g=c.getContext("2d");await sndFonts();sndBg(g);scnBlock(g,q,270,false);sndCta(g)}
 /* la storia della domanda quando la domanda è la «prossima scommessa» di uno scenario appena chiuso: in alto com'è andata, sotto la nuova domanda con lo spazio per lo sticker */
 async function sndDrawQS(c,q,sc){const g=c.getContext("2d");await sndFonts();sndBg(g);let y=scnBlock(g,sc,220,true);
@@ -1142,18 +1155,18 @@ let OG_OPEN={},OG_POD=false;
 function ogShareBtn(id,lab){return '<button type="button" class="ogsh" data-og-share="'+id+'">'+(lab||"Condividi su Instagram")+'</button><a class="sub ogdl" data-snd-dl="'+id+'" href="#">o scarica</a>'}
 async function ogShare(id){const bl=id==="pod"?POD_BLOB:SND_BLOB[id];if(!bl){say("L'immagine non è ancora pronta: riprova tra un attimo.");return}
  const name=id==="pod"?document.getElementById("pd-dl").download:((document.querySelector('[data-snd-dl="'+id+'"]')||{}).download||id+".png");const file=new File([bl],name,{type:"image/png"});
- const k=/^sndc[0-9]$/.test(id)?(((SND&&SND.scenari)||[])[+id.slice(4)]?"scn-"+SND.scenari[+id.slice(4)].id:""):id==="pod"?"pod":id==="sndq"?"dom":/^sndv[0-9]$/.test(id)?(((SND&&SND.verdetti)||[])[+id.slice(4)]?"ver"+SND.verdetti[+id.slice(4)].day:""):"";
+ const k=id==="sndw"?"sett":/^sndc[0-9]$/.test(id)?(((SND&&SND.scenari)||[])[+id.slice(4)]?"scn-"+SND.scenari[+id.slice(4)].id:""):id==="pod"?"pod":id==="sndq"?"dom":/^sndv[0-9]$/.test(id)?(((SND&&SND.verdetti)||[])[+id.slice(4)]?"ver"+SND.verdetti[+id.slice(4)].day:""):"";
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});if(k)ogDone(k)}catch(e){}}else{const a=id==="pod"?document.getElementById("pd-dl"):document.querySelector('[data-snd-dl="'+id+'"]');if(a)a.click();if(k)ogDone(k)}}
 /* condividere (o scaricare) una storia la segna come fatta, anche dalla scheda Podcast */
 async function ogDone(k){if(!SND||(SND.todo||{})[k])return;const r=await api({action:"todo_set",k:k,v:true});if(r&&r.ok){SND=r.sond;OG_OPEN[k]=false;const nx=ogSteps().find(x=>!x.done);if(nx)OG_OPEN[nx.k]=true;sndRender(SND)}}
 function ogTodayDraft(){const t=SND&&SND.day;return (D&&D.drafts||[]).find(x=>x.date===t&&x.status!=="scartata"&&x.format!=="spiegato")||null}
-function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null;
+function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null,tot=qi&&qi.tot;
  const oggi=s.day;const podOk=POD&&POD.date===oggi;
  St.push({k:"pod",ic:"🎧",t:"Storia del podcast",w:"dalle 7:50",done:!!T.pod,body:(!OG_POD?'<div class="sub">Preparo l&#39;immagine…</div>':!POD?'<div class="sub">Nessuna puntata.</div>':(podOk?'':'<div class="warn">La puntata di oggi non c&#39;è ancora: di solito arriva verso le 7:50.</div>')+'<div class="ogsr"><canvas class="ogth" id="ogpod" width="1080" height="1920"></canvas><div class="sndf">'+'<button type="button" class="ogsh" data-og-share="pod">Condividi su Instagram</button>'+sndCp("Link",POD_LINK,"readgeopolitics.com/ascolta")+sndCp("Testo","Ascolta il podcast")+'<div class="sub">Sticker link con la pagina «Ascolta». Versione e temi si cambiano nella scheda Podcast.</div></div></div>')});
- (s.scenari||[]).forEach((c,i)=>{if(q&&q.dopo_scenario===c.id)return;St.push({k:"scn-"+c.id,ic:"📊",t:"Com'è andata: "+(c.tema||""),w:"uno scenario si è chiuso",done:!!T["scn-"+c.id],body:'<div class="ogsr"><canvas class="ogth" id="sndc'+i+'" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndc"+i)+sndCp("Link",OG_LINK+"storia-scenario#vota","readgeopolitics.com · #vota")+sndCp("Testo","Le altre stime")+'<div class="sub">'+esc(scnLine(c))+' Oggi tra le domande non c&#39;è la «prossima scommessa» su questo tema: puoi sceglierla tra le altre proposte, se c&#39;è.</div></div></div>'})});
- (s.verdetti||[]).forEach((v,i)=>St.push({k:"ver"+v.day,ic:"⚖️",t:"Il verdetto: domanda del "+sndMesi(v.day),w:"subito dopo il podcast",done:!!T["ver"+v.day],body:'<div class="ogsr"><canvas class="ogth" id="sndv'+i+'" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndv"+i)+sndCp("Link",OG_LINK+"storia-verdetto#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'<div class="sub">È andata: <b>'+esc(v.esito==="sì"?(v.a||"Sì"):(v.b||"No"))+'</b>. Sticker link nello spazio in basso.'+(v.num?'':' Mancano i numeri del sondaggio di quel giorno: la riga dei lettori non c&#39;è.')+(v.fonte&&v.fonte.url?' <a href="'+esc(v.fonte.url)+'" target="_blank" rel="noopener">Fonte ›</a>':'')+'</div></div></div>'}));
- if(qi)St.push({k:"ieri",ic:"📊",t:"I numeri del sondaggio di ieri",w:"prima della domanda nuova",done:!!n,auto:true,body:'<div class="sub">Instagram › la storia di ieri › Attività: quante persone l&#39;hanno vista, quante hanno votato, la percentuale di «'+esc(qi.a||"Sì")+'». «'+esc(qi.sticker||"")+'»</div><div class="sndn"><label>Hanno visto<input type="number" inputmode="numeric" min="0" id="snv" value="'+(n?n.visti:"")+'"></label><label>Hanno votato<input type="number" inputmode="numeric" min="0" id="snt" value="'+(n?n.votanti:"")+'"></label><label>'+esc(qi.a||"Sì")+' (%)<input type="number" inputmode="numeric" min="0" max="100" id="sns" value="'+(n?n.si:"")+'"></label><button type="button" class="g" id="snsv">'+(n?"Aggiorna":"Salva")+'</button></div>'
-  +(n?'<div class="ogsr" style="margin-top:10px"><canvas class="ogth" id="sndr" width="1080" height="1920"></canvas><div class="sndf"><div class="sub"><b>Facoltativa</b>: la storia del risultato, da mettere prima della domanda.</div>'+ogShareBtn("sndr")+sndCp("Link",OG_LINK+"storia-risultato#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'</div></div>':'<div class="sub">Con i numeri, la storia della domanda mostra in alto com&#39;è andata ieri.</div>')});
+ (s.scenari||[]).filter(c=>!(q&&q.dopo_scenario===c.id)).slice(0,1).forEach((c)=>{const i=(s.scenari||[]).indexOf(c);const resto=(s.scenari||[]).filter(x=>!(q&&q.dopo_scenario===x.id)).length-1;St.push({k:"scn-"+c.id,ic:"📊",t:"Com'è andata: "+(c.tema||""),w:"uno scenario si è chiuso",done:!!T["scn-"+c.id],body:'<div class="ogsr"><canvas class="ogth" id="sndc'+i+'" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndc"+i)+sndCp("Link",OG_LINK+"storia-scenario#vota","readgeopolitics.com · #vota")+sndCp("Testo","Le altre stime")+'<div class="sub">'+esc(scnLine(c))+(resto>0?' Altri '+resto+' in fila: uno al giorno, gli altri finiscono anche nella storia della domenica.':'')+'</div></div></div>'})});
+ if(s.settimana&&(s.settimana.righe||[]).length){const w=s.settimana;St.push({k:"sett",ic:"🏆",t:"I verdetti della settimana",w:"la domenica, subito dopo il podcast",done:!!T.sett,body:'<div class="ogsr"><canvas class="ogth" id="sndw" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndw")+sndCp("Link",OG_LINK+"storia-settimana#vota","readgeopolitics.com · #vota")+sndCp("Testo","Gioca anche tu")+'<div class="sub">Questa settimana: lettori '+w.lettori+' su '+w.ln+', AI '+w.agente+' su '+w.an+'. Da quando giochiamo: lettori '+w.tl+', AI '+w.ta+'.</div></div></div>'})}
+ if(qi)St.push({k:"ieri",ic:"📊",t:"I numeri del sondaggio di ieri",w:"prima della domanda nuova",done:!!n,auto:true,body:'<div class="sub">Instagram › la storia di ieri › Attività: quante persone l&#39;hanno vista, quante hanno votato, la percentuale di «'+esc(qi.a||"Sì")+'». «'+esc(qi.sticker||"")+'»'+(qi.sito&&(qi.sito.tot||qi.sito.n)?'<br>Sul sito hanno scommesso in '+(qi.sito.tot||qi.sito.n)+': si sommano da soli.':'')+'</div><div class="sndn"><label>Hanno visto<input type="number" inputmode="numeric" min="0" id="snv" value="'+(n?n.visti:"")+'"></label><label>Hanno votato<input type="number" inputmode="numeric" min="0" id="snt" value="'+(n?n.votanti:"")+'"></label><label>'+esc(qi.a||"Sì")+' (%)<input type="number" inputmode="numeric" min="0" max="100" id="sns" value="'+(n?n.si:"")+'"></label><button type="button" class="g" id="snsv">'+(n?"Aggiorna":"Salva")+'</button></div>'
+  +(tot?'<div class="ogsr" style="margin-top:10px"><canvas class="ogth" id="sndr" width="1080" height="1920"></canvas><div class="sndf"><div class="sub"><b>Facoltativa</b>: la storia del risultato, da mettere prima della domanda.</div>'+ogShareBtn("sndr")+sndCp("Link",OG_LINK+"storia-risultato#vota","readgeopolitics.com · #vota")+sndCp("Testo","Vota le altre")+'</div></div>':'<div class="sub">Con i numeri, la storia della domanda mostra in alto com&#39;è andata ieri.</div>')});
  const qsc0=q&&q.dopo_scenario&&(s.scenari||[]).find(c=>c.id===q.dopo_scenario);
  St.push({k:"dom",ic:qsc0?"🎯":"🗳️",t:qsc0?"Com'è andata e la prossima scommessa":"La domanda di oggi",w:"subito dopo, con lo sticker sondaggio",done:!!T.dom,body:!q?'<div class="sub">Arriva con il briefing delle 06:45.</div>':'<div class="ogsr"><canvas class="ogth" id="sndq" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndq")+sndCp("Sticker",q.sticker||"")+'<div class="sndab">'+sndCp("Risposta 1",q.a||"Sì")+sndCp("Risposta 2",q.b||"No")+'</div><div class="sub">'+(q.perche?'Perché questa: '+esc(q.perche)+' ':'')+'Si verifica entro il '+esc(sndMesi(q.scadenza||oggi))+(q.fonte&&q.fonte.url?' · <a href="'+esc(q.fonte.url)+'" target="_blank" rel="noopener">'+esc(q.fonte.nome||"fonte")+'</a>':'')+'.'+(qi&&!n?' <b>Prima inserisci i numeri di ieri</b>, così in alto compare il risultato.':'')+'</div></div></div>'+ogAlt(s)});
  const DR=(D&&D.drafts||[]).filter(x=>x.date===oggi&&x.status!=="scartata").sort((a,z)=>(a.format==="spiegato")-(z.format==="spiegato"));
@@ -1178,12 +1191,12 @@ function ogRender(){const el=document.getElementById("og");if(!el)return;const s
  const avg=W.length?Math.round(100*W.reduce((a,x)=>a+x.n.votanti,0)/W.reduce((a,x)=>a+x.n.visti,0)):null;
  h+='<div class="sub">'+(avg==null?'Dopo una settimana di numeri decidiamo: se vota almeno 1 su 4 di chi guarda, si passa ai punti personali.':'Media: '+avg+'% su '+W.length+(W.length===1?' giorno':' giorni')+'. La soglia: 25%.')+'</div></div>';
  el.innerHTML=h;ogDraw()}
-async function ogDraw(){const s=SND;if(!s)return;const q=s.oggi,qi=s.ieri,n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null;
+async function ogDraw(){const s=SND;if(!s)return;const q=s.oggi,qi=s.ieri,n=qi&&qi.tot; /* il totale: storia Instagram più sito */
  if(OG_POD&&POD_BLOB){const c=document.getElementById("ogpod");if(c){const im=new Image();im.onload=()=>{c.getContext("2d").drawImage(im,0,0,1080,1920);URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(POD_BLOB)}}
  const qsc=q&&q.dopo_scenario&&(s.scenari||[]).find(c=>c.id===q.dopo_scenario);
- if(qsc)sndCanvas("sndq",sndDrawQS,q,qsc,"storia_scommessa_"+s.day+".png");else if(q)sndCanvas("sndq",sndDrawQ,q,n?{t:qi.sticker||"",r:(qi.a||"Sì")+" "+n.si+"% · "+(qi.b||"No")+" "+(100-n.si)+"% · "+n.votanti+" risposte"}:null,"storia_domanda_"+s.day+".png");
- if(qi&&n)sndCanvas("sndr",sndDrawR,qi,null,"storia_risultato_"+qi.day+".png");
- (s.verdetti||[]).forEach((v,i)=>sndCanvas("sndv"+i,sndDrawV,v,null,"storia_verdetto_"+v.day+".png"));
+ if(qsc)sndCanvas("sndq",sndDrawQS,q,qsc,"storia_scommessa_"+s.day+".png");else if(q)sndCanvas("sndq",sndDrawQ,q,n?{t:qi.sticker||"",r:(qi.a||"Sì")+" "+n.si+"% · "+(qi.b||"No")+" "+(100-n.si)+"%"+(n.votanti>=10?" · "+n.votanti+" risposte":"")}:null,"storia_domanda_"+s.day+".png");
+ if(qi&&n)sndCanvas("sndr",sndDrawR,{...qi,num:n},null,"storia_risultato_"+qi.day+".png");
+ if(s.settimana&&(s.settimana.righe||[]).length)sndCanvas("sndw",sndDrawW,s.settimana,null,"storia_settimana_"+s.day+".png");
  (s.scenari||[]).forEach((c,i)=>sndCanvas("sndc"+i,sndDrawC,c,null,"storia_scenario_"+c.id+".png"))}
 async function ogPod(){if(OG_POD)return;if(!POD_GEN){POD_GEN=true;await podLoad()}else{let k=0;while(!POD_BLOB&&k++<40)await new Promise(r=>setTimeout(r,250))}OG_POD=true;ogRender()}
 function sndRender(s){SND=s;if(TAB==="og"){ogRender();ogPod()}else{const St=s?ogSteps():[];const nd=St.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b&&s)b.innerHTML='Oggi <span class="ogn'+(nd===St.length?' ok':'')+'">'+nd+'/'+St.length+'</span>'}}
@@ -2698,7 +2711,7 @@ async function tgDivergenza(env, force) {
    I conteggi si mostrano solo da VOTE_MIN voti in su: sotto la soglia l'API risponde solo «sotto soglia». */
 const VOTE_MIN = 20;
 /* tre tipi di sondaggio: t: tesi della storia principale (a, b, n); g: un segnale da osservare (si, no); c: gli scenari di un tema (indice dello scenario) */
-const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] } };
+const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] }, p: { re: /^p:\d{4}-\d{2}-\d{2}$/, ch: ["si", "no"] } }; // v61: p = la scommessa del giorno, la stessa domanda della storia Instagram
 const voteKind = (poll) => { const k = String(poll).slice(0, 1); const K = VOTE_KIND[k]; return K && K.re.test(poll) ? k : ""; };
 let VOTE_T = false;
 async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); await env.DB.prepare("CREATE TABLE IF NOT EXISTS polls (poll TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT NOT NULL)").run(); VOTE_T = true; }
@@ -2714,6 +2727,8 @@ async function pollSnap(env, poll, kind, ctx) { // copia del sondaggio accanto a
   } else if (kind === "g") {
     const s = ctx.s;
     snap = { tipo: "segnale", data: ctx.day, storia_id: ctx.sid, i: ctx.i, titolo: s.titolo || "", testo: (s.segnali || [])[ctx.i - 1] || "", paesi: s.paesi || [], filone_id: s.filone_id || "" };
+  } else if (kind === "p") {
+    const q = ctx.q; snap = { tipo: "scommessa", data: ctx.day, n: q.n, storia_id: q.storia_id || "", tema: q.tema || "", sticker: q.sticker || "", titolo: q.titolo || "", scadenza: q.scadenza || "", attesa: q.attesa || "" };
   } else {
     const sc = ctx.th.scenari || {};
     snap = { tipo: "scenario", data: new Date().toISOString().slice(0, 10), filone_id: ctx.tid, titolo: ctx.th.titolo || "", orizzonte: ctx.oriz, domanda: sc.domanda || "", voci: (sc.voci || []).map((v) => ({ id: v.id || "", titolo: v.titolo || "", prob: +v.prob || 0 })), paesi: ctx.th.paesi || [] };
@@ -2771,6 +2786,10 @@ async function voteApi(request, env) {
     const day = sidDay(sid); if (Date.now() - Date.parse(day + "T00:00:00Z") > (kind === "t" ? 3 : 8) * 86400000) return fail(410, "closed");
     ctx = { sid, s, day };
     if (kind === "g") { ctx.i = +poll.split(":")[2]; if (!(s.segnali || [])[ctx.i - 1]) return fail(404, "no_signal"); }
+  } else if (kind === "p") {
+    const day = poll.slice(2); const q = await scommessa(env, day); if (!q) return fail(404, "no_bet");
+    if (Date.now() - Date.parse(day + "T00:00:00Z") > 2 * 86400000) return fail(410, "closed"); // si gioca il giorno della domanda e il giorno dopo
+    ctx = { day, q };
   } else {
     const [, tid, oriz] = poll.split(":"); const th = await docData(env, "threads", tid); if (!th) return fail(404, "no_theme");
     const sc = th.scenari || {}; if (sc.orizzonte !== oriz || sc.stato === "chiuso") return fail(410, "closed");
@@ -2908,6 +2927,19 @@ async function canaliSet(env, b) {
   return { ok: true, canali: await canaliInfo(env) };
 }
 // v60: storia Instagram con la domanda di previsione (briefing.storia_ig): immagine, testi da copiare, numeri dello sticker inseriti a mano
+/* v61: la domanda di previsione scelta per un giorno (la stessa della storia Instagram), letta da tutti: sito, voti, pannello */
+async function scommessa(env, day) {
+  const b = await docData(env, "briefings", day); if (!b || !b.storia_ig) return null;
+  const c = [b.storia_ig].concat(Array.isArray(b.storia_ig_alt) ? b.storia_ig_alt.slice(0, 2) : []);
+  const SC = (await kvGet(env, "sond_scelte")) || {}; const n = Math.min(c.length - 1, Math.max(0, SC[day] || 0));
+  return { ...c[n], n, day };
+}
+/* voti della storia (numeri inseriti a mano) più voti del sito: il totale che conta per risultato, verdetti e classifica */
+function sondTot(ig, site) {
+  const vi = ig && ig.votanti != null ? +ig.votanti : 0, si_i = vi ? Math.round(vi * (+ig.si || 0) / 100) : 0;
+  const vs = site && site.tot ? +site.tot : 0, si_s = vs ? +((site.c || {}).si || 0) : 0;
+  const v = vi + vs; return v ? { votanti: v, si: Math.round(100 * (si_i + si_s) / v), ig: vi, sito: vs } : null;
+}
 async function sondInfo(env) {
   const day = romeToday(), ieri = romeYesterday();
   const [br, bi] = await Promise.all([tgBriefing(env, day), tgBriefing(env, ieri)]);
@@ -2919,19 +2951,49 @@ async function sondInfo(env) {
   const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
   const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
   const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
-  const V = Array.isArray(br && br.storia_ig_verdetti) ? br.storia_ig_verdetti.filter((v) => v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "") && (v.n || 0) === (SC[v.data] || 0)).slice(0, 3) : [];
-  const verdetti = (await Promise.all(V.map(async (v) => { const [b0, n0] = await Promise.all([tgBriefing(env, v.data), kvGet(env, "sond:" + v.data)]); const q0 = cands(b0)[v.n || 0]; return q0 ? { ...q0, day: v.data, num: n0 && n0.votanti != null ? n0 : null, esito: v.esito === "sì" || v.esito === "si" ? "sì" : "no", riga: v.riga || "", fonte: v.fonte || null } : null; }))).filter(Boolean);
+  const PV = await voteCounts(env, ["p:" + ieri, "p:" + day], true); // voti della scommessa sul sito
   const todo = (await kvGet(env, "todo:" + day)) || {};
-  // v61: scenari chiusi negli ultimi 3 giorni, da raccontare in una storia «Com'è andata»
+  // v61: scenari chiusi negli ultimi 10 giorni e non ancora raccontati: escono uno al giorno, in fila
   let scenari = [];
   try {
-    const lim = new Date(Date.parse(day + "T12:00:00Z") - 3 * 86400000).toISOString().slice(0, 10);
-    const { results } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='threads' AND json_extract(data,'$.scenari.stato')='chiuso' AND json_extract(data,'$.scenari.aggiornato')>=?1 LIMIT 4").bind(lim).all();
-    const T = (results || []).map((r) => ({ id: r.key, t: JSON.parse(r.data) })).filter((x) => x.t.scenari && x.t.scenari.esito && (x.t.scenari.voci || []).some((v) => v.id === x.t.scenari.esito));
+    const pub = (await kvGet(env, "scn_pub")) || {};
+    const lim = new Date(Date.parse(day + "T12:00:00Z") - 10 * 86400000).toISOString().slice(0, 10);
+    const { results } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='threads' AND json_extract(data,'$.scenari.stato')='chiuso' AND json_extract(data,'$.scenari.aggiornato')>=?1 ORDER BY json_extract(data,'$.scenari.aggiornato') LIMIT 8").bind(lim).all();
+    const T = (results || []).map((r) => ({ id: r.key, t: JSON.parse(r.data) })).filter((x) => x.t.scenari && x.t.scenari.esito && (x.t.scenari.voci || []).some((v) => v.id === x.t.scenari.esito) && (!pub[x.id] || pub[x.id] === day));
     const polls = T.map((x) => "c:" + x.id + ":" + x.t.scenari.orizzonte); const VC = polls.length ? await voteCounts(env, polls, true) : {};
-    scenari = T.map((x, i) => { const sc = x.t.scenari; return { id: x.id, tema: x.t.breve || x.t.titolo || "", bandiere: x.t.bandiere || [], domanda: sc.domanda || "", orizzonte: sc.orizzonte, chiuso: sc.aggiornato, esito: sc.esito, nota_esito: sc.nota_esito || "", voci: (sc.voci || []).map((v) => ({ id: v.id, breve: v.breve || v.titolo, titolo: v.titolo, prob: v.prob, storico: v.storico || [] })), voti: VC[polls[i]] || null }; });
+    scenari = T.map((x, i) => scnShape(x.id, x.t, VC[polls[i]]));
   } catch (e) {}
-  return { day, todo, scenari, verdetti, scelte, scelta: q ? q.n : 0, oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null, ieri: qi ? { ...qi, day: ieri, num: N[ieri], riga: q && q.ieri ? q.ieri : null } : null, sett: days.map((d) => ({ d, n: N[d] })) };
+  const settimana = romeDow(day) === 7 ? await sondSettimana(env, day, cands, SC).catch(() => null) : null;
+  return { day, todo, scenari, settimana, scelte, scelta: q ? q.n : 0, sito: PV["p:" + day] || null,
+    oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null,
+    ieri: qi ? { ...qi, day: ieri, num: N[ieri], sito: PV["p:" + ieri] || null, tot: sondTot(N[ieri], PV["p:" + ieri]), riga: q && q.ieri ? q.ieri : null } : null,
+    sett: days.map((d) => ({ d, n: N[d] })) };
+}
+function scnShape(id, t, vt) { const sc = t.scenari; return { id, tema: t.breve || t.titolo || "", bandiere: t.bandiere || [], domanda: sc.domanda || "", orizzonte: sc.orizzonte, chiuso: sc.aggiornato, esito: sc.esito, nota_esito: sc.nota_esito || "", voci: (sc.voci || []).map((v) => ({ id: v.id, breve: v.breve || v.titolo, titolo: v.titolo, prob: v.prob, storico: v.storico || [] })), voti: vt || null }; }
+/* chi ci ha preso: i lettori se la maggioranza ha indovinato, l'agente se la sua stima andava nel verso giusto; null = non giocato (nessun voto, «incerto», parità) */
+function scnOk(c) { const fin = (v) => { const h = v.storico || []; return h.length ? +h[h.length - 1].p : +v.prob; };
+  const V = c.voci.slice().sort((a, z) => fin(z) - fin(a)); const a = V.length > 1 && fin(V[0]) === fin(V[1]) ? null : V[0].id === c.esito;
+  let l = null; const vt = c.voti; if (vt && vt.tot) { const cc = vt.c || {}; const ks = Object.keys(cc).sort((x, y) => cc[y] - cc[x]); if (ks.length && (ks.length < 2 || cc[ks[0]] > cc[ks[1]])) l = c.voci[+ks[0]] ? c.voci[+ks[0]].id === c.esito : null; }
+  return { l, a }; }
+async function sondSettimana(env, day, cands, SC) {
+  const da = new Date(Date.parse(day + "T12:00:00Z") - 6 * 86400000).toISOString().slice(0, 10), lim = new Date(Date.parse(day + "T12:00:00Z") - 180 * 86400000).toISOString().slice(0, 10);
+  const { results } = await env.DB.prepare("SELECT key, json_extract(data,'$.storia_ig_verdetti') v FROM docs WHERE type='briefings' AND status='published' AND key>=?1 AND key<=?2 AND json_extract(data,'$.storia_ig_verdetti') IS NOT NULL").bind(lim, day).all();
+  const VV = []; for (const r of results || []) { let L = []; try { L = JSON.parse(r.v) || []; } catch (e) {} for (const v of L) if (v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "") && (v.n || 0) === (SC[v.data] || 0)) VV.push({ ...v, quando: r.key }); }
+  const seen = new Set(); const U = VV.filter((v) => (seen.has(v.data) ? false : seen.add(v.data)));
+  const dates = [...new Set(U.map((v) => v.data))];
+  const [BB, NN, PV] = await Promise.all([Promise.all(dates.map((d) => tgBriefing(env, d))), Promise.all(dates.map((d) => kvGet(env, "sond:" + d))), dates.length ? voteCounts(env, dates.map((d) => "p:" + d), true) : {}]);
+  const B = Object.fromEntries(dates.map((d, i) => [d, { b: BB[i], n: NN[i] }]));
+  const righe = []; let tl = 0, ta = 0;
+  for (const v of U) { const q = cands(B[v.data].b)[v.n || 0]; if (!q) continue; const es = v.esito === "sì" || v.esito === "si" ? "sì" : "no";
+    const tot = sondTot(B[v.data].n, PV["p:" + v.data]); const l = tot && tot.si !== 50 ? (tot.si > 50 ? "sì" : "no") === es : null;
+    const a = q.attesa === "probabile" ? es === "sì" : q.attesa === "improbabile" ? es === "no" : null;
+    if (l) tl++; if (a) ta++; if (v.quando >= da) righe.push({ tema: q.tema || "", q: q.sticker || q.titolo || "", esito: es, l, a, quando: v.quando }); }
+  try { const { results: TT } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='threads' AND json_extract(data,'$.scenari.stato')='chiuso' AND json_extract(data,'$.scenari.esito') IS NOT NULL").all();
+    const T = (TT || []).map((r) => ({ id: r.key, t: JSON.parse(r.data) })); const polls = T.map((x) => "c:" + x.id + ":" + x.t.scenari.orizzonte); const VC = polls.length ? await voteCounts(env, polls, true) : {};
+    T.forEach((x, i) => { const c = scnShape(x.id, x.t, VC[polls[i]]); const e = c.voci.find((v) => v.id === c.esito); if (!e) return; const o = scnOk(c); if (o.l) tl++; if (o.a) ta++; if ((c.chiuso || "") >= da) righe.push({ tema: c.tema, q: c.domanda, esito: e.breve, l: o.l, a: o.a, quando: c.chiuso }); }); } catch (e) {}
+  righe.sort((x, y) => String(x.quando).localeCompare(String(y.quando)));
+  const per = (d) => { const x = new Date(d + "T12:00:00Z"); return x.getUTCDate() + (x.getUTCDate() === 1 ? "°" : "") + " " + IT_MM[x.getUTCMonth()]; };
+  return { periodo: "Dal " + per(da) + " al " + per(day), righe, lettori: righe.filter((r) => r.l).length, ln: righe.filter((r) => r.l != null).length, agente: righe.filter((r) => r.a).length, an: righe.filter((r) => r.a != null).length, tl, ta };
 }
 async function sondPick(env, b) {
   const day = romeToday(); const br = await tgBriefing(env, day); const c = br && br.storia_ig ? 1 + (Array.isArray(br.storia_ig_alt) ? Math.min(2, br.storia_ig_alt.length) : 0) : 0;
@@ -2944,6 +3006,7 @@ async function todoSet(env, b) {
   const day = romeToday(); const t = (await kvGet(env, "todo:" + day)) || {}; const k = String(b.k || "").slice(0, 40);
   if (!/^[a-z0-9-]+$/.test(k)) return { ok: false, error: "voce non valida" };
   if (b.v) t[k] = new Date().toISOString(); else delete t[k];
+  if (k.startsWith("scn-")) { const P = (await kvGet(env, "scn_pub")) || {}; const id = k.slice(4); if (b.v) P[id] = day; else if (P[id] === day) delete P[id]; await kvSet(env, "scn_pub", P); } // la fila degli scenari: uno raccontato non torna
   await kvSet(env, "todo:" + day, t); return { ok: true, sond: await sondInfo(env) };
 }
 async function sondSet(env, b) {
@@ -3317,6 +3380,7 @@ async function route(request, env) {
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
+  if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
   if (method === "POST" && p === "/api/vote") return await voteApi(request, env);
   if (method === "GET" && p === "/api/votes") return await votesApi(url, env);
   if (method === "POST" && (p === "/api/me" || p === "/api/newsletter")) return await nlApi(request, env, p);
