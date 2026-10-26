@@ -1179,7 +1179,7 @@ function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n
  DR.filter(x=>x.format==="spiegato").forEach(addD);
  return St}
 function ogAlt(s){const L=(s.scelte||[]).filter(x=>x.n!==s.scelta);if(!L.length)return '<div class="sub">Oggi l&#39;agente ha proposto una sola domanda.</div>';
- return '<details class="ogalt"'+(OG_OPEN.alt?' open':'')+'><summary>Non ti convince? Altre '+L.length+' proposte ›</summary>'+L.map(x=>'<div class="ogal"><div class="sndl">'+esc(x.tema||"")+'</div><b>'+esc(x.sticker)+'</b>'+(x.perche?'<div class="sub">'+esc(x.perche)+'</div>':'')+'<button type="button" class="g" data-og-pick="'+x.n+'">Usa questa</button></div>').join("")+'<div class="sub">Quella che scegli è l&#39;unica che conta: risultato e verdetto seguono lei. '+((s.todo||{}).dom?'Hai già segnato la storia come pubblicata: se cambi, ripubblica quella nuova.':'')+'</div></details>'}
+ return '<details class="ogalt"'+(OG_OPEN.alt?' open':'')+'><summary>Non ti convince? Altre '+L.length+' proposte ›</summary>'+L.map(x=>'<div class="ogal"><div class="sndl">'+esc(x.tema||"")+'</div><b>'+esc(x.sticker)+'</b>'+(x.perche?'<div class="sub">'+esc(x.perche)+'</div>':'')+'<button type="button" class="g" data-og-pick="'+x.n+'">Usa questa</button></div>').join("")+'<div class="sub">Quella che scegli è l&#39;unica che conta: risultato e verdetto seguono lei, e cambia anche «La scommessa di oggi» sul sito (entro due minuti; i voti già dati restano sulla domanda vecchia e non contano). '+((s.todo||{}).dom?'Hai già segnato la storia come pubblicata: se cambi, ripubblica quella nuova.':'')+'</div></details>'}
 function clip(s,n){s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s}
 function ogRender(){const el=document.getElementById("og");if(!el)return;const s=SND;if(!s){el.innerHTML='<div class="card sub">Carico…</div>';return}
  const St=ogSteps();const nd=St.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b)b.innerHTML='Oggi <span class="ogn'+(nd===St.length?' ok':'')+'">'+nd+'/'+St.length+'</span>';
@@ -2711,7 +2711,7 @@ async function tgDivergenza(env, force) {
    I conteggi si mostrano solo da VOTE_MIN voti in su: sotto la soglia l'API risponde solo «sotto soglia». */
 const VOTE_MIN = 20;
 /* tre tipi di sondaggio: t: tesi della storia principale (a, b, n); g: un segnale da osservare (si, no); c: gli scenari di un tema (indice dello scenario) */
-const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] }, p: { re: /^p:\d{4}-\d{2}-\d{2}$/, ch: ["si", "no"] } }; // v61: p = la scommessa del giorno, la stessa domanda della storia Instagram
+const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] }, p: { re: /^p:\d{4}-\d{2}-\d{2}:[0-2]$/, ch: ["si", "no"] } }; // p:<giorno>:<n>, n = quale delle proposte: se Francesco cambia domanda dal pannello, i voti restano sulla domanda a cui si riferivano // v61: p = la scommessa del giorno, la stessa domanda della storia Instagram
 const voteKind = (poll) => { const k = String(poll).slice(0, 1); const K = VOTE_KIND[k]; return K && K.re.test(poll) ? k : ""; };
 let VOTE_T = false;
 async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); await env.DB.prepare("CREATE TABLE IF NOT EXISTS polls (poll TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT NOT NULL)").run(); VOTE_T = true; }
@@ -2787,7 +2787,7 @@ async function voteApi(request, env) {
     ctx = { sid, s, day };
     if (kind === "g") { ctx.i = +poll.split(":")[2]; if (!(s.segnali || [])[ctx.i - 1]) return fail(404, "no_signal"); }
   } else if (kind === "p") {
-    const day = poll.slice(2); const q = await scommessa(env, day); if (!q) return fail(404, "no_bet");
+    const day = poll.slice(2, 12); const q = await scommessa(env, day); if (!q || q.n !== +poll.slice(13)) return fail(410, "closed"); // si vota solo la domanda scelta in questo momento
     if (Date.now() - Date.parse(day + "T00:00:00Z") > 2 * 86400000) return fail(410, "closed"); // si gioca il giorno della domanda e il giorno dopo
     ctx = { day, q };
   } else {
@@ -2951,7 +2951,8 @@ async function sondInfo(env) {
   const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
   const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
   const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
-  const PV = await voteCounts(env, ["p:" + ieri, "p:" + day], true); // voti della scommessa sul sito
+  const pi = qi ? "p:" + ieri + ":" + qi.n : "", po = q ? "p:" + day + ":" + q.n : "";
+  const PV = await voteCounts(env, [pi, po].filter(Boolean), true); // voti della scommessa sul sito (solo sulla domanda scelta)
   const todo = (await kvGet(env, "todo:" + day)) || {};
   // v61: scenari chiusi negli ultimi 10 giorni e non ancora raccontati: escono uno al giorno, in fila
   let scenari = [];
@@ -2964,9 +2965,9 @@ async function sondInfo(env) {
     scenari = T.map((x, i) => scnShape(x.id, x.t, VC[polls[i]]));
   } catch (e) {}
   const settimana = romeDow(day) === 7 ? await sondSettimana(env, day, cands, SC).catch(() => null) : null;
-  return { day, todo, scenari, settimana, scelte, scelta: q ? q.n : 0, sito: PV["p:" + day] || null,
+  return { day, todo, scenari, settimana, scelte, scelta: q ? q.n : 0, sito: (po && PV[po]) || null,
     oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null,
-    ieri: qi ? { ...qi, day: ieri, num: N[ieri], sito: PV["p:" + ieri] || null, tot: sondTot(N[ieri], PV["p:" + ieri]), riga: q && q.ieri ? q.ieri : null } : null,
+    ieri: qi ? { ...qi, day: ieri, num: N[ieri], sito: PV[pi] || null, tot: sondTot(N[ieri], PV[pi]), riga: q && q.ieri ? q.ieri : null } : null,
     sett: days.map((d) => ({ d, n: N[d] })) };
 }
 function scnShape(id, t, vt) { const sc = t.scenari; return { id, tema: t.breve || t.titolo || "", bandiere: t.bandiere || [], domanda: sc.domanda || "", orizzonte: sc.orizzonte, chiuso: sc.aggiornato, esito: sc.esito, nota_esito: sc.nota_esito || "", voci: (sc.voci || []).map((v) => ({ id: v.id, breve: v.breve || v.titolo, titolo: v.titolo, prob: v.prob, storico: v.storico || [] })), voti: vt || null }; }
@@ -2981,11 +2982,11 @@ async function sondSettimana(env, day, cands, SC) {
   const VV = []; for (const r of results || []) { let L = []; try { L = JSON.parse(r.v) || []; } catch (e) {} for (const v of L) if (v && /^\d{4}-\d{2}-\d{2}$/.test(v.data || "") && (v.n || 0) === (SC[v.data] || 0)) VV.push({ ...v, quando: r.key }); }
   const seen = new Set(); const U = VV.filter((v) => (seen.has(v.data) ? false : seen.add(v.data)));
   const dates = [...new Set(U.map((v) => v.data))];
-  const [BB, NN, PV] = await Promise.all([Promise.all(dates.map((d) => tgBriefing(env, d))), Promise.all(dates.map((d) => kvGet(env, "sond:" + d))), dates.length ? voteCounts(env, dates.map((d) => "p:" + d), true) : {}]);
+  const [BB, NN, PV] = await Promise.all([Promise.all(dates.map((d) => tgBriefing(env, d))), Promise.all(dates.map((d) => kvGet(env, "sond:" + d))), U.length ? voteCounts(env, U.map((v) => "p:" + v.data + ":" + (v.n || 0)), true) : {}]);
   const B = Object.fromEntries(dates.map((d, i) => [d, { b: BB[i], n: NN[i] }]));
   const righe = []; let tl = 0, ta = 0;
   for (const v of U) { const q = cands(B[v.data].b)[v.n || 0]; if (!q) continue; const es = v.esito === "sì" || v.esito === "si" ? "sì" : "no";
-    const tot = sondTot(B[v.data].n, PV["p:" + v.data]); const l = tot && tot.si !== 50 ? (tot.si > 50 ? "sì" : "no") === es : null;
+    const tot = sondTot(B[v.data].n, PV["p:" + v.data + ":" + (v.n || 0)]); const l = tot && tot.si !== 50 ? (tot.si > 50 ? "sì" : "no") === es : null;
     const a = q.attesa === "probabile" ? es === "sì" : q.attesa === "improbabile" ? es === "no" : null;
     if (l) tl++; if (a) ta++; if (v.quando >= da) righe.push({ tema: q.tema || "", q: q.sticker || q.titolo || "", esito: es, l, a, quando: v.quando }); }
   try { const { results: TT } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='threads' AND json_extract(data,'$.scenari.stato')='chiuso' AND json_extract(data,'$.scenari.esito') IS NOT NULL").all();
@@ -3380,7 +3381,7 @@ async function route(request, env) {
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
-  if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
+  if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d + ":" + q.n } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
   if (method === "POST" && p === "/api/vote") return await voteApi(request, env);
   if (method === "GET" && p === "/api/votes") return await votesApi(url, env);
   if (method === "POST" && (p === "/api/me" || p === "/api/newsletter")) return await nlApi(request, env, p);
