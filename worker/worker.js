@@ -644,6 +644,11 @@ async function panelApi(env, origin, b) {
   if (String(act || "").startsWith("th_")) { const r = await thPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("tg_")) { const r = await tgPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("sv_")) { const r = await svPanelApi(env, b); if (r) return r; }
+  /* v60: queste azioni stavano dentro tgPanelApi, che però riceve solo le azioni «tg_…»: non arrivavano mai */
+  if (act === "canali_set") return await canaliSet(env, b);
+  if (act === "sond_set") return await sondSet(env, b);
+  if (act === "todo_set") return await todoSet(env, b);
+  if (act === "sond_pick") return await sondPick(env, b);
   if (act === "temi") return { ok: true, temi: await richiesteTemi(env) };
   if (act === "proposte") return { ok: true, proposte: await igProposte(env, !!b.force), scelte: await igScelte(env) };
   if (act === "scelta_set") {
