@@ -2522,7 +2522,7 @@ async function richiesteTemi(env) { // suggerimenti per il modulo Richieste: agg
 // ============ TELEGRAM (v33): canale con il mattino (60 secondi + puntata) e i post di Instagram ============
 // Secret TG_BOT_TOKEN (da @BotFather). Il bot è amministratore del canale; il nome del canale (@...) si imposta dal pannello.
 const RG_ORIGIN = "https://rg-api.briefinghub.workers.dev";
-const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", sera: true, ora_sera: "20:15", bilancio: true, ora_bil: "18:00", dossier: true };
+const TG_DEFAULT = { chat: "", mattino: true, ora: "08:00", post: false, divergenze: true, ora_div: "12:30", sera: true, ora_sera: "20:15", bilancio: true, ora_bil: "10:00", dossier: true };
 async function tgSettings(env) { return { ...TG_DEFAULT, ...((await kvGet(env, "tg_settings")) || {}) }; }
 async function tgCall(env, method, body) {
   if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
@@ -2578,7 +2578,9 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
   if (!d) throw { status: 404, code: "draft_not_found" };
   const x = { id, status: "invio", by, at: new Date().toISOString() };
   try {
-    const cap = tgClip(esc(thCaption(d.caption)), 900) + '\n\n<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
+    // v61: sul canale solo il titolo del post (la prima riga della didascalia) e il link: il resto ripete il mattino
+    const tit = String(thCaption(d.caption) || "").split("\n").map((x) => x.trim()).find(Boolean) || "";
+    const cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + '<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
     let r;
     if (d.type === "reel" && d.video_url) r = await tgCall(env, "sendVideo", { chat_id: st.chat, video: d.video_url, caption: cap, parse_mode: "HTML", supports_streaming: true });
     else {
@@ -2611,8 +2613,8 @@ async function tgSeraData(env, day) {
 function tgSeraText(A, day) {
   const d = new Date(day + "T12:00:00Z"); const gg = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"][d.getUTCDay()];
   let msg = "<b>Dalle ultime ore</b> · " + gg + " " + d.getUTCDate() + " " + IT_MM[d.getUTCMonth()] + "\nCosa è cambiato dopo il briefing del mattino:\n\n";
-  msg += A.slice(0, 6).map((x) => "• <b>" + esc(x.ora || "") + "</b> " + (x.tipo === "svolta" ? "<b>Svolta</b> · " : "") + esc(tgClip(x.titolo || x.testo, 140))).join("\n");
-  if (A.length > 6) msg += "\n<i>e altri " + (A.length - 6) + " sul sito</i>";
+  msg += A.slice(0, 4).map((x) => "• <b>" + esc(x.ora || "") + "</b> " + (x.tipo === "svolta" ? "<b>Svolta</b> · " : "") + esc(tgClip(x.titolo || x.testo, 140))).join("\n");
+  if (A.length > 4) msg += "\n<i>e altri " + (A.length - 4) + " sul sito</i>";
   return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=sera#aggiornamenti\">I dettagli e le fonti sul sito</a>";
 }
 async function tgSera(env, force) {
@@ -2818,7 +2820,7 @@ function bilancioText(B) {
   const n = (x) => (x || []).length;
   let msg = "<b>Com'è andata la settimana</b>\nSotto ogni storia indichiamo cosa osservare: i fatti che dicono da che parte andrà. Ecco da che parte sono andati.\n\n" +
     "Questa settimana " + (n(B.ok) + n(B.alt) + n(B.fermi)) + " segnali sono arrivati a scadenza:\n🟢 " + n(B.ok) + " sono successi · 🔀 " + n(B.alt) + " sono andati diversamente · ⚪ " + n(B.fermi) + " non si sono mossi" + (B.open ? "\n(" + B.open + " sono ancora aperti)" : "");
-  const S = B.scelti || [];
+  const S = (B.scelti || []).slice(0, 2); // v61: due fatti da ricordare, non quattro
   if (S.length) msg += "\n\n<b>Da ricordare</b>\n" + S.map((v) => (v.esito === "avvenuto" ? "🟢 " : "🔀 ") + (v.tema ? "<b>" + esc(v.tema) + "</b> · " : "") + esc(tgClip(v.nota || v.segnale, 200)) + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
   if ((B.scen || []).length) msg += "\n\n<b>Gli scenari</b>\n" + B.scen.slice(0, 4).map((s) => "📊 " + esc(tgClip(s.domanda || s.titolo || "", 160)) + "\nÈ andata: <b>" + esc(tgClip(s.esito_titolo || "—", 120)) + "</b>" + (s.esito_prob != null ? "\n<i>L'agente gli dava il " + s.esito_prob + "%" + (s.lettori != null ? ", i lettori il " + s.lettori + "%" : "") + "</i>" : "")).join("\n\n");
   return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
