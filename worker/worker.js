@@ -1112,10 +1112,11 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row" style="margin-top:10px"><label><input type="checkbox" id="ml-en"> invio acceso</label><select id="ml-mode"><option value="test">solo prova (a un indirizzo)</option><option value="live">reale (iscritti con consenso)</option></select></div>
 <div class="row" style="margin-top:8px"><label><input type="checkbox" id="ml-cp"> ricevi anche tu una copia di ogni invio reale</label></div>
 <div class="row" style="margin-top:8px"><input id="ml-te" placeholder="la tua email (prova e copia dell'invio reale)" style="flex:1;min-width:0"><span>ora</span><input type="number" id="ml-h" min="5" max="20" style="width:64px"></div>
+<div class="row" style="margin-top:8px"><span>invio reale</span><select id="ml-via"><option value="batch">email singole (max 100 al giorno)</option><option value="broadcast">broadcast Resend (senza tetto giornaliero)</option></select></div>
 <div class="row" style="margin-top:8px"><span>a scaglioni di</span><input type="number" id="ml-b" min="1" max="100" style="width:70px"><span>max al giorno</span><input type="number" id="ml-c" min="1" max="100" style="width:70px"></div>
 <div class="row" style="margin-top:8px"><input id="ml-p" placeholder="indirizzo dell'informativa privacy (https://…)" style="flex:1;min-width:0"></div>
 <div class="row" style="margin-top:8px"><textarea id="ml-t" rows="2" placeholder="testo esatto della casella newsletter (viene salvato con ogni nuovo consenso)" style="flex:1;min-width:0"></textarea></div>
-<div class="row" style="margin-top:10px"><button class="g" id="ml-s">Salva</button><button class="g" id="ml-pv">Anteprima</button><button class="g" id="ml-t1">Invia prova a me</button></div>
+<div class="row" style="margin-top:10px"><button class="g" id="ml-s">Salva</button><button class="g" id="ml-pv">Anteprima</button><button class="g" id="ml-t1">Invia prova a me</button><button class="g" id="ml-t2">Prova broadcast a me</button></div>
 <div id="ml-m" class="sub" style="margin-top:8px"></div><div id="ml-l" class="sub" style="margin-top:4px"></div></div></div></main><div id="lb"><button class="x" aria-label="Chiudi">×</button><button class="a p" aria-label="Precedente">‹</button><img alt=""><button class="a f" aria-label="Successiva">›</button><div class="n"></div></div>
 <script>
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/ig/sw.js",{scope:"/ig/"}).catch(()=>{});
@@ -1541,7 +1542,7 @@ async function load(){
 async function loadMail(){
  const d=await api({action:"mail_get"});
  if(!d.ok){document.getElementById("mlst").textContent="errore";return}
- const c=d.cfg;document.getElementById("ml-en").checked=!!c.enabled;document.getElementById("ml-cp").checked=c.copy!==false;document.getElementById("ml-mode").value=c.mode;
+ const c=d.cfg;document.getElementById("ml-en").checked=!!c.enabled;document.getElementById("ml-cp").checked=c.copy!==false;document.getElementById("ml-mode").value=c.mode;document.getElementById("ml-via").value=c.via||"batch";
  document.getElementById("ml-te").value=c.test_email||"";document.getElementById("ml-h").value=c.hour;document.getElementById("ml-b").value=c.batch;document.getElementById("ml-c").value=c.daily_cap;
  document.getElementById("ml-p").value=c.privacy_url||"";document.getElementById("ml-t").value=c.consent_text||"";
  document.getElementById("mlst").textContent=(c.enabled?"ACCESO ("+(c.mode==="live"?"reale":"prova")+")":"spento")+" · "+d.stats.attivi+" con consenso · "+d.stats.disiscritti+" disiscritti · oggi inviate "+d.stats.inviate_oggi;
@@ -1561,12 +1562,14 @@ document.getElementById("mbar").onclick=()=>{setTab("ut");document.getElementByI
 document.getElementById("ml-log").addEventListener("toggle",loadLog);
 async function saveMail(){
  const g=i=>document.getElementById(i);
- const r=await api({action:"mail_set",cfg:{enabled:g("ml-en").checked,copy:g("ml-cp").checked,mode:g("ml-mode").value,test_email:g("ml-te").value,hour:g("ml-h").value,batch:g("ml-b").value,daily_cap:g("ml-c").value,privacy_url:g("ml-p").value,consent_text:g("ml-t").value}});
+ const r=await api({action:"mail_set",cfg:{enabled:g("ml-en").checked,copy:g("ml-cp").checked,mode:g("ml-mode").value,via:g("ml-via").value,test_email:g("ml-te").value,hour:g("ml-h").value,batch:g("ml-b").value,daily_cap:g("ml-c").value,privacy_url:g("ml-p").value,consent_text:g("ml-t").value}});
  if(!r.ok){g("ml-m").textContent=r.error==="serve_informativa_privacy"?"Non salvato: per l'invio reale serve l'indirizzo dell'informativa privacy.":r.error==="indirizzo_non_valido"?"Non salvato: l'indirizzo dell'informativa non è valido.":"Errore: "+(r.error||"");return false}
  const c=r.cfg;g("ml-p").value=c.privacy_url||"";g("ml-t").value=c.consent_text||"";
  g("ml-m").textContent="Salvato ✓ "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});loadMail();loadLog();return true}
 document.getElementById("ml-s").onclick=saveMail;
-["ml-en","ml-cp","ml-mode","ml-te","ml-h","ml-b","ml-c","ml-p","ml-t"].forEach(i=>document.getElementById(i).addEventListener("change",saveMail));
+["ml-en","ml-cp","ml-mode","ml-via","ml-te","ml-h","ml-b","ml-c","ml-p","ml-t"].forEach(i=>document.getElementById(i).addEventListener("change",saveMail));
+document.getElementById("ml-t2").onclick=async e=>{e.target.disabled=true;const r=await api({action:"mail_test_bc",to:document.getElementById("ml-te").value});e.target.disabled=false;
+ document.getElementById("ml-m").textContent=r.ok?"Broadcast di prova partito (briefing del "+r.date+"): arriva solo a te. Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?")};
 document.getElementById("ml-pv").onclick=()=>{window.open("/ig/mail/preview?k="+encodeURIComponent(K),"_blank")};
 document.getElementById("ml-t1").onclick=async e=>{e.target.disabled=true;const r=await api({action:"mail_test",to:document.getElementById("ml-te").value});e.target.disabled=false;
  document.getElementById("ml-m").textContent=r.ok?"Prova inviata (briefing del "+r.date+"). Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?");loadLog()};
@@ -3850,7 +3853,7 @@ const MAIL_TXT = "READ GEOPOLITICS · Il briefing quotidiano · {{date_long}}\n\
 const POD_SPOTIFY = "https://open.spotify.com/show/5cozVJfZphY5ivF1GdUCcU";
 const MAIL_SITE = "https://www.readgeopolitics.com";
 const MAIL_API = "https://rg-api.briefinghub.workers.dev";
-const MAIL_DEFAULT = { copy: true, enabled: false, mode: "test", test_email: "", hour: 8, batch: 50, daily_cap: 90, privacy_url: "", consent_text: "", from: "Read Geopolitics <hello@readgeopolitics.com>", reply_to: "hello@readgeopolitics.com" };
+const MAIL_DEFAULT = { copy: true, enabled: false, mode: "test", test_email: "", hour: 8, batch: 50, daily_cap: 90, via: "batch", privacy_url: "", consent_text: "", from: "Read Geopolitics <hello@readgeopolitics.com>", reply_to: "hello@readgeopolitics.com" };
 let MAIL_SCHEMA_OK = false;
 const MAIL_POD_WAIT = 30; // minuti di attesa massima della puntata del giorno
 
@@ -4034,6 +4037,123 @@ function mailMsg(c, cfg, to, token) {
   };
 }
 
+// ---- v66: broadcast Resend (newsletter a un segmento: non conta nel tetto di 100 email singole al giorno) ----
+const RS_API = "https://api.resend.com";
+async function rsApi(env, method, path, body) {
+  const r = await fetch(RS_API + path, { method, headers: { authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) {}
+  if (!r.ok) { const e = new Error("Resend " + r.status + " " + ((j && (j.message || j.name)) || t).toString().slice(0, 200)); e.rs = r.status; throw e; }
+  return j || {};
+}
+// segmento per nome, creato se manca; l'id resta in KV
+async function rsSegment(env, name) {
+  const key = "rs_seg:" + name;
+  const have = await kvGet(env, key);
+  if (have && have.id) return have.id;
+  const l = await rsApi(env, "GET", "/segments?limit=100");
+  const f = (l.data || []).find((x) => x.name === name);
+  const id = f ? f.id : (await rsApi(env, "POST", "/segments", { name })).id;
+  if (!id) throw new Error("Resend: segmento non creato");
+  await kvSet(env, key, { id });
+  return id;
+}
+async function rsContacts(env, segId) {
+  const m = new Map(); let after = null, guard = 0;
+  do {
+    const l = await rsApi(env, "GET", `/contacts?limit=100&segment_id=${encodeURIComponent(segId)}` + (after ? `&after=${encodeURIComponent(after)}` : ""));
+    const d = l.data || [];
+    for (const c of d) if (c && c.email) m.set(String(c.email).toLowerCase(), c);
+    after = l.has_more && d.length ? d[d.length - 1].id : null;
+  } while (after && ++guard < 20);
+  return m;
+}
+// mette un indirizzo nel segmento (crea il contatto se non esiste)
+async function rsAdd(env, email, segId) {
+  try { await rsApi(env, "POST", "/contacts", { email, unsubscribed: false, segments: [{ id: segId }] }); }
+  catch (e) { await rsApi(env, "POST", `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segId)}`); }
+}
+// stato di iscrizione su Resend quando cambia sul sito (ri-adesione o disiscrizione); se il contatto non c'è ancora non fa nulla
+async function rsPush(env, email, on) {
+  if (!env.RESEND_API_KEY || !email) return;
+  try { await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(String(email).toLowerCase())}`, { unsubscribed: !on }); } catch (e) {}
+}
+// allinea il segmento agli iscritti con consenso. Chi si è disiscritto dal link di Resend viene disiscritto anche qui.
+// Al massimo `budget` scritture per giro: restituisce quante ne mancano.
+async function rsSync(env, segId, budget) {
+  const have = await rsContacts(env, segId);
+  const users = (await env.DB.prepare("SELECT id, email, unsub_at FROM users WHERE email IS NOT NULL AND newsletter_at IS NOT NULL").all()).results || [];
+  let used = 0, left = 0, add = 0, off = 0, back = 0;
+  const now = new Date().toISOString();
+  for (const u of users) {
+    const e = String(u.email).trim().toLowerCase();
+    if (!EMAIL_RE.test(e)) continue;
+    const want = !u.unsub_at, c = have.get(e);
+    if (c && c.unsubscribed && want) { await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1 AND unsub_at IS NULL").bind(u.id, now).run(); back++; continue; }
+    const job = (!c && want) ? "add" : (c && !c.unsubscribed && !want) ? "off" : null;
+    if (!job) continue;
+    if (used >= budget) { left++; continue; }
+    used++;
+    try { if (job === "add") { await rsAdd(env, e, segId); add++; } else { await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(e)}`, { unsubscribed: true }); off++; } }
+    catch (err) { left++; }
+  }
+  return { left, add, off, back, total: users.filter((u) => !u.unsub_at).length - back };
+}
+async function rsBroadcast(env, segId, c, cfg, name) {
+  const u = "{{{RESEND_UNSUBSCRIBE_URL}}}";
+  const b = await rsApi(env, "POST", "/broadcasts", { segment_id: segId, from: cfg.from, reply_to: cfg.reply_to, subject: c.subject, html: c.html.split("@@UNSUB@@").join(u), text: c.text.split("@@UNSUB@@").join(u), name, send: true });
+  return b.id;
+}
+const RS_SEG_LIVE = "Read Geopolitics · iscritti", RS_SEG_TEST = "Read Geopolitics · prova";
+// invio reale via broadcast: un solo invio al giorno, dopo aver allineato i contatti
+async function mailTickBroadcast(env, cfg, src, today) {
+  const key = "mail_bc:" + today;
+  const st = (await kvGet(env, key)) || {};
+  if (st.id || st.sending) return;
+  if ((st.tries || 0) >= 3) return;
+  const seg = await rsSegment(env, RS_SEG_LIVE);
+  const sy = await rsSync(env, seg, 30);
+  if (sy.left) { await kvSet(env, "mail_last", { ts: new Date().toISOString(), ok: true, msg: `allineo i contatti su Resend: ${sy.add} aggiunti, ne mancano ${sy.left}` }); return; }
+  await kvSet(env, key, { ...st, sending: new Date().toISOString() });
+  const c = mailCompose(src, cfg);
+  let id = null, err = null;
+  try { id = await rsBroadcast(env, seg, c, cfg, "Mattino " + today); } catch (e) { err = String(e.message || e); }
+  const ts = new Date().toISOString();
+  if (!id) {
+    await kvSet(env, key, { tries: (st.tries || 0) + 1, err, ts });
+    await kvSet(env, "mail_last", { ts, ok: false, msg: "broadcast non partito: " + err });
+    return;
+  }
+  await kvSet(env, key, { id, ts, n: sy.total });
+  const rc = (await env.DB.prepare("SELECT id FROM users WHERE newsletter_at IS NOT NULL AND unsub_at IS NULL AND email IS NOT NULL").all()).results || [];
+  for (let i = 0; i < rc.length; i += 50) await env.DB.batch(rc.slice(i, i + 50).map((r) => env.DB.prepare("INSERT OR REPLACE INTO mail_log (date,user_id,ts,ok,err) VALUES (?1,?2,?3,1,'broadcast')").bind(today, r.id, ts)));
+  let copia = "";
+  const t = String(cfg.test_email || "").trim().toLowerCase();
+  if (cfg.copy && EMAIL_RE.test(t)) {
+    const sub = await env.DB.prepare("SELECT 1 AS x FROM users WHERE email=?1 AND newsletter_at IS NOT NULL AND unsub_at IS NULL").bind(t).first();
+    if (!sub) {
+      const r = await mailSend(env, [mailMsg({ ...c, subject: "[COPIA " + today.slice(8) + "/" + today.slice(5, 7) + "] " + c.subject }, cfg, t, "prova")], `rg-${today}-copy-bc`);
+      await env.DB.prepare("INSERT OR REPLACE INTO mail_log (date,user_id,ts,ok,err) VALUES (?1,'copy',?2,?3,?4)").bind(today, ts, r.ok ? 1 : 0, r.ok ? null : String(r.error).slice(0, 240)).run();
+      if (r.ok) copia = " + 1 copia a te";
+    }
+  }
+  await kvSet(env, "mail_last", { ts, ok: true, n: rc.length, msg: `broadcast inviato a ${rc.length} iscritti${copia} (reale)` });
+}
+// prova: un broadcast vero, ma a un segmento che contiene solo il tuo indirizzo
+async function mailTestBroadcast(env, cfg, to) {
+  const seg = await rsSegment(env, RS_SEG_TEST);
+  const have = await rsContacts(env, seg);
+  for (const [e] of have) if (e !== to) { try { await rsApi(env, "DELETE", `/contacts/${encodeURIComponent(e)}/segments/${encodeURIComponent(seg)}`); } catch (x) {} }
+  const c0 = have.get(to);
+  if (!c0) await rsAdd(env, to, seg);
+  else if (c0.unsubscribed) throw { status: 422, code: "il tuo indirizzo risulta disiscritto su Resend" };
+  const src = await mailBriefing(env, null);
+  if (!src) throw { status: 422, code: "nessun_briefing" };
+  const c = mailCompose(src, cfg);
+  c.subject = "[PROVA BROADCAST " + new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" }).format(new Date()) + "] " + c.subject;
+  const id = await rsBroadcast(env, seg, c, cfg, "Prova " + new Date().toISOString().slice(0, 16));
+  return { id, date: src.date };
+}
+
 async function mailStats(env) {
   await mailSchema(env);
   const a = await env.DB.prepare("SELECT SUM(CASE WHEN newsletter_at IS NOT NULL AND unsub_at IS NULL THEN 1 ELSE 0 END) AS attivi, SUM(CASE WHEN unsub_at IS NOT NULL THEN 1 ELSE 0 END) AS disiscritti FROM users").first();
@@ -4060,6 +4180,7 @@ async function mailTick(env) {
     const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date()).split(":").map(Number);
     if (hm[0] * 60 + hm[1] < cfg.hour * 60 + MAIL_POD_WAIT) return;
   }
+  if (live && cfg.via === "broadcast") return mailTickBroadcast(env, cfg, src, today);
   let rcpt;
   if (live) {
     const room = Math.max(0, cfg.daily_cap - ((done && done.n) || 0));
@@ -4096,6 +4217,7 @@ async function nlConsent(env, id, now, text) {
   if (!cur) return false;
   if (cur.newsletter_at && !cur.unsub_at) return true;
   await env.DB.prepare("UPDATE users SET newsletter_at=?2, unsub_at=NULL, consent_text=?3 WHERE id=?1").bind(id, now, text || null).run();
+  if (cur.unsub_at) { const q = await env.DB.prepare("SELECT email FROM users WHERE id=?1").bind(id).first(); await rsPush(env, q && q.email, true); }
   return true;
 }
 async function nlApi(request, env, p) {
@@ -4110,7 +4232,8 @@ async function nlApi(request, env, p) {
   }
   if (b.off === true) { // disiscrizione dal pannello «Il mio Read»
     const r = await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1 AND unsub_at IS NULL").bind(id, new Date().toISOString()).run();
-    const q = await env.DB.prepare("SELECT 1 AS x FROM users WHERE id=?1").bind(id).first();
+    const q = await env.DB.prepare("SELECT email FROM users WHERE id=?1").bind(id).first();
+    if (q) await rsPush(env, q.email, false);
     return q ? json({ ok: true, newsletter: false }) : fail(404, "unknown_user");
   }
   const ok = await nlConsent(env, id, new Date().toISOString(), clip(b.consent_text, 500));
@@ -4146,11 +4269,11 @@ async function seguiApi(request, env) {
 async function mailUnsub(request, env, token) {
   await mailSchema(env);
   const okTok = /^[0-9a-f]{32}$/.test(token);
-  const u = okTok ? await env.DB.prepare("SELECT id, unsub_at FROM users WHERE unsub_token=?1").bind(token).first() : null;
+  const u = okTok ? await env.DB.prepare("SELECT id, email, unsub_at FROM users WHERE unsub_token=?1").bind(token).first() : null;
   const page = (h, st = 200) => new Response(`<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Read Geopolitics</title><body style="margin:0;background:#0a1020;color:#e6ecf7;font:17px/1.55 system-ui,Segoe UI,Helvetica,Arial,sans-serif"><main style="max-width:520px;margin:12vh auto;padding:0 22px"><div style="font-weight:700;letter-spacing:.5px;color:#fff;font-size:22px">READ GEOPOLITICS</div><div style="height:1px;background:#f5b04c;margin:14px 0 26px"></div>${h}</main></body></html>`, { status: st, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
   if (!u) return page("<p>Questo link non è valido o è scaduto.</p><p>Per qualsiasi richiesta scrivi a <a style='color:#f5b04c' href='mailto:hello@readgeopolitics.com'>hello@readgeopolitics.com</a>.</p>", 404);
   if (request.method === "POST") {
-    if (!u.unsub_at) await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1").bind(u.id, new Date().toISOString()).run();
+    if (!u.unsub_at) { await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1").bind(u.id, new Date().toISOString()).run(); await rsPush(env, u.email, false); }
     const body = await request.text().catch(() => "");
     if (/List-Unsubscribe=One-Click/i.test(body)) return new Response("ok", { status: 200 });
     return page("<h1 style='font-size:24px;margin:0 0 10px'>Disiscrizione completata</h1><p>Non riceverai più la newsletter di Read Geopolitics. Puoi continuare a usare il sito come prima.</p><p style='color:#8fa0bd;font-size:14px'>Per cancellare anche i tuoi dati scrivi a hello@readgeopolitics.com.</p>");
@@ -4184,6 +4307,7 @@ async function mailPanel(env, b) {
     if (typeof i.enabled === "boolean") n.enabled = i.enabled;
     if (typeof i.copy === "boolean") n.copy = i.copy;
     if (i.mode === "test" || i.mode === "live") n.mode = i.mode;
+    if (i.via === "batch" || i.via === "broadcast") n.via = i.via;
     if (typeof i.test_email === "string") n.test_email = i.test_email.trim().slice(0, 254);
     if (typeof i.privacy_url === "string") {
       let u = i.privacy_url.trim();
@@ -4198,6 +4322,14 @@ async function mailPanel(env, b) {
     if (n.mode === "live" && n.enabled && !n.privacy_url) throw { status: 422, code: "serve_informativa_privacy" };
     await kvSet(env, "mail_cfg", n);
     return { ok: true, cfg: n };
+  }
+  if (b.action === "mail_test_bc") {
+    const cfg = await mailCfg(env);
+    const to = String(b.to || cfg.test_email || "").trim().toLowerCase();
+    if (!EMAIL_RE.test(to)) throw { status: 422, code: "email_prova_mancante" };
+    if (!env.RESEND_API_KEY) throw { status: 422, code: "manca RESEND_API_KEY" };
+    try { const r = await mailTestBroadcast(env, cfg, to); return { ok: true, ...r }; }
+    catch (e) { if (e && e.code) throw e; return { ok: false, error: String((e && e.message) || e) }; }
   }
   if (b.action === "mail_test") {
     const cfg = await mailCfg(env);
