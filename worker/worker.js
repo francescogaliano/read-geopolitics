@@ -4125,8 +4125,8 @@ const RS_SEG_LIVE = "Read Geopolitics · iscritti", RS_SEG_TEST = "Read Geopolit
 async function mailTickBroadcast(env, cfg, src, today) {
   const key = "mail_bc:" + today;
   const st = (await kvGet(env, key)) || {};
-  if (st.id || st.sending) return;
-  if (st.gia && st.synced) return;
+  if (st.id || (st.gia && st.synced)) return mailCatchUp(env, cfg, src, today);
+  if (st.sending) return;
   if ((st.tries || 0) >= 3) return;
   const seg = await rsSegment(env, RS_SEG_LIVE);
   const sy = await rsSync(env, seg, 30);
@@ -4162,6 +4162,16 @@ async function mailTickBroadcast(env, cfg, src, today) {
     }
   }
   await kvSet(env, "mail_last", { ts, ok: true, n: rc.length, msg: `broadcast inviato a ${rc.length} iscritti${copia} (reale)` });
+}
+// chi si iscrive dopo il broadcast del mattino riceve l'email di oggi da sola (email singola, come prima del passaggio ai broadcast)
+async function mailCatchUp(env, cfg, src, today) {
+  const rc = (await env.DB.prepare("SELECT id, email, unsub_token FROM users WHERE newsletter_at IS NOT NULL AND unsub_at IS NULL AND unsub_token IS NOT NULL AND email IS NOT NULL AND id NOT IN (SELECT user_id FROM mail_log WHERE date=?1 AND ok=1) ORDER BY newsletter_at LIMIT 20").bind(today).all()).results || [];
+  if (!rc.length) return;
+  const c = mailCompose(src, cfg);
+  const res = await mailSend(env, rc.map((r) => mailMsg(c, cfg, r.email, r.unsub_token)), `rg-${today}-late-${rc[0].id}-${rc.length}`);
+  const ts = new Date().toISOString();
+  await env.DB.batch(rc.map((r) => env.DB.prepare("INSERT OR REPLACE INTO mail_log (date,user_id,ts,ok,err) VALUES (?1,?2,?3,?4,?5)").bind(today, r.id, ts, res.ok ? 1 : 0, res.ok ? null : String(res.error).slice(0, 240))));
+  await kvSet(env, "mail_last", { ts, ok: res.ok, n: rc.length, msg: res.ok ? `inviata a ${rc.length} nuov${rc.length === 1 ? "o iscritto" : "i iscritti"} (email singola, dopo il broadcast)` : res.error });
 }
 // prova: un broadcast vero, ma a un segmento che contiene solo il tuo indirizzo
 async function mailTestBroadcast(env, cfg, to) {
