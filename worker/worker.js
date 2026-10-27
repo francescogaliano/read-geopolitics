@@ -4067,10 +4067,21 @@ async function rsContacts(env, segId) {
   } while (after && ++guard < 20);
   return m;
 }
-// mette un indirizzo nel segmento (crea il contatto se non esiste)
-async function rsAdd(env, email, segId) {
-  try { await rsApi(env, "POST", "/contacts", { email, unsubscribed: false, segments: [{ id: segId }] }); }
-  catch (e) { await rsApi(env, "POST", `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segId)}`); }
+// proprietà del contatto con il token della NOSTRA pagina di disiscrizione (il link nell'email resta su readgeopolitics)
+async function rsProp(env) {
+  if (await kvGet(env, "rs_prop_tok")) return;
+  try { await rsApi(env, "POST", "/contact-properties", { key: "rg_token", type: "string", fallback_value: "x" }); }
+  catch (e) { if (!/exist|already|duplic/i.test(String(e.message)) && e.rs !== 409) throw e; }
+  await kvSet(env, "rs_prop_tok", { ok: true });
+}
+// mette un indirizzo nel segmento (crea il contatto se non esiste) con il suo token di disiscrizione
+async function rsAdd(env, email, segId, tok) {
+  const properties = { rg_token: tok || "x" };
+  try { await rsApi(env, "POST", "/contacts", { email, unsubscribed: false, segments: [{ id: segId }], properties }); }
+  catch (e) {
+    await rsApi(env, "POST", `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segId)}`);
+    await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(email)}`, { properties });
+  }
 }
 // stato di iscrizione su Resend quando cambia sul sito (ri-adesione o disiscrizione); se il contatto non c'è ancora non fa nulla
 async function rsPush(env, email, on) {
@@ -4080,8 +4091,10 @@ async function rsPush(env, email, on) {
 // allinea il segmento agli iscritti con consenso. Chi si è disiscritto dal link di Resend viene disiscritto anche qui.
 // Al massimo `budget` scritture per giro: restituisce quante ne mancano.
 async function rsSync(env, segId, budget) {
+  await rsProp(env);
   const have = await rsContacts(env, segId);
-  const users = (await env.DB.prepare("SELECT id, email, unsub_at FROM users WHERE email IS NOT NULL AND newsletter_at IS NOT NULL").all()).results || [];
+  const users = (await env.DB.prepare("SELECT id, email, unsub_at, unsub_token FROM users WHERE email IS NOT NULL AND newsletter_at IS NOT NULL").all()).results || [];
+  const tk = (await kvGet(env, "rs_tok")) || {}; let tkd = false;
   let used = 0, left = 0, add = 0, off = 0, back = 0;
   const now = new Date().toISOString();
   for (const u of users) {
@@ -4089,17 +4102,21 @@ async function rsSync(env, segId, budget) {
     if (!EMAIL_RE.test(e)) continue;
     const want = !u.unsub_at, c = have.get(e);
     if (c && c.unsubscribed && want) { await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1 AND unsub_at IS NULL").bind(u.id, now).run(); back++; continue; }
-    const job = (!c && want) ? "add" : (c && !c.unsubscribed && !want) ? "off" : null;
+    const job = (!c && want) ? "add" : (c && !c.unsubscribed && !want) ? "off" : (c && want && u.unsub_token && tk[e] !== u.unsub_token) ? "tok" : null;
     if (!job) continue;
     if (used >= budget) { left++; continue; }
     used++;
-    try { if (job === "add") { await rsAdd(env, e, segId); add++; } else { await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(e)}`, { unsubscribed: true }); off++; } }
-    catch (err) { left++; }
+    try {
+      if (job === "add") { await rsAdd(env, e, segId, u.unsub_token); tk[e] = u.unsub_token; tkd = true; add++; }
+      else if (job === "tok") { await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(e)}`, { properties: { rg_token: u.unsub_token } }); tk[e] = u.unsub_token; tkd = true; }
+      else { await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(e)}`, { unsubscribed: true }); off++; }
+    } catch (err) { left++; }
   }
+  if (tkd) await kvSet(env, "rs_tok", tk);
   return { left, add, off, back, total: users.filter((u) => !u.unsub_at).length - back };
 }
 async function rsBroadcast(env, segId, c, cfg, name) {
-  const u = "{{{RESEND_UNSUBSCRIBE_URL}}}";
+  const u = MAIL_API + "/u/{{{contact.rg_token|x}}}"; // la nostra pagina di disiscrizione, con il token di ciascun iscritto
   const b = await rsApi(env, "POST", "/broadcasts", { segment_id: segId, from: cfg.from, reply_to: cfg.reply_to, subject: c.subject, html: c.html.split("@@UNSUB@@").join(u), text: c.text.split("@@UNSUB@@").join(u), name, send: true });
   return b.id;
 }
@@ -4151,9 +4168,13 @@ async function mailTestBroadcast(env, cfg, to) {
   const seg = await rsSegment(env, RS_SEG_TEST);
   const have = await rsContacts(env, seg);
   for (const [e] of have) if (e !== to) { try { await rsApi(env, "DELETE", `/contacts/${encodeURIComponent(e)}/segments/${encodeURIComponent(seg)}`); } catch (x) {} }
+  await rsProp(env);
+  const me = await env.DB.prepare("SELECT unsub_token FROM users WHERE email=?1 AND unsub_token IS NOT NULL").bind(to).first();
+  const tok = (me && me.unsub_token) || "prova";
   const c0 = have.get(to);
-  if (!c0) await rsAdd(env, to, seg);
-  else if (c0.unsubscribed) throw { status: 422, code: "il tuo indirizzo risulta disiscritto su Resend" };
+  if (c0 && c0.unsubscribed) throw { status: 422, code: "il tuo indirizzo risulta disiscritto su Resend" };
+  if (!c0) await rsAdd(env, to, seg, tok);
+  else await rsApi(env, "PATCH", `/contacts/${encodeURIComponent(to)}`, { properties: { rg_token: tok } });
   const src = await mailBriefing(env, null);
   if (!src) throw { status: 422, code: "nessun_briefing" };
   const c = mailCompose(src, cfg);
