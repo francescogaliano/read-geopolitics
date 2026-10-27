@@ -4109,9 +4109,17 @@ async function mailTickBroadcast(env, cfg, src, today) {
   const key = "mail_bc:" + today;
   const st = (await kvGet(env, key)) || {};
   if (st.id || st.sending) return;
+  if (st.gia && st.synced) return;
   if ((st.tries || 0) >= 3) return;
   const seg = await rsSegment(env, RS_SEG_LIVE);
   const sy = await rsSync(env, seg, 30);
+  // se oggi l'email è già partita come email singole (passaggio a metà giornata), allinea i contatti ma non rimanda nulla
+  const gia = await env.DB.prepare("SELECT COUNT(*) AS n FROM mail_log WHERE date=?1 AND ok=1 AND user_id NOT IN ('test','copy') AND (err IS NULL OR err<>'broadcast')").bind(today).first();
+  if (gia && gia.n) {
+    if (!sy.left) await kvSet(env, key, { gia: true, synced: true });
+    await kvSet(env, "mail_last", { ts: new Date().toISOString(), ok: true, msg: sy.left ? `allineo i contatti su Resend: ne mancano ${sy.left}` : `contatti allineati su Resend (${sy.total}); oggi l'email era già partita, il primo broadcast parte domani` });
+    return;
+  }
   if (sy.left) { await kvSet(env, "mail_last", { ts: new Date().toISOString(), ok: true, msg: `allineo i contatti su Resend: ${sy.add} aggiunti, ne mancano ${sy.left}` }); return; }
   await kvSet(env, key, { ...st, sending: new Date().toISOString() });
   const c = mailCompose(src, cfg);
