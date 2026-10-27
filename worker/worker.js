@@ -569,7 +569,19 @@ async function draftCreate(env, origin, b) {
   const f = st.formats[format] || { mode: "approva", time: "08:30" };
   const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400), ...(typeof b.th_domanda === "string" && b.th_domanda.trim() ? { th_domanda: b.th_domanda.trim().slice(0, 500) } : {}) };
   await kvSet(env, "draft:" + id, d);
+  if (format === "daily" && b.sond_post && typeof b.sond_post === "object") await sondPostSet(env, date, b.sond_post).catch(() => {});
   return d;
+}
+/* v62: la domanda di previsione sulla storia del post del giorno, scritta dalla routine Instagram insieme alla bozza: diventa la quinta proposta (n = 4) */
+async function sondPostSet(env, date, q) {
+  const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
+  const sticker = t(q.sticker, 60), scad = String(q.scadenza || "");
+  if (sticker.length < 8 || !/^\d{4}-\d{2}-\d{2}$/.test(scad) || scad < date) return;
+  const url = t(q.fonte && q.fonte.url, 300);
+  const P = (await kvGet(env, "sond_post")) || {};
+  P[date] = { tema: t(q.tema, 30), sticker, titolo: t(q.titolo, 160) || sticker, a: t(q.a, 20) || "Sì", b: t(q.b, 20) || "No", scadenza: scad, contesto: t(q.contesto, 180), perche: t(q.perche, 200), storia_id: t(q.storia_id, 40), attesa: ["probabile", "improbabile", "incerto"].includes(q.attesa) ? q.attesa : "", fonte: /^https:\/\//.test(url) ? { nome: t(q.fonte.nome, 40) || "fonte", url } : null };
+  const lim = new Date(Date.parse(date + "T12:00:00Z") - 90 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(P)) if (d < lim) delete P[d];
+  await kvSet(env, "sond_post", P);
 }
 async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: controlla e pubblica se pronto
   const d = await kvGet(env, "draft:" + id);
@@ -649,6 +661,7 @@ async function panelApi(env, origin, b) {
   if (act === "sond_set") return await sondSet(env, b);
   if (act === "todo_set") return await todoSet(env, b);
   if (act === "sond_pick") return await sondPick(env, b);
+  if (act === "sond_mia") return await sondMia(env, b);
   if (act === "temi") return { ok: true, temi: await richiesteTemi(env) };
   if (act === "proposte") return { ok: true, proposte: await igProposte(env, !!b.force), scelte: await igScelte(env) };
   if (act === "scelta_set") {
@@ -835,7 +848,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .ogs{padding:0}.ogt{display:flex;align-items:center;gap:12px;padding:12px 14px}.ogtt{flex:1;min-width:0;cursor:pointer}.ogtt b{font-size:15px}.ogs .chev{color:#8FA0AE;transition:transform .2s}.ogs.open .chev{transform:rotate(180deg)}
 .ogc{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:2px solid #3A4C5C;background:transparent;color:#C5D0D8;font:700 14px system-ui;cursor:pointer}.ogs.done .ogc{background:#7FD1A0;border-color:#7FD1A0;color:#0B1830}.ogs.done .ogtt b{color:#8FA0AE}
 .ogb{display:none;padding:0 14px 14px;gap:8px}.ogs.open .ogb{display:grid}
-.ogsr{display:flex;gap:12px;align-items:flex-start}.ogth{flex:0 0 108px;width:108px;height:192px;border-radius:10px;border:1px solid #27353F;background:#0a0f1c}canvas.ogth{cursor:zoom-in}.ogzm{position:fixed;inset:0;z-index:99;background:rgba(5,8,15,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}.ogzm img{max-width:100%;max-height:calc(100vh - 80px);border-radius:14px;border:1px solid #34475A}.ogzm .sub{color:#B9C4CF}
+.ogsr{display:flex;gap:12px;align-items:flex-start}.ogmia label{display:block;margin:8px 0}.ogmia input{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:9px 10px;border-radius:8px;border:1px solid #34475A;background:#0f1722;color:#EEF2F6;font:inherit}.ogth{flex:0 0 108px;width:108px;height:192px;border-radius:10px;border:1px solid #27353F;background:#0a0f1c}canvas.ogth{cursor:zoom-in}.ogzm{position:fixed;inset:0;z-index:99;background:rgba(5,8,15,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}.ogzm img{max-width:100%;max-height:calc(100vh - 80px);border-radius:14px;border:1px solid #34475A}.ogzm .sub{color:#B9C4CF}
 .ogalt{border-top:1px solid #27353F;padding-top:8px}.ogalt>summary{cursor:pointer;color:#86B4EA;font-weight:600;font-size:14px;padding:4px 0}.ogal{display:grid;gap:6px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px;margin-top:8px}.ogal .g{justify-self:start}
 .ogsh{width:100%;min-height:44px;border:0;border-radius:10px;background:linear-gradient(90deg,#f58529,#dd2a7b,#8134af);color:#fff;font:700 14.5px system-ui;cursor:pointer}.ogdl{justify-self:center;text-align:center}
 #snd{padding:0}#snd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px}#snd>summary::-webkit-details-marker{display:none}#snd[open]>summary .chev{transform:rotate(180deg)}#sndb{padding:0 14px 12px}
@@ -1178,8 +1191,10 @@ function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n
  (D&&D.svolte||[]).filter(v=>v.date===oggi).forEach(v=>St.push({k:"sv-"+v.id,ic:"⚡",t:"Svolta: "+clip(v.titolo||"",60),w:(v.ora?"alle "+v.ora+" · ":"")+(v.stato==="proposta"?"da approvare per Telegram":v.stato==="approvata"?"uscita sul canale":"scartata"),done:v.stato!=="proposta",auto:true,body:'<div class="sub">Il messaggio per il canale si rilegge e si approva nel riquadro «Svolte da approvare», in cima al pannello.'+(v.req_id?' Se è pronto, il video spiegato compare qui sopra come bozza.':'')+'</div><div class="row"><button type="button" class="g" data-og-sv="1">Vai alla svolta ›</button></div>'}));
  DR.filter(x=>x.format==="spiegato").forEach(addD);
  return St}
-function ogAlt(s){const L=(s.scelte||[]).filter(x=>x.n!==s.scelta);if(!L.length)return '<div class="sub">Oggi l&#39;agente ha proposto una sola domanda.</div>';
- return '<details class="ogalt"'+(OG_OPEN.alt?' open':'')+'><summary>Non ti convince? Altre '+L.length+' proposte ›</summary>'+L.map(x=>'<div class="ogal"><div class="sndl">'+esc(x.tema||"")+'</div><b>'+esc(x.sticker)+'</b>'+(x.perche?'<div class="sub">'+esc(x.perche)+'</div>':'')+'<button type="button" class="g" data-og-pick="'+x.n+'">Usa questa</button></div>').join("")+'<div class="sub">Quella che scegli è l&#39;unica che conta: risultato e verdetto seguono lei, e cambia anche «La scommessa di oggi» sul sito (entro due minuti; i voti già dati restano sulla domanda vecchia e non contano). '+((s.todo||{}).dom?'Hai già segnato la storia come pubblicata: se cambi, ripubblica quella nuova.':'')+'</div></details>'}
+function ogMia(s){const m=s.mia||{};const v=(k)=>esc(m[k]||"");const tom=new Date(Date.now()+7*864e5).toISOString().slice(0,10);
+ return '<div class="ogal ogmia"><div class="sndl">'+(s.scelta===3?'La tua domanda · in uso':'Scrivi la tua domanda')+'</div><label class="sub">Tema<input id="om-tema" maxlength="30" placeholder="es. Israele" value="'+v("tema")+'"></label><label class="sub">Domanda per lo sticker (max 60)<input id="om-st" maxlength="60" placeholder="es. Netanyahu resta premier entro il 30/11?" value="'+v("sticker")+'"></label><label class="sub">Domanda completa per il sito (facoltativa; *così* va in oro)<input id="om-ti" maxlength="160" value="'+v("titolo")+'"></label><label class="sub">Contesto in una riga (facoltativo)<input id="om-cx" maxlength="180" value="'+v("contesto")+'"></label><div class="sndab"><label class="sub">Risposta 1<input id="om-a" maxlength="20" value="'+(v("a")||"Sì")+'"></label><label class="sub">Risposta 2<input id="om-b" maxlength="20" value="'+(v("b")||"No")+'"></label></div><label class="sub">Si verifica entro il<input id="om-sc" type="date" value="'+(v("scadenza")||tom)+'"></label><label class="sub">Link alla fonte (facoltativo)<input id="om-url" placeholder="https://…" value="'+esc((m.fonte&&m.fonte.url)||"")+'"></label><button type="button" class="g" id="om-ok">'+(s.scelta===3?'Aggiorna la mia domanda':'Usa la mia domanda')+'</button>'+(s.mia?'<button type="button" class="g" id="om-del" style="margin-left:8px">Torna alle proposte</button>':'')+'<div class="sub" id="om-msg">Il verdetto lo controlla l&#39;agente alla scadenza, come per le altre. Non c&#39;è la stima dell&#39;AI, quindi nei verdetti della domenica conta solo per i lettori.</div></div>'}
+function ogAlt(s){const L=(s.scelte||[]).filter(x=>x.n!==s.scelta&&!x.mia);
+ return '<details class="ogalt"'+(OG_OPEN.alt?' open':'')+'><summary>Non ti convince? '+(L.length?'Altre '+L.length+' proposte o la tua':'Scrivi la tua')+' ›</summary>'+L.map(x=>'<div class="ogal"><div class="sndl">'+(x.post?'SUL POST DI OGGI · ':'')+esc(x.tema||"")+'</div><b>'+esc(x.sticker)+'</b>'+(x.perche?'<div class="sub">'+esc(x.perche)+'</div>':'')+'<button type="button" class="g" data-og-pick="'+x.n+'">Usa questa</button></div>').join("")+ogMia(s)+'<div class="sub">Quella che scegli è l&#39;unica che conta: risultato e verdetto seguono lei, e cambia anche «La scommessa di oggi» sul sito (entro due minuti; i voti già dati restano sulla domanda vecchia e non contano). '+((s.todo||{}).dom?'Hai già segnato la storia come pubblicata: se cambi, ripubblica quella nuova.':'')+'</div></details>'}
 function clip(s,n){s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s}
 function ogRender(){const el=document.getElementById("og");if(!el)return;const s=SND;if(!s){el.innerHTML='<div class="card sub">Carico…</div>';return}
  const St=ogSteps();const nd=St.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b)b.innerHTML='Oggi <span class="ogn'+(nd===St.length?' ok':'')+'">'+nd+'/'+St.length+'</span>';
@@ -1201,7 +1216,7 @@ async function ogDraw(){const s=SND;if(!s)return;const q=s.oggi,qi=s.ieri,n=qi&&
 async function ogPod(){if(OG_POD)return;if(!POD_GEN){POD_GEN=true;await podLoad()}else{let k=0;while(!POD_BLOB&&k++<40)await new Promise(r=>setTimeout(r,250))}OG_POD=true;ogRender()}
 function sndRender(s){SND=s;if(TAB==="og"){ogRender();ogPod()}else{const St=s?ogSteps():[];const nd=St.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b&&s)b.innerHTML='Oggi <span class="ogn'+(nd===St.length?' ok':'')+'">'+nd+'/'+St.length+'</span>'}}
 function ogZoom(cv){let u="";try{u=cv.toDataURL("image/png")}catch(err){}if(!u)return;const d=document.createElement("div");d.className="ogzm";d.innerHTML='<img alt="">'+'<div class="sub">Tocca per chiudere</div>';d.querySelector("img").src=u;d.addEventListener("click",()=>d.remove());document.body.appendChild(d)}
-document.getElementById("og").addEventListener("click",async e=>{const zm=e.target.closest("canvas.ogth");if(zm){ogZoom(zm);return}const cp=e.target.closest("[data-snd-cp]");if(cp){let ok=false;try{await navigator.clipboard.writeText(cp.dataset.sndCp);ok=true}catch(err){}cp.textContent=ok?"Copiato ✓":"Non riesco";setTimeout(()=>{cp.textContent="Copia"},1600);return}
+document.getElementById("og").addEventListener("click",async e=>{if(e.target.id==="om-ok"||e.target.id==="om-del"){const B=e.target;const g=(id)=>(document.getElementById(id)||{}).value||"";const body=B.id==="om-del"?{action:"sond_mia",del:true}:{action:"sond_mia",tema:g("om-tema"),sticker:g("om-st"),titolo:g("om-ti"),contesto:g("om-cx"),a:g("om-a"),b:g("om-b"),scadenza:g("om-sc"),url:g("om-url")};B.disabled=true;const r=await api(body);if(r&&r.ok){SND=r.sond;OG_OPEN.alt=B.id!=="om-del";OG_OPEN.dom=true;ogRender()}else{B.disabled=false;const m=document.getElementById("om-msg");if(m)m.textContent=(r&&r.error)||"Non riesco a salvare."}return}const zm=e.target.closest("canvas.ogth");if(zm){ogZoom(zm);return}const cp=e.target.closest("[data-snd-cp]");if(cp){let ok=false;try{await navigator.clipboard.writeText(cp.dataset.sndCp);ok=true}catch(err){}cp.textContent=ok?"Copiato ✓":"Non riesco";setTimeout(()=>{cp.textContent="Copia"},1600);return}
  const sh=e.target.closest("[data-og-share]");if(sh){ogShare(sh.dataset.ogShare);return}
  const tg=e.target.closest("[data-og-tg]");if(tg){const c=tg.closest(".ogs");OG_OPEN[tg.dataset.ogTg]=!c.classList.contains("open");c.classList.toggle("open");return}
  const ck=e.target.closest("[data-og-ck]");if(ck){const k=ck.dataset.ogCk;if(ck.dataset.auto){const c=ck.closest(".ogs");OG_OPEN[k]=true;c.classList.add("open");return}const v=!(SND.todo||{})[k];ck.disabled=true;const r=await api({action:"todo_set",k:k,v:v});if(r&&r.ok){SND=r.sond;OG_OPEN[k]=!v;const nx=ogSteps().find(x=>!x.done);if(v&&nx)OG_OPEN[nx.k]=true;ogRender()}else ck.disabled=false;return}
@@ -2713,7 +2728,7 @@ async function tgDivergenza(env, force) {
    I conteggi si mostrano solo da VOTE_MIN voti in su: sotto la soglia l'API risponde solo «sotto soglia». */
 const VOTE_MIN = 20;
 /* tre tipi di sondaggio: t: tesi della storia principale (a, b, n); g: un segnale da osservare (si, no); c: gli scenari di un tema (indice dello scenario) */
-const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] }, p: { re: /^p:\d{4}-\d{2}-\d{2}:[0-2]$/, ch: ["si", "no"] } }; // p:<giorno>:<n>, n = quale delle proposte: se Francesco cambia domanda dal pannello, i voti restano sulla domanda a cui si riferivano // v61: p = la scommessa del giorno, la stessa domanda della storia Instagram
+const VOTE_KIND = { t: { re: /^t:s-\d{8}-\d{2}$/, ch: ["a", "b", "n"] }, g: { re: /^g:s-\d{8}-\d{2}:\d{1,2}$/, ch: ["si", "no"] }, c: { re: /^c:t-[a-z0-9-]{1,80}:\d{4}-\d{2}-\d{2}$/, ch: ["0", "1", "2", "3", "4", "5", "6", "7"] }, p: { re: /^p:\d{4}-\d{2}-\d{2}:[0-4]$/, ch: ["si", "no"] } }; // p:<giorno>:<n>, n = quale delle proposte: se Francesco cambia domanda dal pannello, i voti restano sulla domanda a cui si riferivano // v61: p = la scommessa del giorno, la stessa domanda della storia Instagram
 const voteKind = (poll) => { const k = String(poll).slice(0, 1); const K = VOTE_KIND[k]; return K && K.re.test(poll) ? k : ""; };
 let VOTE_T = false;
 async function voteTable(env) { if (VOTE_T) return; await env.DB.prepare("CREATE TABLE IF NOT EXISTS votes (poll TEXT NOT NULL, dev TEXT NOT NULL, choice TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (poll, dev))").run(); await env.DB.prepare("CREATE TABLE IF NOT EXISTS polls (poll TEXT PRIMARY KEY, data TEXT NOT NULL, created_at TEXT NOT NULL)").run(); VOTE_T = true; }
@@ -2930,10 +2945,20 @@ async function canaliSet(env, b) {
 }
 // v60: storia Instagram con la domanda di previsione (briefing.storia_ig): immagine, testi da copiare, numeri dello sticker inseriti a mano
 /* v61: la domanda di previsione scelta per un giorno (la stessa della storia Instagram), letta da tutti: sito, voti, pannello */
+/* v62: candidate di un giorno: 0 = storia_ig, 1-2 = storia_ig_alt, 3 = la domanda scritta da Francesco nel pannello (kv sond_mia),
+   4 = la domanda sulla storia del post Instagram del giorno, proposta dalla routine Instagram con la bozza (kv sond_post) */
+const MIA_N = 3, POST_N = 4;
+function sondCands(b, M, d, P) {
+  const c = b && b.storia_ig ? [b.storia_ig].concat(Array.isArray(b.storia_ig_alt) ? b.storia_ig_alt.slice(0, 2) : []) : [];
+  const put = (n, x) => { while (c.length < n) c.push(null); c[n] = x; };
+  if (M && M[d]) put(MIA_N, { ...M[d], mia: true });
+  if (P && P[d]) put(POST_N, { ...P[d], post: true });
+  return c;
+}
+function sondN(c, v) { const n = Math.max(0, parseInt(v, 10) || 0); return c[n] ? n : c.findIndex((x) => !!x); }
 async function scommessa(env, day) {
-  const b = await docData(env, "briefings", day); if (!b || !b.storia_ig) return null;
-  const c = [b.storia_ig].concat(Array.isArray(b.storia_ig_alt) ? b.storia_ig_alt.slice(0, 2) : []);
-  const SC = (await kvGet(env, "sond_scelte")) || {}; const n = Math.min(c.length - 1, Math.max(0, SC[day] || 0));
+  const [b, M, SC, P] = await Promise.all([docData(env, "briefings", day), kvGet(env, "sond_mia"), kvGet(env, "sond_scelte"), kvGet(env, "sond_post")]);
+  const c = sondCands(b, M, day, P); const n = sondN(c, (SC || {})[day]); if (n < 0) return null;
   return { ...c[n], n, day };
 }
 /* voti della storia (numeri inseriti a mano) più voti del sito: il totale che conta per risultato, verdetti e classifica */
@@ -2945,11 +2970,11 @@ function sondTot(ig, site) {
 async function sondInfo(env) {
   const day = romeToday(), ieri = romeYesterday();
   const [br, bi] = await Promise.all([tgBriefing(env, day), tgBriefing(env, ieri)]);
-  const SC = (await kvGet(env, "sond_scelte")) || {};
-  const cands = (b) => (b && b.storia_ig ? [b.storia_ig].concat(Array.isArray(b.storia_ig_alt) ? b.storia_ig_alt.slice(0, 2) : []) : []);
-  const pick = (b, d) => { const c = cands(b); const n = Math.min(c.length - 1, Math.max(0, SC[d] || 0)); return c.length ? { ...c[n], n } : null; };
+  const SC = (await kvGet(env, "sond_scelte")) || {}, M = (await kvGet(env, "sond_mia")) || {}, P = (await kvGet(env, "sond_post")) || {};
+  const cands = (b, d) => sondCands(b, M, d, P);
+  const pick = (b, d) => { const c = cands(b, d); const n = sondN(c, SC[d]); return n >= 0 ? { ...c[n], n } : null; };
   const q = pick(br, day), qi = pick(bi, ieri);
-  const scelte = cands(br).map((x, i) => ({ n: i, tema: x.tema || "", sticker: x.sticker || "", titolo: x.titolo || "", perche: x.perche || "" }));
+  const scelte = cands(br, day).map((x, i) => (x ? { n: i, tema: x.tema || "", sticker: x.sticker || "", titolo: x.titolo || "", perche: x.perche || "", mia: !!x.mia, post: !!x.post } : null)).filter(Boolean);
   const days = []; for (let i = 7; i >= 1; i--) days.push(new Date(Date.parse(day + "T12:00:00Z") - i * 86400000).toISOString().slice(0, 10));
   const nums = await Promise.all(days.concat([day]).map((d) => kvGet(env, "sond:" + d)));
   const N = Object.fromEntries(days.concat([day]).map((d, i) => [d, nums[i] || null]));
@@ -2967,7 +2992,7 @@ async function sondInfo(env) {
     scenari = T.map((x, i) => scnShape(x.id, x.t, VC[polls[i]]));
   } catch (e) {}
   const settimana = romeDow(day) === 7 ? await sondSettimana(env, day, cands, SC).catch(() => null) : null;
-  return { day, todo, scenari, settimana, scelte, scelta: q ? q.n : 0, sito: (po && PV[po]) || null,
+  return { day, todo, scenari, settimana, scelte, scelta: q ? q.n : 0, mia: M[day] || null, sito: (po && PV[po]) || null,
     oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null,
     ieri: qi ? { ...qi, day: ieri, num: N[ieri], sito: PV[pi] || null, tot: sondTot(N[ieri], PV[pi]), riga: q && q.ieri ? q.ieri : null } : null,
     sett: days.map((d) => ({ d, n: N[d] })) };
@@ -2987,7 +3012,7 @@ async function sondSettimana(env, day, cands, SC) {
   const [BB, NN, PV] = await Promise.all([Promise.all(dates.map((d) => tgBriefing(env, d))), Promise.all(dates.map((d) => kvGet(env, "sond:" + d))), U.length ? voteCounts(env, U.map((v) => "p:" + v.data + ":" + (v.n || 0)), true) : {}]);
   const B = Object.fromEntries(dates.map((d, i) => [d, { b: BB[i], n: NN[i] }]));
   const righe = []; let tl = 0, ta = 0;
-  for (const v of U) { const q = cands(B[v.data].b)[v.n || 0]; if (!q) continue; const es = v.esito === "sì" || v.esito === "si" ? "sì" : "no";
+  for (const v of U) { const q = cands(B[v.data].b, v.data)[v.n || 0]; if (!q) continue; const es = v.esito === "sì" || v.esito === "si" ? "sì" : "no";
     const tot = sondTot(B[v.data].n, PV["p:" + v.data + ":" + (v.n || 0)]); const l = tot && tot.si !== 50 ? (tot.si > 50 ? "sì" : "no") === es : null;
     const a = q.attesa === "probabile" ? es === "sì" : q.attesa === "improbabile" ? es === "no" : null;
     if (l) tl++; if (a) ta++; if (v.quando >= da) righe.push({ tema: q.tema || "", q: q.sticker || q.titolo || "", esito: es, l, a, quando: v.quando }); }
@@ -2999,11 +3024,27 @@ async function sondSettimana(env, day, cands, SC) {
   return { periodo: "Dal " + per(da) + " al " + per(day), righe, lettori: righe.filter((r) => r.l).length, ln: righe.filter((r) => r.l != null).length, agente: righe.filter((r) => r.a).length, an: righe.filter((r) => r.a != null).length, tl, ta };
 }
 async function sondPick(env, b) {
-  const day = romeToday(); const br = await tgBriefing(env, day); const c = br && br.storia_ig ? 1 + (Array.isArray(br.storia_ig_alt) ? Math.min(2, br.storia_ig_alt.length) : 0) : 0;
-  const n = parseInt(b.n, 10); if (!(n >= 0 && n < c)) return { ok: false, error: "scelta non valida" };
+  const day = romeToday(); const br = await tgBriefing(env, day); const c = sondCands(br, (await kvGet(env, "sond_mia")) || {}, day, (await kvGet(env, "sond_post")) || {});
+  const n = parseInt(b.n, 10); if (!(n >= 0 && c[n])) return { ok: false, error: "scelta non valida" };
   const SC = (await kvGet(env, "sond_scelte")) || {}; SC[day] = n;
   const lim = new Date(Date.parse(day + "T12:00:00Z") - 90 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(SC)) if (d < lim) delete SC[d];
   await kvSet(env, "sond_scelte", SC); return { ok: true, sond: await sondInfo(env) };
+}
+/* v62: la domanda scritta da Francesco: diventa la scelta del giorno (n = 3); del = torna alle proposte dell'agente */
+async function sondMia(env, b) {
+  const day = romeToday(); const M = (await kvGet(env, "sond_mia")) || {}; const SC = (await kvGet(env, "sond_scelte")) || {};
+  if (b.del) { delete M[day]; if (SC[day] === MIA_N) delete SC[day]; }
+  else {
+    const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
+    const sticker = t(b.sticker, 60), scad = String(b.scadenza || "");
+    if (sticker.length < 8) return { ok: false, error: "Scrivi la domanda breve (almeno 8 caratteri)." };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(scad) || scad < day) return { ok: false, error: "Scegli una scadenza da oggi in poi." };
+    const url = t(b.url, 300);
+    M[day] = { tema: t(b.tema, 30), sticker, titolo: t(b.titolo, 160) || sticker, a: t(b.a, 20) || "Sì", b: t(b.b, 20) || "No", scadenza: scad, contesto: t(b.contesto, 180), fonte: /^https:\/\//.test(url) ? { nome: t(b.fonte, 40) || "fonte", url } : null, attesa: "", scritta: new Date().toISOString() };
+    SC[day] = MIA_N;
+  }
+  const lim = new Date(Date.parse(day + "T12:00:00Z") - 90 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(M)) if (d < lim) delete M[d];
+  await kvSet(env, "sond_mia", M); await kvSet(env, "sond_scelte", SC); return { ok: true, sond: await sondInfo(env) };
 }
 async function todoSet(env, b) {
   const day = romeToday(); const t = (await kvGet(env, "todo:" + day)) || {}; const k = String(b.k || "").slice(0, 40);
@@ -3061,6 +3102,7 @@ async function tgPanelApi(env, b) {
   if (act === "sond_set") return await sondSet(env, b);
   if (act === "todo_set") return await todoSet(env, b);
   if (act === "sond_pick") return await sondPick(env, b);
+  if (act === "sond_mia") return await sondMia(env, b);
   if (act === "tg_priv_code") { // chat privata con il bot, per gli avvisi delle svolte: un codice da mandare con /start
     const me = await tgCall(env, "getMe", {});
     const code = "rg" + rid().slice(0, 8);
@@ -3380,7 +3422,7 @@ async function route(request, env) {
   }
 
   // ---------- LETTURE PUBBLICHE ----------
-  if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
+  if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {}, mie: (await kvGet(env, "sond_mia")) || {}, post: (await kvGet(env, "sond_post")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
   if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d + ":" + q.n } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
