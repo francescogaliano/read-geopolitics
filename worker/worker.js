@@ -197,6 +197,69 @@ async function siteFile(env, parte, ver) {
   }
   return body;
 }
+// ---- v63: numeri da fonti aperte (prova di confronto dal 28/10/2026) ----
+// BCE (cambi di riferimento e tasso sui depositi) letti qui; gas, Brent, stoccaggi, carburanti ed elettricità dal worker rs-numeri
+// (Read Signals, licenze verificate) tramite il collegamento diretto RS e il secret RS_TOKEN. Il sito pubblico non cambia:
+// /api/numeri_aperti mostra i valori aperti accanto a quelli del cruscotto di oggi, per decidere voce per voce il 3/11.
+const NUM_UA = "rg-api/1.0 (Read Geopolitics; hello@readgeopolitics.com)";
+async function numBce() {
+  const out = {};
+  const x = await (await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", { headers: { "user-agent": NUM_UA } })).text();
+  const days = [...x.matchAll(/<Cube time=['"](\d{4}-\d{2}-\d{2})['"]>([\s\S]*?)<\/Cube>/g)].map((m) => {
+    const r = {}; for (const c of m[2].matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([\d.]+)['"]/g)) r[c[1]] = +c[2]; return { d: m[1], r };
+  }).filter((d) => d.r.USD).sort((a, b) => b.d.localeCompare(a.d));
+  if (!days.length) throw new Error("cambi BCE: file senza dati");
+  const [t, y] = days; const fonte = { nome: "BCE, tassi di cambio di riferimento", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html", licenza: "riuso con citazione della fonte" };
+  out.eurusd = { valore: t.r.USD, data: t.d, var: y ? +(100 * (t.r.USD / y.r.USD - 1)).toFixed(2) : null, fonte };
+  if (t.r.CNY) out.cny = { valore: +(t.r.CNY / t.r.USD).toFixed(4), data: t.d, var: y && y.r.CNY ? +(100 * ((t.r.CNY / t.r.USD) / (y.r.CNY / y.r.USD) - 1)).toFixed(2) : null, calcolo: "yuan per euro ÷ dollari per euro (BCE, " + t.d + ")", fonte };
+  try {
+    const c = await (await fetch("https://data-api.ecb.europa.eu/service/data/FM/D.U2.EUR.4F.KR.DFR.LEV?lastNObservations=1&format=csvdata", { headers: { "user-agent": NUM_UA } })).text();
+    const L = c.trim().split(/\r?\n/); const h = L[0].split(","); const r = (L[1] || "").split(",");
+    const v = +r[h.indexOf("OBS_VALUE")], d = r[h.indexOf("TIME_PERIOD")];
+    if (Number.isFinite(v) && d) out.bce = { valore: v, data: d, fonte: { nome: "BCE, tasso sui depositi (Data Portal)", url: "https://data.ecb.europa.eu/data/datasets/FM/FM.D.U2.EUR.4F.KR.DFR.LEV", licenza: "riuso con citazione della fonte" } };
+  } catch (e) {}
+  return out;
+}
+async function numRs(env) {
+  if (!env.RS || !env.RS_TOKEN) throw new Error("collegamento rs-numeri non configurato (servono RS e il secret RS_TOKEN)");
+  const r = await env.RS.fetch("https://rs-numeri/history.json", { headers: { authorization: "Bearer " + env.RS_TOKEN } });
+  if (!r.ok) throw new Error("rs-numeri: HTTP " + r.status);
+  const h = await r.json(); if (!Array.isArray(h) || !h.length) throw new Error("rs-numeri: storico vuoto");
+  const last = (k) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && h[i][k] != null && h[i][k] !== "") return h[i]; return null; };
+  const out = {}; const rs = (nome) => ({ nome, via: "Read Signals (rs-numeri)" });
+  let x = last("ttf"); if (x) out.ttf = { valore: +x.ttf, data: x.acer_pub || x.date, calcolo: "GNL spot + scarto GNL−TTF (ACER)", fonte: { ...rs("ACER, LNG price assessment"), url: "https://acer.europa.eu/gas/lng-price-assessment" } };
+  x = last("brent"); if (x) out.brent = { valore: +x.brent, data: x.brent_date || x.date, fonte: { ...rs("EIA, Brent spot FOB (RBRTE)"), url: "https://www.eia.gov/dnav/pet/hist/RBRTED.htm" } };
+  x = last("stor_it"); if (x) out.stoccaggi_it = { valore: +x.stor_it, unita: "%", data: x.stor_date || x.date, ue: x.stor_eu != null ? +x.stor_eu : null, fonte: { ...rs("GIE AGSI"), url: "https://agsi.gie.eu/" } };
+  x = last("diesel_it"); if (x) out.gasolio_it = { valore: +x.diesel_it, unita: "€/l", data: x.wob_date || x.date, ue: x.diesel_eu != null ? +x.diesel_eu : null, fonte: { ...rs("Commissione UE, Weekly Oil Bulletin"), url: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en" } };
+  x = last("el_it_day"); if (x) out.elettricita_it = { valore: +x.el_it_day, unita: "€/MWh", data: x.el_it_day_date || x.date, fonte: { ...rs("Ember, prezzi all'ingrosso"), url: "https://ember-energy.org/data/european-wholesale-electricity-price-data" } };
+  return out;
+}
+async function numAperti(env, force) {
+  const day = romeToday(), hh = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false }).format(new Date());
+  const cur = await kvGet(env, "num_aperti");
+  if (!force && (hh < 7 || (cur && cur.day === day))) return cur;
+  const voci = {}, errori = [];
+  try { Object.assign(voci, await numBce()); } catch (e) { errori.push("BCE: " + (e.message || e)); }
+  try { Object.assign(voci, await numRs(env)); } catch (e) { errori.push(e.message || String(e)); }
+  const rec = { day, at: new Date().toISOString(), voci, errori };
+  await kvSet(env, "num_aperti", rec);
+  const H = (await kvGet(env, "num_aperti_storico")) || {}; H[day] = Object.fromEntries(Object.entries(voci).map(([k, v]) => [k, { v: v.valore, d: v.data }]));
+  const lim = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(H)) if (d < lim) delete H[d];
+  await kvSet(env, "num_aperti_storico", H);
+  return rec;
+}
+async function numConfronto(env) {
+  const a = (await kvGet(env, "num_aperti")) || { voci: {}, errori: ["non ancora raccolti"] };
+  const b = await docData(env, "briefings", romeToday()).catch(() => null);
+  const V = ((b && b.cruscotto && b.cruscotto.voci) || []);
+  const righe = V.map((v) => { const o = a.voci[v.id]; const alt = v.fonte_alt || null;
+    return { id: v.id, nome: v.nome, cruscotto: { valore: v.valore, data: v.data, fonte: v.fonte && v.fonte.nome },
+      aperta: o ? { valore: o.valore, data: o.data, fonte: o.fonte && o.fonte.nome } : null,
+      diff_pct: o && v.valore ? +(100 * (o.valore / v.valore - 1)).toFixed(2) : null,
+      agente_alt: alt ? { valore: alt.valore, data: alt.data, fonte: alt.nome, tipo: alt.tipo } : null }; });
+  const extra = Object.keys(a.voci).filter((k) => !V.some((v) => v.id === k)).map((k) => ({ id: k, aperta: a.voci[k] }));
+  return { ok: true, day: a.day, raccolti: a.at, errori: a.errori, righe, nuove: extra, storico: (await kvGet(env, "num_aperti_storico")) || {} };
+}
 async function siteWarm(env) { // dal cron: prepara i due file quando i dati cambiano, così nessun lettore aspetta la costruzione
   const ver = await siteVer(env);
   if ((await kvGet(env, "site_ver")) === ver) return;
@@ -3422,6 +3485,7 @@ async function route(request, env) {
   }
 
   // ---------- LETTURE PUBBLICHE ----------
+  if (method === "GET" && p === "/api/numeri_aperti") { if (url.searchParams.get("run") === "1") { const c = await kvGet(env, "num_aperti"); if (!c || Date.now() - Date.parse(c.at) > 600000) await numAperti(env, true); } return json(await numConfronto(env), 200, { ...CORS, "cache-control": "no-store" }); } // v63: confronto cruscotto / fonti aperte (?run=1 rilegge, al massimo ogni 10 minuti)
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {}, mie: (await kvGet(env, "sond_mia")) || {}, post: (await kvGet(env, "sond_post")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
@@ -4022,6 +4086,7 @@ export default {
     try { await thDomanda(env, false); } catch (e) {} // v41
     try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
+    try { await numAperti(env, false); } catch (e) {} // v63: numeri da fonti aperte, una volta al giorno dopo le 7
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
     try {
