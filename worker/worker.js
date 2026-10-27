@@ -236,6 +236,139 @@ async function numRs(env) {
   x = last("el_it_day"); if (x) out.elettricita_it = { valore: +x.el_it_day, unita: "€/MWh", data: iso(x.el_it_day_date || x.date), fonte: { ...rs("Ember, prezzi all'ingrosso"), url: "https://ember-energy.org/data/european-wholesale-electricity-price-data" } };
   return out;
 }
+// ---- v64: storico dei numeri da fonti aperte (recupero una tantum, poi aggiornato ogni giorno) ----
+// Lettura di file xlsx senza librerie (copiata da rs-numeri, Read Signals): serve per la Banca Mondiale.
+async function inflateRaw(bytes) {
+  const ds = new DecompressionStream("deflate-raw");
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function unzip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("file xlsx non valido (zip)");
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+  const files = {}; const dec = new TextDecoder();
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const fl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + fl));
+    const lfl = dv.getUint16(off + 26, true), lxl = dv.getUint16(off + 28, true);
+    const start = off + 30 + lfl + lxl;
+    files[name] = { method, data: u8.subarray(start, start + csize) };
+    p += 46 + fl + xl + cl;
+  }
+  return {
+    names: Object.keys(files),
+    async text(name) {
+      const f = files[name]; if (!f) return null;
+      const raw = f.method === 0 ? f.data : await inflateRaw(f.data);
+      return dec.decode(raw);
+    },
+  };
+}
+const unesc = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+function colIndex(ref) { const m = ref.match(/^([A-Z]+)/); let n = 0; for (const ch of m[1]) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; }
+async function xlsxRows(buf) {
+  const z = await unzip(buf);
+  const ssXml = (await z.text("xl/sharedStrings.xml")) || "";
+  const shared = [...ssXml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => unesc([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join("")));
+  const sheetNames = z.names.filter((n) => /^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort();
+  const sheets = [];
+  for (const sn of sheetNames) {
+    const xml = await z.text(sn); const rows = [];
+    for (const rm of xml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)) {
+      const row = [];
+      for (const cm of rm[1].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        const attrs = cm[1], body = cm[2] || "";
+        const ref = (attrs.match(/r="([A-Z]+\d+)"/) || [])[1]; const t = (attrs.match(/t="(\w+)"/) || [])[1];
+        let v = (body.match(/<v>([\s\S]*?)<\/v>/) || [])[1];
+        if (t === "s") v = shared[Number(v)]; else if (t === "inlineStr") v = unesc((body.match(/<t[^>]*>([\s\S]*?)<\/t>/) || [])[1] || ""); else if (v !== undefined) v = unesc(v);
+        if (ref && v !== undefined) row[colIndex(ref)] = v;
+      }
+      rows.push(Array.from(row, (x) => (x === undefined ? "" : x)));
+    }
+    sheets.push({ name: sn, rows });
+  }
+  return sheets;
+}
+
+const NUM_SER = {
+  eurusd: { nome: "Euro / dollaro", unita: "$", freq: "giornaliero", fonte: { nome: "BCE", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html", licenza: "riuso con citazione" } },
+  cny: { nome: "Yuan per dollaro", unita: "CNY", freq: "giornaliero", calcolo: "yuan per euro ÷ dollari per euro (BCE)", fonte: { nome: "BCE", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html", licenza: "riuso con citazione" } },
+  bce: { nome: "Tasso BCE sui depositi", unita: "%", freq: "giornaliero", fonte: { nome: "BCE", url: "https://data.ecb.europa.eu/data/datasets/FM/FM.D.U2.EUR.4F.KR.DFR.LEV", licenza: "riuso con citazione" } },
+  btp10_m: { nome: "Rendimento BTP 10 anni (media mensile)", unita: "%", freq: "mensile", fonte: { nome: "BCE, tassi a lungo termine", url: "https://data.ecb.europa.eu/data/datasets/IRS", licenza: "riuso con citazione" } },
+  spread_m: { nome: "Spread BTP-Bund 10 anni (media mensile)", unita: "pb", freq: "mensile", calcolo: "(Italia − Germania) × 100, tassi a lungo termine BCE", fonte: { nome: "BCE, tassi a lungo termine", url: "https://data.ecb.europa.eu/data/datasets/IRS", licenza: "riuso con citazione" } },
+  oro_m: { nome: "Oro (media mensile)", unita: "$/oncia", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
+  grano_m: { nome: "Grano USA (media mensile)", unita: "$/t", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
+  brent_m: { nome: "Petrolio Brent (media mensile)", unita: "$/barile", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
+  gas_eu_m: { nome: "Gas Europa (media mensile)", unita: "$/MMBtu", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
+  ttf: { nome: "Gas TTF", unita: "€/MWh", freq: "giornaliero", calcolo: "GNL spot + scarto GNL−TTF (ACER)", fonte: { nome: "ACER, via Read Signals", url: "https://acer.europa.eu/gas/lng-price-assessment", licenza: "da verificare (note legali ACER)" } },
+  brent: { nome: "Petrolio Brent", unita: "$/barile", freq: "giornaliero", fonte: { nome: "EIA, via Read Signals", url: "https://www.eia.gov/dnav/pet/hist/RBRTED.htm", licenza: "pubblico dominio" } },
+  stoccaggi_it: { nome: "Stoccaggi gas Italia", unita: "%", freq: "giornaliero", fonte: { nome: "GIE AGSI, via Read Signals", url: "https://agsi.gie.eu/", licenza: "gratuita con citazione" } },
+  gasolio_it: { nome: "Gasolio auto Italia", unita: "€/l", freq: "settimanale", fonte: { nome: "Commissione UE, Weekly Oil Bulletin, via Read Signals", url: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en", licenza: "riuso UE" } },
+  elettricita_it: { nome: "Elettricità all'ingrosso Italia", unita: "€/MWh", freq: "giornaliero", fonte: { nome: "Ember, via Read Signals", url: "https://ember-energy.org/data/european-wholesale-electricity-price-data", licenza: "CC BY 4.0" } },
+};
+async function numCsv(u) {
+  const t = await (await fetch(u, { headers: { "user-agent": NUM_UA } })).text(); const L = t.trim().split(/\r?\n/); const h = L[0].split(",");
+  const iT = h.indexOf("TIME_PERIOD"), iV = h.indexOf("OBS_VALUE"); if (iT < 0 || iV < 0) throw new Error("csv BCE senza colonne attese");
+  return L.slice(1).map((r) => r.split(",")).map((r) => [r[iT], +r[iV]]).filter((x) => x[0] && Number.isFinite(x[1]));
+}
+async function numStoricoRaccogli(env) {
+  const P = {}, err = []; const put = (id, pts) => { if (pts && pts.length) P[id] = pts.sort((a, b) => String(a[0]).localeCompare(String(b[0]))); };
+  try { // BCE: 90 giorni di cambi
+    const x = await (await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", { headers: { "user-agent": NUM_UA } })).text();
+    const D = [...x.matchAll(/<Cube time=['"](\d{4}-\d{2}-\d{2})['"]>([\s\S]*?)<\/Cube>/g)].map((m) => { const r = {}; for (const c of m[2].matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([\d.]+)['"]/g)) r[c[1]] = +c[2]; return [m[1], r]; });
+    put("eurusd", D.filter((d) => d[1].USD).map((d) => [d[0], d[1].USD]));
+    put("cny", D.filter((d) => d[1].USD && d[1].CNY).map((d) => [d[0], +(d[1].CNY / d[1].USD).toFixed(4)]));
+  } catch (e) { err.push("cambi BCE: " + (e.message || e)); }
+  try { put("bce", (await numCsv("https://data-api.ecb.europa.eu/service/data/FM/D.U2.EUR.4F.KR.DFR.LEV?startPeriod=2024-01-01&format=csvdata")).filter((p, i, a) => i === a.length - 1 || i === 0 || p[1] !== a[i - 1][1] || i % 7 === 0)); } catch (e) { err.push("tasso BCE: " + (e.message || e)); }
+  try {
+    const it = await numCsv("https://data-api.ecb.europa.eu/service/data/IRS/M.IT.L.L40.CI.0000.EUR.N.Z?startPeriod=2018-01&format=csvdata");
+    const de = Object.fromEntries(await numCsv("https://data-api.ecb.europa.eu/service/data/IRS/M.DE.L.L40.CI.0000.EUR.N.Z?startPeriod=2018-01&format=csvdata"));
+    put("btp10_m", it); put("spread_m", it.filter((p) => de[p[0]] != null).map((p) => [p[0], Math.round((p[1] - de[p[0]]) * 100)]));
+  } catch (e) { err.push("tassi a lungo termine BCE: " + (e.message || e)); }
+  try { // Banca Mondiale: il link al file mensile cambia ogni mese, lo si prende dalla pagina
+    const pg = await (await fetch("https://www.worldbank.org/en/research/commodity-markets", { headers: { "user-agent": NUM_UA } })).text();
+    const m = pg.match(/https?:\/\/[^"'\s]+CMO-Historical-Data-Monthly\.xlsx/i); if (!m) throw new Error("link al file mensile non trovato");
+    const sheets = await xlsxRows(await (await fetch(m[0], { headers: { "user-agent": NUM_UA } })).arrayBuffer());
+    let done = false;
+    for (const sh of sheets) {
+      const hi = sh.rows.findIndex((r) => r.some((c) => /^gold$/i.test(String(c).trim()))); if (hi < 0) continue;
+      const H = sh.rows[hi].map((c) => String(c).trim().toLowerCase());
+      const col = (re) => H.findIndex((c) => re.test(c));
+      const C = { oro_m: col(/^gold$/), grano_m: col(/^wheat, us hrw/), brent_m: col(/^crude oil, brent/), gas_eu_m: col(/^natural gas, europe/) };
+      for (const [id, ci] of Object.entries(C)) { if (ci < 0) continue;
+        put(id, sh.rows.slice(hi + 1).map((r) => { const mm = /^(\d{4})M(\d{2})$/.exec(String(r[0]).trim()); const v = Number(r[ci]); return mm && Number.isFinite(v) && r[ci] !== "" && mm[1] >= "2018" ? [mm[1] + "-" + mm[2], +v.toFixed(2)] : null; }).filter(Boolean)); }
+      done = true; break;
+    }
+    if (!done) throw new Error("foglio dei prezzi mensili non trovato");
+  } catch (e) { err.push("Banca Mondiale: " + (e.message || e)); }
+  try { // Read Signals: quello che rs-numeri ha raccolto dal 16/10/2026
+    if (!env.RS || !env.RS_TOKEN) throw new Error("collegamento non configurato");
+    const h = await (await env.RS.fetch("https://rs-numeri/history.json", { headers: { authorization: "Bearer " + env.RS_TOKEN } })).json();
+    const iso = (d) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(d || "")); return m ? m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0") : String(d || "").slice(0, 10); };
+    const ser = (k, dk, f) => { const o = {}; for (const r of h || []) if (r && r[k] != null && r[k] !== "") o[iso(r[dk] || r.date)] = f ? f(+r[k]) : +r[k]; return Object.entries(o); };
+    put("ttf", ser("ttf", "acer_pub")); put("brent", ser("brent", "brent_date")); put("stoccaggi_it", ser("stor_it", "stor_date"));
+    put("gasolio_it", ser("diesel_it", "wob_date", (v) => (v > 100 ? +(v / 1000).toFixed(3) : v))); put("elettricita_it", ser("el_it_day", "el_it_day_date"));
+  } catch (e) { err.push("Read Signals: " + (e.message || e)); }
+  return { P, err };
+}
+async function numStorico(env, force) {
+  const cur = await kvGet(env, "num_storico");
+  if (!force && cur && Date.now() - Date.parse(cur.at) < 20 * 3600000) return cur;
+  const { P, err } = await numStoricoRaccogli(env);
+  const old = (cur && cur.serie) || {}; const serie = {};
+  for (const id of Object.keys(NUM_SER)) { // unisce il nuovo al vecchio: lo storico non si perde se una fonte oggi non risponde
+    const m = Object.fromEntries((old[id] && old[id].punti) || []); for (const [d, v] of P[id] || []) m[d] = v;
+    const punti = Object.entries(m).sort((a, b) => a[0].localeCompare(b[0])).slice(-400);
+    if (punti.length) serie[id] = { ...NUM_SER[id], punti };
+  }
+  const rec = { at: new Date().toISOString(), errori: err, serie };
+  await kvSet(env, "num_storico", rec); return rec;
+}
 async function numAperti(env, force) {
   const day = romeToday(), hh = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false }).format(new Date());
   const cur = await kvGet(env, "num_aperti");
@@ -248,6 +381,7 @@ async function numAperti(env, force) {
   const H = (await kvGet(env, "num_aperti_storico")) || {}; H[day] = Object.fromEntries(Object.entries(voci).map(([k, v]) => [k, { v: v.valore, d: v.data }]));
   const lim = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(H)) if (d < lim) delete H[d];
   await kvSet(env, "num_aperti_storico", H);
+  try { await numStorico(env, false); } catch (e) {}
   return rec;
 }
 async function numConfronto(env) {
@@ -3487,6 +3621,7 @@ async function route(request, env) {
   }
 
   // ---------- LETTURE PUBBLICHE ----------
+  if (method === "GET" && p === "/api/numeri_storico") { let r = await kvGet(env, "num_storico"); if (url.searchParams.get("run") === "1" && (!r || Date.now() - Date.parse(r.at) > 600000)) r = await numStorico(env, true); const id = url.searchParams.get("id"); if (!r) return json({ ok: false, error: "non ancora raccolto: ?run=1" }, 200, { ...CORS, "cache-control": "no-store" }); return json(id ? { ok: true, at: r.at, id, serie: (r.serie || {})[id] || null } : { ok: true, at: r.at, errori: r.errori, serie: Object.fromEntries(Object.entries(r.serie || {}).map(([k, v]) => [k, { nome: v.nome, unita: v.unita, freq: v.freq, fonte: v.fonte, punti: v.punti.length, dal: v.punti[0][0], al: v.punti[v.punti.length - 1][0], ultimo: v.punti[v.punti.length - 1][1] }])) }, 200, { ...CORS, "cache-control": "no-store" }); } // v64: storico dei numeri aperti (?id=… per i punti, ?run=1 per rileggere)
   if (method === "GET" && p === "/api/numeri_aperti") { if (url.searchParams.get("run") === "1") { const c = await kvGet(env, "num_aperti"); if (!c || Date.now() - Date.parse(c.at) > 600000) await numAperti(env, true); } return json(await numConfronto(env), 200, { ...CORS, "cache-control": "no-store" }); } // v63: confronto cruscotto / fonti aperte (?run=1 rilegge, al massimo ogni 10 minuti)
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {}, mie: (await kvGet(env, "sond_mia")) || {}, post: (await kvGet(env, "sond_post")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
