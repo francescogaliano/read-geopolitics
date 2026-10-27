@@ -227,11 +227,13 @@ async function numRs(env) {
   const h = await r.json(); if (!Array.isArray(h) || !h.length) throw new Error("rs-numeri: storico vuoto");
   const last = (k) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && h[i][k] != null && h[i][k] !== "") return h[i]; return null; };
   const out = {}; const rs = (nome) => ({ nome, via: "Read Signals (rs-numeri)" });
-  let x = last("ttf"); if (x) out.ttf = { valore: +x.ttf, data: x.acer_pub || x.date, calcolo: "GNL spot + scarto GNL−TTF (ACER)", fonte: { ...rs("ACER, LNG price assessment"), url: "https://acer.europa.eu/gas/lng-price-assessment" } };
-  x = last("brent"); if (x) out.brent = { valore: +x.brent, data: x.brent_date || x.date, fonte: { ...rs("EIA, Brent spot FOB (RBRTE)"), url: "https://www.eia.gov/dnav/pet/hist/RBRTED.htm" } };
-  x = last("stor_it"); if (x) out.stoccaggi_it = { valore: +x.stor_it, unita: "%", data: x.stor_date || x.date, ue: x.stor_eu != null ? +x.stor_eu : null, fonte: { ...rs("GIE AGSI"), url: "https://agsi.gie.eu/" } };
-  x = last("diesel_it"); if (x) out.gasolio_it = { valore: +x.diesel_it, unita: "€/l", data: x.wob_date || x.date, ue: x.diesel_eu != null ? +x.diesel_eu : null, fonte: { ...rs("Commissione UE, Weekly Oil Bulletin"), url: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en" } };
-  x = last("el_it_day"); if (x) out.elettricita_it = { valore: +x.el_it_day, unita: "€/MWh", data: x.el_it_day_date || x.date, fonte: { ...rs("Ember, prezzi all'ingrosso"), url: "https://ember-energy.org/data/european-wholesale-electricity-price-data" } };
+  const iso = (d) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(d || "")); return m ? m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0") : d; };
+  const litro = (v) => (v != null && +v > 100 ? +(v / 1000).toFixed(3) : v != null ? +v : null); // il Weekly Oil Bulletin è in euro per 1.000 litri
+  let x = last("ttf"); if (x) out.ttf = { valore: +x.ttf, data: iso(x.acer_pub || x.date), calcolo: "GNL spot + scarto GNL−TTF (ACER)", fonte: { ...rs("ACER, LNG price assessment"), url: "https://acer.europa.eu/gas/lng-price-assessment" } };
+  x = last("brent"); if (x) out.brent = { valore: +x.brent, data: iso(x.brent_date || x.date), fonte: { ...rs("EIA, Brent spot FOB (RBRTE)"), url: "https://www.eia.gov/dnav/pet/hist/RBRTED.htm" } };
+  x = last("stor_it"); if (x) out.stoccaggi_it = { valore: +x.stor_it, unita: "%", data: iso(x.stor_date || x.date), ue: x.stor_eu != null ? +x.stor_eu : null, fonte: { ...rs("GIE AGSI"), url: "https://agsi.gie.eu/" } };
+  x = last("diesel_it"); if (x) out.gasolio_it = { valore: litro(x.diesel_it), unita: "€/l", data: iso(x.wob_date || x.date), ue: litro(x.diesel_eu), fonte: { ...rs("Commissione UE, Weekly Oil Bulletin"), url: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en" } };
+  x = last("el_it_day"); if (x) out.elettricita_it = { valore: +x.el_it_day, unita: "€/MWh", data: iso(x.el_it_day_date || x.date), fonte: { ...rs("Ember, prezzi all'ingrosso"), url: "https://ember-energy.org/data/european-wholesale-electricity-price-data" } };
   return out;
 }
 async function numAperti(env, force) {
