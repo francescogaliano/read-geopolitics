@@ -5519,7 +5519,7 @@ function mfApply(){
   // il paese selezionato sopra gli altri paesi (sotto gli archi), così il bordo si vede tutto
   if(sel){const sp=box.querySelector(`path.country[data-iso="${sel}"]`),ag=box.querySelector("g.arcs");if(sp&&ag&&sp.parentNode===ag.parentNode)ag.parentNode.insertBefore(sp,ag)}
   box.querySelectorAll("path.arc").forEach(a=>{a.classList.toggle("mf-arc",!!sel&&(a.dataset.i===sel||a.dataset.j===sel))});
-  mfCities();
+  mfNames();mfCities();
 }
 /* ---------- città coinvolte ---------- */
 let MF_CITIES=null,MF_CLOAD=null;
@@ -5558,15 +5558,52 @@ function mfCities(){
     const POS=[[5,-4,"start"],[-5,-4,"end"],[0,-9,"middle"],[0,13,"middle"],[4,12,"start"],[-4,12,"end"],[4,-9,"start"],[-4,-9,"end"]];
     items.forEach(i=>{i.t.style.display="";i.t.setAttribute("x",5);i.t.setAttribute("y",-4);i.t.setAttribute("text-anchor","start")});items.sort((a,b)=>b.p-a.p);
     const kept=[];const dots=items.map(i=>i.c.querySelector("circle").getBoundingClientRect());
-    const hitAny=r=>kept.some(o=>r.left<o.right+2&&r.right>o.left-2&&r.top<o.bottom&&r.bottom>o.top)||dots.some(o=>r.left<o.right&&r.right>o.left&&r.top<o.bottom&&r.bottom>o.top);
+    const hitAny=r=>kept.concat(S._nameRects||[]).some(o=>r.left<o.right+2&&r.right>o.left-2&&r.top<o.bottom&&r.bottom>o.top)||dots.some(o=>r.left<o.right&&r.right>o.left&&r.top<o.bottom&&r.bottom>o.top);
     items.forEach(i=>{let ok=false;for(const [x,y,a] of POS){i.t.setAttribute("x",x);i.t.setAttribute("y",y);i.t.setAttribute("text-anchor",a);const r=i.t.getBoundingClientRect();if(!r.width)return;if(!hitAny(r)){kept.push(r);ok=true;break}}if(!ok)i.t.style.display="none"})}
+}
+/* ---------- nomi dei paesi sulla mappa ----------
+   paese scelto: il suo nome e quelli dei paesi collegati; senza scelta: i nomi dei paesi abbastanza grandi
+   sullo schermo (più si ingrandisce, più nomi), senza sovrapposizioni; su computer, nome al passaggio del mouse */
+function mfMain(f){const g=f.geometry;if(!g||g.type!=="MultiPolygon")return f;let best=null,ba=-1;
+  g.coordinates.forEach(c=>{const p={type:"Feature",geometry:{type:"Polygon",coordinates:c}};const a=d3.geoArea(p);if(a>ba){ba=a;best=p}});return best||f}
+function mfNamePos(){if(S._mfNamePos||!S.geo||!S._mfProj)return S._mfNamePos;const path=d3.geoPath(S._mfProj);const FIX={USA:[-98,39],RUS:[60,60],FRA:[2.5,46.6],CAN:[-100,58],NOR:[9,61.5],CHL:[-71,-33],IDN:[114,-1],GBR:[-1.8,52.8],ITA:[12.6,42.6],GRC:[22,39.5],JPN:[138,36.5],MYS:[102,4],PHL:[122,12.5],NZL:[172,-42]};
+  S._mfNamePos=S.geo.features.filter(f=>f.id&&f.id!=="ATA").map(f=>{const m=mfMain(f);const c=FIX[f.id]?S._mfProj(FIX[f.id]):path.centroid(m);const b=path.bounds(m);return {iso:f.id,x:c[0],y:c[1],w:b[1][0]-b[0][0],a:path.area(m)}}).filter(p=>isFinite(p.x)&&isFinite(p.y));return S._mfNamePos}
+let MF_NRAF=0;
+function mfNames(){if(MF_NRAF)return;MF_NRAF=requestAnimationFrame(()=>{MF_NRAF=0;mfNamesNow()})}
+function mfNamesNow(){
+  const svg=document.querySelector("#mapBox svg");const P=mfNamePos();if(!svg||!P)return;const g=svg.querySelector(":scope > g");if(!g)return;
+  let ng=g.querySelector("g.mf-names");if(!ng){ng=document.createElementNS("http://www.w3.org/2000/svg","g");ng.setAttribute("class","mf-names");const cg=g.querySelector("g.mf-cities");if(cg)g.insertBefore(ng,cg);else g.appendChild(ng)}
+  const k=mfScale(),disp=(svg.getBoundingClientRect().width||960)/960,sel=S.selCountry,rel=sel?mfRel(sel):null;
+  const cand=sel?P.filter(p=>p.iso===sel||(rel&&rel[p.iso])):(k<1.6?[]:P.filter(p=>p.w*k*disp>=34));
+  const nm=iso=>{const c=S.countries[iso];return (c&&c.nome)||cname(iso)||iso};
+  ng.innerHTML=cand.map(p=>{const cls=p.iso===sel?"mf-n sel":sel?"mf-n rel":"mf-n";return `<g class="${cls}" data-iso="${esc(p.iso)}" transform="translate(${p.x.toFixed(2)},${p.y.toFixed(2)})"><text text-anchor="middle" y="3">${esc(nm(p.iso))}</text></g>`}).join("");
+  const sc=1/(disp*k);ng.querySelectorAll("text").forEach(t=>t.setAttribute("transform",`scale(${sc.toFixed(4)})`));
+  // sovrapposizioni: resta il paese scelto, poi i collegati, poi i paesi più grandi; senza scelta un nome deve stare dentro il suo paese
+  const items=[...ng.querySelectorAll(".mf-n")].map(e=>{const p=P.find(q=>q.iso===e.dataset.iso);return {e,pr:(e.classList.contains("sel")?1e9:e.classList.contains("rel")?1e8:0)+p.a,w:p.w}}).sort((a,b)=>b.pr-a.pr);
+  // i puntini delle città sono ostacoli: se il nome ci cade sopra, prova poco sopra o poco sotto
+  const dots=[...g.querySelectorAll(".mf-city")].filter(c=>c.style.display!=="none"&&getComputedStyle(c).display!=="none").map(c=>c.querySelector("circle").getBoundingClientRect()).filter(r=>r.width);
+  const ov=(r,o,m)=>r.left<o.right+m&&r.right>o.left-m&&r.top<o.bottom+1&&r.bottom>o.top-1;
+  const bx=svg.getBoundingClientRect();
+  const kept=[];items.forEach(i=>{const t=i.e.querySelector("text");let ok=false,r0=null;
+    for(const y of [3,-10,16]){t.setAttribute("y",y);const r=t.getBoundingClientRect();if(!r.width)break;if(!r0)r0=r;const inBox=r.left>=bx.left+2&&r.right<=bx.right-2&&r.top>=bx.top+2&&r.bottom<=bx.bottom-2;if(inBox&&!kept.some(o=>ov(r,o,3))&&!dots.some(o=>ov(r,o,2))){if(!(!sel&&r.width>i.w*k*disp*0.95)){kept.push(r);ok=true}break}}
+    if(!ok){if(i.e.classList.contains("sel")&&r0){t.setAttribute("y",-10);kept.push(t.getBoundingClientRect())}else i.e.style.display="none"}});
+  S._nameRects=kept}
+// su computer: nome e livello al passaggio del mouse
+if(window.matchMedia&&window.matchMedia("(hover:hover) and (pointer:fine)").matches){
+  ["click","wheel"].forEach(ev=>document.addEventListener(ev,()=>{const t=document.querySelector("#mapBox .mf-tip");if(t)t.hidden=true},true));
+  document.addEventListener("mousemove",e=>{const box=document.getElementById("mapBox");if(!box)return;let tip=box.querySelector(".mf-tip");const p=e.target.closest&&e.target.closest("#mapBox path.country");
+    if(!p||!p.dataset.iso){if(tip)tip.hidden=true;return}
+    if(!tip){tip=document.createElement("div");tip.className="mf-tip";box.appendChild(tip)}
+    const iso=p.dataset.iso,c=S.countries[iso],l=levelAt(iso);tip.textContent=((c&&c.nome)||cname(iso)||iso)+(l?" · tensione "+l:"");tip.hidden=false;
+    const bb=box.getBoundingClientRect();let x=e.clientX-bb.left+14,y=e.clientY-bb.top+14;if(x+tip.offsetWidth>bb.width-6)x=e.clientX-bb.left-tip.offsetWidth-10;tip.style.left=x+"px";tip.style.top=y+"px"});
 }
 const _drawMap=drawMap;
 drawMap=async function(){await _drawMap.apply(this,arguments);
   // stessa proiezione della mappa principale
   S._mfProj=d3.geoNaturalEarth1().fitExtent([[6,6],[960-6,500-6]],{type:"Sphere"});
+  S._mfNamePos=null;if(window.matchMedia&&window.matchMedia("(hover:hover) and (pointer:fine)").matches)document.querySelectorAll("#mapBox path.country > title").forEach(t=>t.remove());
   await mfLoadCities();
-  const g=document.querySelector("#mapBox svg > g");if(g){const mo=new MutationObserver(()=>mfCities());mo.observe(g,{attributes:true,attributeFilter:["transform"]})}
+  const g=document.querySelector("#mapBox svg > g");if(g){const mo=new MutationObserver(()=>{mfNames();mfCities()});mo.observe(g,{attributes:true,attributeFilter:["transform"]})}
   mfApply()};
 const _hl=highlightSel;highlightSel=function(){_hl.apply(this,arguments);mfApply()};
 // tocco sul mare: togli la selezione
@@ -5585,7 +5622,13 @@ const st=document.createElement("style");st.textContent=`#mapBox path.country{tr
 #mapBox.mf-zoom.mf-on path.arc.mf-arc{opacity:.7;stroke-width:1.3}
 .mf-city circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.2}
 .mf-city text{font:600 11px var(--sans);fill:var(--ink);stroke:var(--bg);stroke-width:3px;paint-order:stroke;stroke-linejoin:round;pointer-events:none}
-.mf-city{cursor:pointer}.mf-city.mf-dim{opacity:.3}`;document.head.appendChild(st);
+.mf-city{cursor:pointer}.mf-city.mf-dim{opacity:.3}
+.mf-n text{font:400 10px var(--sans);letter-spacing:.01em;fill:color-mix(in srgb,var(--ink) 58%,transparent);stroke:color-mix(in srgb,var(--bg) 85%,transparent);stroke-width:2.2px;paint-order:stroke;stroke-linejoin:round;pointer-events:none}
+.mf-n.rel text{fill:color-mix(in srgb,var(--ink) 78%,transparent);font-size:10.5px}
+.mf-n.sel text{fill:var(--ink);font-weight:600;font-size:11px}
+@media (max-width:600px){.mf-n text{font-size:9px}.mf-n.rel text{font-size:9.5px}.mf-n.sel text{font-size:10px}}
+#mapBox.mf-on .mf-city.mf-dim{opacity:.18}
+#mapBox{position:relative}.mf-tip{position:absolute;z-index:5;pointer-events:none;background:var(--surface,#16202b);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:600 12.5px var(--sans);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}`;document.head.appendChild(st);
 })();
 /* ===== Mappa dell'area (Esplora) + zoom intelligente sul paese scelto (Mappa) ===== */
 (function(){
