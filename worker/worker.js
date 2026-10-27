@@ -302,7 +302,7 @@ const NUM_SER = {
   btp10_m: { nome: "Rendimento BTP 10 anni (media mensile)", unita: "%", freq: "mensile", fonte: { nome: "BCE, tassi a lungo termine", url: "https://data.ecb.europa.eu/data/datasets/IRS", licenza: "riuso con citazione" } },
   spread_m: { nome: "Spread BTP-Bund 10 anni (media mensile)", unita: "pb", freq: "mensile", calcolo: "(Italia − Germania) × 100, tassi a lungo termine BCE", fonte: { nome: "BCE, tassi a lungo termine", url: "https://data.ecb.europa.eu/data/datasets/IRS", licenza: "riuso con citazione" } },
   oro_m: { nome: "Oro (media mensile)", unita: "$/oncia", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
-  grano_m: { nome: "Grano USA (media mensile)", unita: "$/t", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
+  grano_m: { nome: "Grano USA, tenero (SRW, media mensile)", unita: "$/t", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
   brent_m: { nome: "Petrolio Brent (media mensile)", unita: "$/barile", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
   gas_eu_m: { nome: "Gas Europa (media mensile)", unita: "$/MMBtu", freq: "mensile", fonte: { nome: "Banca Mondiale, Pink Sheet", url: "https://www.worldbank.org/en/research/commodity-markets", licenza: "CC BY 4.0" } },
   ttf: { nome: "Gas TTF", unita: "€/MWh", freq: "giornaliero", calcolo: "GNL spot + scarto GNL−TTF (ACER)", fonte: { nome: "ACER, via Read Signals", url: "https://acer.europa.eu/gas/lng-price-assessment", licenza: "da verificare (note legali ACER)" } },
@@ -339,7 +339,7 @@ async function numStoricoRaccogli(env) {
       const hi = sh.rows.findIndex((r) => r.some((c) => /^gold$/i.test(String(c).trim()))); if (hi < 0) continue;
       const H = sh.rows[hi].map((c) => String(c).trim().toLowerCase());
       const col = (re) => H.findIndex((c) => re.test(c));
-      const C = { oro_m: col(/^gold$/), grano_m: col(/^wheat, us hrw/), brent_m: col(/^crude oil, brent/), gas_eu_m: col(/^natural gas, europe/) };
+      const C = { oro_m: col(/^gold$/), grano_m: col(/^wheat, us srw/), brent_m: col(/^crude oil, brent/), gas_eu_m: col(/^natural gas, europe/) };
       for (const [id, ci] of Object.entries(C)) { if (ci < 0) continue;
         put(id, sh.rows.slice(hi + 1).map((r) => { const mm = /^(\d{4})M(\d{2})$/.exec(String(r[0]).trim()); const v = Number(r[ci]); return mm && Number.isFinite(v) && r[ci] !== "" && mm[1] >= "2018" ? [mm[1] + "-" + mm[2], +v.toFixed(2)] : null; }).filter(Boolean)); }
       done = true; break;
