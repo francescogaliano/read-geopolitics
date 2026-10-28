@@ -4044,7 +4044,7 @@ function ptFol(b){const out={html:"",n:0};try{const ids=(F.filoni||[]).filter(id
   const quando=d=>d===today?"oggi":d===ieri?"ieri":dShort(d);
   const R=ids.map(id=>{const t=S.threads[id],FS=thFamSet(t);const chiuso=t.stato==="chiuso";
     const cd=t.chiuso_il||t.ultimo_aggiornamento||"";if(chiuso&&cd&&cd<since)return null;
-    const ag=(S.agg||[]).filter(x=>x&&FS.has(x.filone_id)&&x.data>=since&&x.testo).sort((a,z)=>String(z.data+(z.ora||"")).localeCompare(String(a.data+(a.ora||""))))[0];
+    const ag=(S.agg||[]).filter(x=>x&&(FS.has(x.filone_id)||(x.storia_id&&S.stories[x.storia_id]&&FS.has(S.stories[x.storia_id].filone_id)))&&x.data>=since&&x.testo).sort((a,z)=>String(z.data+(z.ora||"")).localeCompare(String(a.data+(a.ora||""))))[0];
     const sids=(b.storie_mondo||[]).concat(b.storie_italia||[]).filter(sid=>S.stories[sid]&&FS.has(S.stories[sid].filone_id));
     const nx=thNext(t);const nov=chiuso||!!ag||sids.length>0;
     let up="";
