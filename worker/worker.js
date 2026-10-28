@@ -898,6 +898,7 @@ async function panelApi(env, origin, b) {
     return { ok: true, total: (tot && tot.n) || 0, newsletter: (tot && tot.nl) || 0, unsub: (tot && tot.un) || 0, users: results };
   }
   if (typeof act === "string" && act.startsWith("mail_")) return await mailPanel(env, b);
+  if (act === "dec_get" || act === "dec_set") return await decPanel(env, b);
   if (act === "draft_reset") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
@@ -1056,6 +1057,21 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .sndab{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sndab .sndl{display:none}.sndd{text-decoration:none;display:inline-flex;align-items:center}
 .sndi{border-top:1px solid #27353F;margin-top:14px;padding-top:12px;display:grid;gap:8px}.sndn{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.sndn label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8FA0AE}.sndn input{width:92px}.sndr canvas{flex-basis:100px;width:100px;height:178px}
 .sndw{border-top:1px solid #27353F;margin-top:14px;padding-top:12px}.sndb{display:flex;gap:6px;align-items:flex-end;height:96px;margin:8px 0}.sndb div{flex:1;text-align:center;font-size:11px;color:#8FA0AE;line-height:1.3}.sndb i{display:block;width:70%;margin:0 auto 4px;background:#86B4EA;border-radius:4px 4px 0 0}
+.dc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.dc-h b{font-size:17px}
+.dc-sec{margin-top:16px;font:500 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
+.dc-r{padding:11px 0;border-top:1px solid #27353F}.dc-sec+.dc-r{border-top:0}
+.dc-t{font-weight:600;font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.dc-m{font-size:12.5px;color:#8FA0AE;margin-top:3px}.dc-m .old{color:#E5B45A}
+.dc-d{font-size:13.5px;color:#B9C4CF;margin-top:4px;line-height:1.4}
+.dc-a{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.dc-a button{background:none;border:0;padding:0;font:600 13.5px 'IBM Plex Sans',system-ui;color:#7FB2F0;cursor:pointer;min-height:24px}
+.dc-a button.y{color:#7BD39A}.dc-a button.n{color:#8FA0AE}
+.dc-l{display:flex;gap:14px;margin-top:8px;padding:8px 10px;border-left:2px solid #7FB2F0;background:rgba(127,178,240,.06);font-size:13px;align-items:center;flex-wrap:wrap}
+.dc-l span{color:#8FA0AE}.dc-l button{background:none;border:0;color:#7FB2F0;font:600 13px 'IBM Plex Sans',system-ui;padding:0;cursor:pointer}.dc-l input{background:#0E151B;color:#E4EAEF;border:1px solid #27353F;border-radius:6px;padding:3px 6px;font-size:13px}
+.dc-more{margin-top:6px;font-size:13px;color:#7FB2F0;background:none;border:0;padding:0;cursor:pointer}
+.dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}
+.dc-f details{margin-top:12px}.dc-f summary{font-size:13px;color:#8FA0AE;cursor:pointer}
+.tab .bdg{background:#E5B45A;color:#0B1830;border-radius:9px;padding:0 6px;font-size:12px;margin-left:4px}
 </style>
 <main><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div>
 <details class="card chan" id="chan"><summary><span class="lab">Canali e uscita</span><span class="chsum" id="chsum">carico…</span><span class="chev">▾</span></summary>
@@ -1085,7 +1101,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 </details>
 <details class="card" id="svb" hidden><summary class="svh"><span class="lab">Svolte</span><span class="chsum" id="svsum"></span><span class="svn" id="svn" hidden></span><span class="chev">▾</span></summary><div class="svbd"><div id="svl"></div><div class="svg" id="svg" hidden></div></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
-<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="pd" hidden>
+<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="wk">Settimana</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -1684,8 +1700,44 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}["og","list","wk","rq","ut","pd","st","lk"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+/* v67: Proposte · decisioni su dossier, idee e richieste. Le porta la routine del sito, che poi applica le scelte nell'artifact */
+let DC=null,DCMORE={},DCT=null;
+const DCAZ={dossier:[["prepara","Prepara","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],idea:[["interessante","Interessante","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],tema:[["seguilo","Seguilo","y"],["tardi","Più tardi",""],["no","No","n"]],lav:[["annulla","Annulla","n"]]};
+const DCSEC=[["dossier","🧭 Dossier proposti"],["idea","💡 Idee"],["tema","🙋 Temi chiesti dai lettori"]];
+const DCFATTO={prepara:"Preparalo",no:"No",interessante:"Interessante",annulla:"Annulla",seguilo:"Seguilo"};
+async function dcLoad(){const r=await api({action:"dec_get"});if(r&&r.ok){DC=r;dcRender()}else{const el=document.getElementById("dc");if(el&&!DC)el.innerHTML='<div class="card"><div class="sub">Non riesco a caricare le proposte: '+esc((r&&r.error)||"")+'</div></div>'}}
+function dcAge(d){if(!d)return "";const n=Math.round((Date.parse(DC.today+"T12:00:00Z")-Date.parse(d+"T12:00:00Z"))/864e5);return n<=0?"oggi":n===1?"da ieri":"in attesa da "+n+" giorni"}
+function dcRow(x,grp){const az=DCAZ[grp]||[];const d=(DC.dec||{})[x.id];const age=x.data?dcAge(x.data):"";const old=x.data&&grp!=="lav"&&age.indexOf("giorni")>0&&parseInt((age.match(/[0-9]+/)||["0"])[0],10)>=14;
+  let h='<div class="dc-r" data-dc="'+esc(x.id)+'"><div class="dc-t">'+esc(x.titolo||x.id)+'</div><div class="dc-m">'+esc(x.meta||"")+(x.meta&&age?" · ":"")+(age?'<span class="'+(old?"old":"")+'">'+esc(age)+'</span>':"")+'</div>'+(x.testo?'<div class="dc-d">'+esc(x.testo)+'</div>':"");
+  if(d&&!d.applicata&&DCFATTO[d.azione])h+='<div class="dc-ok">✓ '+esc(DCFATTO[d.azione])+' · lo applica la routine del sito al prossimo giro (7:52 o 16:52) <button class="dc-more" data-dc-undo="'+esc(x.id)+'">annulla</button></div>';
+  else if(d&&d.azione==="tardi")h+='<div class="dc-m">torna il '+esc(itDate(d.fino))+' · <button class="dc-more" data-dc-undo="'+esc(x.id)+'">riprendi ora</button></div>';
+  else if(d&&d.azione==="pausa")h+='<div class="dc-m">in pausa · <button class="dc-more" data-dc-undo="'+esc(x.id)+'">riattiva</button></div>';
+  else h+='<div class="dc-a">'+az.map(a=>'<button class="'+a[2]+'" data-dc-az="'+a[0]+'">'+a[1]+'</button>').join("")+'</div>'+(DCT===x.id?'<div class="dc-l"><span>Riproponi tra</span><button data-dc-g="3">3 giorni</button><button data-dc-g="7">1 settimana</button><button data-dc-g="30">1 mese</button><input type="date" data-dc-date min="'+esc(DC.today)+'"></div>':"");
+  return h+'</div>'}
+function dcRender(){const el=document.getElementById("dc");if(!el||!DC)return;const dec=DC.dec||{},it=DC.items||[];
+  const st=x=>{const d=dec[x.id];if(!d)return "aperta";if(d.azione==="tardi")return d.fino&&d.fino>DC.today?"tardi":"aperta";if(d.azione==="pausa")return "pausa";if(d.azione==="no")return d.applicata?"via":"fatto";return d.applicata?"via":"fatto"};
+  const open=it.filter(x=>x.tipo!=="lav"&&["aperta","fatto"].includes(st(x)));const n=open.filter(x=>st(x)==="aperta").length;
+  const b=document.getElementById("dcb");if(b){b.hidden=!n;b.textContent=n}
+  let h='<div class="card"><div class="dc-h"><b>Da decidere</b><span class="sub">'+n+(DC.at?' · aggiornate il '+esc(itDate(DC.at.slice(0,10)))+' alle '+esc(new Date(DC.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})):' · non ancora arrivate')+'</span></div><div class="sub" style="margin-top:4px">Le proposte degli agenti e le richieste. La routine del sito (7:52 e 16:52) le aggiorna e porta le tue scelte nell&#39;artifact.</div>';
+  for(const [g,lab] of DCSEC){const L=open.filter(x=>x.tipo===g).sort((a,z)=>String(a.data||"").localeCompare(String(z.data||"")));if(!L.length)continue;const lim=DCMORE[g]?L.length:3;
+    h+='<div class="dc-sec"><span>'+lab+' · '+L.length+'</span><span>'+(g==="dossier"?"dal più vecchio":"")+'</span></div>'+L.slice(0,lim).map(x=>dcRow(x,g)).join("")+(L.length>lim?'<button class="dc-more" data-dc-more="'+g+'">Altri '+(L.length-lim)+' ▾</button>':"")}
+  if(!open.length)h+='<div class="sub" style="margin-top:12px">Niente da decidere.</div>';
+  const lav=it.filter(x=>x.tipo==="lav"&&["aperta","fatto"].includes(st(x)));
+  if(lav.length)h+='<div class="dc-sec"><span>⏳ In lavorazione · '+lav.length+'</span><span></span></div>'+lav.map(x=>dcRow(x,"lav")).join("");
+  const T=it.filter(x=>st(x)==="tardi"),P=it.filter(x=>st(x)==="pausa");
+  h+='<div class="dc-f">'+(T.length?'<details><summary>Rimandate · '+T.length+'</summary>'+T.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+(P.length?'<details><summary>In pausa · '+P.length+'</summary>'+P.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+'</div></div>';
+  el.innerHTML=h}
+async function dcSet(id,azione,fino){const r=await api({action:"dec_set",id,azione,fino});if(r&&r.ok){DC.dec=r.dec;DCT=null;dcRender()}else alert("Non salvato: "+((r&&r.error)||""))}
+document.getElementById("dc").addEventListener("click",e=>{const m=e.target.closest("[data-dc-more]");if(m){DCMORE[m.dataset.dcMore]=1;dcRender();return}
+  const u=e.target.closest("[data-dc-undo]");if(u){dcSet(u.dataset.dcUndo,"riattiva");return}
+  const row=e.target.closest("[data-dc]");if(!row)return;const id=row.dataset.dc;
+  const a=e.target.closest("[data-dc-az]");if(a){const z=a.dataset.dcAz;if(z==="tardi"){DCT=DCT===id?null:id;dcRender();return}dcSet(id,z);return}
+  const g=e.target.closest("[data-dc-g]");if(g){const d=new Date(DC.today+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+(+g.dataset.dcG));dcSet(id,"tardi",d.toISOString().slice(0,10))}});
+document.getElementById("dc").addEventListener("change",e=>{const i=e.target.closest("[data-dc-date]");if(i&&i.value){const row=e.target.closest("[data-dc]");dcSet(row.dataset.dc,"tardi",i.value)}});
+setTimeout(()=>{api({action:"dec_get"}).then(r=>{if(r&&r.ok){DC=r;dcRender()}}).catch(()=>{})},1500);
+
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
   const pub=ds.find(x=>x.status==="pubblicata");if(pub)return {c:"ok",t:"Pubblicato"+(pub.permalink?' · <a href="'+esc(pub.permalink)+'" target="_blank">apri</a>':"")};
@@ -2727,6 +2779,58 @@ async function thPanelApi(env, b) {
 const romeYesterday = () => new Date(Date.parse(romeToday() + "T12:00:00Z") - 86400000).toISOString().slice(0, 10);
 async function svList(env) { return (await kvList(env, "sv:", 40)).map(({ _k, _u, ...x }) => x).sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))); }
 async function tgPriv(env, text) { const st = await tgSettings(env); if (!st.priv_chat || !env.TG_BOT_TOKEN) return null; return await tgCall(env, "sendMessage", { chat_id: st.priv_chat, text, parse_mode: "HTML", disable_web_page_preview: true }); }
+// ---- v67: «Proposte» nel pannello. La routine del sito porta le proposte aperte dell'artifact (POST /v1/decidi: dossier candidati,
+// idee senza giudizio, richieste in lavorazione) e applica nell'artifact le scelte fatte qui (GET /v1/decidi, poi POST /v1/decidi/applicate).
+// «Più tardi» e «Pausa» restano solo nel pannello. Niente di questo è pubblico.
+const DEC_OK = { dossier: ["prepara", "tardi", "pausa", "no"], idea: ["interessante", "tardi", "pausa", "no"], tema: ["seguilo", "tardi", "no"], lav: ["annulla"] };
+const DEC_APPLY = new Set(["prepara", "no", "interessante", "annulla", "seguilo"]);
+async function decPanel(env, b) {
+  const box = (await kvGet(env, "dec_items")) || { at: null, items: [] };
+  const dec = (await kvGet(env, "dec_map")) || {};
+  if (b.action === "dec_get") return { ok: true, today: romeToday(), at: box.at, items: box.items || [], dec };
+  const id = String(b.id || "");
+  const item = (box.items || []).find((x) => x.id === id);
+  if (!item) throw { status: 404, code: "proposta_non_trovata" };
+  const az = String(b.azione || "");
+  if (az === "riattiva") delete dec[id];
+  else {
+    if (!(DEC_OK[item.tipo] || []).includes(az)) throw { status: 422, code: "azione_non_valida" };
+    const e = { azione: az, at: new Date().toISOString(), tipo: item.tipo, titolo: item.titolo };
+    if (az === "tardi") { const f = String(b.fino || ""); if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || f <= romeToday()) throw { status: 422, code: "data_non_valida" }; e.fino = f; }
+    if (DEC_APPLY.has(az)) e.applicata = false;
+    dec[id] = e;
+  }
+  await kvSet(env, "dec_map", dec);
+  return { ok: true, dec };
+}
+async function decPrivate(request, env, p, method) {
+  const dec = (await kvGet(env, "dec_map")) || {};
+  if (method === "GET" && p === "/v1/decidi") {
+    const L = Object.entries(dec).filter(([, d]) => DEC_APPLY.has(d.azione) && !d.applicata).map(([id, d]) => ({ id, tipo: d.tipo, azione: d.azione, titolo: d.titolo, at: d.at }));
+    return json({ ok: true, decisioni: L });
+  }
+  const b = await request.json().catch(() => null);
+  if (!b || typeof b !== "object") return fail(400, "bad_json");
+  if (method === "POST" && p === "/v1/decidi/applicate") {
+    const ids = Array.isArray(b.ids) ? b.ids.map(String) : [];
+    let n = 0; for (const id of ids) if (dec[id]) { dec[id].applicata = true; dec[id].applicata_at = new Date().toISOString(); n++; }
+    await kvSet(env, "dec_map", dec);
+    return json({ ok: true, applicate: n });
+  }
+  if (method === "POST" && p === "/v1/decidi") {
+    const raw = Array.isArray(b.items) ? b.items.slice(0, 300) : null;
+    if (!raw) return fail(422, "servono items");
+    const items = raw.filter((x) => x && typeof x === "object" && DEC_OK[x.tipo] && /^[a-z]+:[A-Za-z0-9_.:-]{1,90}$/.test(String(x.id || ""))).map((x) => ({
+      id: String(x.id), tipo: x.tipo, titolo: clip(x.titolo, 160), meta: clip(x.meta, 160), testo: clip(x.testo, 300), data: /^\d{4}-\d{2}-\d{2}$/.test(String(x.data || "")) ? x.data : null }));
+    await kvSet(env, "dec_items", { at: new Date().toISOString(), items });
+    // le decisioni già applicate di proposte che non ci sono più si tolgono; «più tardi» scaduti pure
+    const ids = new Set(items.map((x) => x.id)); const today = romeToday(); let pulite = 0;
+    for (const [id, d] of Object.entries(dec)) if ((!ids.has(id) && (d.applicata || !DEC_APPLY.has(d.azione))) || (d.azione === "tardi" && d.fino && d.fino <= today)) { delete dec[id]; pulite++; }
+    await kvSet(env, "dec_map", dec);
+    return json({ ok: true, proposte: items.length, decisioni_pulite: pulite });
+  }
+  return fail(404, "not_found");
+}
 async function svPrivate(request, env, p, method) {
   if (method === "GET" && p === "/v1/svolte") {
     const y = romeYesterday();
@@ -3778,6 +3882,7 @@ async function route(request, env) {
     if (p.startsWith("/v1/ig/")) return await igPrivate(request, env, p, method);
     if (p.startsWith("/v1/podcast/")) return await podPrivate(request, env, p, method);
     if (p === "/v1/svolte" || p === "/v1/giro") return await svPrivate(request, env, p, method);
+    if (p === "/v1/decidi" || p === "/v1/decidi/applicate") return await decPrivate(request, env, p, method);
 
     if (method === "GET" && p === "/v1/users") {
       const { results } = await env.DB.prepare(
