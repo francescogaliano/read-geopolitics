@@ -3285,7 +3285,8 @@ function renderIdee(){
 function dosOwn(){return S.owner&&!S.static}
 function dosReady(){return Object.values(S.dossier||{}).filter(d=>d.stato==="pronto")}
 function dosForThread(tid){return tid?dosReady().find(d=>(d.filoni||[]).includes(tid))||null:null}
-function dosForStory(s){if(!s)return null;return dosForThread(s.filone_id)||dosReady().find(d=>(d.bandiere||[]).length&&(d.bandiere||[]).every(b=>(s.paesi||[]).includes(b)))||null}
+/* il dossier di una storia è quello del suo tema (o del tema padre): non si indovina dai paesi, che possono essere solo coinvolti (es. vittime italiane in un incidente in Spagna) */
+function dosForStory(s){if(!s)return null;const t=S.threads&&S.threads[s.filone_id];const p=t&&t.padre&&t.padre!==t.id?t.padre:null;return dosForThread(s.filone_id)||(p?dosForThread(p):null)}
 function dosForCountry(iso){return dosReady().filter(d=>(d.paesi||[]).includes(iso)||(d.bandiere||[]).includes(iso))}
 function dosForActor(aid){const out=[];dosReady().forEach(d=>(d.attori||[]).forEach(x=>{if(x.attore_id===aid)out.push({d,x})}));return out}
 function dosPlain(t){return String(t||"").replace(/\s*(\[\d+(?:[,–-]\s*\d+)*\])+/g,"").replace(/\*\*/g,"")}
