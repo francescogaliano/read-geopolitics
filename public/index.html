@@ -1824,14 +1824,13 @@ function storyHTML(s,rank){
   <div class="sto-h">
     <span class="rank">${String(rank).padStart(2,"0")}</span>
     <h3>${esc(s.titolo)}</h3>
-    <div class="sto-m">${(s.paesi||[]).map(p=>`<button class="sto-fl" data-country="${esc(p)}" title="${esc(cname(p))}">${flag(p)||esc(p)}</button>`).join("")}<span class="conf ${esc(conf.livello)}" title="${esc(conf.motivo)}">confidenza ${esc(conf.livello||"—")}</span>${(()=>{const A=aggForStory(s);return A.length?`<span class="agg-b">aggiornata ${esc(A[0].ora||"")}</span>`:""})()}${s.fuori_riflettori?'<span class="chip fuori" title="Storia rilevante da un\'area che di solito resta fuori dai riflettori">Fuori dai riflettori</span>':""}${s.esempio?'<span class="chip sample">esempio</span>':""}${(()=>{const dz=dosForStory(s);return dz?`<button type="button" class="dzc" data-open-dos="${esc(dz.id)}" title="Il dossier: tutta la storia del tema, da zero"><span class="dzi" aria-hidden="true">🧭</span><span class="dzt">dossier: ${esc(dz.titolo)}</span> ›</button>`:""})()}${folStory(s)}</div>
+    <div class="sto-m">${(s.paesi||[]).map(p=>`<button class="sto-fl" data-country="${esc(p)}" title="${esc(cname(p))}">${flag(p)||esc(p)}</button>`).join("")}<span class="conf ${esc(conf.livello)}" title="${esc(conf.motivo)}">confidenza ${esc(conf.livello||"—")}</span>${(()=>{const A=aggForStory(s);return A.length?`<span class="agg-b">aggiornata ${esc(A[0].ora||"")}</span>`:""})()}${s.fuori_riflettori?'<span class="chip fuori" title="Storia rilevante da un\'area che di solito resta fuori dai riflettori">Fuori dai riflettori</span>':""}${s.esempio?'<span class="chip sample">esempio</span>':""}${(()=>{const dz=dosForStory(s);return dz?`<button type="button" class="dzc" data-open-dos="${esc(dz.id)}" title="Il dossier: tutta la storia del tema, da zero"><span class="dzi" aria-hidden="true">🧭</span><span class="dzt">dossier: ${esc(dz.titolo)}</span> ›</button>`:""})()}</div>${folStory(s)}
   </div>
   <div class="sto-b">
     ${aggStoryHTML(s)}
     <div class="block"><span class="label tag-fact"><span class="ic" aria-hidden="true">🧾</span>Fatti · verificati</span><p>${refText(s.fatti,s.fonti)}</p></div>
     ${s.divergenze?`<div class="diverge"><span class="label"><span class="ic" aria-hidden="true">⚠️</span>Le fonti divergono</span><br>${refText(s.divergenze,s.fonti)}</div>`:""}
     <div class="block pc"><span class="label tag-interp"><span class="ic" aria-hidden="true">💡</span>Perché conta · interpretazione</span><p>${refText(s.perche_conta,s.fonti)}</p></div>${corrHTML(s)}
-    ${dosStripHTML(dosForStory(s))}
   </div>
   <details class="sx"><summary><span class="sx-t">Approfondisci<small>posizioni, sintesi, segnali e fonti</small></span>${voteTag(s,th)}<span class="sx-f">${nf} fonti <span class="dots">${dots}</span></span></summary>
     <div class="sx-b">${sxBody(s,th,hasSc,conf,prev)}</div>
@@ -2815,7 +2814,7 @@ function thCat(t){const s=t.sottoambiti||[],a=t.ambiti||[],h=x=>s.includes(x);
   if(h("diritti")||a.includes("societa"))return"soc";if(a.includes("economia"))return"eco";if(a.includes("energia"))return"ener";if(a.includes("politica"))return"pol";if(a.includes("geopolitica"))return"dipl";return"alt"}
 function thLv(t){return Math.max(0,...(t.bandiere||[]).map(p=>{const c=S.countries[p];return (c&&+c.livello)||0}))}
 function renderTlChips(){const el=$("#tlChips");if(!el)return;const f=S.flt.f;
-  const ths=Object.values(S.threads).filter(t=>(t.stato!=="chiuso"||t.id===f)&&(!thPar(t)||t.id===f)).sort(thSort);
+  const ths=Object.values(S.threads).filter(t=>t.stato!=="chiuso"||t.id===f).sort(thSort);
   el.innerHTML=`<button class="tl-chip" data-tl-chip="" aria-pressed="${!f}">Tutti</button>`+ths.map(t=>`<button class="tl-chip${t.stato!=="attivo"?" dorm":""}" data-tl-chip="${esc(t.id)}" aria-pressed="${f===t.id}" title="${esc(t.titolo)}"><span class="fl" aria-hidden="true">${thFlags(t)}</span>${esc(thShort(t))}</button>`).join("");
   const on=el.querySelector('[aria-pressed="true"]');if(on&&f)el.scrollLeft=Math.max(0,on.offsetLeft-el.clientWidth/2+on.offsetWidth/2)}
 function thSort(a,b){return (a.stato==="attivo"?0:a.stato==="dormiente"?1:2)-(b.stato==="attivo"?0:b.stato==="dormiente"?1:2)||String(thLast(b).data||b.ultimo_aggiornamento||"").localeCompare(String(thLast(a).data||a.ultimo_aggiornamento||""))}
@@ -2830,8 +2829,8 @@ function thFamHTML(t){const p=thPar(t);const k=thKids(t.id).sort(thSort);const S
   return h}
 let FOLAPI=null;
 function folStory(s){try{if(!S.static||!s||!FOLAPI)return"";const follows=FOLAPI.follows;const t=s.filone_id&&S.threads[s.filone_id];
-  if(t&&(t.tipo==="evento"||thPar(t))){const on=follows("filoni",t.id);return `<button type="button" class="folb${on?" on":""}" data-fol="filoni|${esc(t.id)}" title="${esc(t.titolo)}">${on?"✓ Segui questo tema":"+ Segui il tema"}</button>`}
-  const p=(s.paesi||[]).find(x=>/^[A-Z]{3}$/.test(x));if(!p||!cName(p))return"";const on=follows("paesi",p);return `<button type="button" class="folb${on?" on":""}" data-fol="paesi|${esc(p)}">${on?"✓ Segui "+esc(cName(p)):"+ Segui "+esc(cName(p))}</button>`}catch(e){return""}}
+  let k,id,nm;if(t&&(t.tipo==="evento"||thPar(t))){k="filoni";id=t.id;nm=t.titolo}else{const p=(s.paesi||[]).find(x=>/^[A-Z]{3}$/.test(x));if(!p)return"";k="paesi";id=p;nm=(typeof cName==="function"?cName(p):p)}
+  const on=follows(k,id);return `<button type="button" class="sto-star${on?" on":""}" data-fol="${k}|${esc(id)}" data-fol-n="${esc(nm)}" aria-pressed="${on}" aria-label="${on?"Smetti di seguire":"Segui"} ${esc(nm)}" title="${on?"Segui":"Segui"} ${esc(nm)}"><span aria-hidden="true">${on?"★":"☆"}</span><small>${on?"Lo segui":"Segui"}</small></button>`}catch(e){return""}}
 function thFamStorie(t){return [t,...thKids(t.id)].flatMap(x=>x.storie||[])}
 function thLast(t){const today=isoDay(new Date());const FS=thFamSet(t);const ev=S.events.filter(e=>FS.has(e.filone_id)&&e.data<=today).sort((a,b)=>b.data.localeCompare(a.data)||String(b.id).localeCompare(String(a.id)))[0];if(ev)return {testo:ev.testo,data:ev.data};const st=thFamStorie(t).map(x=>S.stories[x.id]).filter(Boolean).sort((a,b)=>b.data.localeCompare(a.data))[0];return st?{testo:st.titolo,data:st.data}:{}}
 function thNext(t){const today=isoDay(new Date());const FS=thFamSet(t);return S.agenda.filter(a=>FS.has(a.filone_id)&&(a.data_fine||a.data)>=today).sort((a,b)=>a.data.localeCompare(b.data))[0]||null}
@@ -2907,7 +2906,7 @@ function themeCard(t,sel,evOk,nf){const l=thLast(t),n=thNext(t),today=isoDay(new
   const cat=thCat(t),tens=TCAT_T.has(cat),lv=tens?thLv(t):0,ci=(TCAT.find(x=>x[0]===cat)||TCAT[6])[1];
   return `<div class="acc${sel?" sel":""}${star?" has-star":""}${lv?" tens":""}"${lv?` style="--lv:var(--l${lv})"`:""} id="acc-${esc(t.id)}">${star}<button class="thc" data-tl-theme="${sel?"":esc(t.id)}" aria-expanded="${sel}"><span class="f" aria-hidden="true">${tens||t.icona?thFlags(t):ci}</span><span class="nm">${esc(thShort(t))}<span class="stt ${esc(t.stato)}">${esc(t.stato)}</span>${lv?`<span class="tlv" title="Tensione più alta tra i paesi del tema, scala 1–5">${lv}</span>`:""}${!tens&&!t.icona&&(t.bandiere||[]).length?`<span class="tfl" aria-hidden="true">${thFlags(t)}</span>`:""}${dosForThread(t.id)?'<span class="dos-badge">🧭 dossier</span>':""}</span><span class="go" aria-hidden="true">›</span>
   <span class="l">${l.testo?`Ultimo: <i>${esc(clip(l.testo,90))}</i> · ${esc(dShort(l.data))}`:esc(t.descrizione||"")}</span>
-  <span class="n${n?"":" no"}">${n?`Prossimo: ${esc(clip(n.titolo,60))} · ${esc(countdown(n,today))}`:"Nessuna scadenza in agenda"}</span>${(()=>{const k=thKids(t.id).filter(x=>x.stato!=="chiuso");return k.length?`<span class="n kd">Dentro: ${k.map(x=>esc(x.breve||x.titolo)).join(" · ")}</span>`:""})()}</button>${sel?`<div class="acc-b">${themeArc(t,evOk,nf)}</div>`:""}</div>`}
+  <span class="n${n?"":" no"}">${n?`Prossimo: ${esc(clip(n.titolo,60))} · ${esc(countdown(n,today))}`:"Nessuna scadenza in agenda"}</span>${(()=>{const k=thKids(t.id).filter(x=>x.stato!=="chiuso");return (k.length?`<span class="n kd">Dentro: ${k.map(x=>esc(x.breve||x.titolo)).join(" · ")}</span>`:"")+(thPar(t)?`<span class="n kd">Fa parte di: ${esc(thShort(thPar(t)))}</span>`:"")})()}</button>${sel?`<div class="acc-b">${themeArc(t,evOk,nf)}</div>`:""}</div>`}
 function renderTimeline(){
   const mode=S.tlMode||"temi";
   document.querySelectorAll("[data-tl-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.tlMode===mode)));
@@ -2917,7 +2916,7 @@ function renderTimeline(){
   const f=S.flt;const cur=f.f&&S.threads[f.f]?f.f:"";const tv=$("#threadView");const el=$("#timeline");
   const nf=[f.r,f.t,f.a].filter(Boolean).length;const fs=$("#tlFsum");if(fs)fs.textContent=nf?`· ${nf} attiv${nf===1?"o":"i"}`:"";if(nf&&$("#tlFilt"))$("#tlFilt").open=true;
   const evOk=e=>(!f.r||e.regione===f.r)&&(!f.t||e.tema===f.t)&&(!f.a||evAmb(e).includes(f.a));
-  let all=Object.values(S.threads).sort(thSort).filter(x=>!thPar(x)||x.id===cur);
+  let all=Object.values(S.threads).sort(thSort).filter(x=>!thPar(x)||x.stato!=="chiuso"||x.id===cur);
   const hits=nf?S.events.filter(evOk).sort((a,b)=>b.data.localeCompare(a.data)):[];
   if(nf){const ids=new Set(hits.map(e=>e.filone_id));hits.forEach(e=>{const p=thPar(S.threads[e.filone_id]);if(p)ids.add(p.id)});all=all.filter(x=>ids.has(x.id)||x.id===cur)}
   const open=all.filter(x=>x.stato!=="chiuso"||x.id===cur),closed=all.filter(x=>x.stato==="chiuso"&&x.id!==cur);
@@ -4032,11 +4031,13 @@ function allNames(){return F.aree.map(a=>fName("aree",a)).concat((F.paesi||[]).m
 function followBtn(k,id,label){const on=follows(k,id);return `<button type="button" class="xp-follow" data-follow="${k}|${esc(id)}" aria-pressed="${on}">${on?"★ Segui":"☆ Segui"}${label?` ${esc(label)}`:""}</button>`}
 
 /* v-temi: «Segui il tema» sulle storie, righe dei temi seguiti in «Per te oggi», elenco nel «Mio Read» */
-document.addEventListener("click",e=>{const f=e.target.closest("[data-fol]");if(!f)return;e.preventDefault();
+document.addEventListener("click",e=>{const f=e.target.closest("[data-fol]");if(!f)return;e.preventDefault();e.stopPropagation();
   if(S.guest&&typeof showLock==="function"){showLock({what:"interessi"});return}
-  const v=f.dataset.fol,i=v.indexOf("|");toggleF(v.slice(0,i),v.slice(i+1));
-  document.querySelectorAll('[data-fol="'+v+'"]').forEach(x=>{const k=v.slice(0,i),id=v.slice(i+1),on=follows(k,id);x.classList.toggle("on",on);x.textContent=k==="filoni"?(on?"✓ Segui questo tema":"+ Segui il tema"):(on?"✓ Segui ":"+ Segui ")+cName(id)});
-  try{perTe()}catch(_){}});
+  const v=f.dataset.fol,i=v.indexOf("|"),k=v.slice(0,i),id=v.slice(i+1);toggleF(k,id);const on=follows(k,id),nm=f.dataset.folN||id;
+  document.querySelectorAll('[data-fol="'+v+'"]').forEach(x=>{x.classList.toggle("on",on);x.setAttribute("aria-pressed",String(on));const sp=x.querySelector("span");if(sp)sp.textContent=on?"★":"☆";const sm=x.querySelector("small");if(sm)sm.textContent=on?"Lo segui":"Segui"});
+  folToast(on?`★ Segui «${nm}»: ogni mattina le novità in «Per te oggi»`:`Non segui più «${nm}»`);
+  try{perTe()}catch(_){}},true);
+function folToast(t){let el=document.getElementById("folToast");if(!el){el=document.createElement("div");el.id="folToast";el.setAttribute("role","status");document.body.appendChild(el)}el.textContent=t;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),3200)}
 function ptFol(b){const out={html:"",n:0};try{const ids=(F.filoni||[]).filter(id=>S.threads[id]);if(!ids.length||!b)return out;
   const today=b.data,y=new Date(today+"T12:00:00");y.setDate(y.getDate()-1);const ieri=isoDay(y);
   const prevB=(S.briefings||[]).filter(x=>x.data<today).sort((x,z)=>z.data.localeCompare(x.data))[0];const since=prevB?prevB.data:ieri;
@@ -4048,15 +4049,15 @@ function ptFol(b){const out={html:"",n:0};try{const ids=(F.filoni||[]).filter(id
     const sids=(b.storie_mondo||[]).concat(b.storie_italia||[]).filter(sid=>S.stories[sid]&&FS.has(S.stories[sid].filone_id));
     const nx=thNext(t);const nov=chiuso||!!ag||sids.length>0;
     let up="";
-    if(chiuso)up=`<p class="ptf-u"><b>concluso</b>${esc(t.esito||thLast(t).testo||"")}</p>`;
-    else if(ag)up=`<p class="ptf-u"><b>${esc(quando(ag.data))}${ag.ora?" "+esc(ag.ora):""}</b>${esc(clip(ag.testo,220))}</p>`;
-    else{const l=thLast(t);up=l.testo?`<p class="ptf-u"><b>${esc(quando(l.data))}</b>${esc(clip(l.testo,160))}</p>`:""}
+    if(chiuso)up=`<p class="ptf-u"><b>concluso</b>${esc(clip(t.esito||thLast(t).testo||"",120))}</p>`;
+    else if(ag)up=`<p class="ptf-u"><b>${esc(quando(ag.data))}${ag.ora?" "+esc(ag.ora):""}</b>${esc(clip(ag.titolo||ag.testo,110))}</p>`;
+    else{const l=thLast(t);up=l.testo?`<p class="ptf-u"><b>${esc(quando(l.data))}</b>${esc(clip(l.testo,110))}</p>`:""}
     const ext=sids.map(sid=>`<button type="button" class="ptf-a" data-story="${esc(sid)}">Oggi: ${esc(tag(sid))} ↓</button>`);
-    if(nx&&!chiuso)ext.push(`<span>Prossimo: ${esc(fmtDM(nx.data))}, ${esc(clip(nx.titolo,70))}</span>`);
-    if(!sids.length)ext.push(`<button type="button" class="ptf-a" data-thread="${esc(id)}">Tutta la storia del tema ›</button>`);
-    return {nov,h:`<div class="ptf-t"><div class="ptf-n"><span aria-hidden="true">${thFlags(t)}</span><span>${esc(t.titolo)}</span>${chiuso?'<small class="ptf-c">CONCLUSO</small>':nov?"<small>NOVITÀ</small>":""}</div>${up}<div class="ptf-x">${ext.join("")}</div></div>`}}).filter(Boolean);
+    if(nx&&!chiuso)ext.push(`<span>Prossimo: ${esc(fmtDM(nx.data))}</span>`);
+    return {nov,h:`<div class="ptf-t"><button type="button" class="ptf-n" data-thread="${esc(id)}"><span aria-hidden="true">${thFlags(t)}</span><span class="ptf-tt">${esc(t.titolo)} ›</span>${chiuso?'<small class="ptf-c">CONCLUSO</small>':nov?"<small>NOVITÀ</small>":""}</button>${up}<div class="ptf-x">${ext.join("")}</div></div>`}}).filter(Boolean);
   R.sort((a,z)=>(z.nov?1:0)-(a.nov?1:0));out.n=R.length;out.html=R.length?`<div class="ptf">${R.map(x=>x.h).join("")}</div>`:"";}catch(e){console.warn("temi seguiti",e)}return out}
 try{FOLAPI={follows,toggleF};setTimeout(()=>{try{if(typeof schedule==="function")schedule()}catch(_){}},0)}catch(_){}
+{const _ptv0=perTeView;perTeView=function(){let h="";try{const b=currentBrief();const r=ptFol(b);if(r.html)h=`<div class="xp-ptf"><div class="pt-h"><b>I temi che segui</b></div>${r.html}</div>`}catch(e){}return h+_ptv0.apply(this,arguments)}}
 function ipTemi(){const ids=(F.filoni||[]).filter(id=>S.threads[id]);if(!ids.length)return "";
   const on=ids.filter(id=>S.threads[id].stato!=="chiuso"),off=ids.filter(id=>S.threads[id].stato==="chiuso");
   const chip=id=>{const t=S.threads[id];return `<button type="button" class="xp-chip" data-pf="filoni|${esc(id)}" aria-pressed="true">${thFlags(t)} ${esc(t.titolo)} ✕</button>`};
@@ -4155,7 +4156,10 @@ css.textContent=`
 .pt2{padding:14px 16px}
 .pt2-h{display:flex;align-items:center;gap:12px}
 .ptf{margin:6px 0 4px}.ptf-t{padding:11px 0;border-top:1px solid var(--line)}.ptf-n{display:flex;gap:8px;align-items:baseline;font:600 15.5px/1.3 var(--sans);color:var(--ink)}.ptf-n small{margin-left:auto;font:500 11.5px var(--mono);color:var(--l2,#C9A24A);white-space:nowrap}.ptf-n small.ptf-c{color:var(--muted)}.ptf-u{margin:5px 0 0;font-size:14.5px;line-height:1.45;color:var(--ink)}.ptf-u b{font:600 12px var(--mono);color:var(--accent);margin-right:6px}.ptf-x{margin:5px 0 0;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:3px 14px;align-items:baseline}.ptf-a{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer}.ptf-sep{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 0 4px;border-top:1px solid var(--line)}
-.folb{background:none;border:0;padding:0 2px;font:600 12.5px var(--sans);color:var(--accent);cursor:pointer;white-space:nowrap}.folb.on{color:var(--muted)}
+.sto-h{position:relative}.sto-h:has(.sto-star){padding-right:52px}.sto-star{position:absolute;top:8px;right:6px;display:flex;flex-direction:column;align-items:center;gap:0;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 6px;line-height:1}.sto-star span{font-size:24px}.sto-star small{font:600 10px var(--sans);margin-top:2px}.sto-star.on{color:#E5B45A}
+#folToast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;max-width:min(92vw,420px);box-shadow:0 8px 24px rgba(0,0,0,.35);transition:opacity .2s,transform .2s;z-index:9999}#folToast.on{opacity:1;transform:translate(-50%,0)}
+.ptf-n{width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}.ptf-tt{color:var(--ink)}
+.xp-ptf{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 4px;margin:0 0 16px}
 .ip-off .xp-chip{opacity:.6}
 .acc .n.kd{color:var(--muted)}.th-fam{margin:8px 0;font-size:14px}.th-fam .label{display:block;margin-bottom:4px}.th-kid{display:block;text-align:left;margin:3px 0}.th-kid small{color:var(--muted)}
 .pt2-t{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -4571,9 +4575,9 @@ function storyList(list){
    +(list.length>shown.length?`<button type="button" class="xp-more" data-more="1">${X.lim<=4?`Tutte le ${list.length} storie`:`Altre ${Math.min(20,list.length-shown.length)}`}</button>`:"");
 }
 function myInterests(){
-  const tags=F.aree.map(id=>["aree",id]).concat((F.paesi||[]).map(id=>["paesi",id]),F.temi.map(id=>["temi",id]),F.incroci.map(id=>["incroci",id])).filter(([k,id])=>fName(k,id));
+  const tags=(F.filoni||[]).map(id=>["filoni",id]).concat(F.aree.map(id=>["aree",id]),(F.paesi||[]).map(id=>["paesi",id]),F.temi.map(id=>["temi",id]),F.incroci.map(id=>["incroci",id])).filter(([k,id])=>fName(k,id));
   const goOf=(k,id)=>k==="aree"?`area|${id}`:k==="paesi"?`paese|${id}`:k==="temi"?(AMBN[id]?`tema|${id}`:`xinc|~${id}`):(()=>{const [g,t]=splitX(id);return !isISO(g)&&AMBN[t]?`areachip|${id}`:`xinc|${id}`})();
-  return `<div class="xp-mine"><div class="pt-h"><b>Quello che segui</b><button type="button" data-int-open="1">Modifica</button></div>${tags.length?`<div class="xp-tags">${tags.map(([k,id])=>`<span class="xp-tag"><button type="button" data-go="${esc(goOf(k,id))}">${k==="temi"?AIC(id)+" ":""}${esc(fName(k,id))}</button><button type="button" class="x" data-follow="${k}|${esc(id)}" aria-label="Smetti di seguire ${esc(fName(k,id))}">✕</button></span>`).join("")}</div><p>Le storie del giorno su queste aree e questi argomenti compaiono in «Per te oggi», in cima al briefing.</p>`:`<p>Ancora niente. Apri un’area o un argomento e tocca «Segui», oppure scegli tutto in un colpo da «Modifica».</p>`}</div>`;
+  return `<div class="xp-mine"><div class="pt-h"><b>Quello che segui</b><button type="button" data-int-open="1">Modifica</button></div>${tags.length?`<div class="xp-tags">${tags.map(([k,id])=>`<span class="xp-tag"><button type="button" ${k==="filoni"?`data-thread="${esc(id)}"`:`data-go="${esc(goOf(k,id))}"`}>${k==="temi"?AIC(id)+" ":k==="filoni"?"🧵 ":""}${esc(fName(k,id))}</button><button type="button" class="x" data-follow="${k}|${esc(id)}" aria-label="Smetti di seguire ${esc(fName(k,id))}">✕</button></span>`).join("")}</div><p>Le storie del giorno su queste aree e questi argomenti compaiono in «Per te oggi», in cima al briefing.</p>`:`<p>Ancora niente. Apri un’area o un argomento e tocca «Segui», oppure scegli tutto in un colpo da «Modifica».</p>`}</div>`;
 }
 
 /* ---------- pagine ---------- */
