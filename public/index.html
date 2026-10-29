@@ -951,6 +951,7 @@ body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],bod
 .fbk-os{display:flex;gap:8px}.fbk-o{flex:1;border:1px solid var(--line);background:none;color:var(--ink);border-radius:10px;padding:10px 8px;font:inherit;font-size:14.5px;cursor:pointer}.fbk-o small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.fbk-o[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
 .fbk textarea,.fbk input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:15px;padding:10px 12px}
 .fbk textarea{margin-top:12px;min-height:100px;resize:vertical}.fbk input{margin-top:10px}
+.fbk-a{display:inline-block;margin-top:10px;font-size:14px;color:var(--accent);cursor:pointer}.fbk-p{display:flex;align-items:flex-end;gap:10px;margin-top:8px}.fbk-p img{max-height:90px;max-width:120px;border-radius:8px;border:1px solid var(--line)}.fbk-p button{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
 .fbk-c{font-size:12.5px;color:var(--muted);margin-top:8px}.fbk-c b{color:var(--ink);font-weight:500}
 .fbk-err{color:var(--low);font-size:13.5px;margin:10px 0 0}
 .fbk-go{margin-top:16px;width:100%;border:0;border-radius:12px;background:var(--accent);color:var(--surface);font:600 16px var(--sans);padding:13px;cursor:pointer}.fbk-go:disabled{opacity:.6}
@@ -5180,26 +5181,34 @@ const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplo
     if(v==="x:perte")go(null);else if(v==="x:area")go({k:"lista",id:"area"});else if(v==="x:tema")go({k:"lista",id:"tema"});else show(v)});
 })();
 /* «Scrivici»: un problema o un'idea, con la pagina da cui si scrive */
-const FBK={tipo:"problema"};
+const FBK={tipo:"problema",img:""};
 function fbkDove(){const V={briefing:"Oggi",esplora:"Esplora",timeline:"Temi",osservazione:"In osservazione",dossier:"Dossier",mappa:"Mappa",calendario:"Calendario",archivio:"Archivio",glossario:"Chi e cosa",protagonisti:"Protagonisti"};let d=V[S.view]||S.view||"";try{if(S.view==="briefing"&&S.briefings&&S.briefings[0])d+=" · "+fmtDM(S.briefings[0].data)}catch(_){}try{if(S.view==="esplora"&&X.page)d+=" · "+(X.page.k==="lista"?(X.page.id==="tema"?"Argomenti":"Aree"):X.page.id)}catch(_){}return d}
 function fbkClose(){document.querySelectorAll(".fbk,.fbk-dim").forEach(x=>x.remove());const b=document.getElementById("fbkBtn");if(b)b.classList.remove("on")}
-function fbkOpen(){fbkClose();const b=document.getElementById("fbkBtn");if(b)b.classList.add("on");const op=(k,l,s)=>`<button type="button" class="fbk-o" data-fbk-t="${k}" aria-pressed="${FBK.tipo===k}">${l}<small>${s}</small></button>`;
+function fbkOpen(){fbkClose();FBK.img="";const b=document.getElementById("fbkBtn");if(b)b.classList.add("on");const op=(k,l,s)=>`<button type="button" class="fbk-o" data-fbk-t="${k}" aria-pressed="${FBK.tipo===k}">${l}<small>${s}</small></button>`;
   document.body.insertAdjacentHTML("beforeend",`<div class="fbk-dim" data-fbk-x="1"></div><div class="fbk" role="dialog" aria-label="Scrivici"><div class="fbk-g" aria-hidden="true"></div><div class="fbk-h"><b>Scrivici</b><button type="button" class="fbk-x" data-fbk-x="1" aria-label="Chiudi">✕</button></div><p class="fbk-s">Lo legge una persona, non un modulo automatico.</p>
   <div class="fbk-os">${op("problema","⚠️ Qualcosa non va","un errore, un link rotto")}${op("idea","💡 Un’idea","cosa aggiungere o cambiare")}</div>
   <textarea id="fbkT" maxlength="1500" placeholder="Raccontaci cosa hai visto o cosa ti servirebbe"></textarea>
+  <label class="fbk-a"><input type="file" id="fbkF" accept="image/*" hidden><span id="fbkAL">📎 Allega uno screenshot (facoltativo)</span></label><div id="fbkP" class="fbk-p" hidden></div>
   <div class="fbk-c">Alleghiamo da soli dove sei: <b>${esc(fbkDove())}</b></div>
   <input id="fbkE" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="La tua email, se vuoi una risposta (facoltativa)">
   <p class="fbk-err" id="fbkErr" hidden></p><button type="button" class="fbk-go" id="fbkGo">Invia</button></div>`)}
 document.addEventListener("click",async e=>{
   if(e.target.closest("[data-fbk-x]")){fbkClose();return}
+  if(e.target.closest("[data-fbk-rm]")){FBK.img="";const p=document.getElementById("fbkP");if(p){p.hidden=true;p.innerHTML=""}const f=document.getElementById("fbkF");if(f)f.value="";const l=document.getElementById("fbkAL");if(l)l.textContent="📎 Allega uno screenshot (facoltativo)";return}
   const o=e.target.closest("[data-fbk-t]");if(o){FBK.tipo=o.dataset.fbkT;document.querySelectorAll("[data-fbk-t]").forEach(x=>x.setAttribute("aria-pressed",String(x===o)));return}
   if(e.target.id==="fbkGo"){const t=(document.getElementById("fbkT").value||"").trim(),em=(document.getElementById("fbkE").value||"").trim(),er=document.getElementById("fbkErr");
     const bad=m=>{er.textContent=m;er.hidden=false};if(t.length<5){bad("Scrivi qualche parola in più.");return}if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){bad("L’email non sembra giusta.");return}
-    e.target.disabled=true;e.target.textContent="Invio…";let ok=false;try{let uid="";try{uid=localStorage.getItem("rg-uid")||""}catch(_){}const r=await fetch(RG_API+"/api/segnala",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tipo:FBK.tipo,testo:t,email:em,dove:fbkDove(),url:location.hash||"",uid})});ok=r.ok}catch(_){}
+    e.target.disabled=true;e.target.textContent="Invio…";let ok=false;try{let uid="";try{uid=localStorage.getItem("rg-uid")||""}catch(_){}const r=await fetch(RG_API+"/api/segnala",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tipo:FBK.tipo,testo:t,email:em,dove:fbkDove(),url:location.hash||"",uid,img:FBK.img||""})});ok=r.ok}catch(_){}
     if(!ok){e.target.disabled=false;e.target.textContent="Invia";bad("Non è partito: riprova tra poco.");return}
     const box=document.querySelector(".fbk");if(box)box.innerHTML=`<div class="fbk-g" aria-hidden="true"></div><div class="fbk-ok"><div aria-hidden="true">🙏</div><b>Grazie, ricevuto</b><p class="fbk-s">${em?"Ti rispondiamo all’email che ci hai lasciato.":"Ogni segnalazione viene letta."}</p></div><button type="button" class="fbk-go" data-fbk-x="1">Chiudi</button>`}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.querySelector(".fbk"))fbkClose()});
+/* lo screenshot si rimpicciolisce sul telefono prima di partire: lato lungo 1400 px, JPEG */
+document.addEventListener("change",e=>{if(e.target.id!=="fbkF")return;const f=e.target.files&&e.target.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+  im.onload=()=>{const k=Math.min(1,1400/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);
+    let q=.82,d=c.toDataURL("image/jpeg",q);while(d.length>880000&&q>.4){q-=.12;d=c.toDataURL("image/jpeg",q)}FBK.img=d.length<=880000?d.split(",")[1]:"";
+    const p=document.getElementById("fbkP"),l=document.getElementById("fbkAL");if(p){p.hidden=!FBK.img;p.innerHTML=FBK.img?`<img src="${d}" alt=""><button type="button" data-fbk-rm="1">Togli</button>`:""}if(l)l.textContent=FBK.img?"📎 Cambia screenshot":"📎 Immagine troppo grande, prova un’altra"};
+  im.onerror=()=>{URL.revokeObjectURL(u);const l=document.getElementById("fbkAL");if(l)l.textContent="📎 Non riesco a leggere questa immagine"};im.src=u});
 function curSub(){const v=S.view;if(v!=="esplora")return v;const p=X.page;if(!p)return "x:perte";if(p.k==="lista")return p.id==="tema"?"x:tema":"x:area";if(p.k==="tema")return "x:tema";return "x:area"}
 /* l'icona in testa all'etichetta si nasconde sui telefoni, così le voci stanno tutte in una riga */
 function snLab(l){const m=String(l).match(/^([^\sA-Za-zÀ-ÿ0-9«]+)\s+(.*)$/);return m?`<span class="sn-ic" aria-hidden="true">${m[1]}</span>${m[2]}`:l}

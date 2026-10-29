@@ -901,7 +901,7 @@ async function panelApi(env, origin, b) {
   }
   if (typeof act === "string" && act.startsWith("mail_")) return await mailPanel(env, b);
   if (act === "dec_get" || act === "dec_set") return await decPanel(env, b);
-  if (act === "fb_get" || act === "fb_set") return await fbPanel(env, b);
+  if (act === "fb_get" || act === "fb_set" || act === "fb_img") return await fbPanel(env, b);
   if (act === "draft_reset") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
@@ -1073,7 +1073,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dc-l{display:flex;gap:14px;margin-top:8px;padding:8px 10px;border-left:2px solid #7FB2F0;background:rgba(127,178,240,.06);font-size:13px;align-items:center;flex-wrap:wrap}
 .dc-l span{color:#8FA0AE}.dc-l button{background:none;border:0;color:#7FB2F0;font:600 13px 'IBM Plex Sans',system-ui;padding:0;cursor:pointer}.dc-l input{background:#0E151B;color:#E4EAEF;border:1px solid #27353F;border-radius:6px;padding:3px 6px;font-size:13px}
 .dc-more{margin-top:6px;font-size:13px;color:#7FB2F0;background:none;border:0;padding:0;cursor:pointer}
-.dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}.fb-r .dc-t{font-weight:500;white-space:pre-wrap}.fb-ok{opacity:.6}.fb-r .dc-m a{color:#7FB2F0}
+.dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}.fb-r .dc-t{font-weight:500;white-space:pre-wrap}.fb-ok{opacity:.6}.fb-im{margin-top:8px}.fb-im img{max-width:220px;max-height:300px;border-radius:8px;border:1px solid #27353F;cursor:zoom-in;display:block}.fb-im button{background:none;border:1px solid #27353F;border-radius:8px;color:#7FB2F0;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}.fb-r .dc-m a{color:#7FB2F0}
 .dc-f details{margin-top:12px}.dc-f summary{font-size:13px;color:#8FA0AE;cursor:pointer}
 .tab .bdg{background:#E5B45A;color:#0B1830;border-radius:9px;padding:0 6px;font-size:12px;margin-left:4px}
 </style>
@@ -1757,12 +1757,12 @@ function dcRender(){const el=document.getElementById("dc");if(!el||!DC)return;co
   h+='<div class="dc-f">'+(T.length?'<details><summary>Rimandate · '+T.length+'</summary>'+T.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+(P.length?'<details><summary>In pausa · '+P.length+'</summary>'+P.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+'</div></div>';
   el.innerHTML=h}
 function fbHTML(FB){const on=FB.filter(x=>x.stato!=="archiviata");if(!FB.length)return "";const N=on.filter(x=>x.stato==="nuova").length;
-  const row=x=>'<div class="dc-r fb-r'+(x.stato==="risolta"?' fb-ok':'')+'"><div class="dc-t">'+(x.tipo==="idea"?"💡 ":"⚠️ ")+esc(x.testo)+'</div><div class="dc-m">'+esc(x.dove||"")+' · '+esc(new Date(x.at).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+(x.email?' · <a href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+(x.stato==="risolta"?' · risolta':'')+'</div><div class="dc-a">'+(x.stato==="nuova"?'<button data-fb="'+x.id+'" data-fb-s="risolta">✓ Risolta</button>':'<button data-fb="'+x.id+'" data-fb-s="nuova">Riapri</button>')+'<button class="dc-g" data-fb="'+x.id+'" data-fb-s="archiviata">Archivia</button></div></div>';
+  const row=x=>'<div class="dc-r fb-r'+(x.stato==="risolta"?' fb-ok':'')+'"><div class="dc-t">'+(x.tipo==="idea"?"💡 ":"⚠️ ")+esc(x.testo)+'</div><div class="dc-m">'+esc(x.dove||"")+' · '+esc(new Date(x.at).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+(x.email?' · <a href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+(x.stato==="risolta"?' · risolta':'')+'</div>'+(x.img?'<div class="fb-im" data-fb-img="'+x.id+'">'+(FBIMG[x.id]?'<img src="data:image/jpeg;base64,'+FBIMG[x.id]+'" alt="Screenshot">':'<button type="button" data-fb-load="'+x.id+'">📎 Vedi lo screenshot</button>')+'</div>':'')+'<div class="dc-a">'+(x.stato==="nuova"?'<button data-fb="'+x.id+'" data-fb-s="risolta">✓ Risolta</button>':'<button data-fb="'+x.id+'" data-fb-s="nuova">Riapri</button>')+'<button class="dc-g" data-fb="'+x.id+'" data-fb-s="archiviata">Archivia</button></div></div>';
   const ar=FB.filter(x=>x.stato==="archiviata");
   return '<div class="card"><div class="dc-h"><b>Segnalazioni dal sito</b><span class="sub">'+N+(N===1?' nuova':' nuove')+'</span></div><div class="sub" style="margin-top:4px">Arrivano da «💬 Scrivici», in alto sul sito.</div>'+(on.length?on.slice(0,FBMORE?on.length:5).map(row).join(""):'<div class="sub" style="margin-top:10px">Nessuna segnalazione aperta.</div>')+(on.length>5&&!FBMORE?'<button class="dc-more" data-fb-more="1">Altre '+(on.length-5)+' ▾</button>':'')+(ar.length?'<div class="dc-f"><details><summary>Archiviate · '+ar.length+'</summary>'+ar.slice(0,30).map(row).join("")+'</details></div>':'')+'</div>'}
-let FBMORE=false;
+let FBMORE=false,FBIMG={};
 async function dcSet(id,azione,fino){const r=await api({action:"dec_set",id,azione,fino});if(r&&r.ok){DC.dec=r.dec;DCT=null;dcRender()}else alert("Non salvato: "+((r&&r.error)||""))}
-document.getElementById("dc").addEventListener("click",async e=>{const fm=e.target.closest("[data-fb-more]");if(fm){FBMORE=true;dcRender();return}const fb=e.target.closest("[data-fb]");if(fb){fb.disabled=true;const r=await api({action:"fb_set",id:fb.dataset.fb,stato:fb.dataset.fbS});if(r&&r.ok){DC.fb=r.items;dcRender()}else{fb.disabled=false;alert("Non salvato: "+((r&&r.error)||""))}return}const m=e.target.closest("[data-dc-more]");if(m){DCMORE[m.dataset.dcMore]=1;dcRender();return}
+document.getElementById("dc").addEventListener("click",async e=>{const fl=e.target.closest("[data-fb-load]");if(fl){fl.disabled=true;fl.textContent="Carico…";const r=await api({action:"fb_img",id:fl.dataset.fbLoad});if(r&&r.ok){FBIMG[fl.dataset.fbLoad]=r.img;dcRender()}else{fl.textContent="Non trovata"}return}const fi=e.target.closest(".fb-im img");if(fi){window.open(fi.src,"_blank");return}const fm=e.target.closest("[data-fb-more]");if(fm){FBMORE=true;dcRender();return}const fb=e.target.closest("[data-fb]");if(fb){fb.disabled=true;const r=await api({action:"fb_set",id:fb.dataset.fb,stato:fb.dataset.fbS});if(r&&r.ok){DC.fb=r.items;dcRender()}else{fb.disabled=false;alert("Non salvato: "+((r&&r.error)||""))}return}const m=e.target.closest("[data-dc-more]");if(m){DCMORE[m.dataset.dcMore]=1;dcRender();return}
   const u=e.target.closest("[data-dc-undo]");if(u){dcSet(u.dataset.dcUndo,"riattiva");return}
   const row=e.target.closest("[data-dc]");if(!row)return;const id=row.dataset.dc;
   const a=e.target.closest("[data-dc-az]");if(a){const z=a.dataset.dcAz;if(z==="tardi"){DCT=DCT===id?null:id;dcRender();return}dcSet(id,z);return}
@@ -4460,7 +4460,8 @@ function seguiClean(x) {
 }
 /* v69: «Scrivici» dal sito: problemi e idee dei lettori. Restano nel pannello (scheda Proposte) e arrivano in Telegram, nella chat privata */
 async function segnalaApi(request, env) {
-  let b = null; try { b = JSON.parse((await request.text()).slice(0, 6000)); } catch (e) {}
+  const raw = await request.text(); if (raw.length > 1000000) return fail(413, "too_large");
+  let b = null; try { b = JSON.parse(raw); } catch (e) {}
   const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
   const tipo = b && b.tipo === "idea" ? "idea" : "problema";
   const testo = String((b && b.testo) || "").trim().slice(0, 1500);
@@ -4470,12 +4471,15 @@ async function segnalaApi(request, env) {
   const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + day)))].slice(0, 8).map((x) => x.toString(16).padStart(2, "0")).join("");
   const rl = (await kvGet(env, "fb_rl")) || {}; if (rl.day !== day) { rl.day = day; rl.n = {}; }
   if ((rl.n[h] || 0) >= 8) return fail(429, "too_many"); rl.n[h] = (rl.n[h] || 0) + 1; await kvSet(env, "fb_rl", rl);
-  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: new Date().toISOString(), tipo, testo, dove: t(b && b.dove, 120), url: t(b && b.url, 200), email, uid: t(b && b.uid, 64), stato: "nuova" };
-  const L = (await kvGet(env, "fb_items")) || []; L.unshift(it); await kvSet(env, "fb_items", L.slice(0, 300));
-  try { await tgPriv(env, (tipo === "idea" ? "💡 <b>Un'idea</b>" : "⚠️ <b>Qualcosa non va</b>") + " dal sito\n" + esc(testo.slice(0, 900)) + "\n<i>" + esc(it.dove || "") + (email ? " · " + esc(email) : "") + "</i>"); } catch (e) {}
+  const img = String((b && b.img) || "").replace(/^data:[^,]*,/, ""); if (img && (!img.startsWith("/9j/") || img.length > 900000)) return fail(422, "bad_image");
+  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: new Date().toISOString(), tipo, testo, dove: t(b && b.dove, 120), url: t(b && b.url, 200), email, uid: t(b && b.uid, 64), stato: "nuova", img: !!img };
+  if (img) await kvSet(env, "fbimg:" + it.id, img); // lo screenshot resta privato: si vede solo dal pannello
+  const L = (await kvGet(env, "fb_items")) || []; L.unshift(it); for (const x of L.slice(300)) if (x.img) await kvDel(env, "fbimg:" + x.id); await kvSet(env, "fb_items", L.slice(0, 300));
+  try { await tgPriv(env, (tipo === "idea" ? "💡 <b>Un'idea</b>" : "⚠️ <b>Qualcosa non va</b>") + " dal sito\n" + esc(testo.slice(0, 900)) + "\n<i>" + esc(it.dove || "") + (email ? " · " + esc(email) : "") + (img ? " · 📎 screenshot nel pannello" : "") + "</i>"); } catch (e) {}
   return json({ ok: true });
 }
 async function fbPanel(env, b) {
+  if (b.action === "fb_img") { const im = await kvGet(env, "fbimg:" + String(b.id || "").slice(0, 40)); return im ? { ok: true, img: im } : { ok: false, error: "immagine non trovata" }; }
   const L = (await kvGet(env, "fb_items")) || [];
   if (b.action === "fb_set") { const x = L.find((y) => y.id === String(b.id || "")); if (!x || !["nuova", "risolta", "archiviata"].includes(b.stato)) return { ok: false, error: "voce non valida" }; x.stato = b.stato; x.cambiato = new Date().toISOString(); await kvSet(env, "fb_items", L); }
   return { ok: true, items: L };
