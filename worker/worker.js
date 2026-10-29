@@ -901,6 +901,7 @@ async function panelApi(env, origin, b) {
   }
   if (typeof act === "string" && act.startsWith("mail_")) return await mailPanel(env, b);
   if (act === "dec_get" || act === "dec_set") return await decPanel(env, b);
+  if (act === "fb_get" || act === "fb_set") return await fbPanel(env, b);
   if (act === "draft_reset") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
@@ -1031,7 +1032,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;background:#8FA0AE}.dot.g{background:#7BD39A}.dot.y{background:#F2B84B}.dot.r{background:#E5645A}
 .tg{font:600 11px ui-monospace,monospace;border:1px solid #3A4C5C;color:#86B4EA;border-radius:999px;padding:2px 8px;white-space:nowrap}.tg.off{color:#8FA0AE;border-color:#27353F}.tg:empty{display:none}.gear{color:#8FA0AE;font-size:16px}
 .set{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px;font-size:14px}.set .row{margin:0}
-.tabs{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:2px;margin:14px 0 6px;border-bottom:1px solid #27353F;position:relative}.tab{flex:none;background:transparent;color:#9FB0BC;border:0;border-bottom:2px solid transparent;border-radius:0;margin:0 0 -1px;padding:10px 10px 9px;font-weight:400;white-space:nowrap}.tab.on{background:transparent;color:#E4EAEF;border-bottom-color:#86B4EA;font-weight:600}.tabsp{flex:1}.tbm{position:absolute;right:0;top:100%;margin-top:4px;background:#16212A;border:1px solid #27353F;border-radius:10px;padding:6px 0;min-width:170px;z-index:5;display:flex;flex-direction:column}.tbm .tab{border:0;margin:0;padding:9px 16px;text-align:left;color:#E4EAEF}.tbm .tab.on{color:#86B4EA}.tab .ogn{background:none;color:#86B4EA;padding:0;margin-left:4px}.tab .ogn.ok{background:none;color:#7FD1A0}.tabs .tab .bdg{background:none;color:#E5B45A;padding:0;font:600 11px ui-monospace,monospace}@media(max-width:520px){.tabs{gap:0}.tab{padding:10px 6px 9px;font-size:14px}}@media(max-width:400px){.tabs .tab{padding:10px 3px 9px;font-size:13px}.tabs .tab .ogn,.tabs .tab .bdg{margin-left:2px}.tabs .tbm .tab{padding:9px 16px;font-size:15px}}
+.tabs{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:2px;margin:14px 0 6px;border-bottom:1px solid #27353F;position:relative}.tab{flex:none;background:transparent;color:#9FB0BC;border:0;border-bottom:2px solid transparent;border-radius:0;margin:0 0 -1px;padding:10px 10px 9px;font-weight:400;white-space:nowrap}.tab.on{background:transparent;color:#E4EAEF;border-bottom-color:#86B4EA;font-weight:600}.tabsp{flex:1}.tbm{position:absolute;right:0;top:100%;margin-top:4px;background:#16212A;border:1px solid #27353F;border-radius:10px;padding:6px 0;min-width:170px;z-index:5;display:flex;flex-direction:column}.tbm .tab{border:0;margin:0;padding:9px 16px;text-align:left;color:#E4EAEF}.tbm .tab.on{color:#86B4EA}.tab .ogn{background:none;color:#86B4EA;padding:0;margin-left:4px}.tab .ogn.ok{background:none;color:#7FD1A0}.tabs>.tab{position:relative}.tabs>.tab[data-t]+.tab[data-t]::before{content:"";position:absolute;left:-1px;top:50%;height:14px;margin-top:-8px;width:1px;background:#33434F}.tabs .tab .bdg{background:none;color:#E5B45A;padding:0;font:600 11px ui-monospace,monospace}@media(max-width:520px){.tabs{gap:0}.tab{padding:10px 6px 9px;font-size:14px}}@media(max-width:400px){.tabs .tab{padding:10px 3px 9px;font-size:13px}.tabs .tab .ogn,.tabs .tab .bdg{margin-left:2px}.tabs .tbm .tab{padding:9px 16px;font-size:15px}}
 .card.ogs{background:transparent;border:0;border-bottom:1px solid #1E2A33;border-radius:0;margin:0}.ogs .ogt{padding:12px 0;align-items:flex-start}.ogs .ogb{padding:0 0 14px 38px}.ogs .ogc{flex:0 0 26px;width:26px;height:26px;padding:0;font-size:12px}.ogs.rec .ogc{border-color:#E5B45A}.ogw{flex:none;max-width:42%;text-align:right;font-size:12.5px;color:#86B4EA;padding-top:3px;cursor:pointer}.ogw.ok{color:#7FD1A0}.ogw.y{color:#E5B45A}.ogg{font:600 11px system-ui;letter-spacing:.08em;text-transform:uppercase;color:#8FA0AE;margin:24px 0 2px}.ogg.y{color:#E5B45A}.ogh2{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}.ogh2 b{font-size:18px}.ogbar2{height:3px;border-radius:3px;background:#27353F;margin:8px 0 4px;overflow:hidden}.ogbar2 i{display:block;height:100%;background:#7FD1A0}.ogv{border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 8px}.ogv.sel{border-color:#86B4EA;background:#13202B}.ogv label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.ogv input{margin-top:4px;accent-color:#86B4EA;width:auto}.ogk{font:600 11px system-ui;color:#8FA0AE;text-transform:uppercase;letter-spacing:.06em}.ogl{display:inline-block;margin:4px 0 0 26px;color:#86B4EA;font-size:14px}.ogwk{display:flex;gap:4px;margin-top:8px}.ogwk div{flex:1;text-align:center;font-size:11px;color:#8FA0AE}.ogwk i{display:block;height:6px;border-radius:3px;margin-bottom:4px;background:#5A3540}.ogwk .a i{background:#7FD1A0}.ogwk .b i{background:#E5B45A}.ogwk div{cursor:pointer;border-radius:6px;padding:2px 0 4px}.ogwk div.sel{background:#1B2A36;color:#E4EAEF}.ogdy{border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin-top:10px;display:grid;gap:6px}.ogleg{font-size:12px;color:#8FA0AE;margin-top:8px}.ogleg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 10px}.ogleg i:first-child{margin-left:0}
 .arc{padding:0}.arc>summary,.arw>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 14px}.arc>summary::-webkit-details-marker,.arw>summary::-webkit-details-marker{display:none}.arc>summary b{flex:1}.arw>summary span:first-child{flex:1;font-weight:600;font-size:14px}.arw{border-top:1px solid #27353F}.arw>summary{padding:10px 14px}.arc[open]>summary .chev,.arw[open]>summary .chev,.orow.on .ohd .chev{transform:rotate(180deg)}.orow{border-top:1px solid #1E2A33}.ohd{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 14px}.oic{width:22px;text-align:center;color:#8FA0AE;flex:none}.otx{flex:1;min-width:0}.otx b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.otx .sub{font-size:12px}.obody{padding:0 8px 10px}.obody .card{margin:0}.dc .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.dc .dh b{font-size:16px;display:block;overflow-wrap:anywhere}
 .pill{flex:none;font:700 10.5px ui-monospace,monospace;border-radius:6px;padding:3px 7px;letter-spacing:.05em;background:#27353F;color:#C5D0D8}.p-bozza{background:#5A4A22;color:#F2B84B}.p-pubblicata{background:#1F4A2E;color:#7BD39A}.p-errore{background:#4A2222;color:#FF9A9A}.p-in_elaborazione,.p-in_pubblicazione{background:#22364A;color:#86B4EA}
@@ -1072,7 +1073,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dc-l{display:flex;gap:14px;margin-top:8px;padding:8px 10px;border-left:2px solid #7FB2F0;background:rgba(127,178,240,.06);font-size:13px;align-items:center;flex-wrap:wrap}
 .dc-l span{color:#8FA0AE}.dc-l button{background:none;border:0;color:#7FB2F0;font:600 13px 'IBM Plex Sans',system-ui;padding:0;cursor:pointer}.dc-l input{background:#0E151B;color:#E4EAEF;border:1px solid #27353F;border-radius:6px;padding:3px 6px;font-size:13px}
 .dc-more{margin-top:6px;font-size:13px;color:#7FB2F0;background:none;border:0;padding:0;cursor:pointer}
-.dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}
+.dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}.fb-r .dc-t{font-weight:500;white-space:pre-wrap}.fb-ok{opacity:.6}.fb-r .dc-m a{color:#7FB2F0}
 .dc-f details{margin-top:12px}.dc-f summary{font-size:13px;color:#8FA0AE;cursor:pointer}
 .tab .bdg{background:#E5B45A;color:#0B1830;border-radius:9px;padding:0 6px;font-size:12px;margin-left:4px}
 </style>
@@ -1732,7 +1733,7 @@ let DC=null,DCMORE={},DCT=null;
 const DCAZ={dossier:[["prepara","Prepara","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],idea:[["interessante","Interessante","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],tema:[["seguilo","Seguilo","y"],["tardi","Più tardi",""],["no","No","n"]],lav:[["annulla","Annulla","n"]]};
 const DCSEC=[["dossier","🧭 Dossier proposti"],["idea","💡 Idee"],["tema","🙋 Temi chiesti dai lettori"]];
 const DCFATTO={prepara:"Preparalo",no:"No",interessante:"Interessante",annulla:"Annulla",seguilo:"Seguilo"};
-async function dcLoad(){const r=await api({action:"dec_get"});if(r&&r.ok){DC=r;dcRender()}else{const el=document.getElementById("dc");if(el&&!DC)el.innerHTML='<div class="card"><div class="sub">Non riesco a caricare le proposte: '+esc((r&&r.error)||"")+'</div></div>'}}
+async function dcLoad(){const [r,f]=await Promise.all([api({action:"dec_get"}),api({action:"fb_get"})]);if(r&&r.ok){DC=r;DC.fb=f&&f.ok?f.items:[];dcRender()}else{const el=document.getElementById("dc");if(el&&!DC)el.innerHTML='<div class="card"><div class="sub">Non riesco a caricare le proposte: '+esc((r&&r.error)||"")+'</div></div>'}}
 function dcAge(d){if(!d)return "";const n=Math.round((Date.parse(DC.today+"T12:00:00Z")-Date.parse(d+"T12:00:00Z"))/864e5);return n<=0?"oggi":n===1?"da ieri":"in attesa da "+n+" giorni"}
 function dcRow(x,grp){const az=DCAZ[grp]||[];const d=(DC.dec||{})[x.id];const age=x.data?dcAge(x.data):"";const old=x.data&&grp!=="lav"&&age.indexOf("giorni")>0&&parseInt((age.match(/[0-9]+/)||["0"])[0],10)>=14;
   let h='<div class="dc-r" data-dc="'+esc(x.id)+'"><div class="dc-t">'+esc(x.titolo||x.id)+'</div><div class="dc-m">'+esc(x.meta||"")+(x.meta&&age?" · ":"")+(age?'<span class="'+(old?"old":"")+'">'+esc(age)+'</span>':"")+'</div>'+(x.testo?'<div class="dc-d">'+esc(x.testo)+'</div>':"");
@@ -1744,8 +1745,9 @@ function dcRow(x,grp){const az=DCAZ[grp]||[];const d=(DC.dec||{})[x.id];const ag
 function dcRender(){const el=document.getElementById("dc");if(!el||!DC)return;const dec=DC.dec||{},it=DC.items||[];
   const st=x=>{const d=dec[x.id];if(!d)return "aperta";if(d.azione==="tardi")return d.fino&&d.fino>DC.today?"tardi":"aperta";if(d.azione==="pausa")return "pausa";if(d.azione==="no")return d.applicata?"via":"fatto";return d.applicata?"via":"fatto"};
   const open=it.filter(x=>x.tipo!=="lav"&&["aperta","fatto"].includes(st(x)));const n=open.filter(x=>st(x)==="aperta").length;
-  const b=document.getElementById("dcb");if(b){b.hidden=!n;b.textContent=n}
-  let h='<div class="card"><div class="dc-h"><b>Da decidere</b><span class="sub">'+n+(DC.at?' · aggiornate il '+esc(itDate(DC.at.slice(0,10)))+' alle '+esc(new Date(DC.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})):' · non ancora arrivate')+'</span></div><div class="sub" style="margin-top:4px">Le proposte degli agenti e le richieste. La routine del sito (7:52 e 16:52) le aggiorna e porta le tue scelte nell&#39;artifact.</div>';
+  const FB=DC.fb||[],fbN=FB.filter(x=>x.stato==="nuova").length;
+  const b=document.getElementById("dcb");if(b){b.hidden=!(n+fbN);b.textContent=n+fbN}
+  let h=fbHTML(FB)+'<div class="card"><div class="dc-h"><b>Da decidere</b><span class="sub">'+n+(DC.at?' · aggiornate il '+esc(itDate(DC.at.slice(0,10)))+' alle '+esc(new Date(DC.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})):' · non ancora arrivate')+'</span></div><div class="sub" style="margin-top:4px">Le proposte degli agenti e le richieste. La routine del sito (7:52 e 16:52) le aggiorna e porta le tue scelte nell&#39;artifact.</div>';
   for(const [g,lab] of DCSEC){const L=open.filter(x=>x.tipo===g).sort((a,z)=>String(a.data||"").localeCompare(String(z.data||"")));if(!L.length)continue;const lim=DCMORE[g]?L.length:3;
     h+='<div class="dc-sec"><span>'+lab+' · '+L.length+'</span><span>'+(g==="dossier"?"dal più vecchio":"")+'</span></div>'+L.slice(0,lim).map(x=>dcRow(x,g)).join("")+(L.length>lim?'<button class="dc-more" data-dc-more="'+g+'">Altri '+(L.length-lim)+' ▾</button>':"")}
   if(!open.length)h+='<div class="sub" style="margin-top:12px">Niente da decidere.</div>';
@@ -1754,8 +1756,13 @@ function dcRender(){const el=document.getElementById("dc");if(!el||!DC)return;co
   const T=it.filter(x=>st(x)==="tardi"),P=it.filter(x=>st(x)==="pausa");
   h+='<div class="dc-f">'+(T.length?'<details><summary>Rimandate · '+T.length+'</summary>'+T.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+(P.length?'<details><summary>In pausa · '+P.length+'</summary>'+P.map(x=>dcRow(x,x.tipo)).join("")+'</details>':"")+'</div></div>';
   el.innerHTML=h}
+function fbHTML(FB){const on=FB.filter(x=>x.stato!=="archiviata");if(!FB.length)return "";const N=on.filter(x=>x.stato==="nuova").length;
+  const row=x=>'<div class="dc-r fb-r'+(x.stato==="risolta"?' fb-ok':'')+'"><div class="dc-t">'+(x.tipo==="idea"?"💡 ":"⚠️ ")+esc(x.testo)+'</div><div class="dc-m">'+esc(x.dove||"")+' · '+esc(new Date(x.at).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+(x.email?' · <a href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a>':'')+(x.stato==="risolta"?' · risolta':'')+'</div><div class="dc-a">'+(x.stato==="nuova"?'<button data-fb="'+x.id+'" data-fb-s="risolta">✓ Risolta</button>':'<button data-fb="'+x.id+'" data-fb-s="nuova">Riapri</button>')+'<button class="dc-g" data-fb="'+x.id+'" data-fb-s="archiviata">Archivia</button></div></div>';
+  const ar=FB.filter(x=>x.stato==="archiviata");
+  return '<div class="card"><div class="dc-h"><b>Segnalazioni dal sito</b><span class="sub">'+N+' nuove</span></div><div class="sub" style="margin-top:4px">Arrivano da «💬 Scrivici», in alto sul sito.</div>'+(on.length?on.slice(0,FBMORE?on.length:5).map(row).join(""):'<div class="sub" style="margin-top:10px">Nessuna segnalazione aperta.</div>')+(on.length>5&&!FBMORE?'<button class="dc-more" data-fb-more="1">Altre '+(on.length-5)+' ▾</button>':'')+(ar.length?'<div class="dc-f"><details><summary>Archiviate · '+ar.length+'</summary>'+ar.slice(0,30).map(row).join("")+'</details></div>':'')+'</div>'}
+let FBMORE=false;
 async function dcSet(id,azione,fino){const r=await api({action:"dec_set",id,azione,fino});if(r&&r.ok){DC.dec=r.dec;DCT=null;dcRender()}else alert("Non salvato: "+((r&&r.error)||""))}
-document.getElementById("dc").addEventListener("click",e=>{const m=e.target.closest("[data-dc-more]");if(m){DCMORE[m.dataset.dcMore]=1;dcRender();return}
+document.getElementById("dc").addEventListener("click",async e=>{const fm=e.target.closest("[data-fb-more]");if(fm){FBMORE=true;dcRender();return}const fb=e.target.closest("[data-fb]");if(fb){fb.disabled=true;const r=await api({action:"fb_set",id:fb.dataset.fb,stato:fb.dataset.fbS});if(r&&r.ok){DC.fb=r.items;dcRender()}else{fb.disabled=false;alert("Non salvato: "+((r&&r.error)||""))}return}const m=e.target.closest("[data-dc-more]");if(m){DCMORE[m.dataset.dcMore]=1;dcRender();return}
   const u=e.target.closest("[data-dc-undo]");if(u){dcSet(u.dataset.dcUndo,"riattiva");return}
   const row=e.target.closest("[data-dc]");if(!row)return;const id=row.dataset.dc;
   const a=e.target.closest("[data-dc-az]");if(a){const z=a.dataset.dcAz;if(z==="tardi"){DCT=DCT===id?null:id;dcRender();return}dcSet(id,z);return}
@@ -3806,6 +3813,7 @@ async function route(request, env) {
   if (method === "GET" && p === "/api/votes") return await votesApi(url, env);
   if (method === "POST" && (p === "/api/me" || p === "/api/newsletter")) return await nlApi(request, env, p);
   if (method === "POST" && p === "/api/segui") return await seguiApi(request, env);
+  if (method === "POST" && p === "/api/segnala") return await segnalaApi(request, env);
   if (method === "GET" && p === "/api/newsletter/esempio") {
     const src = await mailBriefing(env, null);
     if (!src) return htmlPage("Esempio", "Nessun esempio disponibile.", 404);
@@ -4449,6 +4457,28 @@ function seguiClean(x) {
   if (!x || typeof x !== "object") return null;
   const arr = (v, re, n) => Array.isArray(v) ? [...new Set(v.filter((e) => typeof e === "string" && re.test(e)))].slice(0, n) : [];
   return { aree: arr(x.aree, SEGUI_RE, 20), paesi: arr(x.paesi, PAESE_RE, 80), temi: arr(x.temi, SEGUI_RE, 60), incroci: arr(x.incroci, INCROCIO_RE, 150), filoni: arr(x.filoni, FILONE_RE, 80) };
+}
+/* v69: «Scrivici» dal sito: problemi e idee dei lettori. Restano nel pannello (scheda Proposte) e arrivano in Telegram, nella chat privata */
+async function segnalaApi(request, env) {
+  let b = null; try { b = JSON.parse((await request.text()).slice(0, 6000)); } catch (e) {}
+  const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
+  const tipo = b && b.tipo === "idea" ? "idea" : "problema";
+  const testo = String((b && b.testo) || "").trim().slice(0, 1500);
+  if (testo.length < 5) return fail(422, "too_short");
+  const email = t(b && b.email, 120); if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(422, "bad_email");
+  const day = romeToday(); const ip = request.headers.get("CF-Connecting-IP") || "x";
+  const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + day)))].slice(0, 8).map((x) => x.toString(16).padStart(2, "0")).join("");
+  const rl = (await kvGet(env, "fb_rl")) || {}; if (rl.day !== day) { rl.day = day; rl.n = {}; }
+  if ((rl.n[h] || 0) >= 8) return fail(429, "too_many"); rl.n[h] = (rl.n[h] || 0) + 1; await kvSet(env, "fb_rl", rl);
+  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: new Date().toISOString(), tipo, testo, dove: t(b && b.dove, 120), url: t(b && b.url, 200), email, uid: t(b && b.uid, 64), stato: "nuova" };
+  const L = (await kvGet(env, "fb_items")) || []; L.unshift(it); await kvSet(env, "fb_items", L.slice(0, 300));
+  try { await tgPriv(env, (tipo === "idea" ? "💡 <b>Un'idea</b>" : "⚠️ <b>Qualcosa non va</b>") + " dal sito\n" + esc(testo.slice(0, 900)) + "\n<i>" + esc(it.dove || "") + (email ? " · " + esc(email) : "") + "</i>"); } catch (e) {}
+  return json({ ok: true });
+}
+async function fbPanel(env, b) {
+  const L = (await kvGet(env, "fb_items")) || [];
+  if (b.action === "fb_set") { const x = L.find((y) => y.id === String(b.id || "")); if (!x || !["nuova", "risolta", "archiviata"].includes(b.stato)) return { ok: false, error: "voce non valida" }; x.stato = b.stato; x.cambiato = new Date().toISOString(); await kvSet(env, "fb_items", L); }
+  return { ok: true, items: L };
 }
 async function seguiApi(request, env) {
   const text = await request.text();
