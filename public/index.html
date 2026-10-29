@@ -955,7 +955,7 @@ body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],bod
 .fbk-c{font-size:12.5px;color:var(--muted);margin-top:8px}.fbk-c b{color:var(--ink);font-weight:500}
 .fbk-err{color:var(--low);font-size:13.5px;margin:10px 0 0}
 .fbk-go{margin-top:16px;width:100%;border:0;border-radius:12px;background:var(--accent);color:var(--surface);font:600 16px var(--sans);padding:13px;cursor:pointer}.fbk-go:disabled{opacity:.6}
-.fbk-ok{text-align:center;padding:14px 0 4px}.fbk-ok div{font-size:34px}.fbk-ok b{display:block;font:600 19px var(--serif);margin:6px 0}
+.fbk-ref{margin:0 0 4px;font:500 13px var(--mono);color:var(--muted)}.fbk-ok .fbk-ref b{display:inline;margin:0;font:600 13px var(--mono);color:var(--ink)}.fbk-ok{text-align:center;padding:14px 0 4px}.fbk-ok div{font-size:34px}.fbk-ok b{display:block;font:600 19px var(--serif);margin:6px 0}
 .prefbtn{margin-left:8px;background:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
 .prefbtn:hover{color:var(--accent);border-color:var(--accent)}
 #prefs{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;background:rgba(10,16,22,.45);padding:60px 16px 16px;overflow:auto}
@@ -5198,9 +5198,9 @@ document.addEventListener("click",async e=>{
   const o=e.target.closest("[data-fbk-t]");if(o){FBK.tipo=o.dataset.fbkT;document.querySelectorAll("[data-fbk-t]").forEach(x=>x.setAttribute("aria-pressed",String(x===o)));return}
   if(e.target.id==="fbkGo"){const t=(document.getElementById("fbkT").value||"").trim(),em=(document.getElementById("fbkE").value||"").trim(),er=document.getElementById("fbkErr");
     const bad=m=>{er.textContent=m;er.hidden=false};if(t.length<5){bad("Scrivi qualche parola in più.");return}if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){bad("L’email non sembra giusta.");return}
-    e.target.disabled=true;e.target.textContent="Invio…";let ok=false;try{let uid="";try{uid=localStorage.getItem("rg-uid")||""}catch(_){}const r=await fetch(RG_API+"/api/segnala",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tipo:FBK.tipo,testo:t,email:em,dove:fbkDove(),url:location.hash||"",uid,img:FBK.img||""})});ok=r.ok}catch(_){}
+    e.target.disabled=true;e.target.textContent="Invio…";let ok=false,ref="";try{let uid="";try{uid=localStorage.getItem("rg-uid")||""}catch(_){}const r=await fetch(RG_API+"/api/segnala",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tipo:FBK.tipo,testo:t,email:em,dove:fbkDove(),url:location.hash||"",uid,img:FBK.img||""})});ok=r.ok;if(ok){try{ref=(await r.json()).ref||""}catch(_){}}}catch(_){}
     if(!ok){e.target.disabled=false;e.target.textContent="Invia";bad("Non è partito: riprova tra poco.");return}
-    const box=document.querySelector(".fbk");if(box)box.innerHTML=`<div class="fbk-g" aria-hidden="true"></div><div class="fbk-ok"><div aria-hidden="true">🙏</div><b>Grazie, ricevuto</b><p class="fbk-s">${em?"Ti rispondiamo all’email che ci hai lasciato.":"Ogni segnalazione viene letta."}</p></div><button type="button" class="fbk-go" data-fbk-x="1">Chiudi</button>`}
+    const box=document.querySelector(".fbk");if(box)box.innerHTML=`<div class="fbk-g" aria-hidden="true"></div><div class="fbk-ok"><div aria-hidden="true">🙏</div><b>Grazie, ricevuto</b>${ref?`<p class="fbk-ref">Riferimento <b>${esc(ref)}</b></p>`:""}<p class="fbk-s">${em?"Ti rispondiamo all’email che ci hai lasciato.":"Ogni segnalazione viene letta."}</p></div><button type="button" class="fbk-go" data-fbk-x="1">Chiudi</button>`}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.querySelector(".fbk"))fbkClose()});
 /* lo screenshot si rimpicciolisce sul telefono prima di partire: lato lungo 1400 px, JPEG */
