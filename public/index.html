@@ -4057,7 +4057,25 @@ function ptFol(b){const out={html:"",n:0};try{const ids=(F.filoni||[]).filter(id
     return {nov,h:`<div class="ptf-t"><button type="button" class="ptf-n" data-thread="${esc(id)}"><span aria-hidden="true">${thFlags(t)}</span><span class="ptf-tt">${esc(t.titolo)} ›</span>${chiuso?'<small class="ptf-c">CONCLUSO</small>':nov?"<small>NOVITÀ</small>":""}</button>${up}<div class="ptf-x">${ext.join("")}</div></div>`}}).filter(Boolean);
   R.sort((a,z)=>(z.nov?1:0)-(a.nov?1:0));out.n=R.length;out.html=R.length?`<div class="ptf">${R.map(x=>x.h).join("")}</div>`:"";}catch(e){console.warn("temi seguiti",e)}return out}
 try{FOLAPI={follows,toggleF};setTimeout(()=>{try{if(typeof schedule==="function")schedule()}catch(_){}},0)}catch(_){}
-{const _ptv0=perTeView;perTeView=function(){let h="";try{const b=currentBrief();const r=ptFol(b);if(r.html)h=`<div class="xp-ptf"><div class="pt-h"><b>I temi che segui</b></div>${r.html}</div>`}catch(e){}return h+_ptv0.apply(this,arguments)}}
+{const _ptv0=perTeView;perTeView=function(){let h="";try{h=ptFolC(currentBrief())}catch(e){console.warn("temi seguiti",e)}return h+_ptv0.apply(this,arguments)}}
+/* Esplora › Per te: i temi seguiti in righe compatte, al massimo 2 (prima quelli con novità); gli altri con «Tutti» */
+function ptFolC(b){const ids=(F.filoni||[]).filter(id=>S.threads[id]);if(!ids.length||!b)return "";
+  const today=b.data,y=new Date(today+"T12:00:00");y.setDate(y.getDate()-1);const ieri=isoDay(y);
+  const prevB=(S.briefings||[]).filter(x=>x.data<today).sort((x,z)=>z.data.localeCompare(x.data))[0];const since=prevB?prevB.data:ieri;
+  const quando=d=>d===today?"oggi":d===ieri?"ieri":dShort(d);
+  const R=ids.map(id=>{const t=S.threads[id],FS=thFamSet(t);const chiuso=t.stato==="chiuso";
+    const cd=t.chiuso_il||t.ultimo_aggiornamento||"";if(chiuso&&cd&&cd<since)return null;
+    const ag=(S.agg||[]).filter(x=>x&&(FS.has(x.filone_id)||(x.storia_id&&S.stories[x.storia_id]&&FS.has(S.stories[x.storia_id].filone_id)))&&x.data>=since&&x.testo).sort((a,z)=>String(z.data+(z.ora||"")).localeCompare(String(a.data+(a.ora||""))))[0];
+    const sid=(b.storie_mondo||[]).concat(b.storie_italia||[]).find(k=>S.stories[k]&&FS.has(S.stories[k].filone_id));
+    let line="";
+    if(chiuso)line="concluso · "+(t.esito||thLast(t).testo||"");
+    else if(ag)line=quando(ag.data)+(ag.ora?" "+ag.ora:"")+" · "+(ag.titolo||ag.testo);
+    else if(sid)line="oggi · "+S.stories[sid].titolo;
+    else{const l=thLast(t);if(l.testo)line=quando(l.data)+" · "+l.testo}
+    return {id,t,nov:chiuso||!!ag||!!sid,line}}).filter(Boolean);
+  if(!R.length)return "";R.sort((a,z)=>(z.nov?1:0)-(a.nov?1:0));
+  const more=R.length>2,L=X.ptfAll?R:R.slice(0,2);
+  return `<div class="ptc"><div class="ptc-h"><b>★ I temi che segui${more?" · "+R.length:""}</b>${more?`<button type="button" data-ptfall="1">${X.ptfAll?"Meno ▴":"Tutti ›"}</button>`:""}</div>${L.map(x=>`<button type="button" class="ptc-r" data-thread="${esc(x.id)}"><span class="ptc-f" aria-hidden="true">${thFlags(x.t)}</span><span class="ptc-t"><b>${esc(x.t.titolo)}</b>${x.line?`<span>${esc(x.line)}</span>`:""}</span>${x.nov?'<i class="ptc-n" title="Novità"></i>':""}<span class="ptc-c" aria-hidden="true">›</span></button>`).join("")}</div>`}
 function ipTemi(){const ids=(F.filoni||[]).filter(id=>S.threads[id]);if(!ids.length)return "";
   const on=ids.filter(id=>S.threads[id].stato!=="chiuso"),off=ids.filter(id=>S.threads[id].stato==="chiuso");
   const chip=id=>{const t=S.threads[id];return `<button type="button" class="xp-chip" data-pf="filoni|${esc(id)}" aria-pressed="true">${thFlags(t)} ${esc(t.titolo)} ✕</button>`};
@@ -4159,6 +4177,24 @@ css.textContent=`
 .sto-h{position:relative}.sto-h:has(.sto-star){padding-right:52px}.sto-star{position:absolute;top:8px;right:6px;display:flex;flex-direction:column;align-items:center;gap:0;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px 6px;line-height:1}.sto-star span{font-size:24px}.sto-star small{font:600 10px var(--sans);margin-top:2px}.sto-star.on{color:#E5B45A}
 #folToast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px;max-width:min(92vw,420px);box-shadow:0 8px 24px rgba(0,0,0,.35);transition:opacity .2s,transform .2s;z-index:9999}#folToast.on{opacity:1;transform:translate(-50%,0)}
 .ptf-n{width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}.ptf-tt{color:var(--ink)}
+.ptc{margin:0 0 4px}.ptc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 2px}.ptc-h b{font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mid)}.ptc-h button{font:inherit;font-size:14px;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer}
+.ptc-r{display:flex;gap:10px;align-items:center;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.ptc-f{flex:none;max-width:46px;white-space:nowrap;overflow:hidden;font-size:17px}.ptc-t{flex:1;min-width:0}.ptc-t b,.ptc-t span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ptc-t b{font-size:15px;font-weight:600}.ptc-t span{font-size:13.5px;color:var(--muted);margin-top:1px}
+.ptc-n{flex:none;width:8px;height:8px;border-radius:50%;background:var(--mid)}.ptc-c{flex:none;color:var(--faint);font-size:18px}
+.pfb{position:sticky;top:var(--hdr,96px);z-index:8;background:var(--bg);margin:10px -16px 4px;padding:10px 16px 2px;border-bottom:1px solid var(--line)}
+.pfb-r{display:flex;align-items:center;gap:8px;margin-bottom:8px}.pfb-r .pf-seg button{min-height:32px;padding:4px 13px}
+.pfb-v{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:0 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.pfb .pf-row{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:24px}
+.pfb-c{margin:2px 0 8px;font-size:12.5px;color:var(--muted)}
+.pfs-dim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60}
+.pfs{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--surface);border-radius:18px 18px 0 0;padding:8px 20px calc(20px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+@media(min-width:700px){.pfs{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);width:420px;border-radius:16px;padding:16px 22px 20px}.pfs-g{display:none}}
+.pfs-g{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 10px}
+.pfs-h{display:flex;justify-content:space-between;align-items:center}.pfs-h b{font:600 19px var(--serif)}.pfs-x{background:none;border:0;color:var(--muted);font-size:18px;padding:6px;cursor:pointer}
+.pfs-l{font:600 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.pfs-i{margin:0 0 6px;font-size:14px;color:var(--ink)}
+.pfs-o{display:flex;gap:8px}.pfs-op{flex:1;border:1px solid var(--line);background:none;color:var(--ink);border-radius:10px;padding:10px 6px;font:inherit;font-size:14.5px;cursor:pointer}.pfs-op small{display:block;font-size:12px;color:var(--muted);margin-top:2px}.pfs-op[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.pfs-ok{margin-top:20px;width:100%;border:0;border-radius:12px;background:var(--accent);color:var(--surface);font:inherit;font-size:16px;font-weight:600;padding:13px;cursor:pointer}
 .xp-ptf{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 4px;margin:0 0 16px}
 .ip-off .xp-chip{opacity:.6}
 .acc .n.kd{color:var(--muted)}.th-fam{margin:8px 0;font-size:14px}.th-fam .label{display:block;margin-bottom:4px}.th-kid{display:block;text-align:left;margin:3px 0}.th-kid small{color:var(--muted)}
@@ -4399,9 +4435,9 @@ header.top nav.tabs > button[aria-selected="true"] .ic{transform:scale(1.12)}
 #dosPill{display:none!important}
 .subnav{border-bottom:1px solid var(--line)}
 .subnav[hidden]{display:none}
-.subnav-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 0}
-.subnav-row button{font:inherit;font-size:14px;white-space:nowrap;flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer}
-.subnav-row button[aria-current="page"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+.subnav-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0}
+.subnav-row button{font:inherit;font-size:14.5px;white-space:nowrap;flex:none;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);border-radius:0;padding:10px 12px 8px;margin-bottom:-1px;cursor:pointer}.sn-ic{margin-right:6px}@media(max-width:560px){.subnav-row{gap:0}.subnav-row button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 7px;font-size:13px;line-height:1.2}.sn-ic{margin:0;font-size:17px;line-height:1}}
+.subnav-row button[aria-current="page"]{background:transparent;border-bottom-color:var(--accent);color:var(--ink);font-weight:600}
 .subnav-row button:hover{color:var(--ink)}
 .xp-pt{background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:6px 0 14px}
 .xp-pt p{margin:0 0 10px;line-height:1.5}
@@ -4669,10 +4705,15 @@ function perTeView(){
   const prim=[pgChip("tutto","Tutto",all.length,"var(--muted)",X.ptP==="tutto","data-ptp")].concat(pKeys.map(k=>pgChip(k,P.name(k),pc[k],P.col(k),X.ptP===k,"data-ptp"))).join("");
   const sec=X.ptP==="tutto"?"":`<div class="pf-row pf-sub"><span class="pf-sl">${byA?"Argomenti":"Aree"}</span>${[pgChip("tutto",byA?"Tutti":"Tutte",inP.length,"var(--muted)",X.ptS==="tutto","data-pts")].concat(pgKeys(sc,Q).map(k=>pgChip(k,Q.name(k),sc[k],Q.col(k),X.ptS===k,"data-pts"))).join("")}</div>`;
   const seg=(attr,opts,cur)=>`<div class="pf-seg" role="group">${opts.map(([v,l])=>`<button type="button" ${attr}="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
-  const main=`<div class="xp-pthd"><p><span class="xp-mode on">★ Filtrato sui tuoi interessi</span></p><button type="button" class="xp-mod" data-int-open="1">★ Modifica interessi</button></div>${mailNudge()}
-  <div class="pf-ctl"><div class="pf-cr"><span class="pf-sl">Periodo</span>${seg("data-ptper",[["oggi","Oggi"],["7","7 giorni"]],oggi?"oggi":"7")}</div>
-  <div class="pf-cr"><span class="pf-sl">Raggruppa per</span>${seg("data-ptby",[["area","Aree"],["tema","Argomenti"]],byA?"area":"tema")}</div></div>
-  <div class="pf-row">${prim}</div>${sec}
+  const opt=(attr,v,l,sub,on)=>`<button type="button" class="pfs-op" ${attr}="${v}" aria-pressed="${on}">${l}${sub?`<small>${sub}</small>`:""}</button>`;
+  const nm=allNames();
+  const sheet=X.pfv?`<div class="pfs-dim" data-pfv="0"></div><div class="pfs" role="dialog" aria-label="Personalizza"><div class="pfs-g" aria-hidden="true"></div><div class="pfs-h"><b>Personalizza</b><button type="button" class="pfs-x" data-pfv="0" aria-label="Chiudi">✕</button></div>
+  <div class="pfs-l">I tuoi interessi</div><p class="pfs-i">${esc(clip(nm.join(", "),120))}</p><button type="button" class="xp-lnk" data-int-open="1">★ Modifica i miei interessi ›</button>
+  <div class="pfs-l">Raggruppa per</div><div class="pfs-o">${opt("data-ptby","area","🌍 Aree","Medio Oriente, Europa…",byA)}${opt("data-ptby","tema","🏷️ Argomenti","Geopolitica, Economia…",!byA)}</div>
+  <div class="pfs-l">Periodo</div><div class="pfs-o">${opt("data-ptper","oggi","Oggi","",oggi)}${opt("data-ptper","7","7 giorni","",!oggi)}</div>
+  <button type="button" class="pfs-ok" data-pfv="0">Mostra ${all.length} ${all.length===1?"notizia":"notizie"}</button></div>`:"";
+  const main=`<div class="pfb"><div class="pfb-r">${seg("data-ptper",[["oggi","Oggi"],["7","7 giorni"]],oggi?"oggi":"7")}<button type="button" class="pfb-v" data-pfv="1">⚙ Personalizza</button></div>
+  <div class="pf-row">${prim}</div>${sec}<p class="pfb-c">★ Solo i tuoi interessi · per ${byA?"area":"argomento"}${X.ptP!=="tutto"?" · "+esc(P.name(X.ptP))+" · "+shown.length+(shown.length===1?" notizia":" notizie"):""}</p></div>${mailNudge()}${sheet}
   ${shown.length?pgFeed(shown,P,Q,{id:"pt"+X.ptBy+X.ptPer,bIdx,bd,go:k=>k==="altro"?"":`<button type="button" class="pg-go" data-go="${byA?"area":"tema"}|${esc(k)}">Apri ›</button>`}):`<p class="xp-empty">${oggi?"Oggi niente su quello che segui: prova «7 giorni».":"Negli ultimi 7 giorni niente su quello che segui."}</p>`}
   <p class="xp-note">${byA?"Ogni riquadro è un’area, con il colore del suo livello di tensione come sulla mappa. Dentro, le notizie sono divise per argomento, ognuno con il suo colore.":"Ogni riquadro è un argomento, con il suo colore. Dentro, le notizie sono divise per area, con il colore del suo livello di tensione."}</p>`;
   return `<div class="xw"><div class="xw-main">${main}</div><aside class="xw-aside">${ptAside(all,byA)}</aside></div>`;
@@ -4901,6 +4942,8 @@ document.addEventListener("click",e=>{
   const xl=e.target.closest("[data-xlim]");if(xl&&X.pg){X.pg.lim=+xl.dataset.xlim;renderEx();return}
   const pj=e.target.closest("[data-ptjump]");if(pj){const v=pj.dataset.ptjump,i=v.indexOf("|");X.ptBy=v.slice(0,i);try{localStorage.setItem("rg-pt-by",X.ptBy)}catch(_){}X.ptP=v.slice(i+1);X.ptS="tutto";renderEx();try{perTe()}catch(_){}const r=document.getElementById("esplora");if(r){const off=document.querySelector("header.top").offsetHeight+8;const y=r.getBoundingClientRect().top+window.scrollY-off;if(window.scrollY>y)window.scrollTo({top:y,behavior:"smooth"})}return}
   const px=e.target.closest("[data-pgx]");if(px){const k=px.dataset.pgx;if(X.exp.has(k))X.exp.delete(k);else X.exp.add(k);renderEx();return}
+  const pv=e.target.closest("[data-pfv]");if(pv){X.pfv=pv.dataset.pfv==="1";renderEx();return}
+  const pfa=e.target.closest("[data-ptfall]");if(pfa){X.ptfAll=!X.ptfAll;renderEx();return}
   const pp=e.target.closest("[data-ptp]");if(pp){X.ptP=pp.dataset.ptp;X.ptS="tutto";X.ptLim=30;renderEx();return}
   const ps=e.target.closest("[data-pts]");if(ps){X.ptS=ps.dataset.pts;X.ptLim=30;renderEx();return}
   const pr=e.target.closest("[data-ptper]");if(pr){X.ptPer=pr.dataset.ptper;X.ptP="tutto";X.ptS="tutto";X.ptLim=30;renderEx();return}
@@ -5121,6 +5164,8 @@ const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplo
     if(v==="x:perte")go(null);else if(v==="x:area")go({k:"lista",id:"area"});else if(v==="x:tema")go({k:"lista",id:"tema"});else show(v)});
 })();
 function curSub(){const v=S.view;if(v!=="esplora")return v;const p=X.page;if(!p)return "x:perte";if(p.k==="lista")return p.id==="tema"?"x:tema":"x:area";if(p.k==="tema")return "x:tema";return "x:area"}
+/* l'icona in testa all'etichetta si nasconde sui telefoni, così le voci stanno tutte in una riga */
+function snLab(l){const m=String(l).match(/^([^\sA-Za-zÀ-ÿ0-9«]+)\s+(.*)$/);return m?`<span class="sn-ic" aria-hidden="true">${m[1]}</span>${m[2]}`:l}
 function updNav(){
   const g=VGROUP[S.view];const sn=document.getElementById("subnav");if(!sn)return;
   document.querySelectorAll("nav.tabs > button").forEach(b=>{if(!b.classList.contains("navx"))b.setAttribute("aria-selected",String(!!g&&b.id===NAVG[g].tab))});
@@ -5129,7 +5174,7 @@ function updNav(){
   if(items.length<2){sn.hidden=true;sn.innerHTML="";return}
   const cur=curSub();const dl=(document.querySelector("#tab-dossier .tlab")||{}).textContent;
   const oldRow=sn.querySelector(".subnav-row"),keep=oldRow&&sn.dataset.g===g?oldRow.scrollLeft:0;sn.dataset.g=g;
-  sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${v==="protagonisti"?` id="tab-protagonisti"`:""} aria-current="${cur===v?"page":"false"}">${v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l}</button>`).join("")}</div></div>`;
+  sn.hidden=false;sn.innerHTML=`<div class="wrap"><div class="subnav-row">${items.map(([v,l])=>`<button type="button" data-sv="${v}"${v==="protagonisti"?` id="tab-protagonisti"`:""} aria-current="${cur===v?"page":"false"}">${snLab(v==="dossier"&&dl&&dl!=="Dossier"?"🧭 "+esc(dl):l)}</button>`).join("")}</div></div>`;
   /* la riga resta dov'era e la voce scelta è sempre visibile */
   const row=sn.querySelector(".subnav-row"),on=sn.querySelector('[aria-current="page"]');
   try{scrollify(row)}catch(_){}
