@@ -2963,6 +2963,14 @@ async function tgCall(env, method, body) {
   try { if (/^send/.test(method) && body && body.chat_id) { const st = await tgSettings(env); if (st.chat && String(body.chat_id) === String(st.chat)) { const k = "tg_n:" + romeToday(); const L = (await kvGet(env, k)) || []; L.push({ m: method, at: new Date().toISOString() }); await kvSet(env, k, L); } } } catch (e) {} // v53: messaggi sul canale oggi
   return j.result;
 }
+async function tgUpload(env, method, fields, fileField, blob, name) { // v64: invio di un file caricato direttamente (multipart), quando Telegram non riesce a scaricarlo dall'indirizzo
+  if (!env.TG_BOT_TOKEN) throw { status: 409, code: "telegram_chiave", detail: "Manca il secret TG_BOT_TOKEN nel Worker." };
+  const fd = new FormData(); for (const [k, v] of Object.entries(fields)) fd.append(k, String(v)); fd.append(fileField, blob, name);
+  const r = await fetch("https://api.telegram.org/bot" + String(env.TG_BOT_TOKEN).trim() + "/" + method, { method: "POST", body: fd });
+  const j = await gj(r);
+  if (!j.ok) throw { status: 502, code: "telegram_" + (j.error_code || r.status), detail: "Telegram (file caricato): " + (j.description || "HTTP " + r.status) };
+  return j.result;
+}
 const TG_TETTO = 3; // v53: tetto di messaggi al giorno sul canale, vale solo per la divergenza (v54: il riepilogo serale esce sempre se ci sono aggiornamenti: è il messaggio che chiude la giornata)
 async function tgOggi(env) { const day = romeToday(); const n = ((await kvGet(env, "tg_n:" + day)) || []).length;
   const svolta = (await svList(env)).some((x) => x.tg_msg && x.tg_at && new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(x.tg_at)) === day);
@@ -3013,7 +3021,18 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
     const tit = String(thCaption(d.caption) || "").split("\n").map((x) => x.trim()).find(Boolean) || "";
     const cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + '<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
     let r;
-    if (d.type === "reel" && d.video_url) r = await tgCall(env, "sendVideo", { chat_id: st.chat, video: d.video_url, caption: cap, parse_mode: "HTML", supports_streaming: true });
+    if (d.type === "reel" && d.video_url) {
+      /* v64: Telegram ricorda per un po' gli indirizzi che non è riuscito a scaricare, e da lì i «Riprova» falliscono tutti.
+         Prima l'indirizzo con un parametro nuovo a ogni tentativo; se non basta, il Worker carica direttamente il file da R2. */
+      const vu = d.video_url + (d.video_url.includes("?") ? "&" : "?") + "tg=" + Date.now().toString(36);
+      try { r = await tgCall(env, "sendVideo", { chat_id: st.chat, video: vu, caption: cap, parse_mode: "HTML", supports_streaming: true }); }
+      catch (e1) {
+        const vid = (String(d.video_url).match(/\/ig\/vid\/([0-9a-f]{32})\.mp4/) || [])[1];
+        const obj = vid && env.PODCAST ? await env.PODCAST.get("igvid/" + vid + ".mp4") : null;
+        if (!obj) throw e1;
+        r = await tgUpload(env, "sendVideo", { chat_id: st.chat, caption: cap, parse_mode: "HTML", supports_streaming: "true" }, "video", new Blob([await obj.arrayBuffer()], { type: "video/mp4" }), "reel.mp4");
+      }
+    }
     else {
       const imgs = (d.image_urls || []).slice(0, 10);
       if (!imgs.length) throw { code: "telegram_immagini", detail: "Nessuna immagine nella bozza." };
