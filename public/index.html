@@ -396,7 +396,7 @@ details.log h4{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-
 details.log ul{margin:0;padding-left:18px}
 
 /* map */
-.map-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.map-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-areas:"main side" "panel side";gap:16px 24px;align-items:start}.map-main{grid-area:main;min-width:0}.map-layout>.panel{grid-area:panel;position:static}.map-side{grid-area:side;position:sticky;top:calc(var(--hdr,96px) + 14px)}.map-side .map-legend{flex-direction:column;margin-top:0}.map-side .criteria{margin-top:14px}
 .map-box{background:var(--sea);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative;touch-action:none}
 .zctl{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;z-index:2}
 .zctl button{width:36px;height:36px;font-size:19px;color:var(--ink);border:0;background:none;line-height:1}
@@ -738,7 +738,7 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 mark{background:color-mix(in srgb,var(--mid) 30%,transparent);color:inherit;border-radius:2px}
 
 @media (max-width:860px){
-  .map-layout{grid-template-columns:1fr}
+  .map-layout{grid-template-columns:1fr;grid-template-areas:"main" "panel" "side"}.map-side{position:static}
   .panel{position:static}
   .arch-grid{grid-template-columns:1fr}
 }
@@ -1410,10 +1410,13 @@ nav.tabs button .ic{margin-right:.3em}
 
   <section id="v-mappa" class="view" hidden>
     <div class="map-layout">
-      <div>
+      <div class="map-main">
         <div class="tmach" id="tmach"></div>
         <div class="map-box" id="mapBox"><div class="state">Caricamento della mappa…</div></div>
         <p class="hint" style="margin:6px 0 0">Usa i bottoni + / − o il doppio tocco per ingrandire: i paesi piccoli si toccano meglio da vicino.</p>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"><p class="panel-empty">Tocca un paese sulla mappa per vedere situazione, dinamiche, effetti di riflesso e trend.</p></aside>
+      <div class="map-side">
         <div class="map-legend">
           <div><span class="label"><span class="ic" aria-hidden="true">🌡️</span>Livello di tensione</span>
             <div class="scale" id="scale"></div>
@@ -1425,7 +1428,6 @@ nav.tabs button .ic{margin-right:.3em}
         </div>
         <p class="criteria"><strong>Criterio.</strong> 1 stabile · 2 attrito politico o economico senza effetti fuori dai confini · 3 crisi con ricadute regionali (sanzioni, blocchi, proteste di massa) · 4 violenza armata o crisi istituzionale grave · 5 guerra aperta o collasso statale. Il livello misura rilevanza e rischio per i prossimi 30 giorni, non un giudizio sul governo.</p>
       </div>
-      <aside class="panel" id="panel" aria-live="polite"><p class="panel-empty">Tocca un paese sulla mappa per vedere situazione, dinamiche, effetti di riflesso e trend.</p></aside>
     </div>
   </section>
 
