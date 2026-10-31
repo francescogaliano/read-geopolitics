@@ -4,6 +4,11 @@
 #                                   poi rilegge dal sito ogni documento inviato e controlla che coincida
 #   python3 rgsite.py check DIR     solo il controllo (nessun invio): elenca i documenti di DIR assenti o diversi sul sito
 #   python3 rgsite.py missing FILE  FILE ha una riga "collezione/id" per documento: stampa quelli che sul sito mancano
+#   python3 rgsite.py estrai DIR [--dopo ISO]
+#                                   NESSUNA RICOPIATURA: legge dal registro della sessione (~/.claude/projects/**/*.jsonl,
+#                                   sotto-agenti compresi) i risultati esatti di db_get / db_list / db_query sull'artifact
+#                                   e i documenti interi scritti con db_write (op "set"), e li salva in DIR/<collezione>/<id>.json.
+#                                   Con --dopo tiene solo i documenti aggiornati dopo quell'istante (updatedAt del database).
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 # Sicurezza: invia solo le collezioni pubbliche, con gli stessi filtri di privacy di push_site.py; non cancella mai nulla.
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
@@ -95,7 +100,88 @@ def check(docs):
     return bad
 
 
+SLUG = "eb02b64f-dbb3-424b-a57c-38d9fd3c8612"
+
+
+def estrai(dst, dopo=None):
+    import glob, re
+    home = os.path.expanduser("~")
+    files = set()
+    for base in {home, "/root", os.environ.get("CLAUDE_CONFIG_DIR", "")}:
+        if base:
+            files.update(glob.glob(os.path.join(base, ".claude", "projects", "**", "*.jsonl"), recursive=True))
+            files.update(glob.glob(os.path.join(base, "projects", "**", "*.jsonl"), recursive=True))
+    uses, best = {}, {}
+    def put(c, k, data, upd, ts):
+        if c not in OK or not isinstance(data, dict):
+            return
+        old = best.get((c, k))
+        if old is None or (ts or "") >= (old[2] or ""):
+            best[(c, k)] = (data, upd, ts)
+    def body(txt):
+        m = re.search(r"<untrusted-document-([0-9a-f]+)>(.*)</untrusted-document-\1>", txt, re.S)
+        return m.group(2) if m else None
+    for f in sorted(files):
+        try:
+            lines = open(f, encoding="utf-8").read().splitlines()
+        except Exception:
+            continue
+        for line in lines:
+            try:
+                o = json.loads(line)
+            except Exception:
+                continue
+            ts = o.get("timestamp") or ""
+            c = (o.get("message") or {}).get("content")
+            if not isinstance(c, list):
+                continue
+            for b in c:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") == "tool_use":
+                    nm, inp = b.get("name", ""), b.get("input") or {}
+                    uses[b.get("id")] = (nm, inp)
+                    if nm.endswith("db_write") and inp.get("slug") == SLUG:
+                        for op in inp.get("ops") or []:
+                            if op.get("op") == "set" and "/" in str(op.get("path", "")):
+                                cc, kk = op["path"].split("/", 1)
+                                put(cc, kk, op.get("data"), "9999", ts)
+                elif b.get("type") == "tool_result" and not b.get("is_error"):
+                    nm, inp = uses.get(b.get("tool_use_id"), ("", {}))
+                    if inp.get("slug") != SLUG or not re.search(r"db_(get|list|query)$", nm):
+                        continue
+                    cc = b.get("content")
+                    txt = cc if isinstance(cc, str) else "".join(x.get("text", "") for x in (cc or []) if isinstance(x, dict))
+                    head = txt.split("<untrusted-document-", 1)[0]
+                    bd = body(txt)
+                    if bd is None:
+                        continue
+                    rows = [json.loads(l) for l in bd.strip().splitlines() if l.strip().startswith("{")]
+                    if nm.endswith("db_get"):
+                        if "/" not in str(inp.get("path", "")) or len(rows) != 1:
+                            continue
+                        mu = re.search(r'"updatedAt":"([^"]+)"', head)
+                        cc2, kk = inp["path"].split("/", 1)
+                        put(cc2, kk, rows[0], mu.group(1) if mu else "", ts)
+                    else:
+                        col = inp.get("collection", "")
+                        for r in rows:
+                            if isinstance(r, dict) and "id" in r and isinstance(r.get("data"), dict):
+                                put(col, r["id"], r["data"], r.get("updatedAt", ""), ts)
+    n = 0
+    for (c, k), (data, upd, ts) in sorted(best.items()):
+        if dopo and upd and upd != "9999" and upd <= dopo:
+            continue
+        os.makedirs(os.path.join(dst, c), exist_ok=True)
+        json.dump(data, open(os.path.join(dst, c, k + ".json"), "w"), ensure_ascii=False)
+        n += 1
+    print("estratti %d documenti in %s (letti %d registri di sessione)" % (n, dst, len(files)))
+
+
 cmd, src = sys.argv[1], sys.argv[2]
+if cmd == "estrai":
+    estrai(src, sys.argv[4] if len(sys.argv) > 4 and sys.argv[3] == "--dopo" else None)
+    sys.exit(0)
 frag = []
 if cmd == "missing":
     miss, n = [], 0
