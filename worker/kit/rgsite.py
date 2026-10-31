@@ -24,7 +24,7 @@ tok = os.environ["RG_TOKEN"]
 
 def clean(c, x):
     """Stessi filtri di push_site.py. Ritorna None se il documento non va sul sito."""
-    if isinstance(x, dict) and isinstance(x.get("data"), dict) and "id" in x and len(x) <= 5:
+    if isinstance(x, dict) and isinstance(x.get("data"), dict) and "id" in x:
         x = x["data"]
     if not isinstance(x, dict):
         return None
