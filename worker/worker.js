@@ -4790,7 +4790,8 @@ async function salaStato(env) {
     p.luce = !p.routine.length ? "wait" : bad ? "bad" : warn ? "warn" : "ok";
   }
   const silente = !rep || now - Date.parse(rep.at) > 135 * 60000;
-  return { ok: true, oggi, rapporto: rep ? rep.at : null, silente, guardiano: guard ? "collegato" : "da collegare", coda: coda.map((c) => c.id), progetti: progetti.filter((p) => p.id === "rg" || p.routine.length) };
+  const ib = await kvGet(env, "sala:inbox_done");
+  return { ok: true, errore: ib && ib.err ? ib.err : "", oggi, rapporto: rep ? rep.at : null, silente, guardiano: guard ? "collegato" : "da collegare", coda: coda.map((c) => c.id), progetti: progetti.filter((p) => p.id === "rg" || p.routine.length) };
 }
 
 async function salaFire(env, text) { // avvia subito il guardiano (API della routine), che poi rilancia le routine in coda
@@ -4803,9 +4804,28 @@ async function salaFire(env, text) { // avvia subito il guardiano (API della rou
   } catch (e) { return "errore di rete"; }
 }
 
+async function salaInbox(env) { // v73: il guardiano scrive il rapporto in D1 (kv sala:inbox) con il connettore Cloudflare; qui lo si verifica e lo si elabora
+  await kvInit(env);
+  const row = await env.DB.prepare("SELECT v, updated_at FROM kv WHERE k='sala:inbox'").first();
+  if (!row) return;
+  const done = await kvGet(env, "sala:inbox_done");
+  if (done && done.updated_at === row.updated_at) return;
+  let pk = null, err = "";
+  try { pk = JSON.parse(row.v); } catch (e) { err = "il rapporto non è JSON valido"; }
+  if (pk && !err) {
+    const h = (await sha256(JSON.stringify(pk.t || []))).slice(0, 16);
+    if (!Array.isArray(pk.t) || !pk.t.length) err = "il rapporto non contiene routine";
+    else if (h !== pk.h) err = "il rapporto è stato ricopiato male (impronta diversa)";
+  }
+  if (err) { await kvSet(env, "sala:inbox_done", { updated_at: row.updated_at, err, at: new Date().toISOString() }); return; }
+  await salaRapporto(env, { triggers: pk.t });
+  if (Array.isArray(pk.rilanciati) && pk.rilanciati.length) { const ril = new Set(pk.rilanciati.map(String)); await kvSet(env, "sala:coda", ((await kvGet(env, "sala:coda")) || []).filter((c) => !ril.has(c.id))); }
+  await kvSet(env, "sala:inbox_done", { updated_at: row.updated_at, err: "", at: new Date().toISOString() });
+}
+
 async function salaPanelApi(env, b) {
   const act = b.action;
-  if (act === "sala_stato") return await salaStato(env);
+  if (act === "sala_stato") { try { await salaInbox(env); } catch (e) {} return await salaStato(env); }
   if (act === "sala_rilancia") {
     const rep = await kvGet(env, "sala:rep"); const t = rep && rep.triggers.find((x) => x.id === String(b.id || ""));
     if (!t) return { ok: false, error: "routine sconosciuta" };
@@ -4829,6 +4849,7 @@ async function salaPanelApi(env, b) {
 }
 
 async function salaTick(env) { // ogni 15 minuti: avvisi su Telegram, una volta per problema
+  try { await salaInbox(env); } catch (e) {}
   const s = await salaStato(env); const sent = (await kvGet(env, "sala:notif")) || {}; const now = new Date().toISOString(); let ch = false;
   const hh = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false }).format(new Date());
   const msgs = [];
