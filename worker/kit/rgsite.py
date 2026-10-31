@@ -9,6 +9,7 @@
 #                                   sotto-agenti compresi) i risultati esatti di db_get / db_list / db_query sull'artifact
 #                                   e i documenti interi scritti con db_write (op "set"), e li salva in DIR/<collezione>/<id>.json.
 #                                   Con --dopo tiene solo i documenti aggiornati dopo quell'istante (updatedAt del database).
+#                                   Con --privati estrae solo idee, richieste e approfondimenti (per il pannello, mai per push).
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 # Sicurezza: invia solo le collezioni pubbliche, con gli stessi filtri di privacy di push_site.py; non cancella mai nulla.
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
@@ -103,7 +104,7 @@ def check(docs):
 SLUG = "eb02b64f-dbb3-424b-a57c-38d9fd3c8612"
 
 
-def estrai(dst, dopo=None):
+def estrai(dst, dopo=None, cols=None):
     import glob, re
     home = os.path.expanduser("~")
     files = set()
@@ -113,7 +114,7 @@ def estrai(dst, dopo=None):
             files.update(glob.glob(os.path.join(base, "projects", "**", "*.jsonl"), recursive=True))
     uses, best = {}, {}
     def put(c, k, data, upd, ts):
-        if c not in OK or not isinstance(data, dict):
+        if c not in (cols or OK) or not isinstance(data, dict):
             return
         old = best.get((c, k))
         if old is None or (ts or "") >= (old[2] or ""):
@@ -180,7 +181,10 @@ def estrai(dst, dopo=None):
 
 cmd, src = sys.argv[1], sys.argv[2]
 if cmd == "estrai":
-    estrai(src, sys.argv[4] if len(sys.argv) > 4 and sys.argv[3] == "--dopo" else None)
+    a = sys.argv[3:]
+    dopo = a[a.index("--dopo") + 1] if "--dopo" in a else None
+    # --privati: solo idee, richieste e approfondimenti, per le proposte del pannello (passo 4b); MAI da passare a push
+    estrai(src, dopo, ["idee", "richieste", "approfondimenti"] if "--privati" in a else None)
     sys.exit(0)
 frag = []
 if cmd == "missing":
