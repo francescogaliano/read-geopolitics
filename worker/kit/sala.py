@@ -57,6 +57,7 @@ def leggi(minuti=90):
                         trig[t["id"]] = {"id": t["id"], "name": t.get("name", ""), "cron_expression": t.get("cron_expression", ""),
                             "enabled": t.get("enabled", True), "next_run_at": t.get("next_run_at"), "run_once_at": t.get("run_once_at"),
                             "created_kind": t.get("created_kind", ""),
+                            "_ds": t.get("derived_state") or {}, "_conn": len(t.get("mcp_connections") or []),
                             "last_run": {k: lr.get(k) for k in ("status", "fired_at", "finished_at", "session_id", "failure_reason")} if lr.get("fired_at") else None}
     chiesti = {p[0] for p in pagine}
     manca = [p[1] for p in pagine if p[2] and p[1] and p[1] not in chiesti]
@@ -77,7 +78,10 @@ if cmd == "pacchetto":
     cut = lambda x: re.sub(r"\.\d+Z$", "Z", x) if isinstance(x, str) else x
     for t in keep:
         t.pop("created_kind", None); t.pop("run_once_at", None); t.pop("enabled", None)
-        t["cron_expression"] = "x" if t["cron_expression"] else ""
+        ds = t.pop("_ds", {}) or {}; conn = t.pop("_conn", 0)
+        pr = " ".join(str(ds.get("prompt") or "").split())
+        t["info"] = {"auto": ds.get("permission_mode") == "auto", "modello": str(ds.get("model") or "").replace("claude-", ""), "conn": conn,
+                     "prompt": pr[:110], "plen": len(pr)}
         t["next_run_at"] = cut(t["next_run_at"])
         lr = t["last_run"]
         if lr:
@@ -96,6 +100,7 @@ elif cmd == "rapporto":
     if manca:
         print("MANCANO PAGINE: chiama ancora list_triggers con cursor =", manca[0]); sys.exit(2)
     if not tr: sys.exit("ERRORE: nessun risultato di list_triggers in questa sessione negli ultimi 90 minuti")
+    for t in tr: t.pop("_ds", None); t.pop("_conn", None)
     r = call("POST", "/v1/sala/rapporto", {"triggers": tr})
     print("rapporto ok: %d routine lette, %d seguite" % (len(tr), r.get("routine", 0)))
     print("DA RILANCIARE:", " ".join(r.get("coda") or []) or "nessuna")

@@ -39,13 +39,14 @@ h2 small{display:block;font:500 11.5px "JetBrains Mono",monospace;letter-spacing
 .ev b{font-weight:600}.ev .arr{color:var(--mut)}
 .ev.now{border-bottom:2px solid var(--acc)}.ev.now .h,.ev.now b{color:var(--acc)}
 .ev.later{opacity:.6}
-.board{width:100%;border-collapse:collapse;font-size:15px}
+.board{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}.board th:nth-child(2),.board th:nth-child(3){width:86px}.board th:nth-child(4){width:72px}.board td{overflow-wrap:anywhere}
 .board th{font:500 11px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px 6px 8px 0;border-bottom:1px solid var(--line)}
 .board td{padding:10px 6px 10px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
 .board td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
 .board .nm{display:flex;gap:8px;align-items:baseline}.board .nm small{display:block;color:var(--mut);font-size:13px}
 .rl{all:unset;cursor:pointer;color:var(--acc);font-weight:600;min-height:44px;display:inline-flex;align-items:center}
 .rl.ask{color:var(--bad)}.rl:disabled{color:var(--mut);cursor:default}
+.board tr.rr{cursor:pointer}.board tr.det td{padding:4px 0 16px 18px;color:var(--fg)}.dl{display:grid;grid-template-columns:minmax(110px,auto) minmax(0,1fr);gap:6px 12px;font-size:14.5px}.dl dt{color:var(--mut)}.dl dd{margin:0;min-width:0;overflow-wrap:anywhere}.dl .qq{color:var(--mut)}
 .legend{display:flex;gap:16px;flex-wrap:wrap;padding:12px 0;font-size:14px;color:var(--mut)}
 .legend span{display:flex;gap:6px;align-items:center}
 details{border-bottom:1px solid var(--line)}summary{cursor:pointer;padding:14px 0;min-height:44px}
@@ -65,6 +66,16 @@ function e(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {
 function hm(iso){if(!iso)return "";var d=new Date(iso);var o=new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit"}).format(d);var day=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(d);if(day===S.oggi)return o;var w=new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",weekday:"short"}).format(d);return w+" "+o}
 function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(function(r){if(r.status===401){location.href="/ig/panel";return {}}return r.json()})}
 function load(){$("#rf").textContent="…";api({action:"sala_stato"}).then(function(j){$("#rf").textContent="aggiorna";if(!j||!j.ok){$("#main").innerHTML='<div class="empty">Non riesco a leggere lo stato. Riprova tra poco.</div>';return}S=j;if(!PR||!S.progetti.some(function(p){return p.id===PR}))PR=S.progetti[0].id;render()}).catch(function(){$("#rf").textContent="aggiorna";$("#main").innerHTML='<div class="empty">Connessione assente.</div>'})}
+var OPEN={};
+var GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+function quando(c){if(!c)return "solo a richiesta";var tz=/^CRON_TZ=/.test(c);var f=c.replace(/^CRON_TZ=\S+\s+/,"").trim().split(/\s+/);if(f.length<5)return c;var m=f[0],hh=f[1],dw=f[4];var mm=("0"+m).slice(-2),ore;
+ if(/^\d+-\d+$/.test(hh)){var a=hh.split("-");ore="ogni ora dalle "+a[0]+":"+mm+" alle "+a[1]+":"+mm}else if(hh==="*")ore="ogni ora al minuto "+m;else ore="alle "+hh.split(",").map(function(x){return x+":"+mm}).join(", ");
+ var g=dw==="*"?"ogni giorno":dw.split(",").map(function(x){if(/^\d-\d$/.test(x)){var b=x.split("-");return GG[+b[0]%7]+"-"+GG[+b[1]%7]}return GG[+x%7]}).join(", ");
+ return g+", "+ore+(tz?"":" (ora UTC)")}
+function dur(s){return s==null?"—":s<90?Math.round(s)+" s":Math.round(s/60)+" min"}
+function det(r){var i=r.info||{};var x='<dl class="dl"><dt>Quando</dt><dd>'+e(quando(r.cron))+'</dd><dt>Durata tipica</dt><dd>'+dur(r.durata)+(r.giri?' <span class="qq">(su '+r.giri+' giri visti)</span>':'')+'</dd><dt>Ultimi 7 giorni</dt><dd>'+(r.sett?(r.sett.ok+' andati bene'+(r.sett.ko?', '+r.sett.ko+' con problemi':'')):'—')+'</dd>';
+ if(r.info){x+='<dt>Approvazione</dt><dd>'+(i.auto?'automatica':'<b>chiede il permesso</b> <span class="qq">se deve scrivere qualcosa può bloccarsi</span>')+'</dd><dt>Modello</dt><dd>'+e(i.modello||"predefinito")+'</dd><dt>Connettori</dt><dd>'+i.conn+'</dd><dt>Istruzioni</dt><dd><span class="qq">«'+e(i.prompt)+(i.plen>i.prompt.length?'…':'')+'»</span> '+(i.plen?Math.round(i.plen/100)/10+' mila caratteri':'')+'</dd>'}
+ return x+'<dt>Id</dt><dd><span class="qq">'+e(r.id)+'</span></dd></dl>'}
 var TIT={ok:"Tutto ok",warn:"Quasi tutto ok",bad:"Qualcosa non va",wait:"Nessun dato ancora"};
 function render(){
  var p=S.progetti.filter(function(x){return x.id===PR})[0];
@@ -77,7 +88,7 @@ function render(){
  else frase=[nb?(nb===1?"Una routine ha un problema":nb+" routine hanno un problema"):"",nd?(nd===1?"una cosa aspetta te":nd+" cose aspettano te"):""].filter(Boolean).join(", ")+".";
  frase=frase.charAt(0).toUpperCase()+frase.slice(1);
  if(S.errore)frase='Ultimo rapporto scartato: '+S.errore+'.';
- h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.rapporto?"ultimo controllo "+hm(S.rapporto):"nessun controllo ancora")+</div></section>';
+ h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.rapporto?"ultimo controllo "+hm(S.rapporto):"nessun controllo ancora")+'</div></section>';
  h+='<h2>Cosa devi fare<small>solo ciò che richiede te</small></h2>';
  p.problemi.forEach(function(x){h+='<div class="todo '+x.e+'"><b>'+e(x.nome)+': '+e(x.msg)+'</b><p>'+(x.e==="bad"?"Rilanciala: riparte da capo.":"È andata, ma in modo strano: controlla che abbia fatto tutto.")+'</p><button class="btn" data-rl="'+x.id+'">Rilancia</button><button class="btn sec" data-ig="'+e(x.key)+'">Va bene così</button><div class="res" hidden></div></div>'});
  p.dafare.forEach(function(x){h+='<div class="todo warn"><b>'+e(x.testo)+'</b><p>'+e(x.perche)+'</p><a class="btn" href="'+e(x.link)+'">Apri il pannello</a><button class="btn sec" data-ig="'+e(x.key)+'">Non serve, nascondi</button><div class="res" hidden></div></div>'});
@@ -96,8 +107,8 @@ function render(){
   h+='<div class="ev '+c+'"><span class="h">'+hm(r.fired)+'</span><span class="dot"></span><span><b>'+e(r.nome)+'</b> <span class="arr">'+e(t)+'</span></span></div>'});
  if(ev.length&&!placed)h+='<div class="ev now"><span class="h">'+hm(now)+'</span><span class="dot" style="background:var(--acc)"></span><span><b>Adesso</b></span></div>';
  h+='<div class="legend"><span><span class="dot ok"></span>andata bene</span><span><span class="dot warn"></span>con un intoppo</span><span><span class="dot bad"></span>si è rotta</span><span><span class="dot run"></span>in corso</span><span><span class="dot wait"></span>deve partire</span></div>';
- h+='<h2>Le routine<small>una riga per routine · stato attuale</small></h2><table class="board"><thead><tr><th>Routine</th><th>Ultimo</th><th>Prossimo</th><th></th></tr></thead><tbody>';
- p.routine.forEach(function(r){h+='<tr><td><div class="nm '+r.e+'"><span class="dot"></span><span>'+e(r.nome)+(r.msg?'<small>'+e(r.msg)+'</small>':'')+'</span></div></td><td class="n">'+(r.ultimo?hm(r.ultimo):"—")+'</td><td class="n">'+(r.prossimo?hm(r.prossimo):(r.richiesta?"a richiesta":"—"))+'</td><td><button class="rl" data-rl="'+r.id+'"'+(r.in_coda?" disabled":"")+'>'+(r.in_coda?"in coda":"Rilancia")+'</button></td></tr>'});
+ h+='<h2>Le routine<small>una riga per routine · tocca il nome per i dettagli</small></h2><table class="board"><thead><tr><th>Routine</th><th>Ultimo</th><th>Prossimo</th><th></th></tr></thead><tbody>';
+ p.routine.forEach(function(r){h+='<tr class="rr" data-d="'+r.id+'"><td><div class="nm '+r.e+'"><span class="dot"></span><span>'+e(r.nome)+(r.msg?'<small>'+e(r.msg)+'</small>':'')+'</span></div></td><td class="n">'+(r.ultimo?hm(r.ultimo):"—")+'</td><td class="n">'+(r.prossimo?hm(r.prossimo):(r.richiesta?"a richiesta":"—"))+'</td><td><button class="rl" data-rl="'+r.id+'"'+(r.in_coda?" disabled":"")+'>'+(r.in_coda?"in coda":"Rilancia")+'</button></td></tr>'+(OPEN[r.id]?'<tr class="det"><td colspan="4">'+det(r)+'</td></tr>':'')});
  h+='</tbody></table><div class="res" id="bres" hidden></div>';
  h+='<details><summary class="mono">Come funziona</summary><p>Ogni ora il guardiano legge l’elenco delle routine con i loro ultimi giri e lo manda qui. Il Worker capisce se una routine si è rotta, non è partita, è ferma o è finita troppo presto rispetto al solito, e ti avvisa su Telegram una volta sola per problema. «Rilancia» mette la routine in coda: il guardiano la fa ripartire al suo prossimo giro (ogni ora, al minuto 7).</p>';
  h+='</details>';
@@ -108,6 +119,7 @@ document.addEventListener("click",function(ev){
  if(ev.target.closest("#projBtn")){$("#plist").classList.toggle("open");return}
  if(ev.target.closest("#rf")){load();return}
  var b=ev.target.closest("[data-rl]");
+ if(!b){var rr=ev.target.closest("tr.rr");if(rr){OPEN[rr.dataset.d]=!OPEN[rr.dataset.d];render();return}}
  if(b){if(!b.classList.contains("ask")){b.classList.add("ask");b.dataset.t=b.textContent;b.textContent="Tocca di nuovo per rilanciare";setTimeout(function(){if(b.classList.contains("ask")){b.classList.remove("ask");b.textContent=b.dataset.t}},4000);return}
   b.classList.remove("ask");b.disabled=true;b.textContent="…";
   api({action:"sala_rilancia",id:b.dataset.rl}).then(function(j){var r=b.parentElement.querySelector(".res")||$("#bres");r.hidden=false;r.textContent=j&&j.ok?("In coda. Guardiano: "+j.fire+"."):("Non riesco: "+((j&&j.error)||"errore"));b.textContent="in coda"});return}
