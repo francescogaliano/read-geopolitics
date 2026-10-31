@@ -1,6 +1,8 @@
 import KIT_POD from "./kit/podkit.tgz";
 import KIT_PUNTI from "./kit/puntikit.tgz";
 import KIT_RGSITE from "./kit/rgsite.py";
+import KIT_SALA from "./kit/sala.py";
+import SALA_HTML from "./sala.html";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
@@ -868,6 +870,7 @@ async function panelApi(env, origin, b) {
   if (act === "canali_set") return await canaliSet(env, b);
   if (act === "sond_set") return await sondSet(env, b);
   if (act === "todo_set") return await todoSet(env, b);
+  if (String(act || "").startsWith("sala_")) { const r = await salaPanelApi(env, b); if (r) return r; } // v73
   if (act === "post_scelta") return await postScelta(env, b);
   if (act === "sond_pick") return await sondPick(env, b);
   if (act === "sond_mia") return await sondMia(env, b);
@@ -1125,7 +1128,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 </details>
 <div class="card fbn" id="fbn" hidden></div><details class="card" id="svb" hidden><summary class="svh"><span class="lab">Svolte</span><span class="chsum" id="svsum"></span><span class="svn" id="svn" hidden></span><span class="chev">▾</span></summary><div class="svbd"><div id="svl"></div><div class="svg" id="svg" hidden></div></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
-<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><span class="tabsp"></span><button class="tab" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button></div></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
+<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><span class="tabsp"></span><button class="tab" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button><a class="tab" href="/ig/sala" style="text-decoration:none">Sala di controllo</a></div></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -3863,6 +3866,7 @@ async function route(request, env) {
   const method = request.method;
 
   if (method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  { const sr = (p === "/ig/sala" || p.startsWith("/v1/sala/")) ? await salaRoute(request, env, p, method, url) : null; if (sr) return sr; } // v73: sala di controllo
   if (p === "/" || p === "/ping")
     return json({ ok: true, service: "rg-api", time: new Date().toISOString() });
 
@@ -3873,9 +3877,10 @@ async function route(request, env) {
   }
 
   // ---------- KIT DELLE ROUTINE (solo con token): podcast e reel scaricano qui il loro kit, invece che dal database dell'artifact ----------
-  { const m = p.match(/^\/v1\/kit\/(podkit\.tgz|puntikit\.tgz|rgsite\.py)$/);
+  { const m = p.match(/^\/v1\/kit\/(podkit\.tgz|puntikit\.tgz|rgsite\.py|sala\.py)$/);
     if (m && method === "GET") {
       if (!authorized(request, env)) return json({ ok: false, error: "unauthorized" }, 401);
+      if (m[1] === "sala.py") return new Response(KIT_SALA, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
       if (m[1] === "rgsite.py") return new Response(KIT_RGSITE, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
       return new Response(m[1] === "podkit.tgz" ? KIT_POD : KIT_PUNTI, { headers: { "content-type": "application/gzip", "cache-control": "no-store" } });
     } }
@@ -4680,6 +4685,176 @@ async function mailPreview(env) {
 }
 
 
+// ============ SALA DI CONTROLLO (v73): stato di tutte le routine, per progetto ============
+// Il guardiano (routine oraria) legge l'elenco delle routine con i loro ultimi giri e lo manda qui (POST /v1/sala/rapporto).
+// Il Worker calcola semaforo, cose da fare, giornata e tabellone; ogni 15 minuti controlla e avvisa su Telegram (una volta per problema).
+const SALA_PROG = [
+  { id: "rg", nome: "Read Geopolitics", re: null },
+  { id: "radar", nome: "Radar Energia", re: /radar energia/i },
+  { id: "squadra", nome: "La squadra", re: /squadra/i },
+];
+const SALA_URL = "https://rg-api.briefinghub.workers.dev/ig/sala";
+const romeDate = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(iso));
+const salaHM = (iso) => new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+function salaProg(name) { const p = SALA_PROG.find((x) => x.re && x.re.test(name || "")); return p ? p.id : "rg"; }
+function salaTracked(t) { // routine da seguire: attive, non i promemoria una tantum, non il guardiano stesso
+  if (!t || !t.id || t.enabled === false) return false;
+  if (/REMINDER/.test(t.created_kind || "")) return false;
+  if (!t.cron_expression && t.run_once_at) return false;
+  if (/guardiano/i.test(t.name || "")) return false;
+  return true;
+}
+const salaDur = (r) => (r && r.fired_at && r.finished_at) ? Math.max(0, (Date.parse(r.finished_at) - Date.parse(r.fired_at)) / 1000) : null;
+const salaMed = (a) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
+const salaFmtD = (s) => s == null ? "" : s < 90 ? Math.round(s) + " s" : Math.round(s / 60) + " min";
+const salaFail = (f) => ({ ROUTINE_RUN_FAILURE_REASON_UNSPECIFIED: "" }[f] ?? String(f || "").replace(/^ROUTINE_RUN_FAILURE_REASON_/, "").toLowerCase().replace(/_/g, " "));
+
+async function salaRapporto(env, b) {
+  const at = new Date().toISOString();
+  const tr = (Array.isArray(b.triggers) ? b.triggers : []).slice(0, 200).map((t) => ({
+    id: String(t.id || "").slice(0, 60), name: String(t.name || "").slice(0, 120), cron_expression: String(t.cron_expression || "").slice(0, 80),
+    enabled: t.enabled !== false, next_run_at: t.next_run_at || null, run_once_at: t.run_once_at || null, created_kind: String(t.created_kind || ""),
+    last_run: t.last_run && t.last_run.fired_at ? { status: String(t.last_run.status || ""), fired_at: t.last_run.fired_at, finished_at: t.last_run.finished_at || null, session_id: String(t.last_run.session_id || "").slice(0, 80), failure_reason: String(t.last_run.failure_reason || "") } : null,
+  })).filter((t) => /^trig_[A-Za-z0-9]+$/.test(t.id));
+  if (!tr.length) throw { status: 400, code: "nessuna_routine", detail: "il rapporto non contiene routine" };
+  const mem = (await kvGet(env, "sala:mem")) || {};
+  const days = {};
+  const addRun = async (day, run) => { if (!days[day]) days[day] = (await kvGet(env, "sala:runs:" + day)) || []; const L = days[day]; const i = L.findIndex((x) => x.id === run.id && x.fired === run.fired); if (i >= 0) L[i] = { ...L[i], ...run }; else L.push(run); };
+  for (const t of tr) {
+    if (!salaTracked(t)) continue;
+    const m = mem[t.id] || { durs: [] }; const lr = t.last_run;
+    if (lr) {
+      const d = salaDur(lr);
+      if (d != null && m.last_fired !== lr.fired_at) { m.durs = [...(m.durs || []), d].slice(-12); }
+      m.last_fired = lr.fired_at;
+      await addRun(romeDate(lr.fired_at), { id: t.id, nome: t.name, prog: salaProg(t.name), fired: lr.fired_at, finished: lr.finished_at, status: lr.status, fail: salaFail(lr.failure_reason), session: lr.session_id, dur: d });
+    }
+    // giro saltato: l'orario previsto al rapporto scorso è passato da oltre 25 minuti e la routine non è partita
+    if (m.prev_next && Date.parse(at) > Date.parse(m.prev_next) + 25 * 60000 && (!lr || Date.parse(lr.fired_at) < Date.parse(m.prev_next) - 5 * 60000))
+      await addRun(romeDate(m.prev_next), { id: t.id, nome: t.name, prog: salaProg(t.name), fired: m.prev_next, finished: null, status: "MANCATO", fail: "non è partita", dur: null });
+    if (t.next_run_at) m.prev_next = t.next_run_at;
+    mem[t.id] = m;
+  }
+  for (const d in days) await kvSet(env, "sala:runs:" + d, days[d].sort((x, y) => (x.fired < y.fired ? -1 : 1)).slice(-300));
+  await kvSet(env, "sala:mem", mem);
+  await kvSet(env, "sala:rep", { at, triggers: tr });
+  const coda = (await kvGet(env, "sala:coda")) || [];
+  return { ok: true, routine: tr.filter(salaTracked).length, coda: coda.map((c) => c.id) };
+}
+
+// esito di una routine adesso: ok | warn | bad | run | wait
+function salaEsito(t, mem, now, runsToday) {
+  const lr = t.last_run, m = mem[t.id] || {};
+  const miss = runsToday.filter((r) => r.id === t.id && r.status === "MANCATO").pop();
+  if (miss && (!lr || Date.parse(lr.fired_at) < Date.parse(miss.fired))) return { e: "bad", msg: "non è partita alle " + salaHM(miss.fired), key: t.id + ":m:" + miss.fired };
+  if (!lr) return { e: "wait", msg: "nessun giro ancora" };
+  if (/FAIL|ERROR|CANCEL/.test(lr.status)) return { e: "bad", msg: "si è rotta alle " + salaHM(lr.fired_at) + (salaFail(lr.failure_reason) ? " (" + salaFail(lr.failure_reason) + ")" : ""), key: t.id + ":f:" + lr.fired_at };
+  if (!lr.finished_at) {
+    const min = (now - Date.parse(lr.fired_at)) / 60000;
+    return min > 90 ? { e: "bad", msg: "ferma da " + Math.round(min) + " minuti", key: t.id + ":s:" + lr.fired_at } : { e: "run", msg: "in corso da " + Math.max(1, Math.round(min)) + " min" };
+  }
+  const d = salaDur(lr), prev = (m.durs || []).slice(0, -1), med = salaMed(prev);
+  if (prev.length >= 3 && med >= 180 && d < med * 0.25) return { e: "warn", msg: "finita troppo presto: " + salaFmtD(d) + " invece dei soliti " + salaFmtD(med), key: t.id + ":c:" + lr.fired_at };
+  return { e: "ok", msg: "" };
+}
+
+async function salaStato(env) {
+  const rep = await kvGet(env, "sala:rep"), mem = (await kvGet(env, "sala:mem")) || {}, ign = (await kvGet(env, "sala:ign")) || {};
+  const now = Date.now(), oggi = romeToday();
+  const runs = (await kvGet(env, "sala:runs:" + oggi)) || [];
+  const guard = await kvGet(env, "sala:guard"); const coda = (await kvGet(env, "sala:coda")) || [];
+  const progetti = SALA_PROG.map((p) => ({ id: p.id, nome: p.nome, routine: [], problemi: [], dafare: [], giornata: [] }));
+  const P = (id) => progetti.find((p) => p.id === id);
+  const tr = rep ? rep.triggers.filter(salaTracked) : [];
+  for (const t of tr) {
+    const st = salaEsito(t, mem, now, runs), p = P(salaProg(t.name));
+    const lr = t.last_run;
+    p.routine.push({ id: t.id, nome: t.name, e: st.e, msg: st.msg, ultimo: lr ? lr.fired_at : null, ultimo_fine: lr ? lr.finished_at : null, prossimo: t.next_run_at, richiesta: !t.cron_expression, in_coda: coda.some((c) => c.id === t.id) });
+    if ((st.e === "bad" || st.e === "warn") && !(st.key && ign[st.key] && ign[st.key] > new Date().toISOString())) p.problemi.push({ key: st.key, id: t.id, nome: t.name, e: st.e, msg: st.msg });
+    if (t.next_run_at && romeDate(t.next_run_at) === oggi && Date.parse(t.next_run_at) > now) p.giornata.push({ id: t.id, nome: t.name, fired: t.next_run_at, status: "PREVISTO" });
+  }
+  for (const r of runs) { const p = P(r.prog || salaProg(r.nome)); if (p) p.giornata.push(r); }
+  // cose da fare per Francesco (Read Geopolitics): bozze di oggi in attesa, copioni da approvare
+  try {
+    const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
+    for (const row of rs.results || []) { const d = JSON.parse(row.v); const f = row.k.slice(("draft:" + oggi + "-").length);
+      if (d.status === "bozza" && !/^alt/.test(f)) P("rg").dafare.push({ key: "draft:" + row.k, testo: "Pubblica " + (d.type === "reel" ? "il reel" : "il carosello") + ": " + String(d.caption || "").split("\n")[0].slice(0, 90), perche: "È nelle Bozze del pannello da " + salaHM(d.created_at || d.updated_at || new Date().toISOString()) + ".", link: "/ig/panel" }); }
+    const rq = await env.DB.prepare("SELECT v FROM kv WHERE k LIKE 'req:%' AND updated_at > ?1").bind(new Date(now - 3 * 86400000).toISOString()).all();
+    for (const row of rq.results || []) { const r = JSON.parse(row.v); if (r.stato === "copione") P("rg").dafare.push({ key: "req:" + r.id, testo: "Approva il copione della richiesta «" + String(r.titolo || r.template || r.id).slice(0, 60) + "»", perche: "La routine aspetta il tuo via per continuare.", link: "/ig/panel" }); }
+  } catch (e) {}
+  for (const p of progetti) {
+    p.giornata.sort((a, b) => (a.fired < b.fired ? -1 : 1));
+    p.routine.sort((a, b) => ((a.prossimo || "z") < (b.prossimo || "z") ? -1 : 1));
+    p.dafare = p.dafare.filter((x) => !(ign[x.key] && ign[x.key] > new Date().toISOString()));
+    const bad = p.problemi.some((x) => x.e === "bad"), warn = p.problemi.length || p.dafare.length;
+    p.luce = !p.routine.length ? "wait" : bad ? "bad" : warn ? "warn" : "ok";
+  }
+  const silente = !rep || now - Date.parse(rep.at) > 135 * 60000;
+  return { ok: true, oggi, rapporto: rep ? rep.at : null, silente, guardiano: guard ? "collegato" : "da collegare", coda: coda.map((c) => c.id), progetti: progetti.filter((p) => p.id === "rg" || p.routine.length) };
+}
+
+async function salaFire(env, text) { // avvia subito il guardiano (API della routine), che poi rilancia le routine in coda
+  const g = (await kvGet(env, "sala:guard")) || {};
+  const id = g.id || env.SALA_GUARD_ID, tok = g.token || env.SALA_GUARD_TOKEN;
+  if (!id || !tok) return "guardiano non collegato: parte al prossimo giro orario";
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/claude_code/routines/" + encodeURIComponent(id) + "/fire", { method: "POST", headers: { authorization: "Bearer " + tok, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ text }), signal: AbortSignal.timeout(8000) });
+    return r.ok ? "avviato" : "errore " + r.status;
+  } catch (e) { return "errore di rete"; }
+}
+
+async function salaPanelApi(env, b) {
+  const act = b.action;
+  if (act === "sala_stato") return await salaStato(env);
+  if (act === "sala_rilancia") {
+    const rep = await kvGet(env, "sala:rep"); const t = rep && rep.triggers.find((x) => x.id === String(b.id || ""));
+    if (!t) return { ok: false, error: "routine sconosciuta" };
+    const coda = ((await kvGet(env, "sala:coda")) || []).filter((c) => c.id !== t.id);
+    coda.push({ id: t.id, nome: t.name, at: new Date().toISOString() });
+    await kvSet(env, "sala:coda", coda.slice(-20));
+    return { ok: true, fire: await salaFire(env, "Rilancia dalla sala: " + t.id) };
+  }
+  if (act === "sala_ignora") {
+    const ign = (await kvGet(env, "sala:ign")) || {}; const fino = new Date(Date.now() + (b.giorni ? 30 : 1) * 86400000).toISOString();
+    ign[String(b.key || "").slice(0, 200)] = fino;
+    for (const k in ign) if (ign[k] < new Date().toISOString()) delete ign[k];
+    await kvSet(env, "sala:ign", ign); return { ok: true };
+  }
+  if (act === "sala_guard") {
+    const id = String(b.id || "").trim(), token = String(b.token || "").trim();
+    if (!/^trig_[A-Za-z0-9]+$/.test(id) || token.length < 20) return { ok: false, error: "Servono l'id della routine (trig_…) e il suo token." };
+    await kvSet(env, "sala:guard", { id, token, at: new Date().toISOString() }); return { ok: true };
+  }
+  return null;
+}
+
+async function salaTick(env) { // ogni 15 minuti: avvisi su Telegram, una volta per problema
+  const s = await salaStato(env); const sent = (await kvGet(env, "sala:notif")) || {}; const now = new Date().toISOString(); let ch = false;
+  const hh = +new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false }).format(new Date());
+  const msgs = [];
+  if (s.silente && s.rapporto && hh >= 8 && hh <= 23) { const k = "silente:" + s.oggi; if (!sent[k]) { sent[k] = now; msgs.push("Il guardiano non risponde dalle " + salaHM(s.rapporto) + "."); } }
+  for (const p of s.progetti) for (const x of p.problemi) if (x.e === "bad" && x.key && !sent[x.key]) { sent[x.key] = now; msgs.push(p.nome + " · " + x.nome + ": " + x.msg + "."); }
+  if (msgs.length) { ch = true; try { await tgPriv(env, "🔴 <b>Sala di controllo</b>\n" + msgs.map(esc).join("\n") + '\n<a href="' + SALA_URL + '">Apri la sala</a>'); } catch (e) {} }
+  for (const k in sent) if (sent[k] < new Date(Date.now() - 3 * 86400000).toISOString()) { delete sent[k]; ch = true; }
+  if (ch) await kvSet(env, "sala:notif", sent);
+}
+
+async function salaRoute(request, env, p, method, url) {
+  if (p === "/ig/sala" && method === "GET") {
+    if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
+    return new Response(SALA_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+  }
+  if (!p.startsWith("/v1/sala/")) return null;
+  if (!authorized(request, env)) return fail(401, "unauthorized");
+  if (p === "/v1/sala/rapporto" && method === "POST") { const b = await request.json().catch(() => null); if (!b) return fail(400, "json"); return json(await salaRapporto(env, b)); }
+  if (p === "/v1/sala/coda" && method === "GET") return json({ ok: true, coda: (await kvGet(env, "sala:coda")) || [] });
+  if (p === "/v1/sala/coda" && method === "POST") {
+    const b = (await request.json().catch(() => null)) || {}; const done = new Set((b.fatti || []).map(String));
+    const coda = ((await kvGet(env, "sala:coda")) || []).filter((c) => !done.has(c.id)); await kvSet(env, "sala:coda", coda); return json({ ok: true, coda });
+  }
+  return fail(404, "not_found");
+}
+
 export default {
   async scheduled(event, env, ctx) {
     // rinnovo del token Instagram: se mancano meno di 30 giorni
@@ -4696,6 +4871,7 @@ export default {
     try { await thDomanda(env, false); } catch (e) {} // v41
     try { await tgRetry(env); } catch (e) {} // v65: post del giorno su Telegram, se l'invio automatico si è interrotto
     try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
+    try { await salaTick(env); } catch (e) {} // v73: sala di controllo, avvisi
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await numAperti(env, false); } catch (e) {} // v63: numeri da fonti aperte, una volta al giorno dopo le 7
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
