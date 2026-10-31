@@ -1,5 +1,6 @@
 import KIT_POD from "./kit/podkit.tgz";
 import KIT_PUNTI from "./kit/puntikit.tgz";
+import KIT_RGSITE from "./kit/rgsite.py";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
@@ -3829,10 +3830,11 @@ async function route(request, env) {
   }
 
   // ---------- KIT DELLE ROUTINE (solo con token): podcast e reel scaricano qui il loro kit, invece che dal database dell'artifact ----------
-  { const m = p.match(/^\/v1\/kit\/(podkit|puntikit)\.tgz$/);
+  { const m = p.match(/^\/v1\/kit\/(podkit\.tgz|puntikit\.tgz|rgsite\.py)$/);
     if (m && method === "GET") {
       if (!authorized(request, env)) return json({ ok: false, error: "unauthorized" }, 401);
-      return new Response(m[1] === "podkit" ? KIT_POD : KIT_PUNTI, { headers: { "content-type": "application/gzip", "cache-control": "no-store" } });
+      if (m[1] === "rgsite.py") return new Response(KIT_RGSITE, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
+      return new Response(m[1] === "podkit.tgz" ? KIT_POD : KIT_PUNTI, { headers: { "content-type": "application/gzip", "cache-control": "no-store" } });
     } }
 
   // ---------- LETTURE PUBBLICHE ----------
