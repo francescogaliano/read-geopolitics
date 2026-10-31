@@ -4714,6 +4714,7 @@ async function salaRapporto(env, b) {
   const tr = (Array.isArray(b.triggers) ? b.triggers : []).slice(0, 200).map((t) => ({
     id: String(t.id || "").slice(0, 60), name: String(t.name || "").slice(0, 120), cron_expression: String(t.cron_expression || "").slice(0, 80),
     enabled: t.enabled !== false, next_run_at: t.next_run_at || null, run_once_at: t.run_once_at || null, created_kind: String(t.created_kind || ""),
+    info: t.info && typeof t.info === "object" ? { auto: !!t.info.auto, modello: String(t.info.modello || "").slice(0, 40), conn: +t.info.conn || 0, prompt: String(t.info.prompt || "").slice(0, 160), plen: +t.info.plen || 0 } : null,
     last_run: t.last_run && t.last_run.fired_at ? { status: String(t.last_run.status || ""), fired_at: t.last_run.fired_at, finished_at: t.last_run.finished_at || null, session_id: String(t.last_run.session_id || "").slice(0, 80), failure_reason: String(t.last_run.failure_reason || "") } : null,
   })).filter((t) => /^trig_[A-Za-z0-9]+$/.test(t.id));
   if (!tr.length) throw { status: 400, code: "nessuna_routine", detail: "il rapporto non contiene routine" };
@@ -4769,11 +4770,18 @@ async function salaStato(env) {
   for (const t of tr) {
     const st = salaEsito(t, mem, now, runs), p = P(salaProg(t.name));
     const lr = t.last_run;
-    p.routine.push({ id: t.id, nome: t.name, e: st.e, msg: st.msg, ultimo: lr ? lr.fired_at : null, ultimo_fine: lr ? lr.finished_at : null, prossimo: t.next_run_at, richiesta: !t.cron_expression, in_coda: coda.some((c) => c.id === t.id) });
+    const m = mem[t.id] || {};
+    p.routine.push({ id: t.id, nome: t.name, cron: t.cron_expression, info: t.info || null, durata: salaMed(m.durs || []), giri: m.durs ? m.durs.length : 0, e: st.e, msg: st.msg, ultimo: lr ? lr.fired_at : null, ultimo_fine: lr ? lr.finished_at : null, prossimo: t.next_run_at, richiesta: !t.cron_expression, in_coda: coda.some((c) => c.id === t.id) });
     if ((st.e === "bad" || st.e === "warn") && !(st.key && ign[st.key] && ign[st.key] > new Date().toISOString())) p.problemi.push({ key: st.key, id: t.id, nome: t.name, e: st.e, msg: st.msg });
     if (t.next_run_at && romeDate(t.next_run_at) === oggi && Date.parse(t.next_run_at) > now) p.giornata.push({ id: t.id, nome: t.name, fired: t.next_run_at, status: "PREVISTO" });
   }
   for (const r of runs) { const p = P(r.prog || salaProg(r.nome)); if (p) p.giornata.push(r); }
+  { // ultimi 7 giorni per routine: giri andati bene e con problemi
+    const st7 = {};
+    for (let i = 0; i < 7; i++) { const d = romeDate(new Date(now - i * 86400000).toISOString()); const L = i ? (await kvGet(env, "sala:runs:" + d)) || [] : runs;
+      for (const r of L) { const x = st7[r.id] || (st7[r.id] = { ok: 0, ko: 0 }); if (r.status === "MANCATO" || /FAIL|ERROR|CANCEL/.test(r.status)) x.ko++; else if (r.finished) x.ok++; } }
+    for (const p of progetti) for (const r of p.routine) r.sett = st7[r.id] || { ok: 0, ko: 0 };
+  }
   // cose da fare per Francesco (Read Geopolitics): bozze di oggi in attesa, copioni da approvare
   try {
     const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
