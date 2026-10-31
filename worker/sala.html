@@ -76,7 +76,8 @@ function render(){
  else if(!nb&&!nd)frase="Tutte le routine sono andate bene e non c'è niente che aspetta te.";
  else frase=[nb?(nb===1?"Una routine ha un problema":nb+" routine hanno un problema"):"",nd?(nd===1?"una cosa aspetta te":nd+" cose aspettano te"):""].filter(Boolean).join(", ")+".";
  frase=frase.charAt(0).toUpperCase()+frase.slice(1);
- h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.rapporto?"ultimo controllo "+hm(S.rapporto):"nessun controllo ancora")+' · guardiano '+e(S.guardiano)+'</div></section>';
+ if(S.errore)frase='Ultimo rapporto scartato: '+S.errore+'.';
+ h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.rapporto?"ultimo controllo "+hm(S.rapporto):"nessun controllo ancora")+</div></section>';
  h+='<h2>Cosa devi fare<small>solo ciò che richiede te</small></h2>';
  p.problemi.forEach(function(x){h+='<div class="todo '+x.e+'"><b>'+e(x.nome)+': '+e(x.msg)+'</b><p>'+(x.e==="bad"?"Rilanciala: riparte da capo.":"È andata, ma in modo strano: controlla che abbia fatto tutto.")+'</p><button class="btn" data-rl="'+x.id+'">Rilancia</button><button class="btn sec" data-ig="'+e(x.key)+'">Va bene così</button><div class="res" hidden></div></div>'});
  p.dafare.forEach(function(x){h+='<div class="todo warn"><b>'+e(x.testo)+'</b><p>'+e(x.perche)+'</p><a class="btn" href="'+e(x.link)+'">Apri il pannello</a><button class="btn sec" data-ig="'+e(x.key)+'">Non serve, nascondi</button><div class="res" hidden></div></div>'});
@@ -98,8 +99,7 @@ function render(){
  h+='<h2>Le routine<small>una riga per routine · stato attuale</small></h2><table class="board"><thead><tr><th>Routine</th><th>Ultimo</th><th>Prossimo</th><th></th></tr></thead><tbody>';
  p.routine.forEach(function(r){h+='<tr><td><div class="nm '+r.e+'"><span class="dot"></span><span>'+e(r.nome)+(r.msg?'<small>'+e(r.msg)+'</small>':'')+'</span></div></td><td class="n">'+(r.ultimo?hm(r.ultimo):"—")+'</td><td class="n">'+(r.prossimo?hm(r.prossimo):(r.richiesta?"a richiesta":"—"))+'</td><td><button class="rl" data-rl="'+r.id+'"'+(r.in_coda?" disabled":"")+'>'+(r.in_coda?"in coda":"Rilancia")+'</button></td></tr>'});
  h+='</tbody></table><div class="res" id="bres" hidden></div>';
- h+='<details><summary class="mono">Come funziona</summary><p>Ogni ora il guardiano legge l’elenco delle routine con i loro ultimi giri e lo manda qui. Il Worker capisce se una routine si è rotta, non è partita, è ferma o è finita troppo presto rispetto al solito, e ti avvisa su Telegram una volta sola per problema. «Rilancia» mette la routine in coda e sveglia il guardiano, che la fa ripartire.</p>';
- if(S.guardiano!=="collegato")h+='<p><b>Collega il guardiano</b> per far partire i rilanci subito (altrimenti partono al suo giro orario): nella routine «guardiano» apri le impostazioni, crea un token per l’avvio via API e incollalo qui.</p><label>Id della routine<input id="gid" placeholder="trig_…"></label><label>Token<input id="gtk" type="password" autocomplete="off"></label><button class="btn" id="gsv">Salva</button><div class="res" id="gres" hidden></div>';
+ h+='<details><summary class="mono">Come funziona</summary><p>Ogni ora il guardiano legge l’elenco delle routine con i loro ultimi giri e lo manda qui. Il Worker capisce se una routine si è rotta, non è partita, è ferma o è finita troppo presto rispetto al solito, e ti avvisa su Telegram una volta sola per problema. «Rilancia» mette la routine in coda: il guardiano la fa ripartire al suo prossimo giro (ogni ora, al minuto 7).</p>';
  h+='</details>';
  $("#main").innerHTML=h;
 }
