@@ -664,6 +664,7 @@ const IG_TEMPLATES = [
   { id: "settimana-apre", formato: "carosello", nome: "La settimana che si apre", desc: "Date in agenda, segnali da osservare, numeri in movimento", pronto: true, auto_ok: true, param: null },
   { id: "filone", formato: "carosello", nome: "Il punto che sfugge", desc: "Una distinzione o un collegamento che le singole notizie non mostrano", pronto: true, auto_ok: true, param: "Filone (facoltativo: id o titolo; altrimenti il più mosso della settimana)" },
   { id: "settimana-sintesi", formato: "carosello", nome: "La settimana in sintesi", desc: "Il bilancio dei sette giorni: da dove si è partiti, dove si è arrivati, perché conta", pronto: true, auto_ok: true, param: null },
+  { id: "iconografica", formato: "reel", nome: "Iconografica · spiegato da zero", desc: "Reel animato: mappa che si muove, persone e oggetti della storia, azioni. Con voce. Pronto in 10-15 minuti", pronto: true, auto_ok: false, param: "Storia del briefing o tema (per esempio Tregua di Oleshky)" },
   { id: "spiegato", formato: "reel", nome: "Spiegato in 40 secondi", desc: "Un tema caldo spiegato: dove, perché, il punto aperto, il dossier", pronto: true, auto_ok: false, param: "Tema (per esempio Tregua di Oleshky)" },
   { id: "post-storia", formato: "post", nome: "La storia in una carta", desc: "Una sola immagine con la storia più forte", pronto: false, auto_ok: false, param: null },
   { id: "story-titolo", formato: "story", nome: "Storia: il titolo del giorno", desc: "Una carta verticale statica", pronto: false, auto_ok: false, param: null },
@@ -733,18 +734,22 @@ async function reqCreate(env, tpl, o) { // richiesta di un contenuto: dal pannel
     const open = (await kvList(env, "req:", 30)).filter((x) => x.stato === "in_coda");
     if (open.length >= 10) throw { status: 429, code: "troppe_richieste_in_coda" };
     const id = rid().slice(0, 10);
-    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(o.origine ? { origine: clip(o.origine, 80) } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
-    if (env.RICHIESTE_ROUTINE_ID && env.RICHIESTE_ROUTINE_TOKEN) { // avvio immediato della routine (API trigger); se fallisce, la richiesta resta in coda
-      try {
-        const fr = await fetch("https://api.anthropic.com/v1/claude_code/routines/" + encodeURIComponent(env.RICHIESTE_ROUTINE_ID) + "/fire", {
-          method: "POST", headers: { authorization: "Bearer " + env.RICHIESTE_ROUTINE_TOKEN, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-          body: JSON.stringify({ text: "Nuova richiesta dal pannello: " + id }), signal: AbortSignal.timeout(8000),
-        });
-        r.fire = fr.ok ? "avviata" : "errore " + fr.status;
-      } catch (e) { r.fire = "errore di rete"; }
-    }
+    const op = o.opzioni && typeof o.opzioni === "object" ? o.opzioni : null;
+    const opzioni = tpl.id === "iconografica" ? { voce: ["mia", "gemini", "musica"].includes(op && op.voce) ? op.voce : "mia", durata: (op && op.durata) === "corta" ? "corta" : "standard", modo: (op && op.modo) === "tappe" ? "tappe" : "auto" } : null;
+    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
+    await reqFire(env, r);
     await kvSet(env, "req:" + id, r);
     return r;
+}
+async function reqFire(env, r) { // avvio immediato della routine (API trigger); se fallisce, la richiesta resta in coda
+    if (!(env.RICHIESTE_ROUTINE_ID && env.RICHIESTE_ROUTINE_TOKEN)) return;
+    try {
+      const fr = await fetch("https://api.anthropic.com/v1/claude_code/routines/" + encodeURIComponent(env.RICHIESTE_ROUTINE_ID) + "/fire", {
+        method: "POST", headers: { authorization: "Bearer " + env.RICHIESTE_ROUTINE_TOKEN, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ text: (r.ripresa ? "Copione approvato, riprendi la richiesta dal pannello: " : "Nuova richiesta dal pannello: ") + r.id }), signal: AbortSignal.timeout(8000),
+      });
+      r.fire = fr.ok ? "avviata" : "errore " + fr.status;
+    } catch (e) { r.fire = "errore di rete"; }
 }
 
 async function draftCreate(env, origin, b) {
@@ -928,7 +933,19 @@ async function panelApi(env, origin, b) {
   if (act === "req_create") {
     const tpl = IG_TEMPLATES.find((x) => x.id === b.template);
     if (!tpl || !tpl.pronto) throw { status: 400, code: "template_non_pronto" };
-    return { ok: true, request: await reqCreate(env, tpl, { param: b.param, note: b.note, forza: b.forza }) };
+    return { ok: true, request: await reqCreate(env, tpl, { param: b.param, note: b.note, forza: b.forza, opzioni: b.opzioni }) };
+  }
+  if (act === "req_copione_ok") { // Francesco approva il copione di un'iconografica a tappe: la richiesta torna in coda e la routine riparte da lì
+    const r = await kvGet(env, "req:" + String(b.id || "").slice(0, 40));
+    if (!r) throw { status: 404, code: "req_not_found" };
+    if (r.stato !== "copione") throw { status: 409, code: "bad_status", detail: r.stato };
+    const marks = (Array.isArray(b.regia) ? b.regia : []).slice(0, 400).map((x) => ({ i: +x.i || 0, j: +x.j || 0, parola: clip(x.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo", "no"].includes(x.tipo) ? x.tipo : "no" }));
+    r.scelte = { regia: marks, nota: clip(b.nota, 2000), at: new Date().toISOString() };
+    r.stato = "in_coda"; r.ripresa = true; delete r.fire;
+    { const pf = (await kvGet(env, "regia_pref")) || {}; for (const m of marks) { const w = String(m.parola || "").toLowerCase().replace(/[.,;:!?«»"]/g, ""); if (!w) continue; pf[w] = pf[w] || {}; pf[w][m.tipo] = (pf[w][m.tipo] || 0) + 1; } await kvSet(env, "regia_pref", pf); }
+    await reqFire(env, r);
+    await kvSet(env, "req:" + r.id, r);
+    return { ok: true, request: r };
   }
   if (act === "req_cancel") {
     const r = await kvGet(env, "req:" + String(b.id));
@@ -1006,7 +1023,7 @@ textarea{width:100%}
 .rq .sub{margin-top:2px}.rq-s{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#8FA0AE;text-transform:uppercase;margin:16px 0 2px}.rq-g{font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;margin:10px 0 0}.rq-reel{color:#E8B050}.rq-car{color:#86B4EA}
 .rq-f{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #1F2C36;cursor:pointer}.rq-o{width:16px;height:16px;border-radius:50%;border:2px solid #4A5B6A;margin-top:3px}.rq-f.on .rq-o{border-color:#E8B050;background:radial-gradient(#E8B050 45%,transparent 50%)}.rq-f b{font-size:15px}.rq-f.on b{color:#E8B050}.rq-d{display:block;font-size:13px;color:#8FA0AE;line-height:1.35}.rq-new{font:600 10px ui-monospace,monospace;color:#E8B050;margin-left:6px;letter-spacing:.06em}
 .rq-more{font-size:13px;color:#86B4EA;padding:8px 0 0;cursor:pointer}.rq-t{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #1F2C36;font-size:14.5px;cursor:pointer}.rq-t i{width:8px;height:8px;border-radius:50%}.rq-t span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rq-t .w{font-size:12px;color:#8FA0AE;white-space:nowrap}.rq-t.on{color:#86B4EA;font-weight:600}
-.rq-in{width:100%;background:transparent!important;border:0!important;border-bottom:1px solid #34475A!important;border-radius:0!important;padding:8px 0!important;margin-top:4px;outline:none}.rq-fz{display:flex;gap:8px;align-items:center;font-size:13px;color:#8FA0AE;margin-top:12px}.rq-sum{font-size:14px;color:#C5D0D8;padding:12px 0;border-top:1px solid #34475A;margin-top:12px}.rq-fin{margin-top:6px}.rq-fin select{max-width:100%}
+.rq-in{width:100%;background:transparent!important;border:0!important;border-bottom:1px solid #34475A!important;border-radius:0!important;padding:8px 0!important;margin-top:4px;outline:none}.rq-fz{display:flex;gap:8px;align-items:center;font-size:13px;color:#8FA0AE;margin-top:12px}.rq-sum{font-size:14px;color:#C5D0D8;padding:12px 0;border-top:1px solid #34475A;margin-top:12px}.rq-fin{margin-top:6px}.rq-fin select{max-width:100%}.seg{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.seg button{flex:1;min-width:130px;text-align:left;padding:9px 11px;border-radius:10px;border:1px solid #34475A;background:transparent;color:#E4EAEF;font:14.5px system-ui;cursor:pointer}.seg button small{display:block;color:#8FA0AE;font-size:12px;margin-top:2px}.seg button.on{border-color:#E8B050;color:#E8B050}.cop p{margin:6px 0;font-size:15px;line-height:1.7}.cw{cursor:pointer;border-radius:4px;padding:0 2px}.cw.sel{outline:2px solid #E4EAEF}.k-oggetto{background:#86B4EA;color:#0E151B}.k-azione{background:#E8B050;color:#0E151B}.k-attore{background:#c9a6ef;color:#0E151B}.k-luogo{background:#7fd1b9;color:#0E151B}.cop .leg{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;margin-top:4px}.cop .leg span{border-radius:4px;padding:0 6px}.chip.copione{background:#c9a6ef;color:#0E151B}
 #svb{border-color:#27353F;padding:0}#svb.pend{border-color:#F2B84B;box-shadow:0 0 0 1px #F2B84B inset}.svh{display:flex;align-items:center;gap:10px;list-style:none;cursor:pointer;padding:12px 14px}.svh::-webkit-details-marker{display:none}#svb[open]>summary .chev{transform:rotate(180deg)}.svbd{padding:0 14px 12px}#svb.pend>summary .lab{color:#F2B84B}.svn{font:600 11px ui-monospace,monospace;background:#F2B84B;color:#0E151B;border-radius:99px;padding:2px 9px}.sv{border-top:1px solid #27353F;padding:12px 0 6px;margin-top:10px}.sv:first-child{border-top:0}.sv .m{font-size:13px;color:#8FA0AE}.sv .m b{color:#F2B84B;font:600 11px ui-monospace,monospace;letter-spacing:.06em;margin-right:6px}.sv .t{font:600 17px Georgia,serif;margin:6px 0 4px}.sv textarea{margin-top:6px}.sv .svcn{font-size:12px;color:#8FA0AE;text-align:right}.sv .ok{color:#7BD39A}.sv.off{opacity:.6}.svg{border-top:1px solid #27353F;margin-top:12px;padding-top:8px;font-size:14px}.svg div{padding:3px 0}
 .frm{display:grid;gap:8px;margin-top:8px}.frm label{font-size:13px;color:#8FA0AE;display:grid;gap:3px}.frm input[type=text],.frm input[type=time],.frm select,.frm textarea{width:100%}
 input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;border-radius:8px;padding:8px;font:15px system-ui}
@@ -1841,12 +1858,24 @@ function renderWeek(){
     if(q(".f-t"))q(".f-t").onchange=ev=>{const t=tplOf(ev.target.value);if(t)q(".f-f").value=t.formato};
     if(q(".f-s"))q(".f-s").onclick=async ev=>{ev.target.disabled=true;const r=await api({action:"plan_set",dow,entry:{rubrica:q(".f-r").value,template:q(".f-t").value,formato:q(".f-f").value,ora:q(".f-o").value,auto:q(".f-a").checked,note:q(".f-n").value}});if(!r.ok){say("Errore: "+JSON.stringify(r));ev.target.disabled=false;return}WED=null;load()}});
 }
+const KTIPI=[["oggetto","Oggetto","si disegna"],["azione","Azione","si vede succedere"],["attore","Attore","persona, Stato, gruppo"],["luogo","Luogo","sulla mappa"],["no","Niente","togli il risalto"]];
+function copHTML(r){const F=(r.copione&&r.copione.frasi)||[];const sc=r.scelte_bozza||{};
+  return '<div class="cop" data-r="'+esc(r.id)+'"><div class="sub" style="margin:6px 0">Tocca le parole da mettere in scena e scegli come. La regia proposta è già colorata: puoi cambiarla.</div>'
+   +F.map((f,i)=>{const pr={};(f.regia||[]).forEach(x=>{pr[String(x.parola).toLowerCase()]=x.tipo});return '<p><span class="sub">'+(i+1)+' · </span>'+String(f.t||"").split(" ").map((w,j)=>{const k=sc[i+":"+j]!==undefined?sc[i+":"+j]:(pr[w.toLowerCase().replace(/[.,;:!?«»"]/g,"")]||"");return '<span class="cw'+(k&&k!=="no"?" k-"+k:"")+'" data-i="'+i+'" data-j="'+j+'">'+esc(w)+"</span>"}).join(" ")+"</p>"}).join("")
+   +'<div class="leg"><span class="k-oggetto">oggetto</span><span class="k-azione">azione</span><span class="k-attore">attore</span><span class="k-luogo">luogo</span></div>'
+   +'<div class="sub cpinfo" style="margin-top:6px">Nessuna parola selezionata</div><div class="seg cpk" style="display:none">'+KTIPI.map(k=>'<button type="button" data-k="'+k[0]+'">'+k[1]+"<small>"+k[2]+"</small></button>").join("")+"</div>"
+   +'<textarea class="rq-in cpn" rows="1" placeholder="Nota per la regia su questo copione (facoltativa)"></textarea><div class="row" style="margin-top:8px"><button class="cpok">Approva e prosegui</button></div></div>'}
+function copBind(root){root.querySelectorAll(".cop").forEach(box=>{let sel=null;const info=box.querySelector(".cpinfo"),kb=box.querySelector(".cpk");
+  box.querySelectorAll(".cw").forEach(w=>w.onclick=()=>{box.querySelectorAll(".cw").forEach(x=>x.classList.remove("sel"));w.classList.add("sel");sel=w;info.textContent="«"+w.textContent+"»: come la metto in scena?";kb.style.display="flex"});
+  kb.querySelectorAll("button").forEach(b=>b.onclick=()=>{if(!sel)return;sel.className="cw"+(b.dataset.k!=="no"?" k-"+b.dataset.k:"");sel.dataset.k=b.dataset.k;kb.style.display="none";info.textContent="Fatto. Tocca un'altra parola o approva."});
+  box.querySelector(".cpok").onclick=async e=>{const marks=[];box.querySelectorAll(".cw").forEach(w=>{const m=(w.className.match(/k-([a-z]+)/)||[])[1];if(m||w.dataset.k==="no")marks.push({i:+w.dataset.i,j:+w.dataset.j,parola:w.textContent,tipo:w.dataset.k==="no"?"no":m})});
+   e.target.disabled=true;const r=await api({action:"req_copione_ok",id:box.dataset.r,regia:marks,nota:box.querySelector(".cpn").value});if(!r.ok){say("Errore: "+JSON.stringify(r));e.target.disabled=false;return}load()}})}
 function renderReq(){
   if(!D)return;const el=document.getElementById("rq");
   const pr=D.templates.filter(t=>t.pronto);
-  const TOP=["spiegato","reel-storia","oggi-reel","settimana-reel","due-letture","parola","mondo-oggi"];
+  const TOP=["iconografica","spiegato","reel-storia","oggi-reel","settimana-reel","due-letture","parola","mondo-oggi"];
   if(!RQ.t||!pr.some(t=>t.id===RQ.t))RQ.t="spiegato";
-  const fr=t=>'<div class="rq-f'+(RQ.t===t.id?" on":"")+'" data-id="'+esc(t.id)+'"><span class="rq-o"></span><span><b>'+esc(t.nome)+'</b>'+(t.id==="spiegato"?'<span class="rq-new">NUOVO</span>':"")+'<span class="rq-d">'+esc(t.desc)+"</span></span></div>";
+  const fr=t=>'<div class="rq-f'+(RQ.t===t.id?" on":"")+'" data-id="'+esc(t.id)+'"><span class="rq-o"></span><span><b>'+esc(t.nome)+'</b>'+(t.id==="iconografica"?'<span class="rq-new">NUOVO</span>':"")+'<span class="rq-d">'+esc(t.desc)+"</span></span></div>";
   const grp=(f,lab,cl)=>{const ix=t=>{const i=TOP.indexOf(t.id);return i<0?99:i};const a=pr.filter(t=>t.formato===f&&(RQ.all||TOP.includes(t.id)||RQ.t===t.id)).sort((x,y)=>ix(x)-ix(y));return a.length?'<div class="rq-g '+cl+'">'+lab+"</div>"+a.map(fr).join(""):""};
   const extra=pr.filter(t=>!TOP.includes(t.id)&&t.id!==RQ.t).length;
   let h='<div class="card rq"><b>Chiedi un contenuto</b><div class="sub">La routine lo prepara subito e lo trovi tra le Bozze, dove lo controlli prima che esca.</div>';
@@ -1855,6 +1884,10 @@ function renderReq(){
   const t=tplOf(RQ.t);
   if(t&&t.param){h+='<div class="rq-s">2 · Tema · tocca o scrivi</div><div id="rq-tl"></div><input type="text" id="r-p" class="rq-in" maxlength="200" placeholder="oppure scrivi il tema" value="'+esc(RQ.p||"")+'">'}
   h+='<div class="rq-s">'+(t&&t.param?"3":"2")+' · Indicazioni · facoltative</div><textarea id="r-n" class="rq-in" rows="2" placeholder="Es.: insisti sulle due date">'+esc(RQ.n||"")+"</textarea>";
+  if(RQ.t==="iconografica"){const sg=(g,lab,opts,cur)=>'<div class="rq-s">'+lab+'</div><div class="seg" data-g="'+g+'">'+opts.map(o=>'<button type="button" class="'+(cur===o[0]?"on":"")+'" data-v="'+o[0]+'">'+o[1]+'<small>'+o[2]+'</small></button>').join("")+'</div>';
+    h+=sg("ov","Voce",[["mia","La mia voce","ElevenLabs, voce clonata"],["gemini","Voce Gemini","sintetica, costo minore"],["musica","Solo musica","testo a schermo"]],RQ.ov||"mia");
+    h+=sg("od","Durata",[["corta","Corta","circa 45 secondi"],["standard","Standard","60-75 secondi"]],RQ.od||"standard");
+    h+=sg("om","Come lavora",[["auto","Da solo","fa tutto e manda il reel"],["tappe","A tappe","prima il copione: scegli tu cosa mettere in scena"]],RQ.om||"auto")}
   h+='<label class="rq-fz"><input type="checkbox" id="r-f"> Forza: producilo subito, con l ultimo briefing disponibile anche se non è di oggi</label>';
   h+='<div class="rq-sum" id="rq-sum"></div><div class="row"><button id="r-go">Prepara la bozza</button></div></div>';
   const pend=D.templates.filter(t=>!t.pronto);
@@ -1863,7 +1896,7 @@ function renderReq(){
   h+='<div class="card"><div class="row"><b>Richieste</b><span class="sub">ultimo controllo della routine: '+seen+'</span></div><div class="sub">La routine controlla la coda a intervalli: la risposta non è immediata.</div>';
   if(!D.requests.length)h+='<div class="sub" style="margin-top:8px">Nessuna richiesta.</div>';
   h+=D.requests.map(r=>'<div class="day" data-id="'+esc(r.id)+'"><div class="row"><b>'+esc(r.nome)+'</b><span class="chip '+esc(r.stato)+'">'+esc(String(r.stato).replace("_"," "))+'</span><span class="sub">'+when(r.created_at)+"</span>"+(r.stato==="in_coda"?'<button class="r cx" style="margin-left:auto;padding:6px 10px">Annulla</button>':"")+"</div>"
-    +(r.forza?'<div class="s warn">Forzata: usa l ultimo briefing disponibile</div>':"")+(r.param?'<div class="s">Tema: '+esc(r.param)+"</div>":"")+(r.note?'<div class="s mut">'+esc(r.note.length>220?r.note.slice(0,220)+"… ("+r.note.length+" caratteri)":r.note)+"</div>":"")
+    +(r.forza?'<div class="s warn">Forzata: usa l ultimo briefing disponibile</div>':"")+(r.param?'<div class="s">Tema: '+esc(r.param)+"</div>":"")+(r.opzioni?'<div class="s mut">'+esc(({mia:"la tua voce",gemini:"voce Gemini",musica:"solo musica"})[r.opzioni.voce]||"")+" · "+(r.opzioni.durata==="corta"?"circa 45 s":"60-75 s")+" · "+(r.opzioni.modo==="tappe"?"a tappe":"da solo")+"</div>":"")+(r.stato==="copione"&&r.copione?copHTML(r):"")+(r.note?'<div class="s mut">'+esc(r.note.length>220?r.note.slice(0,220)+"… ("+r.note.length+" caratteri)":r.note)+"</div>":"")
     +(r.stato==="in_coda"&&r.fire?'<div class="s '+(r.fire==="avviata"?"ok":"warn")+'">'+(r.fire==="avviata"?"Routine avviata: la bozza arriva tra pochi minuti":"Avvio automatico non riuscito ("+esc(r.fire)+"): parte al prossimo controllo")+"</div>":"")
     +(r.stato==="pronta"?'<div class="s ok">Pronta: guarda tra le Bozze'+(r.draft_id?" ("+esc(r.draft_id)+")":"")+"</div>":"")
     +(r.stato==="bloccata"?'<div class="s warn">Ferma da oltre 3 ore: riprova con una nuova richiesta</div>':"")
@@ -1894,9 +1927,12 @@ function renderReq(){
   temi();sum();
   document.getElementById("r-go").onclick=async e=>{const tt=tplOf(RQ.t);const pv=((document.getElementById("r-p")||{}).value||"").trim();
    if(RQ.t==="spiegato"&&!pv){say("Scegli o scrivi il tema dello spiegato.");return}
+   if(RQ.t==="iconografica"&&!pv){say("Scegli o scrivi la storia dell'iconografica.");return}
    let note=document.getElementById("r-n").value;const fs=document.getElementById("rq-fs");if(fs)note="FINALE: "+(fs.value?"dossier "+fs.value:"Tu leggi, tu decidi")+(note?String.fromCharCode(10)+note:"");
-   e.target.disabled=true;const r=await api({action:"req_create",template:RQ.t,param:tt&&tt.param?pv:"",note,forza:document.getElementById("r-f").checked});if(!r.ok){say("Errore: "+JSON.stringify(r));e.target.disabled=false;return}RQ.p="";RQ.n="";RQ.fin=undefined;load()};
+   e.target.disabled=true;const r=await api({action:"req_create",template:RQ.t,param:tt&&tt.param?pv:"",note,forza:document.getElementById("r-f").checked,opzioni:RQ.t==="iconografica"?{voce:RQ.ov||"mia",durata:RQ.od||"standard",modo:RQ.om||"auto"}:undefined});if(!r.ok){say("Errore: "+JSON.stringify(r));e.target.disabled=false;return}RQ.p="";RQ.n="";RQ.fin=undefined;load()};
   el.querySelectorAll(".cx").forEach(b=>b.onclick=async()=>{await api({action:"req_cancel",id:b.closest(".day").dataset.id});load()});
+  el.querySelectorAll(".seg[data-g]").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{RQ[g.dataset.g]=b.dataset.v;g.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b))}));
+  copBind(el);
 }
 setTab("og");
 load().then(()=>{
@@ -2214,10 +2250,17 @@ async function igPrivate(request, env, p, method) {
     if (b.action === "claim") { if (r.stato !== "in_coda") return fail(409, "bad_status", r.stato); r.stato = "in_lavorazione"; r.started_at = new Date().toISOString(); }
     else if (b.action === "done") { r.stato = "pronta"; r.draft_id = clip(b.draft_id, 80); r.done_at = new Date().toISOString(); if (note) r.esito = note; }
     else if (b.action === "fail") { r.stato = "errore"; r.esito = note || "senza dettagli"; r.done_at = new Date().toISOString(); }
-    else return fail(400, "bad_action", "action: claim | done | fail");
+    else if (b.action === "copione") { // iconografica a tappe: la routine lascia il copione e si ferma; riparte quando Francesco approva dal pannello
+      const fr = Array.isArray(b.frasi) ? b.frasi.slice(0, 40) : [];
+      if (!fr.length) return fail(400, "frasi_mancanti");
+      r.copione = { frasi: fr.map((x) => ({ t: clip(x.t, 400), regia: (Array.isArray(x.regia) ? x.regia : []).slice(0, 20).map((y) => ({ parola: clip(y.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo"].includes(y.tipo) ? y.tipo : "oggetto" })) })), at: new Date().toISOString() };
+      r.stato = "copione"; if (note) r.esito = note;
+    }
+    else return fail(400, "bad_action", "action: claim | done | fail | copione");
     await kvSet(env, "req:" + r.id, r);
     return json({ ok: true, request: r });
   }
+  if (method === "GET" && p === "/v1/ig/regia_pref") return json({ ok: true, pref: (await kvGet(env, "regia_pref")) || {} });
   if (method === "GET" && p === "/v1/ig/drafts") {
     const ds = await kvList(env, "draft:", 30);
     return json({ ok: true, drafts: ds.map(({ _k, _u, image_urls, ...x }) => ({ ...x, n_images: (image_urls || []).length })) });
