@@ -1,3 +1,5 @@
+import KIT_POD from "./kit/podkit.tgz";
+import KIT_PUNTI from "./kit/puntikit.tgz";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
@@ -3825,6 +3827,13 @@ async function route(request, env) {
     const r = await podPublic(request, env, p, url);
     if (r) return r;
   }
+
+  // ---------- KIT DELLE ROUTINE (solo con token): podcast e reel scaricano qui il loro kit, invece che dal database dell'artifact ----------
+  { const m = p.match(/^\/v1\/kit\/(podkit|puntikit)\.tgz$/);
+    if (m && method === "GET") {
+      if (!authorized(request, env)) return json({ ok: false, error: "unauthorized" }, 401);
+      return new Response(m[1] === "podkit" ? KIT_POD : KIT_PUNTI, { headers: { "content-type": "application/gzip", "cache-control": "no-store" } });
+    } }
 
   // ---------- LETTURE PUBBLICHE ----------
   if (method === "GET" && p === "/api/numeri_storico") { let r = await kvGet(env, "num_storico"); if (url.searchParams.get("run") === "1" && (!r || Date.now() - Date.parse(r.at) > 600000)) r = await numStorico(env, true); const id = url.searchParams.get("id"); if (!r) return json({ ok: false, error: "non ancora raccolto: ?run=1" }, 200, { ...CORS, "cache-control": "no-store" }); return json(id ? { ok: true, at: r.at, id, serie: (r.serie || {})[id] || null } : { ok: true, at: r.at, errori: r.errori, serie: Object.fromEntries(Object.entries(r.serie || {}).map(([k, v]) => [k, { nome: v.nome, unita: v.unita, freq: v.freq, fonte: v.fonte, punti: v.punti.length, dal: v.punti[0][0], al: v.punti[v.punti.length - 1][0], ultimo: v.punti[v.punti.length - 1][1] }])) }, 200, { ...CORS, "cache-control": "no-store" }); } // v64: storico dei numeri aperti (?id=… per i punti, ?run=1 per rileggere)

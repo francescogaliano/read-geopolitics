@@ -3,6 +3,8 @@
   // I secret (WRITE_TOKEN, RS_TOKEN, IG_*, PANEL_PASSWORD, RESEND_API_KEY, GC_TOKEN, TT_*, RICHIESTE_*) restano su Cloudflare: una pubblicazione non li tocca.
   "name": "rg-api",
   "main": "worker.js",
+  // kit delle routine (podcast, reel) inclusi nel Worker come dati binari
+  "rules": [{ "type": "Data", "globs": ["**/*.tgz"], "fallthrough": true }],
   "compatibility_date": "2026-10-03",
   "workers_dev": true,
   "preview_urls": false,
