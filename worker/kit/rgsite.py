@@ -3,6 +3,7 @@
 #   python3 rgsite.py push DIR      invia DIR/<collezione>/<id>.json (un file per documento, contenuto = il documento intero)
 #                                   poi rilegge dal sito ogni documento inviato e controlla che coincida
 #   python3 rgsite.py check DIR     solo il controllo (nessun invio): elenca i documenti di DIR assenti o diversi sul sito
+#   python3 rgsite.py missing FILE  FILE ha una riga "collezione/id" per documento: stampa quelli che sul sito mancano
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 # Sicurezza: invia solo le collezioni pubbliche, con gli stessi filtri di privacy di push_site.py; non cancella mai nulla.
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
@@ -96,6 +97,23 @@ def check(docs):
 
 cmd, src = sys.argv[1], sys.argv[2]
 frag = []
+if cmd == "missing":
+    miss, n = [], 0
+    for line in open(src):
+        line = line.strip()
+        if not line or "/" not in line:
+            continue
+        c, k = line.split("/", 1)
+        if c not in OK:
+            continue
+        n += 1
+        r = call("GET", "/api/doc/%s/%s" % (urllib.parse.quote(c), urllib.parse.quote(k)))
+        if not r or not r.get("ok"):
+            miss.append(c + "/" + k)
+    print("controllati %d, mancanti %d" % (n, len(miss)))
+    for x in miss:
+        print("MANCA " + x)
+    sys.exit(0)
 docs, skipped = load(src)
 if skipped:
     print("saltati:", "; ".join(skipped))
