@@ -13,6 +13,8 @@
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 # Sicurezza: invia solo le collezioni pubbliche, con gli stessi filtri di privacy di push_site.py; non cancella mai nulla.
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
+from concurrent.futures import ThreadPoolExecutor
+PAR = 16  # richieste in parallelo
 
 OK = ["briefings", "stories", "threads", "events", "countries", "sources", "agenda", "glossario", "approfondimenti",
       "brevi", "settimanali", "mercati", "segnali", "attori", "attori_storico", "dossier"]
@@ -91,14 +93,15 @@ def same(sent, got):
 
 
 def check(docs):
-    bad = []
-    for x in docs:
+    def one(x):
         r = call("GET", "/api/doc/%s/%s" % (urllib.parse.quote(x["type"]), urllib.parse.quote(x["key"])))
         if not r or not r.get("ok"):
-            bad.append(x["type"] + "/" + x["key"] + " assente")
-        elif not same(x["data"], r.get("doc")):
-            bad.append(x["type"] + "/" + x["key"] + " diverso")
-    return bad
+            return x["type"] + "/" + x["key"] + " assente"
+        if not same(x["data"], r.get("doc")):
+            return x["type"] + "/" + x["key"] + " diverso"
+        return None
+    with ThreadPoolExecutor(PAR) as ex:
+        return [b for b in ex.map(one, docs) if b]
 
 
 SLUG = "eb02b64f-dbb3-424b-a57c-38d9fd3c8612"
@@ -212,17 +215,17 @@ if not docs:
     sys.exit(0)
 def partial(docs):
     """Protezione: un documento con molti meno campi di quello già sul sito è quasi certamente un frammento (merge): non va inviato."""
-    keep, bad = [], []
-    for x in docs:
+    def one(x):
         r = call("GET", "/api/doc/%s/%s" % (urllib.parse.quote(x["type"]), urllib.parse.quote(x["key"])))
         old = (r or {}).get("doc") if (r or {}).get("ok") else None
         if isinstance(old, dict):
             n_old = len([k for k in old if k != "key"])
             if n_old >= 4 and len(x["data"]) < 0.6 * n_old:
-                bad.append("%s/%s ha %d campi contro %d sul sito" % (x["type"], x["key"], len(x["data"]), n_old))
-                continue
-        keep.append(x)
-    return keep, bad
+                return "%s/%s ha %d campi contro %d sul sito" % (x["type"], x["key"], len(x["data"]), n_old)
+        return None
+    with ThreadPoolExecutor(PAR) as ex:
+        res = list(ex.map(one, docs))
+    return [x for x, b in zip(docs, res) if not b], [b for b in res if b]
 
 
 if cmd == "push":
@@ -232,10 +235,21 @@ if cmd == "push":
     if not docs:
         sys.exit(1)
     tot = {"created": 0, "updated": 0, "unchanged": 0}
-    for i in range(0, len(docs), 25):
-        r = call("POST", "/v1/batch", {"docs": docs[i:i + 25]})
-        for k in tot:
-            tot[k] += (r or {}).get(k, 0)
+    # lotti di massimo 25 documenti e circa 700 KB (il Worker rifiuta oltre 1 MB)
+    lotti, cur, size = [], [], 0
+    for x in docs:
+        n = len(json.dumps(x, ensure_ascii=False).encode())
+        if cur and (len(cur) >= 25 or size + n > 700000):
+            lotti.append(cur); cur, size = [], 0
+        cur.append(x); size += n
+    if cur:
+        lotti.append(cur)
+    def send(l):
+        return call("POST", "/v1/batch", {"docs": l})
+    with ThreadPoolExecutor(4) as ex:
+        for r in ex.map(send, lotti):
+            for k in tot:
+                tot[k] += (r or {}).get(k, 0)
     print("push ok", tot, "documenti", len(docs))
 bad = check(docs)
 if cmd == "push" and frag:
