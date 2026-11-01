@@ -112,6 +112,10 @@ document.addEventListener("click",function(ev){var t=ev.target;if(!t.closest)ret
 },true);
 
 /* ---------- innesti nelle viste esistenti ---------- */
+function navBtn(){var sv=document.querySelector('[data-sv="glossario"]');if(!sv||document.querySelector("[data-sp-sv]"))return;var nb=document.createElement("button");nb.type="button";nb.setAttribute("data-sp-sv","1");nb.setAttribute("aria-current","false");nb.innerHTML='<span class="sn-ic" aria-hidden="true">💡</span>Spiegati';sv.parentNode.insertBefore(nb,sv.nextSibling);nb.onclick=openSection}
+/* il pulsante in Esplora va messo subito, senza aspettare l'elenco: altrimenti la barra «salta» */
+new MutationObserver(navBtn).observe(document.documentElement,{childList:true,subtree:true});navBtn();
+
 function deco(){if(!SP.length)return;
  SP.forEach(function(x){(x.storie||[]).forEach(function(id){[document.getElementById("st-"+id),document.getElementById("xst-"+id)].forEach(function(stc){if(!stc||stc.querySelector(".sp-lab"))return;
   var l=document.createElement("a");l.className="sp-lab";l.href=x.url;l.textContent="📖 C'è lo Spiegato: "+x.tit+" ›";var pt=stc.querySelector("#pt-"+id)||document.getElementById("pt-"+id);
@@ -128,8 +132,6 @@ function deco(){if(!SP.length)return;
   lb.onclick=function(){var on=lb.getAttribute("aria-pressed")!=="true";lb.setAttribute("aria-pressed",on?"true":"false");mapLens(on)}}
  var pn=document.getElementById("panel");var s=st();if(pn&&s&&s.selCountry){var h2=pn.querySelector("h2");if(h2&&!pn.querySelector(".sp-prow")){var y=SP.filter(function(z){return (z.paesi||[]).indexOf(s.selCountry)>=0})[0];
   if(y)(pn.querySelector(".lvl")||h2).insertAdjacentHTML("afterend",'<a class="sp-prow" href="'+e(y.url)+'"><span><span class="k">💡 Spiegato</span><b>'+e(y.q)+'</b><small>al '+dl(y.data)+' · '+y.min+' min</small></span><span style="color:'+G+'">›</span></a>')}}
- var sv=document.querySelector('[data-sv="glossario"]');if(sv&&!document.querySelector("[data-sp-sv]")){var nb=document.createElement("button");nb.type="button";nb.setAttribute("data-sp-sv","1");nb.setAttribute("aria-current","false");nb.innerHTML='<span class="sn-ic" aria-hidden="true">💡</span>Spiegati';sv.parentNode.insertBefore(nb,sv.nextSibling);
-  nb.onclick=openSection}
  if(LENS&&!document.querySelector("#mapBox .sp-dot"))mapLens(true);
 }
 function openSection(){var s=st();if(!s||s.view!=="esplora"){var t=document.querySelector('[data-view="esplora"]');if(t)t.click();deco()}
