@@ -1,0 +1,17 @@
+name: Anteprima (non tocca la produzione)
+on:
+  push:
+    branches: [anteprima-spiegati]
+jobs:
+  anteprima:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Carica una versione di anteprima (la produzione resta quella di prima)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx -y wrangler@4 versions upload --preview-alias spiegati 2>&1 | tee out.log
