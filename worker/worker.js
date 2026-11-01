@@ -807,6 +807,7 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
   if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
+  if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
 }
 async function draftPublish(env, origin, id, by) {
@@ -824,6 +825,7 @@ async function draftPublish(env, origin, id, by) {
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
   if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
+  if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
 }
 async function autoPublish(env) {
@@ -4908,12 +4910,25 @@ function spCard(r) {
     storie: sc.storie || [], gl: sc.gl || [], data: s.data, min: s.min || 5, ico: sc.ico || "📖", url: "/spiegato/?id=" + r.id, breve: sc.breve || spPlain(s.dek),
     cap: (s.steps || []).filter((x) => x.ch).map((x) => x.ch), kw: sc.kw || "", video: r.video || null };
 }
+async function spReqState(env, rid) { // stato del video chiesto per uno Spiegato: richiesta → bozza → pubblicato
+  const q = await kvGet(env, "req:" + rid); if (!q) return null;
+  const out = { id: rid, stato: q.stato, esito: q.esito || "" };
+  if (q.draft_id) { const d = await kvGet(env, "draft:" + q.draft_id); if (d) { out.bozza = d.status; out.permalink = d.permalink || null; } }
+  return out;
+}
+async function spLinkVideo(env, d) { // v75: quando esce su Instagram il reel chiesto da uno Spiegato, il link compare da solo sotto lo Spiegato
+  if (!d || !d.req_id || !d.permalink) return;
+  const q = await kvGet(env, "req:" + d.req_id); const m = q && /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); if (!m) return;
+  const r = await kvGet(env, "sp:" + m[1]); if (!r) return;
+  r.video = { ig: d.permalink, mp4: (r.video && r.video.mp4) || null }; r.aggiornato = new Date().toISOString(); await kvSet(env, "sp:" + m[1], r);
+}
 async function spPanelApi(env, b) {
   const act = b.action;
   if (act === "sp_lista") {
     const all = await spAll(env);
     const out = [];
     for (const r of all) out.push({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, creato: r.creato, pubblicato_il: r.pubblicato_il || null,
+      vreq: r.video_req ? await spReqState(env, r.video_req) : null,
       passi: ((r.spec && r.spec.steps) || []).length, fonti: ((r.spec && r.spec.fonti) || []).length, check: spCheck(r.spec), video: r.video || null, note: r.note || "",
       anteprima: SITE + "/spiegato/?id=" + r.id + (r.stato === "pubblicato" ? "" : "&k=" + (await spKey(env, r.id))) });
     out.sort((a, c) => String(c.creato).localeCompare(String(a.creato)));
@@ -4930,6 +4945,18 @@ async function spPanelApi(env, b) {
   }
   if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true }; }
   if (act === "sp_scarta") { if (r.stato === "pubblicato") return { ok: false, error: "è pubblicato: prima ritiralo" }; await kvDel(env, "sp:" + id); return { ok: true }; }
+  if (act === "sp_fai_video") { // v75: chiede l'iconografica dello Spiegato (stessa coda e stessa routine delle richieste del pannello)
+    if (r.stato !== "pubblicato") return { ok: false, error: "prima pubblica lo Spiegato: il video si fa sul testo approvato" };
+    const tpl = IG_TEMPLATES.find((x) => x.id === "iconografica");
+    if (!tpl || !tpl.pronto) return { ok: false, error: "l'iconografica non è attiva" };
+    const o = b.opzioni && typeof b.opzioni === "object" ? b.opzioni : {};
+    const note = "SPIEGATO: " + id + "\nLa storia è lo Spiegato pubblicato «" + spPlain(r.spec.titolo) + "» (fermo al " + r.spec.data + "): leggilo con GET $RG_API/api/spiegato?id=" + id + " e usa SOLO i suoi fatti, numeri, luoghi e fonti (ricetta I, passo I2-bis).";
+    let rq;
+    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note, opzioni: { voce: o.voce, durata: o.durata, modo: o.modo }, origine: "spiegato:" + id }); }
+    catch (e) { return { ok: false, error: e && e.code === "troppe_richieste_in_coda" ? "troppe richieste in coda: riprova più tardi" : "richiesta non creata" }; }
+    r.video_req = rq.id; r.aggiornato = now; await kvSet(env, "sp:" + id, r);
+    return { ok: true, req: rq.id, fire: rq.fire || "in coda" };
+  }
   if (act === "sp_video") {
     const ig = String(b.ig || "").trim(), mp4 = String(b.mp4 || "").trim();
     if (ig && !/^https:\/\/(www\.)?instagram\.com\//.test(ig)) return { ok: false, error: "link Instagram non valido" };
