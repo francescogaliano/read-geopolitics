@@ -21,7 +21,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .meta{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0 20px;border-bottom:1px solid var(--line)}
 /* racconto con mappa */
 .scrolly{position:relative;margin-top:8px}
-.stage{position:sticky;top:0;height:56vh;z-index:1;background:var(--bg);border-bottom:1px solid var(--line)}
+.stage{position:sticky;top:42px;height:56vh;z-index:1;background:var(--bg);border-bottom:1px solid var(--line)}
 .stage svg{width:100%;height:100%;display:block}
 .stage .note{position:absolute;left:12px;bottom:10px;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;opacity:0;transition:opacity .4s}
 .stage .cnt{position:absolute;right:14px;top:12px;text-align:right;opacity:0;transition:opacity .4s}
@@ -38,7 +38,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .step .t .src{display:block;margin-top:8px;font-size:13px;color:var(--mut)}
 @media (min-width:980px){
  .scrolly{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:0 40px;max-width:1180px;margin:8px auto 0;padding:0 24px}
- .steps{order:1}.stage{order:2;height:100vh;border:0}
+ .steps{order:1}.stage{order:2;height:calc(100vh - 42px);border:0}
  .step{min-height:90vh;align-items:center;padding-top:0}
  .steps{padding-top:0}
 }
