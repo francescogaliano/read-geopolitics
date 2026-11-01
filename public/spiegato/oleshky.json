@@ -1,0 +1,922 @@
+{
+ "id": "oleshky",
+ "titolo": "Oleshky, la tregua di *una sola città*",
+ "kicker": "Spiegato · Ucraina",
+ "dek": "Una città rimasta in trappola per anni tra un fiume, le mine e i droni. Per sei giorni Russia e Ucraina hanno fermato le armi solo lì, per farne uscire i civili. Spiegato da zero: com'è nata la trappola, come ha funzionato la tregua, cosa non sappiamo.",
+ "data": "2026-11-01",
+ "min": 6,
+ "fiducia": "media",
+ "tema": "t-ucraina",
+ "tema_nome": "Guerra in Ucraina e negoziati",
+ "map_alt": "Mappa del racconto: Oleshky e il viaggio degli evacuati",
+ "nota_mappa": "Mappa schematica; percorsi indicativi.",
+ "map": {
+  "focus": [
+   "UKR"
+  ],
+  "points": {
+   "ol": {
+    "p": [
+     32.715,
+     46.617
+    ],
+    "kind": "dot",
+    "color": "red"
+   },
+   "ring": {
+    "p": [
+     32.715,
+     46.617
+    ],
+    "kind": "ring",
+    "color": "red"
+   },
+   "dam": {
+    "p": [
+     33.37,
+     46.78
+    ],
+    "kind": "square",
+    "color": "blue"
+   },
+   "ch": {
+    "p": [
+     31.29,
+     51.49
+    ],
+    "kind": "dot",
+    "color": "green"
+   },
+   "mines": {
+    "pts": [
+     [
+      32.95,
+      46.66
+     ],
+     [
+      32.88,
+      46.55
+     ],
+     [
+      32.6,
+      46.5
+     ],
+     [
+      33.05,
+      46.58
+     ],
+     [
+      32.78,
+      46.72
+     ]
+    ],
+    "kind": "x",
+    "color": "red"
+   },
+   "xriver": {
+    "p": [
+     32.4,
+     46.61
+    ],
+    "kind": "x",
+    "color": "red",
+    "size": "26"
+   }
+  },
+  "lines": {
+   "flood": {
+    "pts": [
+     [
+      33.36,
+      46.76
+     ],
+     [
+      33.0,
+      46.7
+     ],
+     [
+      32.62,
+      46.64
+     ],
+     [
+      32.3,
+      46.58
+     ],
+     [
+      31.9,
+      46.55
+     ]
+    ],
+    "kind": "flood"
+   },
+   "river": {
+    "pts": [
+     [
+      30.52,
+      50.45
+     ],
+     [
+      31.5,
+      49.6
+     ],
+     [
+      33.4,
+      49.07
+     ],
+     [
+      34.6,
+      48.6
+     ],
+     [
+      35.05,
+      48.47
+     ],
+     [
+      35.14,
+      47.84
+     ],
+     [
+      34.4,
+      47.57
+     ],
+     [
+      33.36,
+      46.76
+     ],
+     [
+      33.0,
+      46.7
+     ],
+     [
+      32.62,
+      46.64
+     ],
+     [
+      32.3,
+      46.58
+     ],
+     [
+      31.9,
+      46.55
+     ]
+    ],
+    "kind": "river"
+   },
+   "front": {
+    "pts": [
+     [
+      33.36,
+      46.76
+     ],
+     [
+      33.0,
+      46.7
+     ],
+     [
+      32.62,
+      46.64
+     ],
+     [
+      32.3,
+      46.58
+     ],
+     [
+      31.9,
+      46.55
+     ]
+    ],
+    "kind": "front"
+   },
+   "road": {
+    "pts": [
+     [
+      33.8,
+      47.15
+     ],
+     [
+      33.45,
+      46.95
+     ],
+     [
+      33.15,
+      46.8
+     ],
+     [
+      32.8,
+      46.65
+     ],
+     [
+      32.715,
+      46.617
+     ]
+    ],
+    "kind": "road"
+   },
+   "route": {
+    "pts": [
+     [
+      32.715,
+      46.617
+     ],
+     [
+      35.37,
+      46.84
+     ],
+     [
+      38.5,
+      47.1
+     ],
+     [
+      39.7,
+      47.23
+     ],
+     [
+      38.6,
+      49.4
+     ],
+     [
+      36.6,
+      50.6
+     ],
+     [
+      34.36,
+      53.25
+     ],
+     [
+      31.9,
+      52.7
+     ],
+     [
+      30.98,
+      52.44
+     ],
+     [
+      30.6,
+      51.6
+     ],
+     [
+      31.0,
+      51.2
+     ],
+     [
+      31.29,
+      51.49
+     ]
+    ],
+    "kind": "route"
+   }
+  },
+  "zones": {
+   "zone": {
+    "p": [
+     32.715,
+     46.617
+    ]
+   }
+  },
+  "labels": {
+   "lOl": {
+    "t": "OLESHKY",
+    "at": "ol",
+    "dx": 12,
+    "dy": 22
+   },
+   "lDam": {
+    "t": "DIGA DI KAKHOVKA · CROLLATA 2023",
+    "color": "blue",
+    "at": "dam",
+    "dx": -40,
+    "dy": -14
+   },
+   "lFront": {
+    "t": "IL FIUME È IL FRONTE",
+    "color": "red",
+    "p": [
+     33.1,
+     46.73
+    ],
+    "dx": -20,
+    "dy": -16
+   },
+   "lRight": {
+    "t": "RIVA DESTRA · UCRAINA",
+    "color": "grey",
+    "size": "11",
+    "p": [
+     31.95,
+     46.95
+    ]
+   },
+   "lLeft": {
+    "t": "RIVA SINISTRA · RUSSIA",
+    "color": "grey",
+    "size": "11",
+    "p": [
+     32.75,
+     46.33
+    ]
+   },
+   "lMines": {
+    "t": "STRADE MINATE · DRONI",
+    "color": "red",
+    "at": "ol",
+    "dx": -60,
+    "dy": -24
+   },
+   "lZone": {
+    "t": "TREGUA SOLO QUI",
+    "color": "gold",
+    "at": "zone",
+    "dx": -50,
+    "above_zone": true
+   },
+   "lRoad": {
+    "t": "CONVOGLIO DI AIUTI",
+    "color": "blue",
+    "at": "road",
+    "dx": -60,
+    "dy": -14
+   },
+   "lRoute": {
+    "t": "IL GIRO DEGLI EVACUATI",
+    "color": "gold",
+    "p": [
+     38.9,
+     48.4
+    ],
+    "dx": -40,
+    "dy": 22
+   },
+   "lCh": {
+    "t": "CHERNIHIV · ARRIVO",
+    "color": "green",
+    "at": "ch",
+    "dx": 12,
+    "dy": 4
+   }
+  },
+  "names": {
+   "UKR": {
+    "t": "UCRAINA",
+    "p": [
+     30.6,
+     49.3
+    ]
+   },
+   "RUS": {
+    "t": "RUSSIA",
+    "p": [
+     38.6,
+     52.4
+    ]
+   },
+   "BLR": {
+    "t": "BIELORUSSIA",
+    "p": [
+     27.9,
+     53.4
+    ]
+   },
+   "SEA": {
+    "t": "MAR NERO",
+    "p": [
+     31.6,
+     45.2
+    ]
+   }
+  }
+ },
+ "steps": [
+  {
+   "ch": "La città sul fiume",
+   "k": "Dove",
+   "t": "**[[Oleshky|oleshky]]** è una città della regione di Kherson, nel sud dell'[[Ucraina|ukr]], sulla riva sinistra del fiume **Dnipro**, vicino alla foce nel Mar Nero. Prima della guerra ci vivevano circa **24.000 persone**.",
+   "src": "AP, ArmyInform",
+   "map": {
+    "v": [
+     [
+      28.6,
+      44.6
+     ],
+     [
+      37.2,
+      50.2
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "names"
+    ]
+   }
+  },
+  {
+   "k": "Occupata dal primo giorno",
+   "t": "Le forze russe la prendono nei primi giorni dell'invasione, a **febbraio 2022**. Da allora è sotto occupazione: oltre quattro anni e mezzo.",
+   "src": "AP, ArmyInform",
+   "map": {
+    "v": [
+     [
+      29.6,
+      45.3
+     ],
+     [
+      36.2,
+      48.6
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "ring"
+    ],
+    "relabel": {
+     "lOl": "OLESHKY · OCCUPATA DAL 2022"
+    }
+   }
+  },
+  {
+   "k": "Il fiume diventa il fronte",
+   "t": "Oggi il Dnipro **separa le forze ucraine da quelle russe**: sulla riva destra c'è l'Ucraina, su quella sinistra, dove sta Oleshky, la Russia. Attraversare il fiume vuol dire attraversare la linea del fronte.",
+   "src": "AP",
+   "why": "Perché conta: per uscire da Oleshky verso l'Ucraina la strada più corta, il fiume, è chiusa.",
+   "map": {
+    "v": [
+     [
+      31.5,
+      46.15
+     ],
+     [
+      34.0,
+      47.2
+     ]
+    ],
+    "on": [
+     "front",
+     "ol",
+     "lOl",
+     "lRight",
+     "lLeft",
+     "lFront"
+    ]
+   }
+  },
+  {
+   "k": "La diga",
+   "t": "A **giugno 2023** crolla la diga di Kakhovka, a monte sul Dnipro, e l'acqua invade Oleshky. Un'inchiesta dell'AP indica come causa probabile un'esplosione dell'esercito russo; tra gli abitanti i morti sono centinaia.",
+   "src": "AP",
+   "map": {
+    "v": [
+     [
+      31.5,
+      46.15
+     ],
+     [
+      34.0,
+      47.2
+     ]
+    ],
+    "on": [
+     "river",
+     "flood",
+     "dam",
+     "lDam",
+     "ol",
+     "lOl"
+    ],
+    "relabel": {
+     "lOl": "OLESHKY · ALLAGATA NEL 2023"
+    }
+   }
+  },
+  {
+   "ch": "La trappola",
+   "k": "Chi è rimasto",
+   "t": "In città restano **meno di 2.000 persone**. Niente elettricità da anni, niente gas da oltre un anno; l'ultima consegna regolare di cibo risale al **26 maggio**. Si cucina sul fuoco, l'acqua arriva dai pozzi.",
+   "src": "AP, ONU via ArmyInform",
+   "map": {
+    "v": [
+     [
+      32.25,
+      46.42
+     ],
+     [
+      33.2,
+      46.85
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl"
+    ],
+    "cnt": {
+     "v": "<2.000",
+     "s": "rimasti, su 24.000",
+     "from": 24000,
+     "to": 2000
+    }
+   }
+  },
+  {
+   "k": "Perché non se ne vanno",
+   "t": "Le strade intorno sono **minate** e sorvegliate dai droni. A inizio settembre un convoglio che provava a evacuare è finito su una mina ed è stato colpito dai droni. Per la Croce Rossa un'evacuazione è possibile solo se le due parti la accettano e garantiscono la sicurezza.",
+   "src": "ArmyInform, AP",
+   "why": "Perché conta: senza un accordo tra Mosca e Kyiv nessuno poteva entrare o uscire in sicurezza.",
+   "map": {
+    "v": [
+     [
+      32.25,
+      46.42
+     ],
+     [
+      33.2,
+      46.85
+     ]
+    ],
+    "on": [
+     "front",
+     "ol",
+     "lOl",
+     "mines",
+     "lMines"
+    ]
+   }
+  },
+  {
+   "ch": "La tregua",
+   "k": "L'accordo",
+   "t": "Il **23 ottobre** Russia e Ucraina accettano di fermare i combattimenti **solo intorno a Oleshky**, per far entrare aiuti e uscire i civili. La Casa Bianca dice che a mediare è stata Melania Trump.",
+   "src": "Meduza, Casa Bianca",
+   "why": "Cos'è una tregua locale: un cessate il fuoco limitato a un luogo e a pochi giorni, per uno scopo preciso. Il resto del fronte continua a combattere.",
+   "map": {
+    "v": [
+     [
+      31.5,
+      46.15
+     ],
+     [
+      34.0,
+      47.2
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "zone",
+     "lZone"
+    ]
+   }
+  },
+  {
+   "k": "Sei giorni",
+   "t": "La tregua scatta nella notte del **27 ottobre**, due giorni prima di quanto annunciato, e deve finire alle 22:59 del **1° novembre**. Per il negoziatore ucraino Arakhamia è «la più grande de-escalation dal 2022».",
+   "src": "Meduza, Kyiv Independent",
+   "map": {
+    "v": [
+     [
+      31.5,
+      46.15
+     ],
+     [
+      34.0,
+      47.2
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "zone"
+    ],
+    "cnt": {
+     "v": "6",
+     "s": "giorni di tregua"
+    }
+   }
+  },
+  {
+   "k": "Gli aiuti",
+   "t": "Il **30 ottobre** un convoglio di aiuti entra in città e partono le evacuazioni.",
+   "src": "Al Jazeera",
+   "map": {
+    "v": [
+     [
+      31.4,
+      46.0
+     ],
+     [
+      34.6,
+      47.5
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "road",
+     "lRoad"
+    ],
+    "move": "road",
+    "note": "Percorso indicativo"
+   }
+  },
+  {
+   "k": "Il giro lungo",
+   "t": "Il fiume resta chiuso: Kyiv sperava in un passaggio sul Dnipro, mai confermato. Così chi vuole andare in Ucraina viene portato **prima in [[Russia|rus]]** e poi passa dalla **[[Bielorussia|blr]]**: centinaia di chilometri per arrivare dall'altra parte del fiume.",
+   "src": "Meduza (Financial Times), Kyiv Independent",
+   "map": {
+    "v": [
+     [
+      27.5,
+      45.6
+     ],
+     [
+      41,
+      54.2
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "route",
+     "lRoute",
+     "ch",
+     "xriver",
+     "name:UKR",
+     "name:RUS",
+     "name:BLR"
+    ],
+    "walk": "route",
+    "draw": "route",
+    "note": "Percorso indicativo"
+   }
+  },
+  {
+   "k": "L'arrivo",
+   "t": "Il **1° novembre** [[Zelensky|zelensky]] annuncia che gli evacuati sono entrati in Ucraina dalla regione di **Chernihiv**; Mosca dichiara conclusa la missione. Quanti siano, Kyiv non lo dice.",
+   "src": "Al Jazeera, Kyiv Independent",
+   "map": {
+    "v": [
+     [
+      27.5,
+      45.6
+     ],
+     [
+      41,
+      54.2
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "lOl",
+     "route",
+     "ch",
+     "lCh",
+     "name:UKR",
+     "name:RUS",
+     "name:BLR"
+    ],
+    "walk": "route",
+    "note": "Percorso indicativo"
+   }
+  },
+  {
+   "ch": "Perché conta",
+   "k": "Un test per novembre",
+   "t": "È il primo accordo diretto tra le due parti da mesi. Arriva prima dei **[[colloqui a tre|colloqui]]** tra Stati Uniti, Russia e Ucraina, attesi dopo il 4 novembre. Se ha funzionato qui, si può ripetere altrove? È la domanda che resta aperta.",
+   "src": "Kyiv Independent, Euronews",
+   "map": {
+    "v": [
+     [
+      22,
+      43
+     ],
+     [
+      44,
+      56
+     ]
+    ],
+    "on": [
+     "river",
+     "ol",
+     "ring",
+     "name:UKR",
+     "name:RUS",
+     "name:BLR"
+    ]
+   }
+  }
+ ],
+ "numeri": [
+  {
+   "v": "24.000",
+   "s": "abitanti prima della guerra"
+  },
+  {
+   "v": "<2.000",
+   "s": "rimasti prima della tregua"
+  },
+  {
+   "v": "?",
+   "s": "evacuati: Kyiv non lo dice",
+   "unk": true
+  }
+ ],
+ "divergenze_titolo": "Le fonti non coincidono su due date",
+ "divergenze": [
+  {
+   "t": "Prime partenze",
+   "voci": [
+    "30 ottobre · fonti ufficiali",
+    "29 ottobre · una volontaria ucraina, video TASS"
+   ]
+  },
+  {
+   "t": "Fine della tregua",
+   "voci": [
+    "31 ottobre, ore 23 · Lubinets, via Kyiv Independent",
+    "1° novembre, ore 22:59 · Arakhamia e Lantratova, via Meduza; ISW"
+   ]
+  }
+ ],
+ "letture": {
+  "pro": {
+   "k": "Passo concreto",
+   "t": "Primo accordo diretto da mesi: ha funzionato, senza violazioni segnalate.",
+   "chi": "[[Lubinets|lubinets]], [[Lantratova|lantratova]], Casa Bianca"
+  },
+  "con": {
+   "k": "Non cambia nulla",
+   "t": "Senza osservatori può coprire trasferimenti forzati; Mosca esclude una tregua generale.",
+   "chi": "Razom for Ukraine, [[Peskov|peskov]], [[Kallas|kallas]]"
+  },
+  "analisi": "Lo decide un dato che manca: quante persone sono arrivate davvero in Ucraina."
+ },
+ "osservare": [
+  {
+   "t": "[[Colloqui a tre USA-Russia-Ucraina|colloqui]]",
+   "q": "dopo il 4–10 nov"
+  },
+  {
+   "t": "Il numero degli evacuati",
+   "q": "nessuna fonte"
+  },
+  {
+   "t": "Altre tregue locali sul modello Oleshky",
+   "q": "aperto"
+  }
+ ],
+ "altri": [
+  {
+   "t": "Il quadro della guerra",
+   "k": "dossier",
+   "href": "/#dossier=d-guerra-in-ucraina"
+  }
+ ],
+ "fonti": [
+  {
+   "nome": "AP",
+   "url": "https://abcnews.com/International/wireStory/winter-hunger-looms-residents-trapped-russian-occupied-city-137341209",
+   "nota": "la città prima della tregua (17 ottobre)"
+  },
+  {
+   "nome": "ArmyInform",
+   "url": "https://armyinform.com.ua/en/2026/09/30/oleshky-under-russian-occupation-civilians-face-hunger-blockade-and-no-safe-way-out/",
+   "nota": "(media del ministero della Difesa ucraino), le condizioni in città"
+  },
+  {
+   "nome": "Meduza",
+   "url": "https://meduza.io/en/feature/2026/10/27/trapped-without-food-electricity-or-medicine-civilians-in-occupied-oleshky-finally-have-a-chance-to-escape-but-even-those-wishing-to-go-to-ukraine-will-reportedly-be-taken-to-russia-first",
+   "nota": "l'accordo e il passaggio dalla Russia"
+  },
+  {
+   "nome": "Kyiv Independent",
+   "url": "https://kyivindependent.com/local-ceasefire-in-besieged-oleshky-begins-ukrainian-russian-officials-say/",
+   "nota": "inizio della tregua"
+  },
+  {
+   "nome": "Casa Bianca",
+   "url": "https://www.whitehouse.gov/briefings-statements/2026/10/first-lady-melania-trump-secures-ceasefire-between-russia-and-ukraine-localized-to-oleshky/",
+   "nota": "annuncio (fonte ufficiale)"
+  },
+  {
+   "nome": "Euronews",
+   "url": "https://www.euronews.com/2026/10/27/us-brokered-ceasefire-begins-in-russian-occupied-oleshky-as-strikes-hit-kyiv",
+   "nota": "i civili in città"
+  },
+  {
+   "nome": "ISW",
+   "url": "https://www.criticalthreats.org/analysis/russian-offensive-campaign-assessment-october-27-2026-6ae13feb115c7",
+   "nota": "orari della tregua"
+  },
+  {
+   "nome": "RFE/RL",
+   "url": "https://www.newsgram.com/russia/2026/10/30/russian-drone-ukraine",
+   "nota": "i primi giorni e le critiche"
+  },
+  {
+   "nome": "Al Jazeera",
+   "url": "https://www.aljazeera.com/news/2026/10/30/aid-convoy-enters-besieged-ukrainian-town-oleshky",
+   "nota": "il convoglio"
+  },
+  {
+   "nome": "Kyiv Independent",
+   "url": "https://kyivindependent.com/oleshky-evacuation-begins-but-volunteer-claims-russia-already-moved-people-outside-of-agreed-terms/",
+   "nota": "evacuazioni e transito"
+  },
+  {
+   "nome": "Al Jazeera",
+   "url": "https://www.aljazeera.com/news/2026/11/1/ukrainian-evacuees-from-russian-occupied-oleshky-reunite-with-family",
+   "nota": "l'arrivo"
+  },
+  {
+   "nome": "Kyiv Independent",
+   "url": "https://kyivindependent.com/oleshky-residents-reach-ukrainian-controlled-territory-after-escaping-russian-occupation",
+   "nota": "l'arrivo"
+  }
+ ],
+ "ent": {
+  "oleshky": {
+   "tipo": "Luogo",
+   "nome": "Oleshky",
+   "testo": "Città della regione di Kherson, sulla riva sinistra del Dnipro, occupata dalla Russia; dal 27 ottobre 2026 vi è in vigore una tregua locale per aiutare circa 2.000 civili.",
+   "go": "Apri la scheda nella mappa",
+   "href": "/#g=oleshky"
+  },
+  "ukr": {
+   "tipo": "Paese",
+   "nome": "Ucraina",
+   "testo": "Scheda paese: situazione, tensione e storie collegate.",
+   "go": "Apri nella mappa",
+   "href": "/#p=UKR"
+  },
+  "rus": {
+   "tipo": "Paese",
+   "nome": "Russia",
+   "testo": "Scheda paese: situazione, tensione e storie collegate.",
+   "go": "Apri nella mappa",
+   "href": "/#p=RUS"
+  },
+  "blr": {
+   "tipo": "Paese",
+   "nome": "Bielorussia",
+   "testo": "Scheda paese: situazione, tensione e storie collegate.",
+   "go": "Apri nella mappa",
+   "href": "/#p=BLR"
+  },
+  "zelensky": {
+   "tipo": "Persona",
+   "nome": "Volodymyr Zelensky",
+   "testo": "Presidente dell'Ucraina.",
+   "go": "Apri la scheda in Chi e cosa",
+   "href": "/#g=volodymyr-zelensky"
+  },
+  "lubinets": {
+   "tipo": "Persona",
+   "nome": "Dmytro Lubinets",
+   "testo": "Commissario per i diritti umani del parlamento ucraino (ombudsman); ha coordinato con la commissaria russa Lantratova l'evacuazione da Oleshky.",
+   "go": "Apri la scheda in Chi e cosa",
+   "href": "/#g=dmytro-lubinets"
+  },
+  "lantratova": {
+   "tipo": "Persona",
+   "nome": "Yana Lantratova",
+   "testo": "Commissaria per i diritti umani della Russia, eletta nel maggio 2026; ha coordinato con l'omologo ucraino Lubinets l'evacuazione dei civili da Oleshky.",
+   "go": "Apri la scheda in Chi e cosa",
+   "href": "/#g=yana-lantratova"
+  },
+  "peskov": {
+   "tipo": "Persona",
+   "nome": "Dmitry Peskov",
+   "testo": "Portavoce del Cremlino, voce ufficiale della presidenza russa.",
+   "go": "Apri la scheda in Chi e cosa",
+   "href": "/#g=dmitry-peskov"
+  },
+  "kallas": {
+   "tipo": "Persona",
+   "nome": "Kaja Kallas",
+   "testo": "Alta rappresentante dell'UE per la politica estera e vicepresidente della Commissione; ex prima ministra dell'Estonia.",
+   "go": "Apri la scheda in Chi e cosa",
+   "href": "/#g=kaja-kallas"
+  },
+  "tema": {
+   "tipo": "Tema",
+   "nome": "Guerra in Ucraina e negoziati",
+   "testo": "Guerra Russia-Ucraina, mediazione americana, tregue e sanzioni: tutte le storie, dall'inizio a oggi.",
+   "go": "Apri il tema",
+   "href": "/#t=t-ucraina"
+  },
+  "colloqui": {
+   "tipo": "Calendario",
+   "nome": "Colloqui a tre USA-Russia-Ucraina",
+   "testo": "Secondo il Cremlino riprendono dopo il 4 novembre; secondo Euronews dopo il 10. Nel calendario trovi la data appena è confermata.",
+   "go": "Apri il calendario",
+   "href": "/#calendario"
+  }
+ }
+}
