@@ -31,12 +31,15 @@ h2{margin:0;padding:26px 0 10px;font:600 20px/1.3 "Source Serif 4",Georgia,serif
 .vid select{font:inherit;font-size:14px;padding:9px 8px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);flex:1 1 30%}
 .vid input{font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);width:100%}
 .msg{font-size:14.5px;margin-top:8px;color:var(--acc)}
+.ask{display:grid;gap:8px;padding:18px 0;border-bottom:1px solid var(--line)}.ask textarea{font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);width:100%;resize:vertical}
+.rq{font-size:14px;padding:8px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}.rq i{font-style:normal;color:var(--mut);white-space:nowrap}
 .none{color:var(--mut);padding:14px 0;border-bottom:1px solid var(--line)}
 details{border-bottom:1px solid var(--line)}summary{cursor:pointer;min-height:48px;display:flex;align-items:center;color:var(--acc)}
 details p{color:var(--mut);font-size:14.5px}
 </style></head><body><div class="wrap">
 <div class="top"><a href="/ig/panel">‹ Pannello</a><a href="https://www.readgeopolitics.com/#spiegati" target="_blank" rel="noopener">Sul sito ›</a></div>
-<h1>Spiegati</h1><p class="lead">Le bozze arrivano dalla routine. Apri l'anteprima, poi pubblica: lo Spiegato compare sul sito entro un minuto.</p>
+<h1>Spiegati</h1><p class="lead">Le bozze arrivano dalla routine, due volte a settimana o quando le chiedi qui sotto. Apri l'anteprima, poi pubblica: lo Spiegato compare sul sito entro un minuto, parte un messaggio sul canale Telegram e la mattina dopo entra nella newsletter.</p>
+<div class="ask"><span class="mono">Chiedi uno Spiegato</span><textarea id="spq" rows="2" placeholder="La domanda o il tema, es. «Perché la Polonia litiga sulla Corte costituzionale?»"></textarea><button class="btn pri" id="spqb">Chiedi</button><div class="msg" id="spqm"></div><div id="rq"></div></div>
 <div id="out"><p class="none">Carico…</p></div>
 <details><summary>Come funziona</summary><p>Uno Spiegato pubblicato resta fermo alla sua data: non si riscrive. Sotto, il blocco «Da allora» si riempie da solo con le storie successive del tema. Per toglierlo dal sito usa «Ritira». Il video è facoltativo. «Fai il video» chiede l'iconografica con la voce partendo dallo Spiegato pubblicato: il reel arriva in bozza nel pannello e, quando esce su Instagram, il link compare da solo sotto lo Spiegato come «Guarda in 60 secondi». Puoi anche incollare a mano il link di un reel o di un file video.</p></details>
 </div>
@@ -61,7 +64,11 @@ function card(x){var c=x.check||{err:[],avv:[]},cls=x.stato==="pubblicato"?"p":x
   '<button class="btn pri" data-a="sp_fai_video">'+(v?'Rifai il video':'Fai il video')+'</button></div>'}
  h+='<div class="vid"><span class="mono">Video (facoltativo)</span><input data-v="ig" placeholder="Link del reel su Instagram" value="'+e(x.video&&x.video.ig||"")+'"><input data-v="mp4" placeholder="Oppure link di un file .mp4" value="'+e(x.video&&x.video.mp4||"")+'"><button class="btn" data-a="sp_video">Salva video</button></div><div class="msg"></div></div>';
  return h}
-function load(){api({action:"sp_lista"}).then(function(r){var L=(r&&r.spiegati)||[],o=document.getElementById("out");
+var ST={"in_coda":"in coda","fatta":"bozza pronta","non_fatta":"non fatta"};
+function rq(r){var R=(r&&r.richieste)||[],h=R.map(function(x){return '<div class="rq"><span>'+e(x.q)+(x.esito?'<br><small style="color:var(--mut)">'+e(x.esito)+'</small>':'')+'</span><i>'+(ST[x.stato]||e(x.stato))+(x.stato==="in_coda"?' · <a href="#" data-x="'+e(x.id)+'">annulla</a>':'')+'</i></div>'}).join("");
+ if(!r.routine)h+='<details><summary>Collega la routine, per farla partire subito</summary><p>Senza collegamento la richiesta resta in coda e la routine la tratta al prossimo giro. Per farla partire subito: nella pagina della routine Spiegati crea un «API trigger» e incolla qui id e token.</p><div class="vid"><input id="rt" placeholder="id della routine (trig_…)"><input id="rtk" placeholder="token"><button class="btn" id="rtb">Collega</button></div></details>';
+ document.getElementById("rq").innerHTML=h}
+function load(){api({action:"sp_lista"}).then(function(r){rq(r||{});var L=(r&&r.spiegati)||[],o=document.getElementById("out");
  var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}),R=L.filter(function(x){return x.stato==="ritirato"});
  o.innerHTML='<h2>Da pubblicare · '+B.length+'</h2>'+(B.length?B.map(card).join(""):'<p class="none">Nessuna bozza.</p>')+
   '<h2>Pubblicati · '+P.length+'</h2>'+(P.length?P.map(card).join(""):'<p class="none">Nessuno Spiegato pubblicato dal pannello. (Oleshky è nel sito come file.)</p>')+
@@ -71,6 +78,10 @@ document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]
  if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito?"))return;
  if(a==="sp_video"){o.ig=it.querySelector('[data-v=ig]').value;o.mp4=it.querySelector('[data-v=mp4]').value}
  if(a==="sp_fai_video"){o.opzioni={};it.querySelectorAll("[data-o]").forEach(function(x){o.opzioni[x.dataset.o]=x.value});if(!confirm("Chiedere l'iconografica di questo Spiegato? Parte la routine (10-15 minuti) e il reel arriva in bozza."))return}
- b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":"Fatto ✓";setTimeout(load,600)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+ b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":a==="sp_pubblica"?"Pubblicato ✓"+(r.telegram?" · Telegram: "+r.telegram:""):"Fatto ✓";setTimeout(load,600)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+document.addEventListener("click",function(ev){var t=ev.target;
+ if(t.id==="spqb"){var q=document.getElementById("spq").value.trim(),m=document.getElementById("spqm");if(q.length<5){m.textContent="Scrivi la domanda o il tema.";return}t.disabled=true;api({action:"sp_chiedi",q:q}).then(function(r){t.disabled=false;if(r&&r.ok){document.getElementById("spq").value="";m.textContent="Richiesta inviata ✓ · "+r.fire;load()}else m.textContent="Non riuscito: "+((r&&r.error)||"errore")})}
+ if(t.dataset&&t.dataset.x){ev.preventDefault();api({action:"sp_chiedi_annulla",rid:t.dataset.x}).then(load)}
+ if(t.id==="rtb"){api({action:"sp_routine",rt:document.getElementById("rt").value,token:document.getElementById("rtk").value}).then(function(r){document.getElementById("spqm").textContent=r&&r.ok?"Routine collegata ✓":"Non riuscito: "+((r&&r.error)||"errore");load()})}});
 load();
 </script></body></html>
