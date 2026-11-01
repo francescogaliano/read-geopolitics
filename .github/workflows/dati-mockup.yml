@@ -2,17 +2,16 @@ name: Dati per il mockup (solo lettura)
 on:
   push:
     branches: [mockup-dati]
+    paths: [".github/workflows/dati-mockup.yml"]
+permissions:
+  contents: write
 jobs:
   dati:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - run: |
-          mkdir out
-          curl -sf "https://rg-api.briefinghub.workers.dev/api/data.json" -o out/data.json
-          curl -sf "https://rg-api.briefinghub.workers.dev/api/data.json?parte=oggi" -o out/oggi.json || true
-          ls -la out
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dati
-          path: out
-          retention-days: 1
+          mkdir -p mockup-dati
+          curl -sf "https://rg-api.briefinghub.workers.dev/api/data.json" -o mockup-dati/data.json
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add mockup-dati && git commit -m "dati per il mockup" && git push
