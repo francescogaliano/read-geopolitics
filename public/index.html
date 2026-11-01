@@ -5296,12 +5296,12 @@ function hookWeakLink(){const tl=document.querySelector("#v-timeline .read");if(
 /* ---------- Temi e Dossier uniti: il dossier diventa «Il quadro» del suo tema ---------- */
 S.tlLayer=S.tlLayer||{};S.tlDosOnly=false;
 {const st=document.createElement("style");st.textContent=`
-.lay2{display:flex;margin:4px 0 12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.lay2 button{flex:1 1 0;font:inherit;font-size:14.5px;font-weight:600;color:var(--muted);background:transparent;border:0;padding:9px 6px;cursor:pointer;line-height:1.25}
-.lay2 button small{display:block;font-weight:500;font-size:11.5px;opacity:.85;margin-top:2px}
-.lay2 button+button{border-left:1px solid var(--line)}
-.lay2 button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
-.lay2 button:not([aria-pressed="true"]):hover{color:var(--ink);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+/* modi di lettura del tema: schede sottolineate, la spiegazione del modo scelto sta sotto */.lay2{display:flex;gap:16px;position:relative;margin:4px 0 44px;border-bottom:1px solid var(--line)}
+.lay2 button{flex:none;font:inherit;font-size:14.5px;font-weight:500;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 0 9px;cursor:pointer;line-height:1.25;white-space:nowrap}
+.lay2 button small{display:none}.lay2 button[aria-pressed="true"] small{display:block;position:absolute;left:0;right:0;top:calc(100% + 9px);text-align:left;font-size:13.5px;font-weight:400;color:var(--muted);white-space:normal}
+
+.lay2 button[aria-pressed="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.lay2 button:not([aria-pressed="true"]):hover{color:var(--ink)}
 .lay-q .dos-doc{margin-top:0;border:0;padding:0;background:transparent}
 .lay-q .dos-doc h2{font-size:20px}
 .tl-dosf{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:14px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;margin:2px 0 10px;cursor:pointer}
@@ -5321,7 +5321,7 @@ NAVG.temi.items=NAVG.temi.items.filter(([v])=>v!=="dossier");
 function dosHome(d){return (d.filoni||[]).find(id=>S.threads[id])||null}
 function dosOrphans(){return dosReady().filter(d=>!dosHome(d))}
 function dosOfTheme(tid){const p=S.tlDosPick&&S.tlDosPick[tid],d=p&&S.dossier[p];return d&&d.stato==="pronto"&&(d.filoni||[]).includes(tid)?d:dosForThread(tid)}
-function layHTML(key,L){return `<div class="lay2" role="group" aria-label="Come leggere il tema"><button type="button" data-lay="g" data-lay-t="${esc(key)}" aria-pressed="${L!=="q"}">📅 Giorno per giorno<small>cosa è successo</small></button><button type="button" data-lay="q" data-lay-t="${esc(key)}" aria-pressed="${L==="q"}">🧭 Il quadro<small>il dossier: da dove nasce, chi, scenari</small></button></div>`}
+function layHTML(key,L){return `<div class="lay2" role="group" aria-label="Come leggere il tema"><button type="button" data-lay="g" data-lay-t="${esc(key)}" aria-pressed="${L!=="q"}">📅 Giorno per giorno<small>Cosa è successo, una storia dopo l'altra.</small></button><button type="button" data-lay="q" data-lay-t="${esc(key)}" aria-pressed="${L==="q"}">🧭 Quadro<small>Il dossier: da dove nasce, chi conta, scenari.</small></button></div>`}
 {const _ta=themeArc;themeArc=function(t,evOk,nf){const dz=dosOfTheme(t.id);if(!dz)return _ta.apply(this,arguments);
   const L=S.tlLayer[t.id]||"g";
   if(L==="q")return layHTML(t.id,L)+`<div class="lay-q">${dossierHTML(dz)}</div><button class="acc-close" data-tl-theme="">▲ Chiudi ${esc(thShort(t))}</button>`;
