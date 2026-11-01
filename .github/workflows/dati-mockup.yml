@@ -1,0 +1,18 @@
+name: Dati per il mockup (solo lettura)
+on:
+  push:
+    branches: [mockup-dati]
+jobs:
+  dati:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir out
+          curl -sf "https://rg-api.briefinghub.workers.dev/api/data.json" -o out/data.json
+          curl -sf "https://rg-api.briefinghub.workers.dev/api/data.json?parte=oggi" -o out/oggi.json || true
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dati
+          path: out
+          retention-days: 1
