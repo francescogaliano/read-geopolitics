@@ -112,6 +112,8 @@ function render(){
  h+='</tbody></table><div class="res" id="bres" hidden></div>';
  h+='<details><summary class="mono">Come funziona</summary><p>Ogni ora il guardiano legge l’elenco delle routine con i loro ultimi giri e lo manda qui. Il Worker capisce se una routine si è rotta, non è partita, è ferma o è finita troppo presto rispetto al solito, e ti avvisa su Telegram una volta sola per problema. «Rilancia» mette la routine in coda: il guardiano la fa ripartire al suo prossimo giro (ogni ora, al minuto 7).</p>';
  h+='</details>';
+ var gc=S.guardiano==="collegato";
+ h+='<details'+(gc?'':' open')+'><summary class="mono">'+(gc?'Guardiano collegato · cambia':'Collega il guardiano')+'</summary><p>Serve perché «Rilancia» faccia ripartire subito la routine. Nella pagina della routine «guardiano» aggiungi un trigger API e incolla qui l’id (trig_…) e il token.</p><label class="mono">Id della routine<input id="gid" placeholder="trig_…" autocomplete="off"></label><label class="mono" style="display:block;margin-top:10px">Token<input id="gtk" type="password" autocomplete="off"></label><button class="btn" id="gsv" style="margin-top:12px">Collega</button><div class="res" id="gres" hidden></div></details>';
  $("#main").innerHTML=h;
 }
 document.addEventListener("click",function(ev){
