@@ -9,7 +9,7 @@
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
 body{font:17px/1.6 "IBM Plex Sans",system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .mono{font:500 12px/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
-.tag{display:block;text-align:center;padding:8px 16px;color:var(--gold);border-bottom:1px solid var(--line)}
+.tag{display:block;text-align:center;padding:12px 16px;color:var(--gold);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60;background:var(--bg)}
 .wrap{max-width:720px;margin:0 auto;padding:0 18px}
 a{color:var(--blue)}
 /* testata */
@@ -112,7 +112,8 @@ details.src{border-top:0;margin-top:8px}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
-<a class="mono tag" href="/" style="text-decoration:none;color:var(--gold)">‹ Read Geopolitics</a>
+<a class="mono tag" id="spBack" href="/#spiegati" style="text-decoration:none;color:var(--gold)">‹ Torna a Read Geopolitics</a>
+<script>document.getElementById("spBack").addEventListener("click",function(e){try{var r=document.referrer&&new URL(document.referrer);if(r&&r.origin===location.origin&&history.length>1){e.preventDefault();history.back()}}catch(_){}})</script>
 <div class="wrap">
  <div class="crumb mono"><a href="/#timeline">Temi</a> › <a class="ent" data-e="tema" href="/#timeline">Ucraina</a> › Spiegato</div>
  <div class="mono kick">Spiegato · Ucraina</div>

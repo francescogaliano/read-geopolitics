@@ -129,9 +129,12 @@ function deco(){if(!SP.length)return;
  var pn=document.getElementById("panel");var s=st();if(pn&&s&&s.selCountry){var h2=pn.querySelector("h2");if(h2&&!pn.querySelector(".sp-prow")){var y=SP.filter(function(z){return (z.paesi||[]).indexOf(s.selCountry)>=0})[0];
   if(y)(pn.querySelector(".lvl")||h2).insertAdjacentHTML("afterend",'<a class="sp-prow" href="'+e(y.url)+'"><span><span class="k">💡 Spiegato</span><b>'+e(y.q)+'</b><small>al '+dl(y.data)+' · '+y.min+' min</small></span><span style="color:'+G+'">›</span></a>')}}
  var sv=document.querySelector('[data-sv="glossario"]');if(sv&&!document.querySelector("[data-sp-sv]")){var nb=document.createElement("button");nb.type="button";nb.setAttribute("data-sp-sv","1");nb.setAttribute("aria-current","false");nb.innerHTML='<span class="sn-ic" aria-hidden="true">💡</span>Spiegati';sv.parentNode.insertBefore(nb,sv.nextSibling);
-  nb.onclick=function(){var t=document.querySelector('[data-view="esplora"]');if(t)t.click();setTimeout(function(){document.querySelectorAll("[data-sv]").forEach(function(b){b.setAttribute("aria-current","false")});nb.setAttribute("aria-current","page");section();try{history.replaceState(null,"","#spiegati")}catch(_){}window.scrollTo({top:0})},60)}}
+  nb.onclick=openSection}
  if(LENS&&!document.querySelector("#mapBox .sp-dot"))mapLens(true);
 }
+function openSection(){var s=st();if(!s||s.view!=="esplora"){var t=document.querySelector('[data-view="esplora"]');if(t)t.click();deco()}
+ var nb=document.querySelector("[data-sp-sv]");document.querySelectorAll("[data-sv]").forEach(function(b){b.setAttribute("aria-current","false")});if(nb)nb.setAttribute("aria-current","page");
+ section();try{history.replaceState(null,"","#spiegati")}catch(_){}window.scrollTo({top:0})}
 var LENS=false;
 function mapLens(on){LENS=on;var svg=document.querySelector("#mapBox svg");if(!svg)return;svg.querySelectorAll(".sp-dot").forEach(function(n){n.remove()});svg.classList.toggle("sp-on",!!on);if(!on)return;
  var k=1;try{var tg=svg.querySelector("g[transform]");var m=tg&&tg.getAttribute("transform").match(/scale\(([\d.]+)/);if(m)k=+m[1]}catch(_){}
