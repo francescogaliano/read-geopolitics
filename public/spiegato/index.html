@@ -85,6 +85,8 @@ details.src{border-top:0;margin-top:8px}
 .next button.shr-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:600}
 .next button.shr-row span{color:var(--mut);font-weight:400;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#112243;border:1px solid #2C4670;color:var(--fg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:80;opacity:0;transition:opacity .25s;pointer-events:none}.toast.on{opacity:1}
+.bozza{background:var(--gold);color:#0B1830;padding:6px 10px;border-radius:4px;display:inline-block;margin-top:16px}
+.vidb video{width:100%;max-width:360px;aspect-ratio:9/16;background:#000;border-radius:10px;display:block;margin:0 0 10px}
 .err{padding:60px 18px;text-align:center;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
@@ -121,13 +123,14 @@ document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");v
 
 function page(){var s=SP,h="";
  h+='<div class="wrap"><div class="crumb mono"><a href="/#spiegati">Spiegati</a>'+(s.tema?' › <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Tema")+'</a>':'')+'</div>';
- h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
+ if(s.bozza)h+='<p class="bozza mono">Anteprima della bozza · non è ancora sul sito</p>';h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
  h+='<div class="meta mono"><span>Spiegato al '+dl(s.data,true)+'</span><span>'+s.min+' minuti</span><span>'+(s.fonti||[]).length+' fonti</span>'+(s.fiducia?'<span>Fiducia: '+e(s.fiducia)+'</span>':'')+'<button type="button" class="shr" data-share="1">↗ Condividi</button></div></div>';
  h+='<section class="scrolly"><div class="stage" id="stage"><svg id="map" role="img" aria-label="'+e(s.map_alt||"Mappa del racconto")+'"></svg><div class="prog" id="prog">'+s.steps.map(function(){return "<i></i>"}).join("")+'</div><div class="cap mono" id="cap"></div><div class="cnt" id="cnt"><b id="cntb"></b><span class="mono" id="cnts"></span></div><div class="note" id="note"></div></div><div class="steps">';
  var chn=0,chName="";
  s.steps.forEach(function(st,i){if(st.ch){chn++;chName=st.ch}st._cap=chn+" · "+chName;
   h+='<div class="step'+(st.ch?' first':'')+'" data-s="'+i+'"><div class="t">'+(st.ch?'<span class="ch">Capitolo '+chn+' · '+e(st.ch)+'</span>':'')+'<span class="mono">'+e(st.k)+'</span><p>'+rich(st.t)+'</p>'+(st.src?'<span class="src">'+e(st.src)+'</span>':'')+(st.why?'<span class="why">'+rich(st.why)+'</span>':'')+'</div></div>'});
  h+='</div></section><div class="wrap end-wrap">';
+ if(s.video&&(s.video.mp4||s.video.ig))h+='<section class="blk vidb"><h2>Guarda in 60 secondi</h2>'+(s.video.mp4?'<video src="'+e(s.video.mp4)+'" controls playsinline preload="metadata"></video>':'')+(s.video.ig?'<a class="w" href="'+e(s.video.ig)+'" target="_blank" rel="noopener"><span>Il reel su Instagram</span><i>apri ›</i></a>':'')+'</section>';
  h+='<section class="blk"><h2>Da allora</h2><p class="aft">Questo Spiegato racconta i fatti fino al <b>'+dl(s.data)+'</b> e non viene riscritto. Qui sotto compaiono da soli gli sviluppi successivi'+(s.tema?' del tema <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"")+'</a>':'')+'.</p><div id="aft"><div class="w none"><span>Carico gli sviluppi…</span></div></div></section>';
  if(s.numeri&&s.numeri.length){h+='<section class="blk"><h2>'+(s.numeri.length===3?'In tre numeri':'In numeri')+'</h2><div class="trio">'+s.numeri.map(function(n){return '<div'+(n.unk?' class="unk"':'')+'><b>'+e(n.v)+'</b><span>'+e(n.s)+'</span></div>'}).join("")+'</div>';
   if(s.divergenze&&s.divergenze.length)h+='<details class="more"><summary>'+e(s.divergenze_titolo||("Le fonti non coincidono su "+(s.divergenze.length===1?"un punto":s.divergenze.length+" punti")))+' <span>›</span></summary>'+s.divergenze.map(function(d){return '<div class="dv"><b>'+e(d.t)+'</b>'+d.voci.map(function(v){return '<span>'+e(v)+'</span>'}).join("")+'</div>'}).join("")+'</details>';
@@ -233,7 +236,10 @@ function progress(id){var mx=0,key="rg-sp-"+id;try{mx=+(localStorage.getItem(key
 
 var id=(new URLSearchParams(location.search).get("id")||"").replace(/[^a-z0-9-]/g,"");
 function fail(){document.getElementById("root").innerHTML='<p class="err">Questo Spiegato non è disponibile. <a href="/#spiegati">Vai a tutti gli Spiegati</a></p>'}
-if(!id)fail();else fetch("/spiegato/"+id+".json",{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){SP=j;SP.ent=SP.ent||{};
+var kq=(new URLSearchParams(location.search).get("k")||"").replace(/[^a-f0-9]/g,"");
+function load(){return fetch(RG_API+"/api/spiegato?id="+id+(kq?"&k="+kq:""),{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).catch(function(){
+ return fetch("/spiegato/"+id+".json",{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()})})}
+if(!id)fail();else load().then(function(j){SP=j;SP.ent=SP.ent||{};
  if(SP.tema&&!SP.ent.tema)SP.ent.tema={tipo:"Tema",nome:SP.tema_nome||"",testo:"Tutte le storie del tema, dall'inizio a oggi.",go:"Apri il tema",href:"/#t="+SP.tema};
  page();mapStart();after();progress(id)}).catch(fail);
 })();
@@ -256,7 +262,9 @@ FORMATO di /spiegato/<id>.json (lo scrive la routine; i fatti vengono dalle stor
   "numeri": [{"v","s","unk":true}], "divergenze":[{"t","voci":[…]}], "divergenze_titolo",
   "letture": {"pro":{"k","t","chi"},"con":{"k","t","chi"},"analisi"}, "osservare":[{"t","q"}],
   "altri": [{"t","k","href"}], "fonti":[{"nome","url","nota"}],
-  "ent": { chiave: {"tipo","nome","testo","go","href"} } }
+  "ent": { chiave: {"tipo","nome","testo","go","href"} },
+  "scheda": {"q":"la domanda","ico":"emoji","area","paesi":[ISO3],"storie":[id delle storie collegate],"gl":[voci del glossario],"breve","kw"},
+  "video": {"ig":"link del reel","mp4":"link del file"} (lo mette il pannello) }
 Link del sito: /#p=ISO3 (scheda paese), /#t=filone, /#s=storia, /#g=voce del glossario, /#calendario, /#spiegati.
 -->
 </body></html>
