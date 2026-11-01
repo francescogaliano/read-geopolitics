@@ -1690,6 +1690,8 @@ nav.tabs button .ic{margin-right:.3em}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
 (function(){
+/* Spiegati (spiegati.js): accesso in sola lettura ai dati e a due funzioni del sito */
+window.RG_SP={dati:()=>S,scrivici:t=>{if(window.RG_SP_fbk)window.RG_SP_fbk(t)},traccia:n=>{try{track(n)}catch(_){}}};
 const S={agg:[],dossier:{},dosOpen:null,segnali:{},attori:{},since:null,owner:false,editor:false,brevi:[],sub:"mondo",idee:{},openIdea:null,iflt:{q:"",o:"",s:"",c:"",t:""},prefs:null,settimanali:[],mercati:{},approf:{},agenda:[],glossario:{},richieste:{},db:null,briefings:[],stories:{},threads:{},events:[],countries:{},sources:{},geo:null,view:"briefing",briefId:null,selCountry:null,flt:{r:"",t:"",f:"",a:""}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -5185,7 +5187,7 @@ const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplo
     if(v==="x:perte")go(null);else if(v==="x:area")go({k:"lista",id:"area"});else if(v==="x:tema")go({k:"lista",id:"tema"});else show(v)});
 })();
 /* «Scrivici»: un problema o un'idea, con la pagina da cui si scrive */
-const FBK={tipo:"problema",img:""};
+const FBK={tipo:"problema",img:""};window.RG_SP_fbk=t=>{FBK.tipo=t||"idea";fbkOpen()};
 function fbkDove(){const V={briefing:"Oggi",esplora:"Esplora",timeline:"Temi",osservazione:"In osservazione",dossier:"Dossier",mappa:"Mappa",calendario:"Calendario",archivio:"Archivio",glossario:"Chi e cosa",protagonisti:"Protagonisti"};let d=V[S.view]||S.view||"";try{if(S.view==="briefing"&&S.briefings&&S.briefings[0])d+=" · "+fmtDM(S.briefings[0].data)}catch(_){}try{if(S.view==="esplora"&&X.page)d+=" · "+(X.page.k==="lista"?(X.page.id==="tema"?"Argomenti":"Aree"):X.page.id)}catch(_){}return d}
 function fbkClose(){document.querySelectorAll(".fbk,.fbk-dim").forEach(x=>x.remove());const b=document.getElementById("fbkBtn");if(b)b.classList.remove("on")}
 function fbkOpen(){fbkClose();FBK.img="";const b=document.getElementById("fbkBtn");if(b)b.classList.add("on");const op=(k,l,s)=>`<button type="button" class="fbk-o" data-fbk-t="${k}" aria-pressed="${FBK.tipo===k}">${l}<small>${s}</small></button>`;
@@ -6067,4 +6069,5 @@ setTimeout(pullF,300);
 </script>
 
 <script>(function(){var b=document.getElementById("themeBtn");if(!b)return;function sync(){var d=document.documentElement.getAttribute("data-theme")!=="light";b.textContent=d?"☀️":"🌙";b.title=d?"Passa al tema chiaro":"Passa al tema scuro";b.setAttribute("aria-label",b.title)}sync();b.addEventListener("click",function(){var n=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("rg-theme",n)}catch(e){}sync()})})();</script>
+<script src="/spiegati.js" defer></script>
 </body></html>
