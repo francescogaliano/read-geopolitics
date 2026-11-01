@@ -122,7 +122,7 @@ function deco(){if(!SP.length)return;
   if(pt&&stc.contains(pt))pt.parentNode.insertBefore(l,pt.nextSibling);else{var h=stc.querySelector(".sto-h");if(h)h.appendChild(l);else stc.insertBefore(l,stc.firstChild)}})})});
  document.querySelectorAll(".lay2").forEach(function(l){var b=l.querySelector("[data-lay-t]");if(!b||l.querySelector(".sp-lay"))return;var tema=b.getAttribute("data-lay-t");
   var L=SP.filter(function(x){return x.tema===tema}).sort(function(a,c){return a.data<c.data?-1:1});if(!L.length)return;
-  var x=document.createElement("button");x.type="button";x.className="sp-lay";x.setAttribute("aria-pressed","false");x.innerHTML="📖 Da zero<small>gli Spiegati in ordine</small>";l.insertBefore(x,l.firstChild);
+  var x=document.createElement("button");x.type="button";x.className="sp-lay";x.setAttribute("aria-pressed","false");x.innerHTML="📖 Da zero<small>Gli Spiegati in ordine, per partire da zero.</small>";l.insertBefore(x,l.firstChild);
   x.onclick=function(){var box=l.parentNode;l.querySelectorAll("button").forEach(function(y){y.setAttribute("aria-pressed",y===x?"true":"false")});
    [].forEach.call(box.children,function(c){if(c!==l&&!c.classList.contains("th-ds")&&!c.classList.contains("acc-close")&&!c.classList.contains("sp-path"))c.style.display="none"});
    var p=box.querySelector(":scope > .sp-path");if(!p){p=document.createElement("div");p.className="sp-path";l.parentNode.insertBefore(p,l.nextSibling)}
