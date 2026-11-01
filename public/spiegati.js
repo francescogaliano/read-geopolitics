@@ -147,6 +147,14 @@ function mapLens(on){LENS=on;var svg=document.querySelector("#mapBox svg");if(!s
   gg.addEventListener("click",function(ev){ev.stopPropagation();p.dispatchEvent(new MouseEvent("click",{bubbles:true}))});
   var top=p.parentNode;while(top.parentNode&&top.parentNode.tagName&&top.parentNode.tagName.toLowerCase()==="g")top=top.parentNode;top.appendChild(gg)})}
 
+/* link diretti dalle pagine degli Spiegati: #p=ISO3 (paese), #t=filone, #s=storia, #g=voce del glossario */
+(function(){var m=/^#([ptsg])=([A-Za-z0-9_.~-]+)$/.exec(location.hash||"");if(!m)return;var k=m[1],id=decodeURIComponent(m[2]),n=0;
+ var ready=function(){var s=st();if(!s)return false;if(k==="p")return !!(s.countries&&Object.keys(s.countries).length);if(k==="t")return !!(s.threads&&s.threads[id]);if(k==="s")return !!(s.stories&&s.stories[id]);return !!(s.glossario&&Object.keys(s.glossario).length)};
+ var go=function(){try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}var b=document.createElement("button");b.type="button";b.style.display="none";
+  if(k==="p")b.setAttribute("data-country",id);else if(k==="t")b.setAttribute("data-thread",id);else if(k==="s")b.setAttribute("data-story",id);else{b.className="gl";b.setAttribute("data-gl",id)}
+  document.body.appendChild(b);b.click();setTimeout(function(){b.remove()},500)};
+ var tick=function(){if(ready())go();else if(++n<60)setTimeout(tick,250)};setTimeout(tick,300)})();
+
 fetch("/spiegati.json",{cache:"no-cache"}).then(function(r){return r.ok?r.json():null}).then(function(j){
  SP=(j&&j.spiegati)||[];if(!SP.length)return;
  var mo=new MutationObserver(function(){clearTimeout(mo.t);mo.t=setTimeout(deco,60)});mo.observe(document.body,{childList:true,subtree:true});deco();

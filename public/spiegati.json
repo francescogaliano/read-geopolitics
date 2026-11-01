@@ -7,15 +7,32 @@
       "tit": "Oleshky, la tregua di una sola città",
       "tema": "t-ucraina",
       "area": "Russia ed Europa orientale",
-      "paesi": ["UKR"],
-      "storie": ["s-20261101-03", "s-20261031-03", "s-20261030-03", "s-20261028-05", "s-20261027-03"],
-      "gl": ["oleshky", "yana-lantratova", "dmytro-lubinets"],
+      "paesi": [
+        "UKR"
+      ],
+      "storie": [
+        "s-20261101-03",
+        "s-20261031-03",
+        "s-20261030-03",
+        "s-20261028-05",
+        "s-20261027-03"
+      ],
+      "gl": [
+        "oleshky",
+        "yana-lantratova",
+        "dmytro-lubinets"
+      ],
       "data": "2026-11-01",
       "min": 6,
       "ico": "🕊️",
-      "url": "/spiegato/oleshky.html",
+      "url": "/spiegato/?id=oleshky",
       "breve": "Una città occupata, isolata da fiume, mine e droni: per sei giorni Russia e Ucraina hanno fermato le armi solo lì, per farne uscire i civili.",
-      "cap": ["La città sul fiume", "La trappola", "La tregua", "Perché conta"],
+      "cap": [
+        "La città sul fiume",
+        "La trappola",
+        "La tregua",
+        "Perché conta"
+      ],
       "kw": "oleshky tregua ucraina russia kherson dnipro evacuazione civili"
     }
   ]

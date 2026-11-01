@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spiegato · Read Geopolitics</title><meta name="theme-color" content="#0B1830">
+<meta name="description" content="Le notizie che tornano, spiegate da zero con una mappa. Read Geopolitics.">
+<meta property="og:site_name" content="Read Geopolitics"><meta property="og:type" content="article"><meta property="og:title" content="Spiegato · Read Geopolitics"><meta property="og:description" content="Le notizie che tornano, spiegate da zero con una mappa.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Serif:wght@600&display=swap" rel="stylesheet">
+<style>
+/* Spiegato di Read Geopolitics: modello unico. Il contenuto arriva da /spiegato/<id>.json (formato in fondo al file). */
+:root{color-scheme:dark;--bg:#0B1830;--fg:#EEF2F6;--mut:#9FB0C2;--line:#22324D;--gold:#E8B050;--blue:#86B4EA;--red:#e5786d;--green:#7FD1A0}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font:17px/1.6 "IBM Plex Sans",system-ui,sans-serif;padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.mono{font:500 12px/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.tag{display:block;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));color:var(--gold);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60;background:var(--bg);text-decoration:none}
+.wrap{max-width:720px;margin:0 auto;padding:0 18px}
+a{color:var(--blue)}
+.crumb{padding:16px 0 0}.crumb a{color:var(--mut);text-decoration:none}
+.kick{color:var(--gold);margin:22px 0 8px}
+h1{font:600 clamp(30px,6vw,46px)/1.12 "IBM Plex Serif",Georgia,serif;margin:0 0 14px;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--gold)}
+.dek{font-size:19px;color:#C8D3DE;margin:0 0 16px;max-width:60ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0 20px;border-bottom:1px solid var(--line)}
+.scrolly{position:relative;margin-top:8px}
+.stage{position:sticky;top:42px;height:56vh;z-index:1;background:var(--bg);border-bottom:1px solid var(--line)}
+.stage svg{width:100%;height:100%;display:block}
+.stage .note{position:absolute;left:12px;bottom:10px;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;opacity:0;transition:opacity .4s}
+.stage .cnt{position:absolute;right:14px;top:12px;text-align:right;opacity:0;transition:opacity .4s}
+.stage .cnt b{display:block;font:600 54px/1 "IBM Plex Serif",serif;color:var(--gold)}
+.stage .prog{position:absolute;left:12px;top:12px;display:flex;gap:5px}
+.stage .prog i{width:14px;height:3px;background:var(--line);border-radius:2px;transition:background .3s}
+.stage .prog i.on{background:var(--gold)}
+.stage .cap{position:absolute;left:12px;top:22px;color:var(--gold)}
+.steps{position:relative;z-index:2;padding-bottom:20vh}
+.step{min-height:74vh;display:flex;align-items:flex-start;padding-top:58vh}
+.step.first{min-height:84vh}
+.step .t{background:rgba(11,24,48,.94);border-left:3px solid var(--gold);padding:14px 16px;max-width:520px}
+.step .t .mono{display:block;margin-bottom:6px;color:var(--gold)}
+.step .t p{margin:0}
+.step .t .src{display:block;margin-top:8px;font-size:13px;color:var(--mut)}
+.step .t .ch{display:block;font:600 20px/1.2 "IBM Plex Serif",serif;color:var(--fg);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.step .t .why{display:block;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:14.5px;color:#C8D3DE}
+@media (min-width:980px){
+ .scrolly{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:0 40px;max-width:1180px;margin:8px auto 0;padding:0 24px}
+ .steps{order:1;padding-top:0}.stage{order:2;height:calc(100vh - 42px);border:0}
+ .step{min-height:90vh;align-items:center;padding-top:0}
+}
+.ent{color:inherit;text-decoration:underline dotted;text-decoration-color:var(--gold);text-underline-offset:3px;text-decoration-thickness:2px;cursor:pointer}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#112243;border-top:1px solid #2C4670;padding:16px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -12px 30px rgba(0,0,0,.4)}
+.sheet.on{transform:none}
+.sheet .k{color:var(--gold)}.sheet h3{font:600 22px/1.2 "IBM Plex Serif",serif;margin:4px 0 8px}
+.sheet p{margin:0 0 12px;font-size:15.5px;color:#C8D3DE}
+.sheet .go{display:flex;justify-content:space-between;align-items:center;min-height:48px;border-top:1px solid var(--line);color:var(--blue);text-decoration:none;font-weight:600}
+.sheet .x{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--mut);font-size:26px;min-width:44px;min-height:44px;cursor:pointer}
+@media (min-width:980px){.sheet{left:auto;right:24px;bottom:24px;width:380px;border:1px solid #2C4670;border-radius:10px}}
+h2{font:600 24px/1.25 "IBM Plex Serif",Georgia,serif;margin:0;padding:0 0 12px}
+.blk{padding:28px 0 6px;border-bottom:1px solid var(--line)}
+.aft{margin:0 0 10px;font-size:15.5px;color:#C8D3DE}
+.w{display:flex;justify-content:space-between;gap:12px;align-items:baseline;min-height:46px;padding:10px 0;border-top:1px solid var(--line);font-size:15.5px;color:var(--fg);text-decoration:none}
+.w i{font-style:normal;font:500 12px "IBM Plex Mono",monospace;color:var(--gold);white-space:nowrap}
+.w.none{color:var(--mut)}
+.trio{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;padding-bottom:14px}
+.trio>div{min-width:0}.trio b{display:block;font:600 clamp(24px,7vw,34px)/1 "IBM Plex Serif",serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trio span{display:block;font-size:13.5px;color:var(--mut);margin-top:6px;line-height:1.35}
+.trio .unk b{color:var(--gold)}
+details.more{border-top:1px solid var(--line)}
+details.more summary{list-style:none;cursor:pointer;min-height:48px;display:flex;justify-content:space-between;align-items:center;color:var(--blue);font-size:15px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary span{transition:transform .2s}details.more[open] summary span{transform:rotate(90deg)}
+.dv{display:grid;gap:2px;padding:10px 0 10px 12px;border-left:3px solid var(--blue);margin-bottom:10px}
+.dv b{font-size:15px}.dv span{font-size:14px;color:#C8D3DE}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.vs>div{padding:4px 0 14px}.vs .mono{display:block;margin-bottom:4px}.vs .pro .mono{color:var(--green)}.vs .con .mono{color:var(--red)}
+.vs p{margin:0 0 4px;font-size:15.5px;line-height:1.45}.vs small{color:var(--mut);font-size:12.5px}
+.an{margin:0 0 14px;font-size:15px;color:#C8D3DE}
+.lab{display:inline-block;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--mut);padding:1px 6px;border-radius:3px;margin-right:6px;vertical-align:1px}
+.next{padding-top:12px}
+.next a{display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--fg);font-weight:600}
+.next a span{color:var(--mut);font-weight:400;font-size:14px}
+.src-l{font-size:14px;color:var(--mut);padding:0 0 0 20px}.src-l li{margin:4px 0}
+.end{padding:6px 0 60px;color:var(--mut);font-size:13px}
+details.src{border-top:0;margin-top:8px}
+@media (min-width:980px){.wrap.end-wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}.wrap.end-wrap>details.src{grid-column:1/-1}.trio b{font-size:40px}}
+.shr{all:unset;cursor:pointer;color:var(--gold);font:500 12px/1.4 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
+.next button.shr-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:600}
+.next button.shr-row span{color:var(--mut);font-weight:400;font-size:14px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#112243;border:1px solid #2C4670;color:var(--fg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:80;opacity:0;transition:opacity .25s;pointer-events:none}.toast.on{opacity:1}
+.err{padding:60px 18px;text-align:center;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<a class="mono tag" id="spBack" href="/#spiegati">‹ Torna a Read Geopolitics</a>
+<div id="root"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="false"><button class="x" id="shx" aria-label="Chiudi">×</button><span class="mono k" id="shk"></span><h3 id="sht"></h3><p id="shp"></p><a class="go" id="shg" href="#">Apri <span>›</span></a></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+(function(){
+"use strict";
+var RG_API="https://rg-api.briefinghub.workers.dev";
+var MESI=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+var COL={red:"#e5786d",green:"#7FD1A0",blue:"#86B4EA",gold:"#E8B050",white:"#EEF2F6",grey:"#C8D3DE",muted:"#7E93AE",water:"#4F8FD8"};
+function col(c){return COL[c]||c||COL.white}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function dl(iso,y){var p=String(iso||"").split("-");if(p.length!==3)return "";var d=+p[2];return (d===1?"1°":d)+" "+MESI[+p[1]-1]+(y?" "+p[0]:"")}
+var SP=null;
+/* testo: **grassetto**, [[etichetta|chiave]] = nome cliccabile (chiave in ent) */
+function rich(s){return e(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,function(_,l,k){var d=SP.ent&&SP.ent[k];return d?'<a class="ent" data-e="'+e(k)+'" href="'+e(d.href||"/")+'">'+l+'</a>':l})}
+
+/* condividi: menu del telefono se c'è, altrimenti copia il link */
+function toast(t){var x=document.querySelector(".toast");if(!x){x=document.createElement("div");x.className="toast";document.body.appendChild(x)}x.textContent=t;x.classList.add("on");clearTimeout(x._t);x._t=setTimeout(function(){x.classList.remove("on")},2200)}
+function share(){var url=location.origin+"/spiegato/?id="+encodeURIComponent(SP.id),title=String(SP.titolo).replace(/\*/g,""),text=title+" · lo Spiegato di Read Geopolitics";
+ try{if(window.RG_track)RG_track("spiegato-condiviso")}catch(_){}
+ if(navigator.share){navigator.share({title:title,text:text,url:url}).catch(function(){});return}
+ var done=function(){toast("Link copiato")};
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done,function(){prompt("Copia il link",url)});else prompt("Copia il link",url)}
+document.addEventListener("click",function(ev){if(ev.target.closest("[data-share]")){ev.preventDefault();share()}});
+document.getElementById("spBack").addEventListener("click",function(ev){try{var r=document.referrer&&new URL(document.referrer);if(r&&r.origin===location.origin&&history.length>1){ev.preventDefault();history.back()}}catch(_){}});
+document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");var sh=document.getElementById("sheet");
+ if(a){ev.preventDefault();var d=SP.ent[a.dataset.e];if(!d)return;document.getElementById("shk").textContent=d.tipo||"";document.getElementById("sht").textContent=d.nome||"";document.getElementById("shp").textContent=d.testo||"";var g=document.getElementById("shg");g.firstChild.textContent=(d.go||"Apri")+" ";g.href=a.getAttribute("href");sh.classList.add("on");return}
+ if(ev.target.closest("#shx")||(!ev.target.closest("#sheet")&&sh.classList.contains("on")))sh.classList.remove("on")});
+
+function page(){var s=SP,h="";
+ h+='<div class="wrap"><div class="crumb mono"><a href="/#spiegati">Spiegati</a>'+(s.tema?' › <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Tema")+'</a>':'')+'</div>';
+ h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
+ h+='<div class="meta mono"><span>Spiegato al '+dl(s.data,true)+'</span><span>'+s.min+' minuti</span><span>'+(s.fonti||[]).length+' fonti</span>'+(s.fiducia?'<span>Fiducia: '+e(s.fiducia)+'</span>':'')+'<button type="button" class="shr" data-share="1">↗ Condividi</button></div></div>';
+ h+='<section class="scrolly"><div class="stage" id="stage"><svg id="map" role="img" aria-label="'+e(s.map_alt||"Mappa del racconto")+'"></svg><div class="prog" id="prog">'+s.steps.map(function(){return "<i></i>"}).join("")+'</div><div class="cap mono" id="cap"></div><div class="cnt" id="cnt"><b id="cntb"></b><span class="mono" id="cnts"></span></div><div class="note" id="note"></div></div><div class="steps">';
+ var chn=0,chName="";
+ s.steps.forEach(function(st,i){if(st.ch){chn++;chName=st.ch}st._cap=chn+" · "+chName;
+  h+='<div class="step'+(st.ch?' first':'')+'" data-s="'+i+'"><div class="t">'+(st.ch?'<span class="ch">Capitolo '+chn+' · '+e(st.ch)+'</span>':'')+'<span class="mono">'+e(st.k)+'</span><p>'+rich(st.t)+'</p>'+(st.src?'<span class="src">'+e(st.src)+'</span>':'')+(st.why?'<span class="why">'+rich(st.why)+'</span>':'')+'</div></div>'});
+ h+='</div></section><div class="wrap end-wrap">';
+ h+='<section class="blk"><h2>Da allora</h2><p class="aft">Questo Spiegato racconta i fatti fino al <b>'+dl(s.data)+'</b> e non viene riscritto. Qui sotto compaiono da soli gli sviluppi successivi'+(s.tema?' del tema <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"")+'</a>':'')+'.</p><div id="aft"><div class="w none"><span>Carico gli sviluppi…</span></div></div></section>';
+ if(s.numeri&&s.numeri.length){h+='<section class="blk"><h2>'+(s.numeri.length===3?'In tre numeri':'In numeri')+'</h2><div class="trio">'+s.numeri.map(function(n){return '<div'+(n.unk?' class="unk"':'')+'><b>'+e(n.v)+'</b><span>'+e(n.s)+'</span></div>'}).join("")+'</div>';
+  if(s.divergenze&&s.divergenze.length)h+='<details class="more"><summary>'+e(s.divergenze_titolo||("Le fonti non coincidono su "+(s.divergenze.length===1?"un punto":s.divergenze.length+" punti")))+' <span>›</span></summary>'+s.divergenze.map(function(d){return '<div class="dv"><b>'+e(d.t)+'</b>'+d.voci.map(function(v){return '<span>'+e(v)+'</span>'}).join("")+'</div>'}).join("")+'</details>';
+  h+='</section>'}
+ if(s.letture){var L=s.letture;h+='<section class="blk"><h2>Due letture</h2><div class="vs"><div class="pro"><span class="mono">'+e(L.pro.k)+'</span><p>'+rich(L.pro.t)+'</p><small>'+rich(L.pro.chi)+'</small></div><div class="con"><span class="mono">'+e(L.con.k)+'</span><p>'+rich(L.con.t)+'</p><small>'+rich(L.con.chi)+'</small></div></div>'+(L.analisi?'<p class="an"><span class="lab">Analisi</span>'+rich(L.analisi)+'</p>':'')+'</section>'}
+ if(s.osservare&&s.osservare.length)h+='<section class="blk"><h2>Da osservare</h2>'+s.osservare.map(function(o){return '<div class="w"><span>'+rich(o.t)+'</span><i>'+e(o.q)+'</i></div>'}).join("")+'</section>';
+ h+='<section class="blk next"><button type="button" class="shr-row" data-share="1">↗ Condividi questo Spiegato <span>link ›</span></button>'+(s.tema?'<a href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Il tema")+' <span>storie ›</span></a>':'')+(s.altri||[]).map(function(a){return '<a href="'+e(a.href)+'">'+e(a.t)+' <span>'+e(a.k||"")+' ›</span></a>'}).join("")+'<a href="/#spiegati">Altri Spiegati <span>›</span></a></section>';
+ h+='<details class="more src"><summary>'+(s.fonti||[]).length+' fonti <span>›</span></summary><ol class="src-l">'+(s.fonti||[]).map(function(f){return '<li><a href="'+e(f.url)+'" target="_blank" rel="noopener">'+e(f.nome)+'</a>'+(f.nota?(/^\(/.test(f.nota)?' ':', ')+e(f.nota):'')+'</li>'}).join("")+'</ol><p class="end">'+e(s.nota_mappa||"Mappa schematica; percorsi indicativi.")+'</p></details></div>';
+ document.getElementById("root").innerHTML=h;
+ document.title=String(s.titolo).replace(/\*/g,"")+" · Spiegato · Read Geopolitics";
+}
+
+/* Da allora: storie del tema dopo la data dello Spiegato */
+function after(){var box=document.getElementById("aft");if(!box)return;
+ function show(st){var L=st.filter(function(x){return x.data&&x.data.filone_id===SP.tema&&String(x.data.data||"")>SP.data}).map(function(x){return {id:x.id,t:x.data.titolo,d:x.data.data}});
+  var seen={};L=L.filter(function(x){if(seen[x.id])return false;seen[x.id]=1;return true}).sort(function(a,b){return a.d<b.d?1:-1}).slice(0,6);
+  box.innerHTML=L.length?L.map(function(x){return '<a class="w" href="/#s='+e(x.id)+'"><span>'+e(x.t)+'</span><i>'+dl(x.d)+'</i></a>'}).join(""):'<div class="w none"><span>Ancora nessuno sviluppo dopo il '+dl(SP.data)+'.</span></div>'}
+ if(!SP.tema){box.innerHTML="";return}
+ fetch(RG_API+"/api/data.json?parte=oggi").then(function(r){return r.json()}).then(function(j){show((j.collections&&j.collections.stories)||[])}).catch(function(){box.innerHTML='<div class="w none"><span>Gli sviluppi non sono raggiungibili ora.</span></div>'})}
+
+/* ---------- mappa ---------- */
+var NS="http://www.w3.org/2000/svg",svg,W=0,H=0,proj=d3.geoMercator(),path=d3.geoPath(proj);
+var cur=null,S=-1,ts=0,t0=performance.now(),feats=[],countries=[],lay={},M={},cntAnim=null;
+function el(t,a,p){var x=document.createElementNS(NS,t);for(var k in a)x.setAttribute(k,a[k]);(p||svg).appendChild(x);return x}
+function bboxFeat(v){return {type:"MultiPoint",coordinates:[v[0],v[1],[v[0][0],v[1][1]],[v[1][0],v[0][1]]]}}
+function fit(v){proj.fitExtent([[18,40],[W-18,H-26]],bboxFeat(v))}
+function lerpV(a,b,t){return [[a[0][0]+(b[0][0]-a[0][0])*t,a[0][1]+(b[0][1]-a[0][1])*t],[a[1][0]+(b[1][0]-a[1][0])*t,a[1][1]+(b[1][1]-a[1][1])*t]]}
+function txt(s,fill,size,g){var x=el("text",{"font-family":"IBM Plex Mono, monospace","font-size":size||"12","font-weight":"500","letter-spacing":"1.5",fill:fill||COL.white,opacity:"0","paint-order":"stroke",stroke:"#0B1830","stroke-width":"4"},g||lay.gLab);x.textContent=s;return x}
+var LINE={river:{stroke:COL.water,w:3.5},flood:{stroke:COL.water,w:16,op:.35},front:{stroke:COL.red,w:4,dash:"10 6",flow:1},route:{stroke:COL.gold,w:3},road:{stroke:COL.grey,w:2.5,dash:"6 6"},border:{stroke:COL.red,w:2,dash:"4 4"},sea:{stroke:COL.blue,w:2.5,dash:"2 6"}};
+function build(){
+ svg.innerHTML="";var gLand=el("g",{}),gLow=el("g",{}),gLines=el("g",{}),gPts=el("g",{});lay={};lay.gLab=el("g",{});var F=M.focus||[];
+ countries=feats.map(function(f){return {f:f,e:el("path",{fill:F.indexOf(f.id)>=0?"#1E3760":"#132544",stroke:"#2C4670","stroke-width":"1"},gLand)}});
+ Object.keys(M.lines||{}).forEach(function(k){var d=M.lines[k],st=LINE[d.kind]||LINE.route;
+  lay[k]={type:"line",d:d,e:el("path",{fill:"none",stroke:d.color?col(d.color):st.stroke,"stroke-width":st.w,"stroke-linecap":"round","stroke-linejoin":"round",opacity:"0","stroke-opacity":st.op||1},d.kind==="flood"||d.kind==="river"||d.kind==="front"?gLow:gLines)};
+  if(st.dash)lay[k].e.setAttribute("stroke-dasharray",st.dash);lay[k].flow=!!st.flow;lay[k].pulse=d.kind==="flood"});
+ Object.keys(M.zones||{}).forEach(function(k){var d=M.zones[k];lay[k]={type:"zone",d:d,e:el("circle",{r:"40",fill:"rgba(232,176,80,.10)",stroke:col(d.color||"gold"),"stroke-width":"2","stroke-dasharray":"6 5",opacity:"0"},gLines)}});
+ Object.keys(M.points||{}).forEach(function(k){var d=M.points[k],c=col(d.color||"red"),pts=d.pts||[d.p],es;
+  if(d.kind==="x")es=pts.map(function(){var x=el("text",{"font-size":d.size||"18","font-weight":"700",fill:c,"text-anchor":"middle",opacity:"0"},gPts);x.textContent="×";return x});
+  else if(d.kind==="square")es=pts.map(function(){return el("rect",{width:"12",height:"12",fill:c,stroke:"#0B1830","stroke-width":"2",opacity:"0"},gPts)});
+  else if(d.kind==="ring")es=pts.map(function(){return el("circle",{r:"14",fill:"none",stroke:c,"stroke-width":"2.5",opacity:"0"},gPts)});
+  else es=pts.map(function(){return el("circle",{r:"7",fill:c,stroke:"#0B1830","stroke-width":"2",opacity:"0"},gPts)});
+  lay[k]={type:"point",d:d,pts:pts,es:es}});
+ Object.keys(M.labels||{}).forEach(function(k){var d=M.labels[k];lay[k]={type:"label",d:d,e:txt(d.t,col(d.color||"white"),d.size)}});
+ lay.names={};Object.keys(M.names||{}).forEach(function(k){lay.names[k]=txt(M.names[k].t,COL.muted,"13")});
+ lay.movers=[0,1,2].map(function(){return el("rect",{width:"14",height:"9",rx:"2",fill:COL.blue,opacity:"0"},gPts)});
+ lay.walkers=[0,1,2,3].map(function(){return el("circle",{r:"5",fill:COL.white,opacity:"0"},gPts)});
+}
+function Lp(pts){return "M"+pts.map(function(p){var q=proj(p);return q[0].toFixed(1)+","+q[1].toFixed(1)}).join("L")}
+function along(pts,t){var q=pts.map(proj),len=[0];for(var i=1;i<q.length;i++)len.push(len[i-1]+Math.hypot(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]));var T=len[len.length-1]*Math.max(0,Math.min(1,t));for(i=1;i<q.length;i++)if(len[i]>=T){var u=(T-len[i-1])/(len[i]-len[i-1]||1);return [q[i-1][0]+(q[i][0]-q[i-1][0])*u,q[i-1][1]+(q[i][1]-q[i-1][1])*u]}return q[q.length-1]}
+function at(x,p,dx,dy){var q=proj(p),X=q[0]+(dx||0),w=(x.getComputedTextLength&&x.getComputedTextLength())||0;X=Math.max(8,Math.min(X,W-w-8));x.setAttribute("x",X);x.setAttribute("y",q[1]+(dy||0))}
+function anchor(d){if(d.p)return d.p;var o=d.at&&(M.points||{})[d.at];if(o)return o.p||o.pts[0];var l=d.at&&(M.lines||{})[d.at];if(l)return l.pts[0];var z=d.at&&(M.zones||{})[d.at];if(z)return z.p;return [0,0]}
+function zr(){return Math.max(26,Math.min(80,W/9))}
+function draw(now){var t=((now||performance.now())-t0)/1000,st=SP.steps[S]||{},sm=st.map||{};
+ countries.forEach(function(c){c.e.setAttribute("d",path(c.f)||"")});
+ Object.keys(lay).forEach(function(k){var o=lay[k];if(!o||!o.type)return;
+  if(o.type==="line"){o.e.setAttribute("d",Lp(o.d.pts));if(o.flow)o.e.style.strokeDashoffset=-t*20;if(o.pulse)o.e.setAttribute("stroke-width",10+8*Math.abs(Math.sin(t*1.5)))}
+  else if(o.type==="zone"){var q=proj(o.d.p);o.e.setAttribute("cx",q[0]);o.e.setAttribute("cy",q[1]);o.e.setAttribute("r",zr())}
+  else if(o.type==="point"){o.pts.forEach(function(p,i){var q=proj(p),x=o.es[i];if(o.d.kind==="x"){x.setAttribute("x",q[0]);x.setAttribute("y",q[1]+6)}else if(o.d.kind==="square"){x.setAttribute("x",q[0]-6);x.setAttribute("y",q[1]-6)}else{x.setAttribute("cx",q[0]);x.setAttribute("cy",q[1]);if(o.d.kind==="ring"){var u=(t%1.6)/1.6;x.setAttribute("r",14+10*u);x.setAttribute("stroke-opacity",1-u)}}})}
+  else if(o.type==="label"){var a=anchor(o.d),dy=o.d.dy||0;if(o.d.above_zone)dy=-zr()-8;at(o.e,a,o.d.dx||0,dy)}});
+ for(var k in lay.names)at(lay.names[k],M.names[k].p,-30,0);
+ if(sm.move&&M.lines[sm.move])lay.movers.forEach(function(b,i){var q=along(M.lines[sm.move].pts,Math.min(1,((t-0.3*i)%4)/3.2));b.setAttribute("x",q[0]-7);b.setAttribute("y",q[1]-4.5)});
+ if(sm.walk&&lay[sm.walk]){var ln=lay[sm.walk],len=ln.e.getTotalLength(),pr=sm.draw===sm.walk?Math.min(1,(t-ts)/2.6):1;
+  if(sm.draw===sm.walk){ln.e.style.strokeDasharray=len;ln.e.style.strokeDashoffset=len*(1-pr)}else{ln.e.style.strokeDasharray="";ln.e.style.strokeDashoffset=""}
+  lay.walkers.forEach(function(w,i){var q=along(ln.d.pts,sm.draw===sm.walk?Math.max(0,Math.min(1,pr-0.08*i)):1-0.02*i);w.setAttribute("cx",q[0]);w.setAttribute("cy",q[1])})}
+ if(cntAnim){var u2=Math.min(1,(t-ts)/1.6);document.getElementById("cntb").textContent=u2<1?Math.round(cntAnim.from+(cntAnim.to-cntAnim.from)*u2).toLocaleString("it-IT"):cntAnim.v;if(u2>=1)cntAnim=null}
+}
+function op(x,v){x.style.transition="opacity .5s";x.setAttribute("opacity",v)}
+function setStep(s){if(s===S)return;var st=SP.steps[s],sm=st.map||{},from=cur||sm.v,to=sm.v,a0=performance.now();S=s;ts=(performance.now()-t0)/1000;
+ document.querySelectorAll("#prog i").forEach(function(i,k){i.classList.toggle("on",k<=s)});
+ document.getElementById("cap").textContent=st._cap;
+ var on={};(sm.on||[]).forEach(function(k){on[k]=1});
+ Object.keys(lay).forEach(function(k){var o=lay[k];if(!o||!o.type)return;if(o.type==="point")o.es.forEach(function(x){op(x,on[k]?1:0)});else op(o.e,on[k]?1:0);
+  if(o.type==="label"&&sm.relabel&&sm.relabel[k]!==undefined)o.e.textContent=sm.relabel[k];else if(o.type==="label")o.e.textContent=o.d.t});
+ for(var n in lay.names)op(lay.names[n],on["names"]||on["name:"+n]?1:0);
+ lay.movers.forEach(function(b){op(b,sm.move?1:0)});lay.walkers.forEach(function(w){op(w,sm.walk?1:0)});
+ Object.keys(lay).forEach(function(k){var o=lay[k];if(o&&o.type==="line"&&!(sm.walk===k&&sm.draw===k)&&o.e.style.strokeDasharray&&!LINE[o.d.kind].dash){o.e.style.strokeDasharray="";o.e.style.strokeDashoffset=""}});
+ var cn=document.getElementById("cnt");cn.style.opacity=sm.cnt?1:0;cntAnim=null;
+ if(sm.cnt){document.getElementById("cntb").textContent=sm.cnt.v;document.getElementById("cnts").textContent=sm.cnt.s||"";if(typeof sm.cnt.from==="number"&&typeof sm.cnt.to==="number")cntAnim=sm.cnt}
+ var nt=document.getElementById("note");nt.textContent=sm.note||"";nt.style.opacity=sm.note?1:0;
+ if(!to)return;
+ (function anim(now){var u=Math.min(1,(now-a0)/900),k=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;cur=lerpV(from,to,k);fit(cur);draw(now);if(u<1)requestAnimationFrame(anim)})(a0);
+}
+function loop(now){if(cur)draw(now);requestAnimationFrame(loop)}
+function size(){var r=svg.getBoundingClientRect();W=r.width;H=r.height;svg.setAttribute("viewBox","0 0 "+W+" "+H);if(cur){fit(cur);draw()}}
+function mapStart(){svg=document.getElementById("map");M=SP.map||{};
+ var first=SP.steps.filter(function(x){return x.map&&x.map.v})[0];
+ build();size();cur=first?first.map.v:[[-20,30],[60,60]];fit(cur);setStep(0);requestAnimationFrame(loop);
+ window.addEventListener("resize",size);
+ /* il passo cambia quando arriva la sua scheda di testo (non lo spazio vuoto sopra): mappa e testo restano allineati */
+ var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting)setStep(+x.target.parentNode.dataset.s)})},{rootMargin:matchMedia("(min-width:980px)").matches?"-45% 0px -45% 0px":"-60% 0px -15% 0px"});
+ document.querySelectorAll(".step>.t").forEach(function(x){io.observe(x)});
+ /* paesi: prima la mappa leggera del sito, poi quella più dettagliata */
+ fetch("/geo.json").then(function(r){return r.json()}).then(function(t){if(feats.length)return;feats=topojson.feature(t,t.objects.countries).features;rebuild()}).catch(function(){});
+ if(M.dettaglio!==false)fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json").then(function(r){return r.json()}).then(function(t){
+  var fs=topojson.feature(t,t.objects.countries).features.filter(function(f){return ISO[f.id]}).map(function(f){f.id=ISO[f.id];return f});if(fs.length>100){feats=fs;rebuild()}}).catch(function(){});
+}
+function rebuild(){build();var s=S;S=-1;setStep(s<0?0:s)}
+var ISO={"004":"AFG","008":"ALB","010":"ATA","012":"DZA","016":"ASM","020":"AND","024":"AGO","028":"ATG","031":"AZE","032":"ARG","036":"AUS","040":"AUT","044":"BHS","048":"BHR","050":"BGD","051":"ARM","052":"BRB","056":"BEL","060":"BMU","064":"BTN","068":"BOL","070":"BIH","072":"BWA","076":"BRA","084":"BLZ","090":"SLB","092":"VGB","096":"BRN","100":"BGR","104":"MMR","108":"BDI","112":"BLR","116":"KHM","120":"CMR","124":"CAN","132":"CPV","136":"CYM","140":"CAF","144":"LKA","148":"TCD","152":"CHL","156":"CHN","158":"TWN","170":"COL","174":"COM","178":"COG","180":"COD","184":"COK","188":"CRI","191":"HRV","192":"CUB","196":"CYP","203":"CZE","204":"BEN","208":"DNK","212":"DMA","214":"DOM","218":"ECU","222":"SLV","226":"GNQ","231":"ETH","232":"ERI","233":"EST","234":"FRO","238":"FLK","239":"SGS","242":"FJI","246":"FIN","248":"ALA","250":"FRA","258":"PYF","260":"ATF","262":"DJI","266":"GAB","268":"GEO","270":"GMB","275":"PSE","276":"DEU","288":"GHA","296":"KIR","300":"GRC","304":"GRL","308":"GRD","316":"GUM","320":"GTM","324":"GIN","328":"GUY","332":"HTI","334":"HMD","336":"VAT","340":"HND","344":"HKG","348":"HUN","352":"ISL","356":"IND","360":"IDN","364":"IRN","368":"IRQ","372":"IRL","376":"ISR","380":"ITA","384":"CIV","388":"JAM","392":"JPN","398":"KAZ","400":"JOR","404":"KEN","408":"PRK","410":"KOR","414":"KWT","417":"KGZ","418":"LAO","422":"LBN","426":"LSO","428":"LVA","430":"LBR","434":"LBY","438":"LIE","440":"LTU","442":"LUX","446":"MAC","450":"MDG","454":"MWI","458":"MYS","462":"MDV","466":"MLI","470":"MLT","478":"MRT","480":"MUS","484":"MEX","492":"MCO","496":"MNG","498":"MDA","499":"MNE","500":"MSR","504":"MAR","508":"MOZ","512":"OMN","516":"NAM","520":"NRU","524":"NPL","528":"NLD","531":"CUW","533":"ABW","534":"SXM","540":"NCL","548":"VUT","554":"NZL","558":"NIC","562":"NER","566":"NGA","570":"NIU","574":"NFK","578":"NOR","580":"MNP","583":"FSM","584":"MHL","585":"PLW","586":"PAK","591":"PAN","598":"PNG","600":"PRY","604":"PER","608":"PHL","612":"PCN","616":"POL","620":"PRT","624":"GNB","626":"TLS","630":"PRI","634":"QAT","642":"ROU","643":"RUS","646":"RWA","652":"BLM","654":"SHN","659":"KNA","660":"AIA","662":"LCA","663":"MAF","666":"SPM","670":"VCT","674":"SMR","678":"STP","682":"SAU","686":"SEN","688":"SRB","690":"SYC","694":"SLE","702":"SGP","703":"SVK","704":"VNM","705":"SVN","706":"SOM","710":"ZAF","716":"ZWE","724":"ESP","728":"SSD","729":"SDN","732":"ESH","740":"SUR","748":"SWZ","752":"SWE","756":"CHE","760":"SYR","762":"TJK","764":"THA","768":"TGO","776":"TON","780":"TTO","784":"ARE","788":"TUN","792":"TUR","795":"TKM","796":"TCA","798":"TUV","800":"UGA","804":"UKR","807":"MKD","818":"EGY","826":"GBR","831":"GGY","832":"JEY","833":"IMN","834":"TZA","840":"USA","850":"VIR","854":"BFA","858":"URY","860":"UZB","862":"VEN","876":"WLF","882":"WSM","887":"YEM","894":"ZMB"};
+
+/* progresso di lettura: lo usa la sezione Spiegati del sito */
+function progress(id){var mx=0,key="rg-sp-"+id;try{mx=+(localStorage.getItem(key)||0)}catch(_){}
+ addEventListener("scroll",function(){var h=document.documentElement,p=(h.scrollTop+innerHeight)/h.scrollHeight;if(p>mx+0.02){mx=Math.min(1,p>0.97?1:p);try{localStorage.setItem(key,mx.toFixed(2))}catch(_){}}},{passive:true})}
+
+var id=(new URLSearchParams(location.search).get("id")||"").replace(/[^a-z0-9-]/g,"");
+function fail(){document.getElementById("root").innerHTML='<p class="err">Questo Spiegato non è disponibile. <a href="/#spiegati">Vai a tutti gli Spiegati</a></p>'}
+if(!id)fail();else fetch("/spiegato/"+id+".json",{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){SP=j;SP.ent=SP.ent||{};
+ if(SP.tema&&!SP.ent.tema)SP.ent.tema={tipo:"Tema",nome:SP.tema_nome||"",testo:"Tutte le storie del tema, dall'inizio a oggi.",go:"Apri il tema",href:"/#t="+SP.tema};
+ page();mapStart();after();progress(id)}).catch(fail);
+})();
+</script>
+<!--
+FORMATO di /spiegato/<id>.json (lo scrive la routine; i fatti vengono dalle storie e dalle fonti linkate)
+{ "id", "titolo" (con *parola* in oro), "kicker", "dek", "data" (AAAA-MM-GG, il giorno a cui è fermo), "min", "fiducia",
+  "tema", "tema_nome", "map_alt", "nota_mappa",
+  "map": { "focus": [ISO3 evidenziati], "dettaglio": true,
+           "points": { id: {"p":[lon,lat] | "pts":[[lon,lat],…], "kind":"dot|square|ring|x", "color":"red|green|blue|gold|white|grey"} },
+           "lines":  { id: {"pts":[[lon,lat],…], "kind":"river|flood|front|route|road|border|sea"} },
+           "zones":  { id: {"p":[lon,lat]} },
+           "labels": { id: {"t":"TESTO", "p":[lon,lat] | "at":"id di un punto/linea/zona", "dx","dy","color","size","above_zone":true} },
+           "names":  { ISO3: {"t":"NOME", "p":[lon,lat]} } },
+  "steps": [ { "ch":"nome del capitolo (solo sul primo passo)", "k":"occhiello", "t":"testo con **grassetto** e [[nome|chiave]]",
+               "src":"fonti", "why":"Perché conta: …",
+               "map": { "v":[[lon,lat],[lon,lat]] (inquadratura), "on":[id visibili, "names"], "relabel":{idLabel:"nuovo testo"},
+                        "cnt":{"v":"<2.000","s":"rimasti","from":24000,"to":2000}, "note":"Percorso indicativo",
+                        "move":"id linea (mezzi)", "walk":"id linea (persone)", "draw":"id linea disegnata poco a poco" } } ],
+  "numeri": [{"v","s","unk":true}], "divergenze":[{"t","voci":[…]}], "divergenze_titolo",
+  "letture": {"pro":{"k","t","chi"},"con":{"k","t","chi"},"analisi"}, "osservare":[{"t","q"}],
+  "altri": [{"t","k","href"}], "fonti":[{"nome","url","nota"}],
+  "ent": { chiave: {"tipo","nome","testo","go","href"} } }
+Link del sito: /#p=ISO3 (scheda paese), /#t=filone, /#s=storia, /#g=voce del glossario, /#calendario, /#spiegati.
+-->
+</body></html>
