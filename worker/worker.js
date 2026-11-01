@@ -3,6 +3,7 @@ import KIT_PUNTI from "./kit/puntikit.tgz";
 import KIT_RGSITE from "./kit/rgsite.py";
 import KIT_SALA from "./kit/sala.py";
 import SALA_HTML from "./sala.html";
+import SPIEGATI_HTML from "./spiegati.html";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
@@ -871,6 +872,7 @@ async function panelApi(env, origin, b) {
   if (act === "sond_set") return await sondSet(env, b);
   if (act === "todo_set") return await todoSet(env, b);
   if (String(act || "").startsWith("sala_")) { const r = await salaPanelApi(env, b); if (r) return r; } // v73
+  if (String(act || "").startsWith("sp_")) { const r = await spPanelApi(env, b); if (r) return r; } // v74
   if (act === "post_scelta") return await postScelta(env, b);
   if (act === "sond_pick") return await sondPick(env, b);
   if (act === "sond_mia") return await sondMia(env, b);
@@ -1128,7 +1130,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 </details>
 <div class="card fbn" id="fbn" hidden></div><details class="card" id="svb" hidden><summary class="svh"><span class="lab">Svolte</span><span class="chsum" id="svsum"></span><span class="svn" id="svn" hidden></span><span class="chev">▾</span></summary><div class="svbd"><div id="svl"></div><div class="svg" id="svg" hidden></div></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
-<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><span class="tabsp"></span><button class="tab" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button><a class="tab" href="/ig/sala" style="text-decoration:none">Sala di controllo</a></div></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
+<div class="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><span class="tabsp"></span><button class="tab" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="st">Statistiche</button><button class="tab" data-t="lk">Link</button><a class="tab" href="/ig/sala" style="text-decoration:none">Sala di controllo</a><a class="tab" href="/ig/spiegati" style="text-decoration:none">Spiegati</a></div></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -3867,6 +3869,7 @@ async function route(request, env) {
 
   if (method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   { const sr = (p === "/ig/sala" || p.startsWith("/v1/sala/")) ? await salaRoute(request, env, p, method, url) : null; if (sr) return sr; } // v73: sala di controllo
+  { const sr = (p === "/ig/spiegati" || p === "/v1/spiegati" || p === "/api/spiegati" || p === "/api/spiegato") ? await spRoute(request, env, p, method, url) : null; if (sr) return sr; } // v74: Spiegati
   if (p === "/" || p === "/ping")
     return json({ ok: true, service: "rg-api", time: new Date().toISOString() });
 
@@ -4867,6 +4870,115 @@ async function salaTick(env) { // ogni 15 minuti: avvisi su Telegram, una volta 
   for (const k in sent) if (sent[k] < new Date(Date.now() - 3 * 86400000).toISOString()) { delete sent[k]; ch = true; }
   if (ch) await kvSet(env, "sala:notif", sent);
 }
+
+// ============ v74: Spiegati (bozze dalla routine, Pubblica dal pannello, letti dal sito) ============
+// kv "sp:<id>" = { id, stato: "bozza"|"pubblicato"|"ritirato", spec, creato, aggiornato, pubblicato_il, video, note }
+const SP_ID = /^[a-z0-9][a-z0-9-]{1,60}$/;
+const SITE = "https://www.readgeopolitics.com";
+async function spAll(env) {
+  await kvInit(env);
+  const r = await env.DB.prepare("SELECT v FROM kv WHERE k LIKE 'sp:%' ORDER BY k").all();
+  return (r.results || []).map((x) => { try { return JSON.parse(x.v); } catch (e) { return null; } }).filter(Boolean);
+}
+async function spKey(env, id) { return (await sha256("spiegato|" + id + "|" + (env.WRITE_TOKEN || ""))).slice(0, 20); }
+function spPlain(t) { return String(t || "").replace(/\*\*?/g, "").replace(/\[\[([^\]|]+)\|[^\]]+\]\]/g, "$1"); }
+/* controlli: errori bloccano il salvataggio, avvisi si mostrano nel pannello */
+function spCheck(s) {
+  const err = [], avv = [];
+  if (!s || typeof s !== "object") return { err: ["manca la specifica"], avv };
+  if (!SP_ID.test(String(s.id || ""))) err.push("id non valido (minuscole, numeri e trattini)");
+  for (const k of ["titolo", "dek", "data"]) if (!s[k]) err.push("manca " + k);
+  if (s.data && !/^\d{4}-\d{2}-\d{2}$/.test(s.data)) err.push("data non nel formato AAAA-MM-GG");
+  if (!Array.isArray(s.steps) || s.steps.length < 3) err.push("servono almeno 3 passi");
+  else s.steps.forEach((st, i) => { if (!st || !st.k || !st.t) err.push("passo " + (i + 1) + ": manca k o t"); if (st && !st.src) avv.push("passo " + (i + 1) + ": senza fonte"); });
+  if (!Array.isArray(s.fonti) || s.fonti.length < 3) err.push("servono almeno 3 fonti");
+  else s.fonti.forEach((f, i) => { if (!f || !/^https?:\/\//.test(String(f.url || ""))) err.push("fonte " + (i + 1) + ": url mancante"); });
+  const sc = s.scheda || {};
+  if (!sc.q) err.push("manca scheda.q (la domanda)");
+  if (!Array.isArray(sc.paesi) || !sc.paesi.length) avv.push("scheda.paesi vuoto: niente puntino sulla mappa");
+  if (!s.tema) avv.push("manca tema: niente «Da allora» e niente percorso");
+  const ents = new Set(Object.keys(s.ent || {}));
+  JSON.stringify(s.steps || []).replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, (_, k) => { if (!ents.has(k)) avv.push("nome cliccabile senza scheda: " + k); return ""; });
+  if (s.steps && s.steps.some((st) => !(st.map && st.map.v))) avv.push("alcuni passi senza inquadratura della mappa");
+  return { err, avv: [...new Set(avv)] };
+}
+function spCard(r) {
+  const s = r.spec || {}, sc = s.scheda || {};
+  return { id: r.id, q: sc.q || spPlain(s.titolo), tit: spPlain(s.titolo), tema: s.tema || "", temaNome: s.tema_nome || "", area: sc.area || "", paesi: sc.paesi || [],
+    storie: sc.storie || [], gl: sc.gl || [], data: s.data, min: s.min || 5, ico: sc.ico || "📖", url: "/spiegato/?id=" + r.id, breve: sc.breve || spPlain(s.dek),
+    cap: (s.steps || []).filter((x) => x.ch).map((x) => x.ch), kw: sc.kw || "", video: r.video || null };
+}
+async function spPanelApi(env, b) {
+  const act = b.action;
+  if (act === "sp_lista") {
+    const all = await spAll(env);
+    const out = [];
+    for (const r of all) out.push({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, creato: r.creato, pubblicato_il: r.pubblicato_il || null,
+      passi: ((r.spec && r.spec.steps) || []).length, fonti: ((r.spec && r.spec.fonti) || []).length, check: spCheck(r.spec), video: r.video || null, note: r.note || "",
+      anteprima: SITE + "/spiegato/?id=" + r.id + (r.stato === "pubblicato" ? "" : "&k=" + (await spKey(env, r.id))) });
+    out.sort((a, c) => String(c.creato).localeCompare(String(a.creato)));
+    return { ok: true, spiegati: out };
+  }
+  const id = String(b.id || "");
+  if (!SP_ID.test(id)) return { ok: false, error: "id non valido" };
+  const r = await kvGet(env, "sp:" + id);
+  if (!r) return { ok: false, error: "Spiegato non trovato" };
+  const now = new Date().toISOString();
+  if (act === "sp_pubblica") {
+    const c = spCheck(r.spec); if (c.err.length) return { ok: false, error: "Da correggere: " + c.err.join("; ") };
+    r.stato = "pubblicato"; r.pubblicato_il = r.pubblicato_il || now; r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
+  }
+  if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true }; }
+  if (act === "sp_scarta") { if (r.stato === "pubblicato") return { ok: false, error: "è pubblicato: prima ritiralo" }; await kvDel(env, "sp:" + id); return { ok: true }; }
+  if (act === "sp_video") {
+    const ig = String(b.ig || "").trim(), mp4 = String(b.mp4 || "").trim();
+    if (ig && !/^https:\/\/(www\.)?instagram\.com\//.test(ig)) return { ok: false, error: "link Instagram non valido" };
+    if (mp4 && !/^https:\/\//.test(mp4)) return { ok: false, error: "link del video non valido" };
+    r.video = ig || mp4 ? { ig: ig || null, mp4: mp4 || null } : null; r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
+  }
+  return null;
+}
+async function spRoute(request, env, p, method, url) {
+  if (p === "/ig/spiegati" && method === "GET") {
+    if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
+    return new Response(SPIEGATI_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+  }
+  const pub = { ...CORS, "cache-control": "public, max-age=60" };
+  if (p === "/api/spiegati" && (method === "GET" || method === "HEAD")) {
+    const L = (await spAll(env)).filter((r) => r.stato === "pubblicato").map(spCard).sort((a, c) => String(c.data).localeCompare(String(a.data)));
+    return json({ ok: true, spiegati: L }, 200, { "cache-control": "public, max-age=60" });
+  }
+  if (p === "/api/spiegato" && (method === "GET" || method === "HEAD")) {
+    const id = String(url.searchParams.get("id") || "");
+    if (!SP_ID.test(id)) return fail(400, "id");
+    const r = await kvGet(env, "sp:" + id);
+    const k = url.searchParams.get("k") || "";
+    const ok = r && (r.stato === "pubblicato" || (k && safeEq(k, await spKey(env, id))));
+    if (!ok) return json({ ok: false, error: "not_found" }, 404);
+    if (url.searchParams.get("meta") === "1") return json({ ok: true, titolo: spPlain(r.spec.titolo), dek: spPlain(r.spec.dek), kicker: r.spec.kicker || "Spiegato" }, 200, pub);
+    const spec = { ...r.spec, id: r.id, video: r.video || r.spec.video || null, bozza: r.stato !== "pubblicato" };
+    return json(spec, 200, r.stato === "pubblicato" ? pub : { "cache-control": "no-store" });
+  }
+  if (p !== "/v1/spiegati") return null;
+  if (!authorized(request, env)) return fail(401, "unauthorized");
+  if (method === "GET") return json({ ok: true, spiegati: (await spAll(env)).map((r) => ({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, tema: r.spec && r.spec.tema })) });
+  if (method === "POST") {
+    const b = await request.json().catch(() => null);
+    if (!b || !b.spec) return fail(400, "json", "atteso { spec, note? }");
+    const s = b.spec, c = spCheck(s);
+    if (c.err.length) return json({ ok: false, error: "spec", detail: c.err, avvisi: c.avv }, 400);
+    if (JSON.stringify(s).length > 180000) return fail(413, "too_large");
+    const old = await kvGet(env, "sp:" + s.id);
+    if (old && old.stato === "pubblicato") return fail(409, "pubblicato", "uno Spiegato pubblicato non si riscrive: usa un id nuovo");
+    const now = new Date().toISOString();
+    await kvSet(env, "sp:" + s.id, { id: s.id, stato: "bozza", spec: s, creato: (old && old.creato) || now, aggiornato: now, video: (old && old.video) || null, note: String(b.note || "").slice(0, 1000) });
+    const k = await spKey(env, s.id), ant = SITE + "/spiegato/?id=" + s.id + "&k=" + k;
+    try { await tgPriv(env, "📖 <b>Nuova bozza di Spiegato</b>\n" + esc(spPlain(s.titolo)) + "\n\nAnteprima: " + ant + "\nPubblica: " + url.origin + "/ig/spiegati"); } catch (e) {}
+    return json({ ok: true, id: s.id, stato: "bozza", anteprima: ant, avvisi: c.avv });
+  }
+  return fail(405, "method");
+}
+// ============ fine Spiegati ============
 
 async function salaRoute(request, env, p, method, url) {
   if (p === "/ig/sala" && method === "GET") {

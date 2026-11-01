@@ -155,8 +155,12 @@ function mapLens(on){LENS=on;var svg=document.querySelector("#mapBox svg");if(!s
   document.body.appendChild(b);b.click();setTimeout(function(){b.remove()},500)};
  var tick=function(){if(ready())go();else if(++n<60)setTimeout(tick,250)};setTimeout(tick,300)})();
 
-fetch("/spiegati.json",{cache:"no-cache"}).then(function(r){return r.ok?r.json():null}).then(function(j){
- SP=(j&&j.spiegati)||[];if(!SP.length)return;
+/* elenco: quelli pubblicati dal pannello (database) più quelli scritti come file nel sito; a parità di id vince il database */
+var RG_API="https://rg-api.briefinghub.workers.dev";
+function getJ(u,o){return fetch(u,o).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+Promise.all([getJ(RG_API+"/api/spiegati"),getJ("/spiegati.json",{cache:"no-cache"})]).then(function(rs){var db=(rs[0]&&rs[0].spiegati)||[],fl=(rs[1]&&rs[1].spiegati)||[],ids={};
+ SP=db.concat(fl).filter(function(x){if(!x||!x.id||ids[x.id])return false;ids[x.id]=1;return true});return SP}).then(function(){
+ if(!SP.length)return;
  var mo=new MutationObserver(function(){clearTimeout(mo.t);mo.t=setTimeout(deco,60)});mo.observe(document.body,{childList:true,subtree:true});deco();
  if((location.hash||"")==="#spiegati"){var n=0;var tick=function(){var b=document.querySelector("[data-sp-sv]");if(b){b.click();return}if(n===4){var t=document.querySelector('[data-view="esplora"]');if(t)t.click()}if(++n<40)setTimeout(tick,250)};setTimeout(tick,300)}
 }).catch(function(){});

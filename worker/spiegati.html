@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spiegati</title><meta name="theme-color" content="#111417"><link rel="icon" href="/ig/panel.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F5F1;--fg:#1D2329;--mut:#66707A;--line:#DEDBD3;--acc:#2F5D8A;--ok:#2E8B57;--warn:#B7791F;--bad:#C0392B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368}}
+:root[data-theme="dark"]{--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font:16px/1.5 Inter,system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 60px}
+.mono{font:500 11.5px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.top{display:flex;justify-content:space-between;align-items:center;min-height:52px;border-bottom:1px solid var(--line)}
+.top a{color:var(--fg);text-decoration:none;min-height:44px;display:flex;align-items:center}
+h1{font:600 28px/1.2 "Source Serif 4",Georgia,serif;margin:22px 0 4px}
+.lead{color:var(--mut);margin:0 0 6px}
+h2{margin:0;padding:26px 0 10px;font:600 20px/1.3 "Source Serif 4",Georgia,serif;border-bottom:1px solid var(--line)}
+.it{border-bottom:1px solid var(--line);border-left:4px solid var(--c,var(--line));padding:14px 0 14px 14px}
+.it.b{--c:var(--warn)}.it.p{--c:var(--ok)}.it.r{--c:var(--mut)}
+.it b{font-size:17px;display:block;line-height:1.3}
+.it .m{color:var(--mut);font-size:14px;margin:4px 0 8px}
+.chk{font-size:14px;margin:6px 0 10px;padding-left:10px;border-left:2px solid var(--c2)}.chk.e{--c2:var(--bad)}.chk.a{--c2:var(--warn)}
+.chk li{margin:2px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;flex:1 1 140px;text-align:center;min-height:46px;line-height:46px;font-weight:600;border-radius:8px;border:1px solid var(--line);color:var(--fg);white-space:nowrap;padding:0 12px}
+.btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.del{color:var(--bad)}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.vid{margin-top:10px;display:grid;gap:6px}
+.vid input{font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);width:100%}
+.msg{font-size:14.5px;margin-top:8px;color:var(--acc)}
+.none{color:var(--mut);padding:14px 0;border-bottom:1px solid var(--line)}
+details{border-bottom:1px solid var(--line)}summary{cursor:pointer;min-height:48px;display:flex;align-items:center;color:var(--acc)}
+details p{color:var(--mut);font-size:14.5px}
+</style></head><body><div class="wrap">
+<div class="top"><a href="/ig/panel">‹ Pannello</a><a href="https://www.readgeopolitics.com/#spiegati" target="_blank" rel="noopener">Sul sito ›</a></div>
+<h1>Spiegati</h1><p class="lead">Le bozze arrivano dalla routine. Apri l'anteprima, poi pubblica: lo Spiegato compare sul sito entro un minuto.</p>
+<div id="out"><p class="none">Carico…</p></div>
+<details><summary>Come funziona</summary><p>Uno Spiegato pubblicato resta fermo alla sua data: non si riscrive. Sotto, il blocco «Da allora» si riempie da solo con le storie successive del tema. Per toglierlo dal sito usa «Ritira». Il video (reel) è facoltativo: incolla il link del post Instagram o di un file video e comparirà come «Guarda in 60 secondi».</p></details>
+</div>
+<script>
+function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(function(r){if(r.status===401){location.href="/ig/panel";return {}}return r.json()})}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var MESI=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+function dt(iso){var p=String(iso||"").slice(0,10).split("-");return p.length===3?(+p[2])+" "+MESI[+p[1]-1]:""}
+function card(x){var c=x.check||{err:[],avv:[]},cls=x.stato==="pubblicato"?"p":x.stato==="ritirato"?"r":"b";
+ var h='<div class="it '+cls+'" data-id="'+e(x.id)+'"><b>'+e(x.titolo)+'</b><div class="m">'+(x.stato==="pubblicato"?"Pubblicato il "+dt(x.pubblicato_il):x.stato==="ritirato"?"Ritirato":"Bozza del "+dt(x.creato))+' · fermo al '+dt(x.data)+' · '+x.passi+' passi · '+x.fonti+' fonti</div>';
+ if(x.note)h+='<div class="m">Nota della routine: '+e(x.note)+'</div>';
+ if(c.err.length)h+='<ul class="chk e">'+c.err.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';
+ if(c.avv.length)h+='<ul class="chk a">'+c.avv.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';
+ h+='<div class="row"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">'+(x.stato==="pubblicato"?"Apri":"Anteprima")+'</a>';
+ if(x.stato!=="pubblicato")h+='<button class="btn pri" data-a="sp_pubblica"'+(c.err.length?' disabled':'')+'>Pubblica</button>';
+ if(x.stato==="pubblicato")h+='<button class="btn" data-a="sp_ritira">Ritira</button>';
+ if(x.stato!=="pubblicato")h+='<button class="btn del" data-a="sp_scarta">Scarta</button>';
+ h+='</div><div class="vid"><span class="mono">Video (facoltativo)</span><input data-v="ig" placeholder="Link del reel su Instagram" value="'+e(x.video&&x.video.ig||"")+'"><input data-v="mp4" placeholder="Oppure link di un file .mp4" value="'+e(x.video&&x.video.mp4||"")+'"><button class="btn" data-a="sp_video">Salva video</button></div><div class="msg"></div></div>';
+ return h}
+function load(){api({action:"sp_lista"}).then(function(r){var L=(r&&r.spiegati)||[],o=document.getElementById("out");
+ var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}),R=L.filter(function(x){return x.stato==="ritirato"});
+ o.innerHTML='<h2>Da pubblicare · '+B.length+'</h2>'+(B.length?B.map(card).join(""):'<p class="none">Nessuna bozza.</p>')+
+  '<h2>Pubblicati · '+P.length+'</h2>'+(P.length?P.map(card).join(""):'<p class="none">Nessuno Spiegato pubblicato dal pannello. (Oleshky è nel sito come file.)</p>')+
+  (R.length?'<h2>Ritirati · '+R.length+'</h2>'+R.map(card).join(""):"")})}
+document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]");if(!b)return;var it=b.closest(".it"),id=it.dataset.id,a=b.dataset.a,o={action:a,id:id};
+ if(a==="sp_scarta"&&!confirm("Scartare questa bozza? Non si recupera."))return;
+ if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito?"))return;
+ if(a==="sp_video"){o.ig=it.querySelector('[data-v=ig]').value;o.mp4=it.querySelector('[data-v=mp4]').value}
+ b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":"Fatto ✓";setTimeout(load,600)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+load();
+</script></body></html>
