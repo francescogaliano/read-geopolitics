@@ -4830,6 +4830,10 @@ async function salaInbox(env) { // v73: il guardiano scrive il rapporto in D1 (k
   if (pk && !err) {
     const h = (await sha256(JSON.stringify(pk.t || []))).slice(0, 16);
     if (!Array.isArray(pk.t) || !pk.t.length) err = "il rapporto non contiene routine";
+    else if (pk.v === 2) { // v76: rapporto composto dal guardiano senza script (nessuna impronta): si controlla la forma di ogni riga
+      const bad = pk.t.filter((t) => !t || !/^trig_[A-Za-z0-9]+$/.test(String(t.id || "")) || typeof t.name !== "string" || (t.last_run && t.last_run.fired_at && isNaN(Date.parse(t.last_run.fired_at))) || (t.next_run_at && isNaN(Date.parse(t.next_run_at))));
+      if (bad.length) err = "righe non valide nel rapporto: " + bad.length;
+    }
     else if (h !== pk.h) err = "il rapporto è stato ricopiato male (impronta diversa)";
   }
   if (err) { await kvSet(env, "sala:inbox_done", { updated_at: row.updated_at, err, at: new Date().toISOString() }); return; }
