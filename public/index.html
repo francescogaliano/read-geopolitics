@@ -298,6 +298,36 @@ main{padding-block:24px 64px}
 @media (min-width:900px){.ags[data-mode="story"] .ags-p{width:640px}}
 .ags-tg{padding:10px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);font-size:13px}.ags-tg a{color:var(--accent)}
 @media (min-width:900px){.ags-p{left:auto;top:0;bottom:0;width:440px;max-height:none;border-radius:0;border-top:0;border-left:1px solid var(--line);box-shadow:-16px 0 40px rgba(0,0,0,.3);transform:translateX(100%)}.ags-grab{display:none}.ags-hd{padding-top:16px}}
+
+/* v90: lettura a lista */
+#briefing.rl-on>.in60,#briefing.rl-on>#subtabs,#briefing.rl-on>.subpanel,#briefing.rl-on>.hint,#briefing.rl-on>.b-aside,#briefing.rl-on>.pt-box,#briefing.rl-on>.today,#briefing.rl-on>.vt-day,#briefing.rl-on>.since{display:none!important}
+@media (min-width:1100px){#briefing.read.rl-on{display:block;max-width:760px}}
+.rl{margin:10px 0 28px}
+.rl-meta{font:500 12px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}.rl-meta b{color:var(--ok,#2E8B57);font-weight:600}
+.rl-bar{display:flex;gap:4px;margin:8px 0 6px}.rl-bar i{flex:1;height:3px;border-radius:2px;background:var(--line)}.rl-bar i.on{background:var(--accent)}
+.rl-g{display:flex;justify-content:space-between;align-items:baseline;font:600 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.rl-more{background:none;border:0;color:var(--accent);font:600 12px var(--sans);cursor:pointer;padding:0;text-transform:none;letter-spacing:0}
+.rl-i{display:flex;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 6px;color:var(--ink);font:inherit;cursor:pointer;border-radius:0}
+.rl-i:hover{background:var(--surface-2)}.rl-i.sel{box-shadow:inset 3px 0 0 var(--accent);background:var(--surface-2)}
+.rl-n{flex:0 0 22px;font:600 12px var(--mono,ui-monospace),monospace;color:var(--muted);padding-top:3px}.rl-i.done .rl-n{color:var(--ok,#2E8B57)}
+.rl-b{display:block;min-width:0}.rl-k{display:block;font:600 11.5px/1.3 var(--mono,ui-monospace),monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.rl-h{display:block;font-weight:600;font-size:16.5px;line-height:1.32;margin-top:2px}.rl-i.done .rl-h{color:var(--muted);font-weight:500}
+.rl-w{display:block;font-size:14px;line-height:1.45;color:var(--muted);margin-top:4px}
+.rl-br{display:block}.rl-bi{display:flex;gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 6px;color:var(--ink);font:inherit;font-size:14.5px;line-height:1.4;cursor:pointer}.rl-bi:hover{background:var(--surface-2)}
+.rl-bp{flex:0 0 34px;font:600 11px var(--mono,ui-monospace),monospace;color:var(--muted);padding-top:3px}
+.rl-ts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.rl-t{display:block;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}.rl-t:hover{border-color:var(--accent)}
+.rl-t b{display:block;font-size:14px;line-height:1.3}.rl-t span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (min-width:700px){.rl-ts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ags-tools{display:none;gap:6px;flex:0 0 auto}.ags[data-mode="rl"] .ags-tools{display:flex}
+.ags-tb{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink);font-size:17px;cursor:pointer}
+@media (max-width:899px){.ags-tb[data-rl-full]{display:none}}
+.ags[data-mode="rl"] .ags-hr{justify-content:flex-start}
+.ags[data-mode="rl"] .ags-l{padding:8px 10px 12px}.ags[data-mode="rl"] .rl-box{padding:6px 10px}
+.ags[data-mode="rl"] .ags-tg{display:flex;justify-content:space-between;align-items:center;gap:10px}.ags[data-mode="rl"] .ags-tg:empty{display:none}
+.rl-pv,.rl-nx{background:none;border:0;padding:8px 0;font:600 14px var(--sans);cursor:pointer;color:var(--muted)}.rl-nx{color:var(--accent);text-align:right}
+@media (min-width:900px){.ags[data-mode="rl"] .ags-p{width:min(62vw,900px)}.ags.ags-full[data-mode="rl"] .ags-p{width:100vw}.ags.ags-full[data-mode="rl"] .ags-l{padding:12px max(24px,calc((100vw - 860px)/2))}}
+@media (max-width:899px){.ags[data-mode="rl"] .ags-p{max-height:92vh;max-height:92dvh}}
 @media (prefers-reduced-motion:reduce){.ags-p,.ags-dim{transition:none}}
 .agg-n{font:600 11px ui-monospace,monospace;background:var(--sample-line);color:var(--sample-ink);border-radius:99px;padding:1px 7px;margin-left:8px;letter-spacing:0}.agg-h .agg-tgl{font-size:12.5px;color:var(--accent);white-space:nowrap}
 .agg-fd{position:relative;height:0}.agg-fd::before{content:"";position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(transparent,var(--sample));pointer-events:none}.agg-fd[hidden]{display:none}
@@ -5397,6 +5427,88 @@ function briefAside(){const el=document.getElementById("briefing");if(!el)return
 {const _rb3=renderBriefing;renderBriefing=function(){const r=_rb3.apply(this,arguments);try{in60Kick();briefAside()}catch(e){console.warn("briefing 2 colonne",e)}return r}}
 {const bb=document.getElementById("briefing");if(bb&&window.MutationObserver){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;try{in60Kick();briefAside()}catch(_){}busy=false}).observe(bb,{childList:true})}}
 setTimeout(()=>{try{in60Kick();briefAside()}catch(_){}},0);
+/* v90: «lettura a lista» (proposta A, decisa il 2/11/2026). La pagina del briefing è una lista di tutte le storie (titolo e perché conta);
+   ogni storia, breve o riquadro di «Anche oggi» si apre nel pannello: da destra sul computer, dal basso sul telefono (si chiude con ×, tocco fuori, Esc, trascinando giù o col tasto indietro).
+   Il pannello si allarga a schermo intero o si apre in una pagina a parte. Il vecchio contenuto resta nel DOM, nascosto: i riquadri lo riusano. */
+const RL={key:"rg-lette",ids:[],sel:null,all:false,full:false};
+function rlLette(d){try{return new Set((JSON.parse(localStorage.getItem(RL.key)||"{}")[d])||[])}catch(_){return new Set()}}
+function rlSegna(d,id){try{const o=JSON.parse(localStorage.getItem(RL.key)||"{}");const a=new Set(o[d]||[]);a.add(id);o[d]=[...a];const k=Object.keys(o).sort();while(k.length>14)delete o[k.shift()];localStorage.setItem(RL.key,JSON.stringify(o))}catch(_){}}
+function rlKick(s){const iso=(s.paesi||[]).filter(p=>/^[A-Z]{3}$/.test(p)).slice(0,2);const th=S.threads[s.filone_id];return {fl:iso.map(flag).join(" "),k:th?thShort(th):iso.map(cname).join(" · ")}}
+function rlTiles(el){const T=[];
+  el.querySelectorAll(".today .trow[data-since]").forEach(r=>{const k=r.dataset.since;const b=r.querySelector(".tt b"),s=r.querySelector(".ts"),i=r.querySelector(".ti");T.push({id:"since:"+k,ic:i?i.textContent:"",t:b?b.textContent:k,s:s?s.textContent:""})});
+  const vt=el.querySelector(":scope>.vt-day");if(vt)T.push({id:"vote",ic:"🗳️",t:"La domanda del giorno",s:clip((vt.querySelector(".vd-ctx")||vt).textContent.trim(),60)});
+  const pt=el.querySelector(".pt-box");if(pt)T.push({id:"perte",ic:"★",t:"Per te",s:"le storie dei temi che segui"});
+  el.querySelectorAll("#subtabs [data-sub]").forEach(t=>{const k=t.dataset.sub;if(k==="mondo"||k==="italia")return;const n=t.querySelector(".n");const ic=t.querySelector(".ic");const lab=t.textContent.replace(n?n.textContent:"","").replace(ic?ic.textContent:"","").trim();T.push({id:"sub:"+k,ic:ic?ic.textContent:"",t:lab,s:n?(k==="log"?n.textContent+" dubbi":n.textContent):""})});
+  return T}
+function rlBuild(){const el=document.getElementById("briefing");const b=typeof currentBrief==="function"?currentBrief():null;if(!el||!b||!S.stories)return;
+  el.classList.add("rl-on");
+  const old=el.querySelector(":scope>.rl");if(old)old.remove();
+  const ok=id=>S.stories[id]&&!ambOff(S.stories[id]);
+  const mon=(b.storie_mondo||[]).filter(ok),ita=(b.storie_italia||[]).filter(ok);RL.ids=mon.concat(ita);
+  const lette=rlLette(b.data),G=!!S.guest;
+  const item=(id,n,lock)=>{const s=S.stories[id],kk=rlKick(s),done=lette.has(id);
+    return `<button type="button" class="rl-i${done?" done":""}" data-rl="${esc(id)}"${lock?' data-rl-lock="1"':""}><span class="rl-n">${lock?"🔒":done?"✓":String(n).padStart(2,"0")}</span><span class="rl-b"><span class="rl-k">${kk.fl?`<span class="fl" aria-hidden="true">${kk.fl}</span> `:""}${esc(kk.k)}</span><span class="rl-h">${esc(s.titolo)}</span>${done?"":`<span class="rl-w">${esc(clip(s.perche_conta||"",170))}</span>`}</span></button>`};
+  const brevi=(S.brevi||[]).filter(x=>x.data===b.data||x.briefing===b.id).filter(x=>!(AMBITI[x.ambito]&&prefs().ambiti[x.ambito]==="spento"));
+  const nl=RL.ids.filter(id=>lette.has(id)).length;
+  const min=Math.max(5,Math.round(RL.ids.length*1.3));
+  const T=rlTiles(el);
+  const h=`<section class="rl" aria-label="Le storie di oggi">
+   <div class="rl-meta">${RL.ids.length} storie${brevi.length?" · "+brevi.length+" brevi":""} · circa ${min} minuti${nl?` · <b>${nl} ${nl===1?"letta":"lette"}</b>`:""}</div>
+   <div class="rl-bar" aria-hidden="true">${RL.ids.map(id=>`<i${lette.has(id)?' class="on"':""}></i>`).join("")}</div>
+   ${mon.length?`<div class="rl-g">Mondo · ${mon.length}</div>${mon.map((id,i)=>item(id,i+1,G&&i>=3)).join("")}`:""}
+   ${ita.length?`<div class="rl-g">Italia · ${ita.length}</div>${ita.map((id,i)=>item(id,mon.length+i+1,G)).join("")}`:""}
+   ${brevi.length?`<div class="rl-g"><span>In breve · ${brevi.length}</span>${brevi.length>4?`<button type="button" class="rl-more" data-rl-all>${RL.all?"meno":"tutte"} ›</button>`:""}</div><div class="rl-br">${brevi.slice(0,RL.all?99:4).map((x,i)=>`<button type="button" class="rl-bi" data-rl-br="${i}"><span class="rl-bp">${esc(((x.paesi||[])[0]||"").slice(0,3))}</span><span>${esc(clip(x.titolo||x.testo||"",140))}</span></button>`).join("")}</div>`:""}
+   ${T.length?`<div class="rl-g">Anche oggi</div><div class="rl-ts">${T.map(t=>`<button type="button" class="rl-t" data-rl-t="${esc(t.id)}"><b>${esc(t.ic)} ${esc(t.t)}</b>${t.s?`<span>${esc(t.s)}</span>`:""}</button>`).join("")}</div>`:""}
+  </section>`;
+  const head=el.querySelector(":scope>.brief-head"),agg=el.querySelector(":scope>#aggiornamenti");const after=agg||head;
+  if(after)after.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h);
+  try{glossify(el.querySelector(":scope>.rl"))}catch(_){}
+  RL.sig=T.map(t=>t.id).join("|")}
+function rlTools(w){if(w.querySelector(".ags-tools"))return;const x=w.querySelector(".ags-x");const d=document.createElement("span");d.className="ags-tools";
+  d.innerHTML=`<button type="button" class="ags-tb" data-rl-full aria-label="Schermo intero" title="Schermo intero">⤢</button><button type="button" class="ags-tb" data-rl-new aria-label="Apri in una pagina" title="Apri in una pagina">↗</button>`;x.parentNode.insertBefore(d,x)}
+function rlShow(w){AGS.y=window.scrollY;w.hidden=false;document.body.style.overflow="hidden";AGS.open=true;w.classList.toggle("ags-full",RL.full);
+  if(!AGS.pushed){try{history.pushState({ags:1},"",location.href);AGS.pushed=true}catch(e){}}
+  requestAnimationFrame(()=>{w.classList.add("on");w.querySelector(".ags-l").scrollTop=0;try{vtLoad();vtFill()}catch(e){}try{ppFit()}catch(e){}try{w.querySelector(".ags-x").focus({preventScroll:true})}catch(e){}})}
+function rlOpen(id){const b=currentBrief();const s=S.stories[id];if(!b||!s)return false;const i=RL.ids.indexOf(id);if(i<0)return false;
+  const w=agsEl();rlTools(w);w.dataset.mode="rl";RL.sel=id;const kk=rlKick(s);
+  w.querySelector(".ags-cal").innerHTML="";w.querySelector(".ags-t").textContent=`Storia ${i+1} di ${RL.ids.length}`;
+  w.querySelector(".ags-d").textContent=(kk.fl?kk.fl+" ":"")+kk.k;
+  w.querySelector(".ags-l").innerHTML=`<div class="ags-story">${storyHTML(s,i+1)}</div>`;
+  try{glossify(w.querySelector(".ags-l"))}catch(_){}
+  const n=RL.ids.length,p=RL.ids[(i-1+n)%n],q=RL.ids[(i+1)%n],nm=x=>esc(clip(rlKick(S.stories[x]).k,28));
+  w.querySelector(".ags-tg").innerHTML=`<button type="button" class="rl-pv" data-rl-go="${esc(p)}">‹ ${nm(p)}</button><button type="button" class="rl-nx" data-rl-go="${esc(q)}">Prossima: ${nm(q)} ›</button>`;
+  rlSegna(b.data,id);const it=document.querySelector(`.rl-i[data-rl="${CSS.escape(id)}"]`);if(it&&!it.classList.contains("done")){it.classList.add("done");const nn=it.querySelector(".rl-n");if(nn)nn.textContent="✓";const ww=it.querySelector(".rl-w");if(ww)ww.remove()}
+  document.querySelectorAll(".rl-i.sel").forEach(x=>x.classList.remove("sel"));if(it)it.classList.add("sel");
+  if(AGS.open&&w.classList.contains("on")){w.querySelector(".ags-l").scrollTop=0;try{vtLoad();vtFill()}catch(e){}return true}
+  rlShow(w);return true}
+function rlOpenBox(title,sub,html){const w=agsEl();rlTools(w);w.dataset.mode="rl";RL.sel=null;w.querySelector(".ags-cal").innerHTML="";w.querySelector(".ags-t").textContent=title;w.querySelector(".ags-d").textContent=sub||"";
+  w.querySelector(".ags-l").innerHTML=`<div class="rl-box">${html}</div>`;try{glossify(w.querySelector(".ags-l"))}catch(_){}
+  w.querySelector(".ags-tg").innerHTML="";if(AGS.open&&w.classList.contains("on")){w.querySelector(".ags-l").scrollTop=0;return}rlShow(w)}
+function rlTile(id){const el=document.getElementById("briefing");const b=currentBrief();if(!el||!b)return;
+  if(id.startsWith("since:")){const k=id.slice(6);const r=el.querySelector(`.today .trow[data-since="${CSS.escape(k)}"]`),p=el.querySelector(`.today .tbody[data-since-p="${CSS.escape(k)}"]`);if(!p)return;rlOpenBox((r&&r.querySelector(".tt b")||{}).textContent||"Oggi",fmtDate(b.data,true),p.innerHTML);return}
+  if(id==="vote"){const v=el.querySelector(":scope>.vt-day");if(v)rlOpenBox("La domanda del giorno",fmtDate(b.data,true),v.outerHTML);try{vtFill()}catch(e){}return}
+  if(id==="perte"){const v=el.querySelector(".pt-box");if(v)rlOpenBox("Per te","le storie dei temi che segui",v.innerHTML);return}
+  if(id.startsWith("sub:")){const k=id.slice(4);const p=el.querySelector(`.subpanel[data-panel="${CSS.escape(k)}"]`);const t=el.querySelector(`#subtabs [data-sub="${CSS.escape(k)}"]`);if(!p)return;const c=p.cloneNode(true);c.querySelectorAll(".sub-next").forEach(x=>x.remove());c.removeAttribute("hidden");
+    rlOpenBox(t?t.textContent.replace(/\d+$/,"").trim():"Oggi",fmtDate(b.data,true),c.innerHTML)}}
+document.addEventListener("click",e=>{
+  const it=e.target.closest(".rl-i[data-rl]");if(it){e.preventDefault();if(it.dataset.rlLock){showLock({what:"storie"});return}rlOpen(it.dataset.rl);return}
+  const go=e.target.closest("[data-rl-go]");if(go){e.preventDefault();rlOpen(go.dataset.rlGo);return}
+  const t=e.target.closest("[data-rl-t]");if(t){e.preventDefault();rlTile(t.dataset.rlT);return}
+  const br=e.target.closest("[data-rl-br]");if(br){e.preventDefault();const b=currentBrief();const L=(S.brevi||[]).filter(x=>x.data===b.data||x.briefing===b.id).filter(x=>!(AMBITI[x.ambito]&&prefs().ambiti[x.ambito]==="spento"));const x=L[+br.dataset.rlBr];if(x)rlOpenBox("In breve",fmtDate(b.data,true),`<ul class="brevi">${breveHTML(x)}</ul>`);return}
+  if(e.target.closest("[data-rl-all]")){e.preventDefault();RL.all=!RL.all;rlBuild();return}
+  if(e.target.closest("[data-rl-full]")){e.preventDefault();RL.full=!RL.full;const w=AGS.el;if(w)w.classList.toggle("ags-full",RL.full);const fb=w&&w.querySelector("[data-rl-full]");if(fb){fb.textContent=RL.full?"⤡":"⤢";fb.title=RL.full?"Riduci":"Schermo intero"}return}
+  if(e.target.closest("[data-rl-new]")){e.preventDefault();const u=location.pathname+"?pieno=1"+(RL.sel?"#s="+encodeURIComponent(RL.sel):"");window.open(u,"_blank","noopener");return}
+},true);
+/* da qualunque punto del sito, una storia del briefing che si sta leggendo si apre nel pannello */
+{const _os=openStory;openStory=function(id){
+  if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){showLock({what:"storie"});return}}
+  const cur=typeof currentBrief==="function"?currentBrief():null;
+  if(cur&&(cur.storie_mondo||[]).concat(cur.storie_italia||[]).includes(id)){if(S.view!=="briefing")show("briefing");if(!document.querySelector("#briefing>.rl"))rlBuild();if(rlOpen(id))return}
+  return _os.apply(this,arguments)}}
+{const _rb4=renderBriefing;renderBriefing=function(){const r=_rb4.apply(this,arguments);try{rlBuild()}catch(e){console.warn("lettura a lista",e)}return r}}
+{const bb=document.getElementById("briefing");if(bb&&window.MutationObserver){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;try{const el=document.getElementById("briefing");if(el.querySelector(":scope>.brief-head")&&(!el.querySelector(":scope>.rl")||rlTiles(el).map(t=>t.id).join("|")!==RL.sig))rlBuild()}catch(_){}setTimeout(()=>{busy=false},0)}).observe(bb,{childList:true,subtree:false})}}
+setTimeout(()=>{try{rlBuild()}catch(_){}},0);
+{try{if(new URLSearchParams(location.search).get("pieno")==="1")RL.full=true}catch(_){}}
 (function mapSearch(){const tm=document.getElementById("tmach");if(!tm||document.getElementById("mapQ"))return;
   const w=document.createElement("div");w.className="map-q";w.innerHTML=`<label for="mapQ" class="sr">Cerca un paese</label><input id="mapQ" list="mapQl" autocomplete="off" placeholder="Cerca un paese… es. Sudan, Taiwan, Venezuela"><datalist id="mapQl"></datalist><span class="mq-msg" hidden></span>`;
   tm.parentNode.insertBefore(w,tm);
