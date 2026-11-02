@@ -315,6 +315,8 @@ main{padding-block:24px 64px}
 .rl-w{display:block;font-size:14px;line-height:1.45;color:var(--muted);margin-top:4px}
 .rl-br{display:block}.rl-bi{display:flex;gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 6px;color:var(--ink);font:inherit;font-size:14.5px;line-height:1.4;cursor:pointer}.rl-bi:hover{background:var(--surface-2)}
 .rl-bp{flex:0 0 34px;font:600 11px var(--mono,ui-monospace),monospace;color:var(--muted);padding-top:3px}
+/* v97: brevi con bandiera e colore dell'area, più leggero delle storie */
+.rl-bi{border-left:3px solid var(--arc,transparent);padding-left:9px}.rl-bi .rl-bp{display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex:0 0 38px;padding-top:2px}.rl-bf.fl{font-size:19px;line-height:1;margin:0;letter-spacing:0}
 .rl-ts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 .rl-t{display:block;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}.rl-t:hover{border-color:var(--accent)}
 .rl-t b{display:block;font-size:14px;line-height:1.3}.rl-t span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -5605,7 +5607,7 @@ function rlBuild(){const el=document.getElementById("briefing");const b=typeof c
    ${used.size>1?`<div class="rl-leg">${[...used].map(([k,n])=>`<span class="ar-${k}"><i aria-hidden="true"></i>${esc(n)}</span>`).join("")}</div>`:""}
    ${pt?PTL:`${mon.length?`<div class="rl-g">Mondo · ${mon.length}</div>${LI}`:""}
    ${ita.length?`<div class="rl-g">Italia · ${ita.length}</div>${LT}`:""}`}
-   ${brevi.length?`<div class="rl-g"><span>In breve · ${brevi.length}</span>${brevi.length>4?`<button type="button" class="rl-more" data-rl-all>${RL.all?"meno":"tutte"} ›</button>`:""}</div><div class="rl-br">${brevi.slice(0,RL.all?99:4).map((x,i)=>`<button type="button" class="rl-bi" data-rl-br="${i}"><span class="rl-bp">${esc(((x.paesi||[])[0]||"").slice(0,3))}</span><span>${esc(clip(x.titolo||x.testo||"",140))}</span></button>`).join("")}</div>`:""}
+   ${brevi.length?`<div class="rl-g"><span>In breve · ${brevi.length}</span>${brevi.length>4?`<button type="button" class="rl-more" data-rl-all>${RL.all?"meno":"tutte"} ›</button>`:""}</div><div class="rl-br">${brevi.slice(0,RL.all?99:4).map((x,i)=>(()=>{const iso=((x.paesi||[])[0]||"").slice(0,3),ar=rlArea(x,false),fg=iso?flag(iso):"";return `<button type="button" class="rl-bi${ar?" ar-"+ar[0]:""}" data-rl-br="${i}"><span class="rl-bp">${fg?`<span class="rl-bf fl" aria-hidden="true">${fg}</span>`:""}${esc(iso)}</span>`})()+`<span>${esc(clip(x.titolo||x.testo||"",140))}</span></button>`).join("")}</div>`:""}
    ${rlAnche(b,T)}
   </section>`;
   const head=el.querySelector(":scope>.brief-head"),agg=el.querySelector(":scope>#aggiornamenti");const after=agg||head;
