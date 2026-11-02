@@ -328,6 +328,32 @@ main{padding-block:24px 64px}
 .ar-it{--arc:#E879A6}.ar-eu{--arc:#5B8FD8}.ar-ru{--arc:#D9564A}.ar-mo{--arc:#E0962A}.ar-af{--arc:#3FAE6C}.ar-as{--arc:#9B6FD6}.ar-am{--arc:#2BA5B5}
 .rl-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 0;font-size:12.5px;color:var(--muted)}.rl-leg span{display:inline-flex;align-items:center;gap:6px}.rl-leg i{width:10px;height:10px;border-radius:2px;background:var(--arc)}
 .rl-i.done{border-left-color:color-mix(in srgb,var(--arc,transparent) 45%,transparent)}
+/* v93: «Anche oggi» a righe */
+.rl-s{position:relative;border-bottom:1px solid var(--line);padding:14px 4px 14px 16px}
+.rl-s::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:2px;background:var(--rlc,var(--line))}
+.rl-sh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}.rl-sh b{font:600 17px/1.3 var(--serif,Georgia),serif;color:var(--ink)}.rl-sh span{font:500 11px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rl-sl{margin:6px 0 4px;font-size:14px;line-height:1.45;color:var(--muted)}.rl-sl .ok,.rl-s .ok{color:var(--ok,#2E8B57)}.rl-sl .ko,.rl-s .ko{color:var(--low,#C2453A)}
+.rl-r{display:flex;gap:10px;align-items:flex-start;width:100%;min-height:44px;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:10px 2px;color:var(--ink);font:inherit;font-size:14.5px;line-height:1.42;cursor:pointer}
+div.rl-r{cursor:default}.rl-sh+.rl-r,.rl-sl+.rl-r{border-top:0}button.rl-r:hover{background:var(--surface-2)}
+.rl-ic{flex:0 0 22px;text-align:center;font-weight:700}.rl-ic.ok{color:var(--ok,#2E8B57)}.rl-ic.ko{color:var(--low,#C2453A)}.rl-ic.mu{color:var(--muted)}
+.rl-tx{flex:1;min-width:0}.rl-tx small{display:block;font-size:13px;line-height:1.4;color:var(--muted);margin-top:3px}.rl-ar{flex:none;color:var(--muted)}
+.rl-k2{display:block;font:600 10.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.rl-v{font:600 10.5px var(--mono,ui-monospace),monospace;letter-spacing:.06em;text-transform:uppercase;margin-right:7px}.rl-v.v-escalation{color:#D9564A}.rl-v.v-distensione{color:#3FAE6C}.rl-v.v-svolta{color:#E0962A}.rl-v.v-nuovo{color:#5B8FD8}.rl-v.v-stallo{color:var(--muted)}
+.rl-m2{display:block;background:none;border:0;color:var(--accent);font:600 13.5px var(--sans);padding:10px 2px;min-height:40px;cursor:pointer;text-align:left}
+.rl-bet{margin-top:10px;padding-top:12px;border-top:1px dashed var(--line)}
+.rl-bk{font:600 11px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:#E0962A}
+.rl-bq{font:600 17px/1.35 var(--serif,Georgia),serif;margin:4px 0}.rl-bc{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.rl-bo button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:46px;padding:11px 8px;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.rl-bo button:last-child{border-bottom:1px solid var(--line)}.rl-bo button:hover{background:var(--surface-2)}.rl-bo i{font-style:normal;color:var(--muted)}
+.rl-bo button[aria-pressed="true"]{background:var(--surface-2);box-shadow:inset 3px 0 0 #E0962A;font-weight:600}
+.rl-bn{font-size:13.5px;color:var(--muted);margin:10px 0 0}.rl-bn b{color:var(--ink)}
+.rl-sc{display:flex;gap:22px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}.rl-sc b{display:block;font:600 20px/1.2 var(--serif,Georgia),serif;color:var(--ink)}
+.rl-y{font:600 30px/1 var(--serif,Georgia),serif;color:#E0962A;margin-top:8px;font-variant-numeric:tabular-nums}
+.rl-at{font-size:15.5px;line-height:1.5;margin:6px 0}.rl-al{font-size:14px;line-height:1.5;color:var(--muted);font-style:italic;margin:0 0 6px}.rl-af{font-size:13px;margin:0}
+.rl-wt{display:block;font:600 16px/1.35 var(--serif,Georgia),serif}.rl-c2{display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rl-avv{border-top:0;border-bottom:1px solid var(--line)}
+.rl-alt{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding:12px 4px;font-size:13.5px;color:var(--muted)}.rl-alt span{font:600 11px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase}
+.rl-alt button{background:none;border:0;color:var(--accent);font:inherit;font-size:14px;padding:8px 0;min-height:40px;cursor:pointer}
 .rls{padding:6px 10px 18px}
 .rls-m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px}
 .rls-h{font:600 23px/1.28 var(--serif,Georgia),serif;margin:0 0 14px;color:var(--ink)}
@@ -5461,6 +5487,51 @@ function rlTiles(el){const T=[];
   const vt=el.querySelector(":scope>.vt-day");if(vt)T.push({id:"vote",ic:"🗳️",t:"La domanda del giorno",s:clip((vt.querySelector(".vd-ctx")||vt).textContent.trim(),60)});
   el.querySelectorAll("#subtabs [data-sub]").forEach(t=>{const k=t.dataset.sub;if(k==="mondo"||k==="italia")return;const n=t.querySelector(".n");const ic=t.querySelector(".ic");const lab=t.textContent.replace(n?n.textContent:"","").replace(ic?ic.textContent:"","").trim();T.push({id:"sub:"+k,ic:ic?ic.textContent:"",t:lab,s:n?(k==="log"?n.textContent+" dubbi":n.textContent):""})});
   return T}
+/* v93: «Anche oggi» a righe, non più a box: il rendiconto (segnali verificati, pronostici chiusi, il pronostico di oggi e il tuo storico), cosa è cambiato, accadde oggi, tendenza lenta, lenti; il resto in una riga «Altro» */
+function rlYes(x){x=String(x||"").toLowerCase();return x==="sì"||x==="si"?"si":x==="no"?"no":""}
+function rlQd(v){const br=(S.briefings||[]).find(x=>x.data===v.data);if(!br)return null;const c=[br.storia_ig].concat(Array.isArray(br.storia_ig_alt)?br.storia_ig_alt:[]);return c[v.n||0]||null}
+function rlStorico(){let n=0,ok=0;(S.briefings||[]).forEach(br=>{(br.storia_ig_verdetti||[]).forEach(v=>{const e=rlYes(v&&v.esito);if(!e||!v.data)return;const m=vtMine("p:"+v.data+":"+(v.n||0));if(m!=="si"&&m!=="no")return;n++;if(m===e)ok++})});return {n,ok}}
+function rlBetHTML(b){const B=S.bet;if(!B||!S.briefings[0]||b!==S.briefings[0]||B.day!==b.data)return"";const m=vtMine(B.poll),c=S.votes[B.poll]||{},st=rlStorico();
+  const t=String(B.titolo||B.sticker||"").split("*").map((x,i)=>i%2?`<b>${esc(x)}</b>`:esc(x)).join("");const gg=B.scadenza?fmtDM(B.scadenza):"";
+  return `<div class="rl-bet" data-bet="${esc(B.poll)}"><div class="rl-bk">🎯 Il tuo pronostico${B.tema?` · ${esc(B.tema)}`:""}</div><div class="rl-bq">${t}</div>${B.contesto?`<p class="rl-bc">${esc(B.contesto)}</p>`:""}
+  <div class="rl-bo"><button type="button" data-bt="si" aria-pressed="${m==="si"}"><span>${esc(B.a||"Sì")}</span><i aria-hidden="true">›</i></button><button type="button" data-bt="no" aria-pressed="${m==="no"}"><span>${esc(B.b||"No")}</span><i aria-hidden="true">›</i></button></div>
+  <p class="rl-bn">${m?`<b>✓ Hai detto ${esc(m==="si"?(B.a||"Sì"):(B.b||"No"))}.</b> ${gg?`Il ${esc(gg)} trovi qui com'è andata: tu, gli altri lettori e l'AI.`:""}${c.tot?` Finora ${c.tot} voti.`:""} <button type="button" class="linkbtn" data-bt="x">Togli</button>`:`Un tocco. L'AI ha già fatto la sua stima: la vedi solo alla fine.`}</p>
+  ${st.n?`<div class="rl-sc"><div><b>${st.ok} su ${st.n}</b>pronostici giusti</div><div><b>${Math.round(100*st.ok/st.n)}%</b>la tua precisione</div></div>`:""}</div>`}
+function rlBetFill(){let b=null;try{b=currentBrief()}catch(_){}document.querySelectorAll(".rl-betw").forEach(w=>{w.innerHTML=b?rlBetHTML(b):""})}
+{const _bf=betFill;betFill=function(){try{_bf()}catch(_){}try{rlBetFill()}catch(_){}}}
+function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>t.id===id);
+  const fine=v=>v.esito==="avvenuto"||v.esito==="smentito";
+  const ver=b.verifiche||[],fin=ver.filter(fine),altri=ver.filter(v=>!fine(v));
+  const cnt=k=>ver.filter(v=>v.esito===k).length;const a=cnt("avvenuto"),sm=cnt("smentito"),sc=cnt("scaduto"),na=cnt("non ancora");
+  const vd=(b.storia_ig_verdetti||[]).filter(v=>v&&v.riga&&rlYes(v.esito));
+  const src=f=>f&&f.nome?` · <span class="rl-src">${esc(f.nome)}</span>`:"";
+  const vrow=v=>{const ok=v.esito==="avvenuto",sid=S.stories[v.storia_id]?v.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-story="${esc(sid)}"`:""}><span class="rl-ic ${ok?"ok":"ko"}">${ok?"✓":"✗"}</span><span class="rl-tx">${esc(v.segnale)}<small>${ok?"Avvenuto":"Smentito"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`};
+  const drow=v=>{const e=rlYes(v.esito),m=vtMine("p:"+v.data+":"+(v.n||0)),q=rlQd(v),ai=q&&q.attesa==="probabile"?"si":q&&q.attesa==="improbabile"?"no":"";const lab=e==="si"?(q&&q.a||"Sì"):(q&&q.b||"No");
+    return `<div class="rl-r"><span class="rl-ic">🎯</span><span class="rl-tx"><span class="rl-k2">Pronostico del ${esc(fmtDM(v.data))} · è andata: ${esc(lab)}</span>${q&&(q.sticker||q.titolo)?`<b>${esc(String(q.sticker||q.titolo).replace(/\*/g,""))}</b> `:""}${esc(v.riga)}<small>${m==="si"||m==="no"?`<b class="${m===e?"ok":"ko"}">${m===e?"✓ Ci hai preso":"✗ Non ci hai preso"}</b> · `:""}${ai?`L'AI ${ai===e?"ci aveva preso":"aveva sbagliato"}`:""}${src(v.fonte)}</small></span></div>`};
+  const last=!!(S.briefings[0]&&b===S.briefings[0]);
+  const al=tl("since:avvisi");
+  const AL=al?`<button type="button" class="rl-r rl-avv" data-rl-t="since:avvisi"><span class="rl-ic">🔔</span><span class="rl-tx"><b>${esc(al.t)}</b><small>${esc(al.s||"")}</small></span><span class="rl-ar" aria-hidden="true">›</span></button>`:"";
+  const sum=[a?`<b class="ok">${a} ${plur(a,"avvenuto","avvenuti")}</b>`:"",sm?`<b class="ko">${sm} ${plur(sm,"smentito","smentiti")}</b>`:"",sc?`${sc} non ${plur(sc,"successo","successi")} entro la data`:"",na?`${na} ancora da vedere`:""].filter(Boolean).join(" · ");
+  const R=(ver.length||vd.length||last)?`<section class="rl-s" style="--rlc:var(--ok,#2E8B57)"><div class="rl-sh"><b>🧾 Il rendiconto</b><span>Avevamo detto · com'è andata</span></div>
+   ${ver.length?`<p class="rl-sl">I segnali indicati nei giorni scorsi, verificati stamattina: ${sum}.</p>`:""}${vd.map(drow).join("")}${fin.map(vrow).join("")}
+   ${altri.length?`<button type="button" class="rl-m2" data-rl-alt aria-expanded="${!!RL.alt}">${RL.alt?"Nascondi ‹":`Vedi ${plur(altri.length,"l'altro","gli altri "+altri.length)} ›`}</button>${RL.alt?altri.map(v=>`<div class="rl-r"><span class="rl-ic mu">${v.esito==="scaduto"?"–":"…"}</span><span class="rl-tx">${esc(v.segnale)}<small>${v.esito==="scaduto"?"Non successo entro la data":"Ancora da vedere"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span></div>`).join(""):""}`:""}
+   <div class="rl-betw">${rlBetHTML(b)}</div></section>`:"";
+  const ch=(b.cambiato||[]).filter(x=>x&&x.testo);const lm=prevBrief(b)?levelMoves(b):[];
+  const C=ch.length?`<section class="rl-s" style="--rlc:var(--accent)"><div class="rl-sh"><b>🔄 Cosa è cambiato da ieri</b><span>${ch.length} ${plur(ch.length,"sviluppo","sviluppi")}</span></div>${ch.map(x=>{const v=VERSO[x.verso]||VERSO.svolta;const sid=x.storia_id&&S.stories[x.storia_id]?x.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-rl-go="${esc(sid)}"`:""}><span class="rl-tx"><span class="rl-v v-${esc(x.verso||"svolta")}">${esc(v[1])}</span>${esc(x.testo)}</span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`}).join("")}${lm.length&&has("since:cambiato")?`<button type="button" class="rl-m2" data-rl-t="since:cambiato">${lm.length} ${plur(lm.length,"paese cambia","paesi cambiano")} livello di tensione ›</button>`:""}</section>`:"";
+  const ac=b.accadde;let A="";
+  if(ac&&ac.testo){const d=new Date(b.data+"T12:00:00");const y=parseInt(ac.anno,10);const ago=y?d.getFullYear()-y:0;const th=S.threads[ac.filone_id];
+    A=`<section class="rl-s" style="--rlc:#E0962A"><div class="rl-sh"><b>📜 Accadde oggi</b><span>${d.getDate()} ${MONTHS[d.getMonth()]}${ago>0?` · ${ago} ${plur(ago,"anno","anni")} fa`:""}</span></div>${y?`<div class="rl-y">${y}</div>`:""}<p class="rl-at">${esc(ac.testo)}</p>${ac.legame?`<p class="rl-al">${esc(ac.legame)}</p>`:""}<p class="rl-af">${th?`<button type="button" class="linkbtn" data-thread="${esc(th.id)}">Il filone ›</button> `:""}${ac.fonte&&ac.fonte.url?`<a class="src-inline" href="${esc(ac.fonte.url)}" target="_blank" rel="noopener">${esc(ac.fonte.nome||"fonte")}</a>`:""}</p></section>`}
+  let w=null;if(has("sub:slow")){try{w=slowFor(b)}catch(_){}}
+  const W=w?`<section class="rl-s" style="--rlc:#3FAE6C"><div class="rl-sh"><b>🐢 Tendenza lenta</b><span>${esc(fmtDate(w.data))} · ${esc(w.minuti||4)} minuti</span></div><button type="button" class="rl-r" data-rl-t="sub:slow"><span class="rl-tx"><span class="rl-wt">${esc(w.titolo)}</span><small class="rl-c2">${esc(w.sommario||"")}</small></span><span class="rl-ar" aria-hidden="true">›</span></button></section>`:"";
+  let Lz="";if(has("sub:lenti")){const on=prefs().lenti||{};const ok=x=>x&&(typeof x==="string"?x:x.testo);
+    const L=[["tasca","In tasca",b.lente_tasca],["venture","Venture",b.lente_venture],["scitech","Scienza e tecnologia",b.lente_scitech],["viaggi","Viaggi",b.lente_viaggi]].filter(([k,,x])=>on[k]!==false&&(x||[]).filter(ok).length);
+    if(L.length)Lz=`<section class="rl-s" style="--rlc:#9B6FD6"><div class="rl-sh"><b>🔍 Le lenti</b><span>La giornata vista da vicino</span></div>${L.map(([k,n,x])=>{const f=x.filter(ok)[0];const t=typeof f==="string"?f:f.testo;return `<button type="button" class="rl-r" data-rl-t="sub:lenti"><span class="rl-ic">${LENSICO[k]||""}</span><span class="rl-tx"><b>${esc(n)}.</b> ${esc(clip(t,170))}</span><span class="rl-ar" aria-hidden="true">›</span></button>`}).join("")}</section>`}
+  const alt=[has("since:numeri")&&["since:numeri","📈 Numeri"],has("sub:scoperte")&&["sub:scoperte","🔬 Scoperte"],has("since:lettori")&&["since:lettori","👥 I lettori, ieri"],has("sub:log")&&["sub:log","Come lavoriamo"]].filter(Boolean);
+  const X=alt.length?`<div class="rl-alt"><span>Altro</span>${alt.map(([id,l])=>`<button type="button" data-rl-t="${id}">${l}</button>`).join("")}</div>`:"";
+  const body=AL+R+C+A+W+Lz;
+  if(last&&!S.bet&&!RL.betW){RL.betW=1;let k=0;const iv=setInterval(()=>{if(S.bet||++k>40){clearInterval(iv);if(S.bet)rlBetFill()}},250)}
+  return body||X?`<div class="rl-g">Anche oggi</div>${body}${X}`:""}
+document.addEventListener("click",e=>{if(e.target.closest("[data-rl-alt]")){e.preventDefault();RL.alt=!RL.alt;rlBuild()}});
 function rlBuild(){const el=document.getElementById("briefing");const b=typeof currentBrief==="function"?currentBrief():null;if(!el||!b||!S.stories)return;
   el.classList.add("rl-on");
   const old=el.querySelector(":scope>.rl");if(old)old.remove();
@@ -5493,7 +5564,7 @@ function rlBuild(){const el=document.getElementById("briefing");const b=typeof c
    ${pt?PTL:`${mon.length?`<div class="rl-g">Mondo · ${mon.length}</div>${LI}`:""}
    ${ita.length?`<div class="rl-g">Italia · ${ita.length}</div>${LT}`:""}`}
    ${brevi.length?`<div class="rl-g"><span>In breve · ${brevi.length}</span>${brevi.length>4?`<button type="button" class="rl-more" data-rl-all>${RL.all?"meno":"tutte"} ›</button>`:""}</div><div class="rl-br">${brevi.slice(0,RL.all?99:4).map((x,i)=>`<button type="button" class="rl-bi" data-rl-br="${i}"><span class="rl-bp">${esc(((x.paesi||[])[0]||"").slice(0,3))}</span><span>${esc(clip(x.titolo||x.testo||"",140))}</span></button>`).join("")}</div>`:""}
-   ${T.length?`<div class="rl-g">Anche oggi</div><div class="rl-ts">${T.map(t=>`<button type="button" class="rl-t" data-rl-t="${esc(t.id)}"><b>${esc(t.ic)} ${esc(t.t)}</b>${t.s?`<span>${esc(t.s)}</span>`:""}</button>`).join("")}</div>`:""}
+   ${rlAnche(b,T)}
   </section>`;
   const head=el.querySelector(":scope>.brief-head"),agg=el.querySelector(":scope>#aggiornamenti");const after=agg||head;
   if(after)after.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h);
