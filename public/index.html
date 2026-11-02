@@ -5765,6 +5765,35 @@ document.addEventListener("click",e=>{
 
 document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]"))return;e.preventDefault();const h=RL.hist.pop();if(!h){rlBackBtn();return}
   RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}rlBackBtn()});
+/* v-swipe: sul telefono, nel pannello, si scorre di lato. Verso destra = indietro (il pannello da cui arrivi, se no la storia prima); verso sinistra = avanti (il pannello da cui sei appena tornato, se no la storia dopo). */
+RL.fwd=[];
+{const _ng=rlNavGo;rlNavGo=function(f,a,self){if(!RL.back)RL.fwd=[];return _ng(f,a,self)}}
+function rlApplyNav(h){RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}RL.cur={...h};delete RL.cur.tg;rlBackBtn()}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]")||!RL.cur||!AGS.el)return;RL.fwd.push({...RL.cur,tg:AGS.el.querySelector(".ags-tg").innerHTML})},true);
+function rlForward(){const h=RL.fwd.pop();if(!h||!AGS.el)return false;if(RL.cur)RL.hist.push({...RL.cur,tg:AGS.el.querySelector(".ags-tg").innerHTML});rlApplyNav(h);return true}
+function rlSwipeGo(dir){const w=AGS.el;if(!w)return false;
+  if(dir<0){if(RL.hist.length){const b=w.querySelector(".ags-back");if(b){b.click();return true}}const p=w.querySelector(".ags-tg .rl-pv");if(p){p.click();return true}return false}
+  if(RL.fwd.length&&rlForward())return true;const n=w.querySelector(".ags-tg .rl-nx");if(n){n.click();return true}return false}
+(function(){const coarse=()=>{try{return matchMedia("(pointer:coarse)").matches||innerWidth<=700}catch(_){return false}};
+  let w=null,l=null,x0=0,y0=0,t0=0,dx=0,hz=null,ok=false;
+  const skip=t=>{if(!t||!t.closest)return true;if(t.closest("input,textarea,select,svg,canvas,.ags-hd,[data-noswipe]"))return true;
+    for(let n=t;n&&n!==l;n=n.parentElement){const cs=getComputedStyle(n);if(n.scrollWidth>n.clientWidth+2&&/(auto|scroll)/.test(cs.overflowX))return true}return false};
+  document.addEventListener("touchstart",e=>{ok=false;w=AGS.el;if(!w||!AGS.open||!coarse()||w.dataset.mode==="quiz"||e.touches.length>1)return;l=w.querySelector(".ags-l");if(!l||!l.contains(e.target)||skip(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();dx=0;hz=null;ok=true;l.style.transition="none"},{passive:true});
+  document.addEventListener("touchmove",e=>{if(!ok)return;const x=e.touches[0].clientX,y=e.touches[0].clientY;dx=x-x0;const dy=y-y0;
+    if(hz===null&&(Math.abs(dx)>10||Math.abs(dy)>10))hz=Math.abs(dx)>Math.abs(dy)*1.4;if(!hz)return;
+    const can=dx>0?!!(RL.hist.length||w.querySelector(".ags-tg .rl-pv")):!!(RL.fwd.length||w.querySelector(".ags-tg .rl-nx"));
+    const k=can?1:.25;l.style.transform=`translateX(${dx*k}px)`;l.style.opacity=String(1-Math.min(.4,Math.abs(dx*k)/600))},{passive:true});
+  document.addEventListener("touchend",()=>{if(!ok)return;ok=false;const fast=Date.now()-t0<450;
+    const go=hz&&(Math.abs(dx)>innerWidth*.28||(fast&&Math.abs(dx)>60));const dir=dx>0?-1:1;
+    l.style.transition="transform .16s ease,opacity .16s ease";
+    if(!go){l.style.transform="";l.style.opacity="";return}
+    l.style.transform=`translateX(${dx>0?"":"-"}45%)`;l.style.opacity="0";
+    setTimeout(()=>{const done=rlSwipeGo(dir);l.style.transition="none";l.style.transform=`translateX(${dx>0?"-":""}30%)`;
+      requestAnimationFrame(()=>{l.style.transition="transform .18s ease,opacity .18s ease";l.style.transform="";l.style.opacity="";if(done)l.scrollTop=0})},150)},{passive:true});
+  document.addEventListener("touchcancel",()=>{if(!ok)return;ok=false;l.style.transform="";l.style.opacity=""},{passive:true});
+})();
+
 /* il glossario si apre nel pannello (prima: un fumetto che, dentro il pannello, restava nascosto sotto) */
 /* v96b: la parola del glossario apre il fumetto con la sintesi, anche sopra il pannello, così non si perde la lettura; «Apri nel pannello» per chi vuole di più */
 {const _og=openGloss;openGloss=function(btn){_og(btn);const d=document.getElementById("gloss");if(!d)return;if(AGS.open)d.classList.add("gl-top");const a=document.createElement("div");a.className="gs gl-more";a.innerHTML=`<button type="button" class="linkbtn" data-gl-open="${esc(btn.dataset.gl)}">Apri nel pannello ›</button>`;d.appendChild(a)}}
