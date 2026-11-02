@@ -319,6 +319,17 @@ main{padding-block:24px 64px}
 .rl-t{display:block;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}.rl-t:hover{border-color:var(--accent)}
 .rl-t b{display:block;font-size:14px;line-height:1.3}.rl-t span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (min-width:700px){.rl-ts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.rls{padding:6px 10px 18px}
+.rls-m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px}
+.rls-h{font:600 23px/1.28 var(--serif,Georgia),serif;margin:0 0 14px;color:var(--ink)}
+.rls-why{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:0 0 16px}.rls-why p,.rls-f p{margin:4px 0 0;font-size:16px;line-height:1.62}
+.rls-f{margin:0 0 14px}.rls-src{font-size:13px;color:var(--muted);margin-top:8px}.rls-src a{color:var(--muted)}
+.rls-acc{border-top:1px solid var(--line);margin-top:6px}
+.rla{border-bottom:1px solid var(--line)}.rla>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 2px;cursor:pointer;font-weight:600;font-size:15.5px}.rla>summary::-webkit-details-marker{display:none}
+.rla-r{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:500}.rla-r i{font-style:normal;transition:transform .2s;display:inline-block}.rla[open] .rla-r i{transform:rotate(90deg)}
+.rla-n{font:600 12px var(--sans);background:var(--surface-2);border-radius:99px;padding:1px 8px}
+.rla-b{padding:0 2px 16px;font-size:15px;line-height:1.55}.rla-b p{margin:0 0 8px}
+.rls-act{margin-top:16px}
 .ags-tools{display:none;gap:6px;flex:0 0 auto}.ags[data-mode="rl"] .ags-tools{display:flex}
 .ags-tb{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink);font-size:17px;cursor:pointer}
 @media (max-width:899px){.ags-tb[data-rl-full]{display:none}}
@@ -5473,7 +5484,7 @@ function rlOpen(id){const b=currentBrief();const s=S.stories[id];if(!b||!s)retur
   const w=agsEl();rlTools(w);w.dataset.mode="rl";RL.sel=id;const kk=rlKick(s);
   w.querySelector(".ags-cal").innerHTML="";w.querySelector(".ags-t").textContent=`Storia ${i+1} di ${RL.ids.length}`;
   w.querySelector(".ags-d").textContent=(kk.fl?kk.fl+" ":"")+kk.k;
-  w.querySelector(".ags-l").innerHTML=`<div class="ags-story">${storyHTML(s,i+1)}</div>`;
+  w.querySelector(".ags-l").innerHTML=`<div class="ags-story">${rlStoryHTML(s,i+1)}</div>`;
   try{glossify(w.querySelector(".ags-l"))}catch(_){}
   const n=RL.ids.length,p=RL.ids[(i-1+n)%n],q=RL.ids[(i+1)%n],nm=x=>esc(clip(rlKick(S.stories[x]).k,28));
   w.querySelector(".ags-tg").innerHTML=`<button type="button" class="rl-pv" data-rl-go="${esc(p)}">‹ ${nm(p)}</button><button type="button" class="rl-nx" data-rl-go="${esc(q)}">Prossima: ${nm(q)} ›</button>`;
@@ -5499,6 +5510,43 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-rl-full]")){e.preventDefault();RL.full=!RL.full;const w=AGS.el;if(w)w.classList.toggle("ags-full",RL.full);const fb=w&&w.querySelector("[data-rl-full]");if(fb){fb.textContent=RL.full?"⤡":"⤢";fb.title=RL.full?"Riduci":"Schermo intero"}return}
   if(e.target.closest("[data-rl-new]")){e.preventDefault();const u=location.pathname+"?pieno=1"+(RL.sel?"#s="+encodeURIComponent(RL.sel):"");window.open(u,"_blank","noopener");return}
 },true);
+/* v91: la storia nel pannello (passo 2 della proposta A): prima il perché conta, poi i fatti con le fonti per nome (senza [1][2]),
+   poi le sezioni chiuse. Nessun id ripetuto: la vecchia scheda resta nascosta nella pagina. */
+function rlNr(t){return esc(String(t||"").replace(/\s*\[\d+\](\s*\[\d+\])*/g,"")).replace(/\s+([.,;:])/g,"$1")}
+function rlFonti(s){const seen=new Set(),L=[];(s.fonti||[]).forEach(f=>{const n=String(f&&f.nome||"").split(" (")[0].trim();if(!n||seen.has(n))return;seen.add(n);L.push(f&&f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n))});return L}
+function rlStoryHTML(s,rank){if(!s)return"";const conf=s.confidenza||{},th=S.threads[s.filone_id],prev=s.precedente_id&&S.stories[s.precedente_id];
+  const F=rlFonti(s),dz=dosForStory(s);
+  const scDone=!!(th&&th.scenari&&th.scenari.stato==="chiuso"&&srHTML(th));const hasSc=scDone||(th&&th.scenari&&th.scenari.stato!=="chiuso"&&(th.scenari.voci||[]).length);
+  let syn=String(s.sintesi||""),dec="";const m=syn.match(/(?:^|[.;]\s+)((?:Decisiv[oa]|Cosa deciderà|A decidere|Il fatto che deciderà|Deciderà)[^]*)$/);if(m){dec=m[1];syn=syn.slice(0,syn.length-m[1].length).trim()}
+  const pSc=predScn(s);let segs=(s.segnali||[]).map((x,i)=>{const g=S.segnali[s.id+"-"+(i+1)];const st=(g&&g.stato)||"aperto";return `<div class="ck ck-${esc(st)}"><span aria-hidden="true">${SGI[st]||"☐"}</span><span>${esc(x)}</span><span class="ck-t">${sgTag(g)}</span></div>${st==="aperto"&&!pSc?gsHTML(s,i):""}`}).join("");
+  const ids=actorsOfStory(s);const d=divInfo(s.fonti);
+  const up=s.filone_id?upcomingFrom(s.data).filter(a=>a.filone_id===s.filone_id).slice(0,2):[];const today=isoDay(new Date());
+  const cal=x0=>{const x=new Date(x0+"T12:00:00");return `<span class="cx-cal"><b>${x.getDate()}</b><span>${MONTHS[x.getMonth()].slice(0,3)}</span></span>`};
+  const ctx=[th?`<div class="cx-tiles"><button class="cx-tile" data-thread="${esc(th.id)}"><small>Tema</small><b><span class="fl">${thFlags(th)}</span> ${esc(thShort(th))} ›</b></button>${dosForThread(th.id)?`<button class="cx-tile" data-open-dos="${esc(dosForThread(th.id).id)}"><small>Dossier</small><b>🧭 A 360° ›</b></button>`:th.radici?`<button class="cx-tile" data-roots="${esc(th.id)}"><small>🏛️ Storia del tema</small><b>Da dove nasce ›</b></button>`:""}</div>`:"",
+    up.length?`<div class="cx-lab">${up.length===1?"Prossima data":"Prossime date"}</div>${up.map(a=>`<div class="cx-date">${cal(a.data)}<div><div>${esc(a.titolo)}</div><span class="sx-cd">${a.data_fine&&a.data_fine!==a.data?esc(fmtShort(a))+" · ":""}${esc(countdown(a,today))}</span></div></div>`).join("")}`:"",
+    prev?`<div class="cx-lab">Puntata precedente · ${esc(fmtDM(prev.data))}</div><button class="cx-prev" data-story="${esc(prev.id)}"><span aria-hidden="true">←</span><span>${esc(prev.titolo)}</span></button>`:""].join("");
+  const acc=(k,t,b,badge)=>b?`<details class="rla" data-rla="${k}"><summary><span>${t}</span><span class="rla-r">${badge||""}<i aria-hidden="true">›</i></span></summary><div class="rla-b">${b}</div></details>`:"";
+  return `<article class="story rls" data-rls="${esc(s.id)}">
+   <div class="rls-m">${(s.paesi||[]).map(p=>`<button class="sto-fl" data-country="${esc(p)}" title="${esc(cname(p))}">${flag(p)||esc(p)}</button>`).join("")}<span class="conf ${esc(conf.livello)}" title="${esc(conf.motivo)}">confidenza ${esc(conf.livello||"—")}</span>${dz?`<button type="button" class="dzc" data-open-dos="${esc(dz.id)}"><span class="dzi" aria-hidden="true">🧭</span><span class="dzt">dossier</span></button>`:""}</div>
+   <h3 class="rls-h">${esc(s.titolo)}</h3>
+   ${aggStoryHTML(s)}
+   <div class="rls-why"><span class="label tag-interp">Perché conta</span><p>${rlNr(s.perche_conta)}</p></div>
+   <div class="rls-f"><span class="label tag-fact">Cosa è successo · fatti verificati</span><p>${rlNr(s.fatti)}</p><div class="rls-src">${F.slice(0,4).join(" · ")}${F.length>4?` · e altre ${F.length-4}`:""}</div></div>
+   ${corrHTML(s)}
+   <div class="rls-acc">
+   ${acc("pos","Le due posizioni · e la tua",`<div class="sx-pos"><div class="pv pa"><span class="w">Chi sostiene</span>${rlNr(s.pro&&s.pro.tesi)}<span class="who">${esc(s.pro&&s.pro.attori)}</span></div><div class="pv pb"><span class="w">Chi si oppone</span>${rlNr(s.contro&&s.contro.tesi)}<span class="who">${esc(s.contro&&s.contro.attori)}</span></div></div>${voteHTML(s)}`)}
+   ${acc("syn","Sintesi critica",syn||dec?`<div class="sx-syn">${rlNr(syn)}${dec?`<span class="dec"><b>Cosa deciderà:</b> ${rlNr(dec.replace(/^(Decisiv[oa]|Cosa deciderà|A decidere|Il fatto che deciderà|Deciderà)\s*[:,]?\s*/,""))}</span>`:""}</div>`:"")}
+   ${s.divergenze?acc("div","Le fonti non coincidono",`<p>${rlNr(s.divergenze)}</p>`,'<span class="rla-n">!</span>'):""}
+   ${acc("oss","Da osservare nei prossimi giorni",segs?`<div class="sx-ck">${segs}</div>${pSc?`<button type="button" class="linkbtn" data-rla-go="scn">La tua previsione: «Come va a finire?» ›</button>`:""}`:"",(s.segnali||[]).length?`<span class="rla-n">${(s.segnali||[]).length}</span>`:"")}
+   ${hasSc?acc("scn",(th&&th.scenari&&th.scenari.stato==="chiuso")?"Com'è andata":"Come può andare · stima",scenMiniHTML(th)):""}
+   ${ids.length?acc("ppl","Le persone coinvolte",ppHTML(ids.map(x=>S.attori[x]).filter(Boolean)),`<span class="rla-n">${ids.length}</span>`):""}
+   ${acc("ctx","Il tema, il dossier e le prossime date",ctx?`<div class="sx-ctx">${ctx}</div>`:"")}
+   ${acc("src",`Le fonti · ${d.n} da ${d.paesi} ${plur(d.paesi,"paese","paesi")}`,`<p class="sx-src">${divHTML(s.fonti)}<span class="muted">Confidenza ${esc(conf.livello||"")}: ${esc(conf.motivo||"")}</span></p>${srcList(s.fonti)}`)}
+   </div>
+   <div class="rls-act"><button class="askbtn ghost" data-ask-story="${esc(s.id)}">💬 Fai una domanda</button></div>
+  </article>`}
+document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains("rla")||!d.open)return;try{if(d.dataset.rla==="pos"||d.dataset.rla==="oss"){vtLoad();vtFill()}if(d.dataset.rla==="ppl")ppFit()}catch(_){}},true);
+document.addEventListener("click",e=>{const g=e.target.closest("[data-rla-go]");if(!g)return;e.preventDefault();const box=g.closest(".rls");const d=box&&box.querySelector(`details.rla[data-rla="${g.dataset.rlaGo}"]`);if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}});
 /* da qualunque punto del sito, una storia del briefing che si sta leggendo si apre nel pannello */
 {const _os=openStory;openStory=function(id){
   if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){showLock({what:"storie"});return}}
