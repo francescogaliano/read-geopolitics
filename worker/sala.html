@@ -54,8 +54,10 @@ details p{margin:0 0 14px;color:var(--mut);max-width:68ch}
 label{display:block;margin:8px 0;font-size:14px;color:var(--mut)}
 input{display:block;width:100%;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font:inherit}
 .empty{padding:40px 0;text-align:center;color:var(--mut)}
+.rgh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 0}.rgh h1,.rgh .h{font:600 22px Georgia,"Source Serif 4",serif;margin:0;color:var(--fg)}.rgh a.gearb{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:17px;min-height:40px;box-sizing:border-box}
+.sw{display:flex;gap:4px;margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;padding:4px}.sw>a{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:var(--mut);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}.sw>a.on{background:var(--fg);color:var(--bg)}@media(max-width:520px){.sw>a{font-size:13px;padding:9px 2px}}
 </style></head><body><div class="wrap">
-<div class="top"><button class="proj" id="projBtn">…</button><span style="display:flex;gap:18px"><a class="mono" href="/ig/panel">pannello</a><button class="mono" id="rf">aggiorna</button></span></div>
+<div class="rgh"><span class="h">Read Geopolitics</span><a class="gearb" href="/ig/panel#canali" aria-label="Canali e uscita">⚙</a></div><nav class="sw"><a href="/ig/panel">Pannello</a><a href="/ig/sala" class="on">Sala di controllo</a><a href="/ig/panel#st">Statistiche</a></nav><div class="top"><button class="proj" id="projBtn">…</button><button class="mono" id="rf">aggiorna</button></div>
 <div class="plist" id="plist"></div>
 <div id="main"><div class="empty">Carico…</div></div>
 </div>
