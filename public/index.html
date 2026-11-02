@@ -363,7 +363,8 @@ div.rl-r{cursor:default}.rl-sh+.rl-r,.rl-sl+.rl-r{border-top:0}button.rl-r:hover
 .ags-back{flex:none;width:36px;height:36px;margin-right:10px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink);font-size:20px;line-height:1;cursor:pointer}.ags-back[hidden]{display:none}.ags-back:hover{background:var(--surface-2)}
 .rl-gl{padding:14px 18px 24px;font-size:15.5px;line-height:1.55}.rl-gl p{margin:0 0 10px}.rl-gl .gs{font-size:13px;color:var(--muted);margin-top:10px}.rl-gl .gl-actions{margin-top:12px}
 #deep{z-index:320!important}
-@media (min-width:900px){.ags[data-kind="box"]:not(.ags-full) .ags-p{width:min(42vw,560px)}}
+#gloss.gl-top{z-index:330!important}.gl-more{margin-top:8px}
+@media (min-width:900px){.ags:not(.ags-full) .ags-p{width:min(62vw,900px)}} /* v96b: stessa larghezza per tutti i pannelli */
 /* v95: «Anche oggi» compatto */
 .rl-end{margin:34px 0 16px;text-align:center}.rl-endr{display:flex;align-items:center;gap:12px;color:var(--muted)}.rl-endr::before,.rl-endr::after{content:"";flex:1;height:1px;background:var(--line)}
 .rl-endr span{font:600 11px var(--mono,ui-monospace),monospace;letter-spacing:.12em;text-transform:uppercase}.rl-end p{margin:8px 0 0;font-size:13.5px;color:var(--muted)}.rl-end p b{color:var(--ok,#2E8B57);font-weight:600}
@@ -5737,7 +5738,10 @@ function rlBackBtn(){const w=AGS.el;if(!w)return;let b=w.querySelector(".ags-bac
 document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]"))return;e.preventDefault();const h=RL.hist.pop();if(!h){rlBackBtn();return}
   RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}rlBackBtn()});
 /* il glossario si apre nel pannello (prima: un fumetto che, dentro il pannello, restava nascosto sotto) */
-{const _og=openGloss;openGloss=function(btn){_og(btn);const d=document.getElementById("gloss");if(!d)return;const t=d.querySelector(".gt"),k=d.querySelector(".gk");const tt=t?t.textContent:"";const kk=k?k.textContent:"";if(t)t.remove();if(k)k.remove();const h=`<div class="rl-gl">${d.innerHTML}</div>`;d.remove();rlOpenBox("📖 "+tt,kk||"Glossario",h)}}
+/* v96b: la parola del glossario apre il fumetto con la sintesi, anche sopra il pannello, così non si perde la lettura; «Apri nel pannello» per chi vuole di più */
+{const _og=openGloss;openGloss=function(btn){_og(btn);const d=document.getElementById("gloss");if(!d)return;if(AGS.open)d.classList.add("gl-top");const a=document.createElement("div");a.className="gs gl-more";a.innerHTML=`<button type="button" class="linkbtn" data-gl-open="${esc(btn.dataset.gl)}">Apri nel pannello ›</button>`;d.appendChild(a)}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-gl-open]");if(!b)return;e.preventDefault();const d=document.getElementById("gloss");if(!d)return;const c=d.cloneNode(true);c.querySelectorAll(".gl-more").forEach(x=>x.remove());const t=c.querySelector(".gt"),k=c.querySelector(".gk");const tt=t?t.textContent:"";const kk=k?k.textContent:"";if(t)t.remove();if(k)k.remove();closeGloss();rlOpenBox("📖 "+tt,kk||"Glossario",`<div class="rl-gl">${c.innerHTML}</div>`)});
+document.addEventListener("scroll",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("ags-l")&&document.getElementById("gloss"))closeGloss()},true);
 document.addEventListener("click",e=>{const b=e.target.closest("[data-rl-aon]");if(!b)return;e.preventDefault();const R=[...document.querySelectorAll(".rl-ao .rl-ar2")];const r=R[+b.dataset.rlAon];if(r)r.click()});
 {const _pt=perTe;perTe=function(){const r=_pt.apply(this,arguments);try{if(document.querySelector("#briefing>.rl"))rlBuild()}catch(_){}return r}}
 {const _rb4=renderBriefing;renderBriefing=function(){const r=_rb4.apply(this,arguments);try{rlBuild()}catch(e){console.warn("lettura a lista",e)}return r}}
