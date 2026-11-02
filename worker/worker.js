@@ -1585,7 +1585,7 @@ async function load(){
   +stripHtml(x)
   +((pri||m)?'<div class="pri">'+(pri||'<span style="flex:1"></span>')+(m?'<button class="btn more mo" type="button" aria-label="Altre azioni">⋯</button>':'')+'</div>':'')
   +(m?'<div class="menu" hidden>'+m+'</div>':'')
-  +(x.status==="bozza"?'<div class="prg">'+(pg?'<span>Esce da sola '+esc(pgs)+' (entro 5 minuti)</span><button class="sm prgx">Annulla</button>':'<button class="sm prgo">Programma uscita</button><span class="prgf" hidden><input type="datetime-local" class="prgt"><button class="sm prgk">Conferma</button></span>')+'</div>':'')
+  +(x.status==="bozza"?'<div class="prg">'+(pg?'<span>Esce da sola '+esc(pgs)+' (entro 5 minuti)</span><button class="sm prgx">Annulla</button>':'<button class="sm prgo">Programma uscita</button><span class="prgf" hidden><input type="date" class="prgd"><select class="prgh">'+Array.from({length:24},(_,i)=>'<option>'+String(i).padStart(2,"0")+'</option>').join("")+'</select>:<select class="prgm">'+Array.from({length:12},(_,i)=>'<option>'+String(i*5).padStart(2,"0")+'</option>').join("")+'</select><button class="sm prgk">Conferma</button><button class="sm prga">Annulla</button></span>')+'</div>':'')
   +(open?capsHtml(x):'<details class="capd"><summary class="sub">Didascalie</summary>'+capsHtml(x)+'</details>')
   +(rows?'<div class="dist"><div class="lab">'+(x.status==="pubblicata"?"Canali":"Dopo Instagram")+'</div>'+rows+'</div>':'')
   +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'};
@@ -1609,8 +1609,9 @@ async function load(){
  L.querySelectorAll(":scope>.card[data-id]").forEach(c=>wire(c));
  function wire(c){const id=c.dataset.id;const q=s=>c.querySelector(s);
   if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
-  if(q(".prgo"))q(".prgo").onclick=()=>{q(".prgo").hidden=true;q(".prgf").hidden=false;const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()<30?30:60,0,0);const p=n=>String(n).padStart(2,"0");q(".prgt").value=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes())};
-  if(q(".prgk"))q(".prgk").onclick=async e=>{const v=q(".prgt").value;if(!v)return;e.target.disabled=true;const r=await api({action:"draft_programma",id,at:new Date(v).toISOString()});if(!r.ok){say("Errore: "+(r.detail||r.error));e.target.disabled=false;return}load()};
+  if(q(".prgo"))q(".prgo").onclick=()=>{q(".prgo").hidden=true;q(".prgf").hidden=false;const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()<30?30:60,0,0);const p=n=>String(n).padStart(2,"0");q(".prgd").value=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());q(".prgh").value=p(d.getHours());q(".prgm").value=p(d.getMinutes())};
+  if(q(".prga"))q(".prga").onclick=()=>{q(".prgf").hidden=true;q(".prgo").hidden=false};
+  if(q(".prgk"))q(".prgk").onclick=async e=>{const dd=q(".prgd").value;if(!dd)return;const v=dd+"T"+q(".prgh").value+":"+q(".prgm").value;e.target.disabled=true;const r=await api({action:"draft_programma",id,at:new Date(v).toISOString()});if(!r.ok){say("Errore: "+(r.detail||r.error));e.target.disabled=false;return}load()};
   if(q(".prgx"))q(".prgx").onclick=async e=>{e.target.disabled=true;await api({action:"draft_programma",id,at:null});load()};
   c.querySelectorAll(".chsw").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await api({action:"draft_canale",id,ch:b.dataset.ch,on:b.dataset.on==="1"});if(!r.ok){say("Errore: "+(r.detail||r.error));b.disabled=false;return}load()});
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
@@ -3143,7 +3144,12 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
   try {
     // v61: sul canale solo il titolo del post (la prima riga della didascalia) e il link: il resto ripete il mattino
     const tit = String(thCaption(d.caption) || "").split("\n").map((x) => x.trim()).find(Boolean) || "";
-    const cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + '<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
+    let cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + '<a href="https://www.readgeopolitics.com/?utm_source=telegram">readgeopolitics.com</a>';
+    // v84: il reel nato da uno Spiegato porta con sé lo Spiegato: un solo messaggio, video + link alla pagina con la mappa
+    let spR = null;
+    try { const q = d.req_id ? await kvGet(env, "req:" + d.req_id) : null; const mm = q && /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); spR = mm ? await kvGet(env, "sp:" + mm[1]) : null; if (spR && spR.stato !== "pubblicato") spR = null; } catch (e) { spR = null; }
+    if (spR) { const c = spCard(spR), u = SITE + "/spiegato/?id=" + spR.id + "&utm_source=telegram&utm_medium=canale&utm_campaign=spiegato_reel";
+      cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + "📖 Lo Spiegato completo, con la mappa e le fonti: <a href=\"" + esc(u) + "\">leggilo qui</a> · " + c.min + " minuti"; }
     let r;
     if (d.type === "reel" && d.video_url) {
       /* v64: Telegram ricorda per un po' gli indirizzi che non è riuscito a scaricare, e da lì i «Riprova» falliscono tutti.
@@ -3166,6 +3172,7 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
     const m = Array.isArray(r) ? r[0] : r;
     x.status = "inviato"; x.message_id = m && m.message_id;
     if (m && m.chat && m.chat.username) x.link = "https://t.me/" + m.chat.username + "/" + m.message_id;
+    if (spR) { try { const r2 = await kvGet(env, "sp:" + spR.id); if (r2) { if (!r2.tg_at) r2.tg_at = new Date().toISOString(); spLog(r2, "Sul canale Telegram insieme al reel"); await kvSet(env, "sp:" + r2.id, r2); } } catch (e) {} }
   } catch (e) { x.status = "errore"; x.error = thErr(e); }
   await kvSet(env, "tg:" + id, x);
   return x;
