@@ -6066,7 +6066,7 @@ function ptLock(){
 }
 /* ingressi del Per te per chi non è entrato */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-ptlock]");if(t){e.preventDefault();e.stopImmediatePropagation();PTL.sel=null;ptLock();return}
+  const t=e.target.closest("[data-ptlock]");if(t){e.preventDefault();e.stopImmediatePropagation();if(!ptlOn()){try{openPanel()}catch(_){}return}PTL.sel=null;ptLock();return}
   if(!ptlOn())return;
   if(e.target.closest("#lock"))return;
   if(e.target.closest("#intBtn"))return;/* «Il mio Read» resta aperto a tutti (aspetto, guida, newsletter); dentro si bloccano solo gli interessi */
