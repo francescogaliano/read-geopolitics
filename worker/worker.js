@@ -2275,6 +2275,25 @@ async function igPrivate(request, env, p, method) {
     if (r.copione && (b.action === "done" || b.action === "copione")) await spSaveCopione(env, r); // v77: il copione resta nello Spiegato anche se il reel si scarta
     return json({ ok: true, request: r });
   }
+  if (p === "/v1/ig/ingredienti") { // v81: gli «ingredienti» di un'iconografica (spec, voce, tempi) per rimontarla senza rifare voce e controlli
+    if (!env.PODCAST) return fail(503, "no_r2");
+    if (method === "POST") {
+      const b = await request.json().catch(() => null);
+      if (!b || typeof b.req_id !== "string" || typeof b.tgz_b64 !== "string") return fail(400, "bad_body", "atteso { req_id, tgz_b64 }");
+      const q = await kvGet(env, "req:" + b.req_id); if (!q) return fail(404, "req_not_found");
+      const clean = b.tgz_b64.replace(/\s+/g, ""); if (clean.length > 40000000) return fail(413, "too_big");
+      const bytes = typeof Uint8Array.fromBase64 === "function" ? Uint8Array.fromBase64(clean) : Uint8Array.from(atob(clean), (c) => c.charCodeAt(0));
+      await env.PODCAST.put("ingredienti/" + q.id + ".tgz", bytes, { httpMetadata: { contentType: "application/gzip" } });
+      q.ingredienti = q.id; await kvSet(env, "req:" + q.id, q);
+      const m = /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); if (m) { const r = await kvGet(env, "sp:" + m[1]); if (r && r.copione) { r.copione.ingredienti = q.id; await kvSet(env, "sp:" + r.id, r); } }
+      return json({ ok: true, key: "ingredienti/" + q.id + ".tgz", bytes: bytes.length });
+    }
+    if (method === "GET") {
+      const id = String(new URL(request.url).searchParams.get("req") || "").replace(/[^a-z0-9]/gi, "");
+      const o = id ? await env.PODCAST.get("ingredienti/" + id + ".tgz") : null; if (!o) return fail(404, "not_found");
+      return new Response(o.body, { headers: { "content-type": "application/gzip" } });
+    }
+  }
   if (method === "GET" && p === "/v1/ig/regia_pref") return json({ ok: true, pref: (await kvGet(env, "regia_pref")) || {} });
   if (method === "GET" && p === "/v1/ig/drafts") {
     const ds = await kvList(env, "draft:", 30);
@@ -4988,7 +5007,7 @@ async function spSaveCopione(env, q) { // v77: copia il copione del video nello 
   const m = /^spiegato:([a-z0-9-]+)$/.exec((q && q.origine) || ""); if (!m) return;
   const r = await kvGet(env, "sp:" + m[1]); if (!r) return;
   const ct = (q.copione.copertina || (r.copione && r.copione.copertina)) || null;
-  r.copione = { frasi: q.copione.frasi, ...(ct ? { copertina: ct } : {}), at: q.copione.at || new Date().toISOString(), req: q.id, fonte: q.copione_fisso && r.copione && r.copione.fonte === "modificato" ? "modificato" : "routine" };
+  r.copione = { frasi: q.copione.frasi, ...(ct ? { copertina: ct } : {}), ...(q.ingredienti ? { ingredienti: q.ingredienti } : {}), at: q.copione.at || new Date().toISOString(), req: q.id, fonte: q.copione_fisso && r.copione && r.copione.fonte === "modificato" ? "modificato" : "routine" };
   spLog(r, "Copione del video salvato (" + q.copione.frasi.length + " frasi)");
   await kvSet(env, "sp:" + r.id, r);
 }
@@ -5181,20 +5200,22 @@ async function spPanelApi(env, b) {
     const prev = (r.copione && r.copione.frasi) || [];
     const fr = (Array.isArray(b.frasi) ? b.frasi : []).map((x, i) => { const t = String((x && x.t) || "").trim(); const low = t.toLowerCase(); return { t, regia: ((prev[i] && prev[i].regia) || []).filter((y) => low.includes(String(y.parola || "").toLowerCase())) }; });
     const cp = reqCopione(fr, { titolo: b.copertina }); if (!cp) return { ok: false, error: "il copione è vuoto" };
-    r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato" }; spLog(r, "Copione del video scritto o modificato da te (" + cp.frasi.length + " frasi)");
+    const fraseCambiata = JSON.stringify(cp.frasi.map((x) => x.t)) !== JSON.stringify(prev.map((x) => x.t));
+    r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato", ...(!fraseCambiata && r.copione && r.copione.ingredienti ? { ingredienti: r.copione.ingredienti } : {}) }; // se cambiano le frasi, gli ingredienti non valgono più spLog(r, "Copione del video scritto o modificato da te (" + cp.frasi.length + " frasi)");
     r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
   }
   if (act === "sp_solo_copertina") { // v80: aggiunge (o rifà) solo la copertina al reel in bozza: niente nuovo montaggio, niente nuovi controlli sul resto
     const v = r.video_req ? await spReqState(env, r.video_req) : null; const q = r.video_req ? await kvGet(env, "req:" + r.video_req) : null;
     const d = q && q.draft_id ? await kvGet(env, "draft:" + q.draft_id) : null;
-    if (!d || d.status !== "bozza" || !d.video_url) return { ok: false, error: "nessun reel in bozza a cui aggiungere la copertina" };
+    if (!d || d.status !== "bozza" || !d.video_url) return { ok: false, error: "nessun reel in bozza a cui cambiare la copertina" };
+    const ingr = r.copione && r.copione.ingredienti; if (!ingr) return { ok: false, error: "questo reel non ha gli ingredienti salvati: per la copertina va rifatto il video dal copione" };
     const tit = String((b.copertina || (r.copione && r.copione.copertina && r.copione.copertina.titolo) || "")).trim().slice(0, 140);
     if (tit.length < 3) return { ok: false, error: "scrivi il titolo della copertina" };
     if (r.copione) { r.copione.copertina = { titolo: tit }; }
     const tpl = IG_TEMPLATES.find((x) => x.id === "iconografica");
-    const note = "SPIEGATO: " + id + "\nSOLO COPERTINA: il reel è già fatto e approvato nel contenuto (bozza " + d.id + "). Rifai SOLO la copertina con questo titolo: «" + tit + "» (le parole tra asterischi vanno in oro) e mettila in testa al video esistente (campo solo_copertina). Non toccare il resto.";
+    const note = "SPIEGATO: " + id + "\nSOLO COPERTINA: il reel è già fatto e approvato nel contenuto (bozza " + d.id + "). Rifai SOLO la copertina con questo titolo: «" + tit + "» (le parole tra asterischi vanno in oro) e rimonta il video dagli ingredienti salvati (campo solo_copertina). Non toccare il resto.";
     let rq;
-    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note, opzioni: { ...(q.opzioni || {}), modo: "auto" }, origine: "spiegato:" + id, copione: r.copione ? { frasi: r.copione.frasi, copertina: { titolo: tit }, at: r.copione.at } : null, solo_copertina: { draft_id: d.id, video_url: d.video_url, caption: d.caption, titolo: tit } }); }
+    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note, opzioni: { ...(q.opzioni || {}), modo: "auto" }, origine: "spiegato:" + id, copione: r.copione ? { frasi: r.copione.frasi, copertina: { titolo: tit }, at: r.copione.at } : null, solo_copertina: { draft_id: d.id, ingredienti: ingr, caption: d.caption, titolo: tit } }); }
     catch (e) { return { ok: false, error: e && e.code === "troppe_richieste_in_coda" ? "troppe richieste in coda: riprova più tardi" : "richiesta non creata" }; }
     r.video_req = rq.id; r.aggiornato = now; spLog(r, "Copertina chiesta per il reel in bozza: «" + tit + "»"); await kvSet(env, "sp:" + id, r);
     return { ok: true, req: rq.id, fire: rq.fire || "in coda" };
