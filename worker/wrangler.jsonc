@@ -13,6 +13,6 @@
   "r2_buckets": [{ "binding": "PODCAST", "bucket_name": "rg-podcast" }],
   // v63: collegamento diretto al worker rs-numeri (Read Signals); serve anche il secret RS_TOKEN su rg-api
   "services": [{ "binding": "RS", "service": "rs-numeri" }],
-  "triggers": { "crons": ["*/15 * * * *"] },
+  "triggers": { "crons": ["*/15 * * * *", "*/5 * * * *"] },
   "observability": { "enabled": true, "head_sampling_rate": 1, "logs": { "enabled": true, "head_sampling_rate": 1, "invocation_logs": true } }
 }
