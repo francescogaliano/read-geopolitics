@@ -36,49 +36,115 @@ h2{margin:0;padding:26px 0 10px;font:600 20px/1.3 "Source Serif 4",Georgia,serif
 .none{color:var(--mut);padding:14px 0;border-bottom:1px solid var(--line)}
 details{border-bottom:1px solid var(--line)}summary{cursor:pointer;min-height:48px;display:flex;align-items:center;color:var(--acc)}
 details p{color:var(--mut);font-size:14.5px}
+
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 4px}
+.kpi div{border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center}
+.kpi b{display:block;font:600 22px/1.2 "Source Serif 4",Georgia,serif}.kpi span{font-size:12px;color:var(--mut);line-height:1.25;display:block}
+.kpi div.w b{color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.chip{font-size:12.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:currentColor}.chip.warn{color:var(--warn);border-color:currentColor}
+.pr{cursor:pointer}.pr .ar{float:right;color:var(--mut);transition:transform .15s}.pr.on .ar{transform:rotate(90deg)}
+.det{display:none;margin-top:12px}.pr.on+.det,.it.on .det{display:block}
+.sec{font:500 11.5px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:16px 0 6px}
+.life{list-style:none;margin:0;padding:0}
+.life li{display:grid;grid-template-columns:96px 12px 1fr;gap:8px;padding:5px 0;font-size:14.5px;align-items:baseline}
+.life .h{font:500 12px "JetBrains Mono",ui-monospace,monospace;color:var(--mut)}
+.life .d{width:9px;height:9px;border-radius:50%;background:var(--ok)}.life .d.w{background:var(--warn)}.life .d.n{background:transparent;border:1.5px solid var(--mut)}
+.lk{all:unset;cursor:pointer;color:var(--acc);text-decoration:underline;text-underline-offset:2px}
+.cop{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14.5px}
+.cop ol{margin:6px 0 0;padding-left:22px}.cop li{margin:3px 0}
+.cop textarea{font:inherit;font-size:14.5px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);margin:4px 0;resize:vertical}
+[hidden]{display:none!important}a{color:var(--acc)}
+.small{font-size:13.5px;color:var(--mut);margin:6px 0}
 </style></head><body><div class="wrap">
 <div class="top"><a href="/ig/panel">‹ Pannello</a><a href="https://www.readgeopolitics.com/#spiegati" target="_blank" rel="noopener">Sul sito ›</a></div>
-<h1>Spiegati</h1><p class="lead">Le bozze arrivano dalla routine, due volte a settimana o quando le chiedi qui sotto. Apri l'anteprima, poi pubblica: lo Spiegato compare sul sito entro un minuto, parte un messaggio sul canale Telegram e la mattina dopo entra nella newsletter.</p>
+<h1>Spiegati</h1>
+<div class="kpi" id="kpi"></div>
 <div class="ask"><span class="mono">Chiedi uno Spiegato</span><textarea id="spq" rows="2" placeholder="La domanda o il tema, es. «Perché la Polonia litiga sulla Corte costituzionale?»"></textarea><button class="btn pri" id="spqb">Chiedi</button><div class="msg" id="spqm"></div><div id="rq"></div></div>
 <div id="out"><p class="none">Carico…</p></div>
-<details><summary>Come funziona</summary><p>Uno Spiegato pubblicato resta fermo alla sua data: non si riscrive. Sotto, il blocco «Da allora» si riempie da solo con le storie successive del tema. Per toglierlo dal sito usa «Ritira». Il video è facoltativo. «Fai il video» chiede l'iconografica con la voce partendo dallo Spiegato pubblicato: il reel arriva in bozza nel pannello e, quando esce su Instagram, il link compare da solo sotto lo Spiegato come «Guarda in 60 secondi». Puoi anche incollare a mano il link di un reel o di un file video.</p></details>
+<details><summary>Come funziona</summary><p>La routine scrive le bozze due volte a settimana, o quando ne chiedi una qui sopra. Apri l'anteprima e pubblica. Lo Spiegato compare sul sito entro un minuto, parte un messaggio sul canale Telegram e la mattina dopo entra nella newsletter. Tocca uno Spiegato pubblicato per vedere la sua storia: dove è uscito, cosa manca, il video.</p><p>Il video: «Fai il video» chiede l'iconografica partendo dallo Spiegato. Il copione del video (le frasi e la regia) viene salvato qui. Se scarti il reel il copione resta: puoi modificarlo e rifare solo il video. Quando il reel esce su Instagram il link compare da solo sotto lo Spiegato.</p><p>Uno Spiegato pubblicato resta fermo alla sua data. Il blocco «Da allora» si riempie da solo con le storie successive. Per toglierlo dal sito usa «Ritira»; puoi rimetterlo in qualsiasi momento.</p></details>
 </div>
 <script>
 function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(function(r){if(r.status===401){location.href="/ig/panel";return {}}return r.json()})}
 function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-var MESI=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+var MESI=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"],GG=["dom","lun","mar","mer","gio","ven","sab"];
 function dt(iso){var p=String(iso||"").slice(0,10).split("-");return p.length===3?(+p[2])+" "+MESI[+p[1]-1]:""}
-function card(x){var c=x.check||{err:[],avv:[]},cls=x.stato==="pubblicato"?"p":x.stato==="ritirato"?"r":"b";
- var h='<div class="it '+cls+'" data-id="'+e(x.id)+'"><b>'+e(x.titolo)+'</b><div class="m">'+(x.stato==="pubblicato"?"Pubblicato il "+dt(x.pubblicato_il):x.stato==="ritirato"?"Ritirato":"Bozza del "+dt(x.creato))+' · fermo al '+dt(x.data)+' · '+x.passi+' passi · '+x.fonti+' fonti</div>';
- if(x.note)h+='<div class="m">Nota della routine: '+e(x.note)+'</div>';
- if(c.err.length)h+='<ul class="chk e">'+c.err.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';
- if(c.avv.length)h+='<ul class="chk a">'+c.avv.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';
- h+='<div class="row"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">'+(x.stato==="pubblicato"?"Apri":"Anteprima")+'</a>';
- if(x.stato!=="pubblicato")h+='<button class="btn pri" data-a="sp_pubblica"'+(c.err.length?' disabled':'')+'>Pubblica</button>';
- if(x.stato==="pubblicato")h+='<button class="btn" data-a="sp_ritira">Ritira</button>';
- if(x.stato!=="pubblicato")h+='<button class="btn del" data-a="sp_scarta">Scarta</button>';
- h+='</div>';
- if(x.stato==="pubblicato"){var v=x.vreq;var vs=v?(v.permalink?'Uscito su Instagram ✓ · <a href="'+e(v.permalink)+'" target="_blank" rel="noopener">apri</a>':v.bozza==="bozza"?'Bozza del reel pronta: approvala dal pannello':v.bozza?'Reel: '+e(v.bozza):v.stato==="in_coda"?'Richiesto, in coda':v.stato==="in_lavorazione"?'In lavorazione (10-15 minuti)':v.stato==="copione"?'Copione pronto: approvalo dalle Richieste del pannello':v.stato==="errore"?'Non riuscito: '+e(v.esito):e(v.stato)):'';
-  h+='<div class="vid"><span class="mono">Iconografica con la voce</span>'+(vs?'<div class="m">'+vs+'</div>':'')+
-  '<div class="row"><select data-o="voce"><option value="mia">La mia voce</option><option value="gemini">Voce Gemini</option><option value="musica">Solo musica</option></select><select data-o="durata"><option value="standard">60-75 s</option><option value="corta">45 s</option></select><select data-o="modo"><option value="auto">Fa tutto</option><option value="tappe">Prima il copione</option></select></div>'+
-  '<button class="btn pri" data-a="sp_fai_video">'+(v?'Rifai il video':'Fai il video')+'</button></div>'}
- h+='<div class="vid"><span class="mono">Video (facoltativo)</span><input data-v="ig" placeholder="Link del reel su Instagram" value="'+e(x.video&&x.video.ig||"")+'"><input data-v="mp4" placeholder="Oppure link di un file .mp4" value="'+e(x.video&&x.video.mp4||"")+'"><button class="btn" data-a="sp_video">Salva video</button></div><div class="msg"></div></div>';
- return h}
+function dth(iso){if(!iso)return "";var d=new Date(iso);if(isNaN(d))return dt(iso);var f=new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).formatToParts(d),g={};f.forEach(function(x){g[x.type]=x.value});return g.day+" "+String(g.month).replace(".","")+" "+g.hour+":"+g.minute}
+var OPEN={};try{OPEN=JSON.parse(sessionStorage.getItem("spOpen")||"{}")}catch(_){}
+function saveOpen(){try{sessionStorage.setItem("spOpen",JSON.stringify(OPEN))}catch(_){}}
+function vstato(v){if(!v)return null;
+ if(v.permalink)return {t:"Uscito su Instagram",c:"ok",h:'Uscito su Instagram ✓ · <a href="'+e(v.permalink)+'" target="_blank" rel="noopener">apri</a>'};
+ if(v.bozza==="bozza")return {t:"da rivedere",c:"warn",h:'Reel in bozza: rivedilo e pubblicalo dal <a href="/ig/panel">pannello</a>'};
+ if(v.bozza==="scartata")return {t:"reel scartato",c:"",h:"Reel scartato"};
+ if(v.bozza)return {t:v.bozza,c:"",h:"Reel: "+e(v.bozza)};
+ if(v.stato==="in_coda")return {t:"in coda",c:"",h:"Video richiesto, in coda"};
+ if(v.stato==="in_lavorazione")return {t:"in lavorazione",c:"",h:"Video in lavorazione"};
+ if(v.stato==="copione")return {t:"copione da approvare",c:"warn",h:'Copione pronto: approvalo dalle Richieste del <a href="/ig/panel">pannello</a>'};
+ if(v.stato==="errore")return {t:"non riuscito",c:"warn",h:"Video non riuscito: "+e(v.esito)};
+ return {t:v.stato,c:"",h:e(v.stato)}}
+function chips(x){var v=vstato(x.vreq),h='<div class="chips"><span class="chip ok">Sito ✓</span>';
+ h+=x.tg_at?'<span class="chip ok">Telegram ✓</span>':'<span class="chip warn">Telegram —</span>';
+ h+=x.nl?'<span class="chip ok">Newsletter '+dt(x.nl)+' ✓</span>':x.nl_stato==="inviata"?'<span class="chip ok">Newsletter '+dt(x.nl_data)+' ✓</span>':x.nl_stato==="in arrivo"?'<span class="chip">Newsletter '+dt(x.nl_data)+'</span>':'<span class="chip">Newsletter —</span>';
+ h+=x.video&&x.video.ig?'<span class="chip ok">Video ✓</span>':v?'<span class="chip '+v.c+'">Video: '+e(v.t)+'</span>':'<span class="chip">Video —</span>';
+ return h+'</div>'}
+function storia(x){var L=[];
+ L.push({at:x.creato,t:"Bozza scritta dalla routine ("+x.fonti+" fonti)"});
+ if(x.pubblicato_il)L.push({at:x.pubblicato_il,t:"Pubblicato"});
+ if(x.pubblicato_il)L.push(x.tg_at?{at:x.tg_at,t:"Inviato sul canale Telegram"}:{at:x.pubblicato_il,t:'Non inviato sul canale Telegram · <button class="lk" data-a="sp_telegram">Invia ora</button>',d:"n",raw:1});
+ if(x.nl_data){var nl=x.nl||x.nl_stato==="inviata";L.push({at:(x.nl||x.nl_data)+"T07:30:00",t:nl?"Nella newsletter del mattino":x.nl_stato==="in arrivo"?"Entrerà nella newsletter di domattina":"Non risulta nella newsletter di quella mattina",d:nl?"":"n",day:1})}
+ (x.log||[]).forEach(function(l){L.push({at:l.at,t:e(l.t),raw:1})});
+ var v=vstato(x.vreq);if(v&&!(x.video&&x.video.ig&&v.c==="ok"))L.push({at:"9999",t:v.h,d:v.c==="warn"?"w":"",raw:1,now:1});
+ L.sort(function(a,b){return String(a.at).localeCompare(String(b.at))});
+ return '<ul class="life">'+L.map(function(l){return '<li><span class="h">'+(l.now?"ora":l.day?dt(l.at):dth(l.at))+'</span><span class="d '+(l.d||"")+'"></span><span>'+(l.raw?l.t:e(l.t))+'</span></li>'}).join("")+'</ul>'}
+function copione(x){var c=x.copione;
+ if(!c)return '<div class="cop small">Nessun copione salvato. Dal prossimo video il copione resta qui, anche se scarti il reel.</div>';
+ var F=c.frasi||[];
+ return '<div class="cop"><div><b style="font-size:15px;display:inline">Copione salvato</b> · '+F.length+' frasi · '+(c.fonte==="modificato"?"modificato da te il ":"della routine, ")+dth(c.at)+'</div>'+
+  '<ol class="cv">'+F.map(function(f){return '<li>'+e(f.t)+'</li>'}).join("")+'</ol>'+
+  '<div class="ce" hidden>'+F.map(function(f,i){return '<textarea rows="2" data-f="'+i+'">'+e(f.t)+'</textarea>'}).join("")+'<textarea rows="2" data-f="new" placeholder="Aggiungi una frase (facoltativo)"></textarea><p class="small">Svuota una frase per toglierla. La regia resta sulle parole che non cambi.</p></div>'+
+  '<div class="row" style="margin-top:8px"><button class="btn" data-ui="cped">Modifica</button><button class="btn pri" data-a="sp_copione_salva" hidden>Salva copione</button><button class="btn pri" data-a="sp_fai_video" data-cop="1">Rifai il video da questo copione</button></div></div>'}
+function opz(){return '<div class="row"><select data-o="voce"><option value="mia">La mia voce</option><option value="gemini">Voce Gemini</option><option value="musica">Solo musica</option></select><select data-o="durata"><option value="standard">60-75 s</option><option value="corta">45 s</option></select><select data-o="modo"><option value="auto">Fa tutto</option><option value="tappe">Prima il copione</option></select></div>'}
+function checks(c){var h="";if(c.err.length)h+='<ul class="chk e">'+c.err.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';if(c.avv.length)h+='<ul class="chk a">'+c.avv.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';return h}
+function bozza(x){var c=x.check||{err:[],avv:[]};
+ return '<div class="it b" data-id="'+e(x.id)+'"><b>'+e(x.titolo)+'</b><div class="m">Bozza del '+dth(x.creato)+' · fermo al '+dt(x.data)+' · '+x.passi+' passi · '+x.fonti+' fonti</div>'+(x.note?'<div class="m">Nota della routine: '+e(x.note)+'</div>':'')+checks(c)+
+ '<div class="row"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">Anteprima</a><button class="btn pri" data-a="sp_pubblica"'+(c.err.length?' disabled':'')+'>Pubblica</button><button class="btn del" data-a="sp_scarta">Scarta</button></div><div class="msg"></div></div>'}
+function pub(x){var on=OPEN[x.id]?" on":"",v=vstato(x.vreq);
+ return '<div class="it p'+on+'" data-id="'+e(x.id)+'"><div class="pr'+on+'" data-ui="tog"><span class="ar">›</span><b>'+e(x.titolo)+'</b><div class="m">Pubblicato il '+dt(x.pubblicato_il)+' · fermo al '+dt(x.data)+' · '+x.passi+' passi · '+x.fonti+' fonti</div>'+chips(x)+'</div>'+
+ '<div class="det"><div class="sec">La sua storia</div>'+storia(x)+
+ '<div class="row" style="margin-top:10px"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">Apri</a><button class="btn" data-a="sp_telegram">'+(x.tg_at?"Rilancia su Telegram":"Invia su Telegram")+'</button><button class="btn del" data-a="sp_ritira">Ritira</button></div>'+
+ '<div class="sec">Video</div>'+copione(x)+
+ '<div class="vid"><span class="small">'+(x.copione?"Oppure un video nuovo, con un copione riscritto da zero:":"Chiedi il video: la routine scrive il copione e lo salva qui.")+'</span>'+opz()+'<button class="btn'+(x.copione?"":" pri")+'" data-a="sp_fai_video">'+(x.copione?"Video nuovo da zero":v?"Rifai il video":"Fai il video")+'</button></div>'+
+ '<details><summary>Link del video a mano</summary><div class="vid"><input data-v="ig" placeholder="Link del reel su Instagram" value="'+e(x.video&&x.video.ig||"")+'"><input data-v="mp4" placeholder="Oppure link di un file .mp4" value="'+e(x.video&&x.video.mp4||"")+'"><button class="btn" data-a="sp_video">Salva video</button></div></details>'+
+ '<div class="msg"></div></div></div>'}
+function rit(x){return '<div class="it r" data-id="'+e(x.id)+'"><b>'+e(x.titolo)+'</b><div class="m">Ritirato'+(x.ritirato_il?" il "+dt(x.ritirato_il):"")+' · fermo al '+dt(x.data)+'</div><div class="row"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">Anteprima</a><button class="btn" data-a="sp_pubblica">Rimetti sul sito</button></div><div class="msg"></div></div>'}
 var ST={"in_coda":"in coda","fatta":"bozza pronta","non_fatta":"non fatta"};
 function rq(r){var R=(r&&r.richieste)||[],h=R.map(function(x){return '<div class="rq"><span>'+e(x.q)+(x.esito?'<br><small style="color:var(--mut)">'+e(x.esito)+'</small>':'')+'</span><i>'+(ST[x.stato]||e(x.stato))+(x.stato==="in_coda"?' · <a href="#" data-x="'+e(x.id)+'">annulla</a>':'')+'</i></div>'}).join("");
  if(!r.routine)h+='<details><summary>Collega la routine, per farla partire subito</summary><p>Senza collegamento la richiesta resta in coda e la routine la tratta al prossimo giro. Per farla partire subito: nella pagina della routine Spiegati crea un «API trigger» e incolla qui id e token.</p><div class="vid"><input id="rt" placeholder="id della routine (trig_…)"><input id="rtk" placeholder="token"><button class="btn" id="rtb">Collega</button></div></details>';
  document.getElementById("rq").innerHTML=h}
-function load(){api({action:"sp_lista"}).then(function(r){rq(r||{});var L=(r&&r.spiegati)||[],o=document.getElementById("out");
- var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}),R=L.filter(function(x){return x.stato==="ritirato"});
- o.innerHTML='<h2>Da pubblicare · '+B.length+'</h2>'+(B.length?B.map(card).join(""):'<p class="none">Nessuna bozza.</p>')+
-  '<h2>Pubblicati · '+P.length+'</h2>'+(P.length?P.map(card).join(""):'<p class="none">Nessuno Spiegato pubblicato dal pannello. (Oleshky è nel sito come file.)</p>')+
-  (R.length?'<h2>Ritirati · '+R.length+'</h2>'+R.map(card).join(""):"")})}
-document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]");if(!b)return;var it=b.closest(".it"),id=it.dataset.id,a=b.dataset.a,o={action:a,id:id};
+function kpi(r,B,P){var vr=P.filter(function(x){var v=vstato(x.vreq);return v&&v.c==="warn"}).length,n=r.prossimo?new Date(r.prossimo):null,nx="—",nl="prossimo giro";
+ if(n&&!isNaN(n)){var f=new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",weekday:"short",hour:"2-digit",minute:"2-digit"}).formatToParts(n),g={};f.forEach(function(x){g[x.type]=x.value});nx=String(g.weekday).replace(".","");nl="prossimo giro "+g.hour+":"+g.minute}
+ document.getElementById("kpi").innerHTML='<div><b>'+P.length+'</b><span>pubblicati</span></div><div'+(B.length?' class="w"':'')+'><b>'+B.length+'</b><span>da decidere</span></div><div'+(vr?' class="w"':'')+'><b>'+vr+'</b><span>video da rivedere</span></div><div><b>'+e(nx)+'</b><span>'+e(nl)+'</span></div>'}
+var DATA=[];
+function load(){api({action:"sp_lista"}).then(function(r){r=r||{};rq(r);var L=r.spiegati||[],o=document.getElementById("out");DATA=L;
+ var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}).sort(function(a,b){return String(b.pubblicato_il).localeCompare(String(a.pubblicato_il))}),R=L.filter(function(x){return x.stato==="ritirato"});
+ kpi(r,B,P);
+ o.innerHTML=(B.length?'<h2>Da decidere · '+B.length+'</h2>'+B.map(bozza).join(""):"")+
+  '<h2>Pubblicati · '+P.length+'</h2>'+(P.length?P.map(pub).join(""):'<p class="none">Nessuno Spiegato pubblicato dal pannello.</p>')+'<p class="small">Oleshky è nel sito come file e non passa da qui.</p>'+
+  (R.length?'<h2>Ritirati · '+R.length+'</h2>'+R.map(rit).join(""):"")})}
+document.addEventListener("click",function(ev){var u=ev.target.closest("[data-ui]");if(!u)return;var it=u.closest(".it");
+ if(u.dataset.ui==="tog"){var on=!it.classList.contains("on");it.classList.toggle("on",on);u.classList.toggle("on",on);OPEN[it.dataset.id]=on;saveOpen()}
+ if(u.dataset.ui==="cped"){var c=it.querySelector(".cop"),ed=c.querySelector(".ce"),open=ed.hidden;ed.hidden=!open;c.querySelector(".cv").hidden=open;c.querySelector('[data-a=sp_copione_salva]').hidden=!open;u.textContent=open?"Annulla":"Modifica"}});
+document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]");if(!b)return;var it=b.closest(".it"),id=it.dataset.id,a=b.dataset.a,o={action:a,id:id},x=DATA.find(function(y){return y.id===id})||{};
  if(a==="sp_scarta"&&!confirm("Scartare questa bozza? Non si recupera."))return;
- if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito?"))return;
+ if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito? Potrai rimetterlo quando vuoi."))return;
+ if(a==="sp_telegram"&&!confirm(x.tg_at?"Rilanciarlo sul canale Telegram? Gli iscritti ricevono un nuovo messaggio.":"Inviarlo ora sul canale Telegram?"))return;
  if(a==="sp_video"){o.ig=it.querySelector('[data-v=ig]').value;o.mp4=it.querySelector('[data-v=mp4]').value}
- if(a==="sp_fai_video"){o.opzioni={};it.querySelectorAll("[data-o]").forEach(function(x){o.opzioni[x.dataset.o]=x.value});if(!confirm("Chiedere l'iconografica di questo Spiegato? Parte la routine (10-15 minuti) e il reel arriva in bozza."))return}
- b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":a==="sp_pubblica"?"Pubblicato ✓"+(r.telegram?" · Telegram: "+r.telegram:""):"Fatto ✓";setTimeout(load,600)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+ if(a==="sp_copione_salva"){o.frasi=[];it.querySelectorAll(".ce textarea").forEach(function(t){o.frasi.push({t:t.value})})}
+ if(a==="sp_fai_video"){o.opzioni={};it.querySelectorAll("[data-o]").forEach(function(s){o.opzioni[s.dataset.o]=s.value});
+  if(b.dataset.cop){o.usa_copione=true;if(!confirm("Rifare il video da questo copione? La routine non riscrive le frasi: parte dallo storyboard. Il reel arriva in bozza."))return}
+  else if(!confirm(x.copione?"Fare un video nuovo con un copione riscritto da zero? Il copione salvato verrà sostituito da quello nuovo.":"Chiedere il video di questo Spiegato? Parte la routine e il reel arriva in bozza."))return}
+ b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":a==="sp_pubblica"?"Pubblicato ✓"+(r.telegram?" · Telegram: "+r.telegram:""):a==="sp_telegram"?"Inviato sul canale ✓":a==="sp_copione_salva"?"Copione salvato ✓":"Fatto ✓";setTimeout(load,700)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
 document.addEventListener("click",function(ev){var t=ev.target;
  if(t.id==="spqb"){var q=document.getElementById("spq").value.trim(),m=document.getElementById("spqm");if(q.length<5){m.textContent="Scrivi la domanda o il tema.";return}t.disabled=true;api({action:"sp_chiedi",q:q}).then(function(r){t.disabled=false;if(r&&r.ok){document.getElementById("spq").value="";m.textContent="Richiesta inviata ✓ · "+r.fire;load()}else m.textContent="Non riuscito: "+((r&&r.error)||"errore")})}
  if(t.dataset&&t.dataset.x){ev.preventDefault();api({action:"sp_chiedi_annulla",rid:t.dataset.x}).then(load)}
