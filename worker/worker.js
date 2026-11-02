@@ -4786,12 +4786,32 @@ async function salaStato(env) {
   const P = (id) => progetti.find((p) => p.id === id);
   const tr = rep ? rep.triggers.filter(salaTracked) : [];
   const live = await salaLive(env, oggi);
+  const evs = (await kvGet(env, "sala:ev:" + oggi)) || []; // v78: avvisi delle routine (in tempo reale)
+  const evNorm = (x) => String(x || "").toLowerCase().replace(/\s+/g, " ").trim();
   let foto = null; try { foto = ((await env.DB.prepare("SELECT updated_at FROM kv WHERE k='sala:inbox'").first()) || {}).updated_at || null; } catch (e) {}
   const fotoT = Date.parse(foto || (rep && rep.at) || 0);
   for (const t of tr) {
     let st = salaEsito(t, mem, now, runs); const p = P(salaProg(t.name));
     let lr = t.last_run;
-    { // v77: conferma dai risultati (più fresca del guardiano) oppure attesa dichiarata se l'orario è passato dopo l'ultimo controllo
+    let evOk = false;
+    { // v78: avvisi della routine stessa: più freschi di tutto il resto
+      const mine = evs.filter((x) => evNorm(x.nome) === evNorm(t.name));
+      const ini = mine.filter((x) => x.fase === "inizio").pop(), fin = mine.filter((x) => x.fase === "fine").pop();
+      if (fin && (!ini || fin.at >= ini.at) && (!lr || fin.at > (lr.finished_at || lr.fired_at))) {
+        const start = ini && ini.at <= fin.at ? ini.at : fin.at;
+        st = fin.esito === "errore" ? { e: "bad", msg: "errore: " + (fin.nota || "senza dettagli"), key: t.id + ":ev:" + fin.at } : { e: "ok", msg: "finita alle " + salaHM(fin.at) + (fin.nota ? " · " + fin.nota : "") };
+        lr = { status: fin.esito === "errore" ? "FAILED" : "SUCCEEDED", fired_at: start, finished_at: fin.at }; evOk = true;
+        if (!runs.some((r) => r.id === t.id && Math.abs(Date.parse(r.fired) - Date.parse(start)) < 15 * 60000)) runs.push({ id: t.id, nome: t.name, prog: salaProg(t.name), fired: start, finished: fin.at, status: lr.status, fail: fin.esito === "errore" ? fin.nota : "", dur: (Date.parse(fin.at) - Date.parse(start)) / 1000 });
+        else for (const r of runs) if (r.id === t.id && Math.abs(Date.parse(r.fired) - Date.parse(start)) < 15 * 60000) { r.finished = fin.at; r.status = lr.status; r.dur = (Date.parse(fin.at) - Date.parse(r.fired)) / 1000; }
+      } else if (ini && (!fin || ini.at > fin.at) && (!lr || ini.at > lr.fired_at)) {
+        const mins = Math.round((now - Date.parse(ini.at)) / 60000), med = salaMed((mem[t.id] || {}).durs || []);
+        const lim = Math.max(90, med ? Math.round(med / 60) * 3 : 0);
+        st = mins > lim ? { e: "bad", msg: "partita alle " + salaHM(ini.at) + ", non ha ancora finito (" + mins + " min)", key: t.id + ":lenta:" + ini.at } : { e: "run", msg: "in corso da " + mins + " min" };
+        lr = { status: "RUNNING", fired_at: ini.at, finished_at: null }; evOk = true;
+        if (!runs.some((r) => r.id === t.id && Math.abs(Date.parse(r.fired) - Date.parse(ini.at)) < 15 * 60000)) runs.push({ id: t.id, nome: t.name, prog: salaProg(t.name), fired: ini.at, finished: null, status: "RUNNING" });
+      }
+    }
+    if (!evOk) { // v77: conferma dai risultati (più fresca del guardiano) oppure attesa dichiarata se l'orario è passato dopo l'ultimo controllo
       const lv = SALA_LIVE.find((x) => x[0].test(t.name || "")); const E = lv && live[lv[1]];
       if (E && (!lr || E > lr.fired_at)) {
         st = { e: "ok", msg: lv[2] + " (" + salaHM(E) + ")" };
@@ -5101,6 +5121,16 @@ async function salaRoute(request, env, p, method, url) {
   if (!p.startsWith("/v1/sala/")) return null;
   if (!authorized(request, env)) return fail(401, "unauthorized");
   if (p === "/v1/sala/rapporto" && method === "POST") { const b = await request.json().catch(() => null); if (!b) return fail(400, "json"); return json(await salaRapporto(env, b)); }
+  if (p === "/v1/sala/evento" && method === "POST") { // v78: ogni routine avvisa la sala quando parte e quando finisce
+    const b = await request.json().catch(() => null);
+    const nome = String((b && b.routine) || "").trim().slice(0, 120), fase = String((b && b.fase) || "");
+    if (!nome || !["inizio", "fine"].includes(fase)) return fail(400, "evento", "atteso { routine, fase: inizio|fine, esito?: ok|errore, nota? }");
+    const esito = fase === "fine" ? (b.esito === "errore" ? "errore" : "ok") : "";
+    const ev = { nome, fase, esito, nota: String(b.nota || "").slice(0, 300), at: new Date().toISOString() };
+    const k = "sala:ev:" + romeToday(); const L = (await kvGet(env, k)) || []; L.push(ev); await kvSet(env, k, L.slice(-300));
+    if (esito === "errore") { try { await tgPriv(env, "🔴 <b>Sala di controllo</b>\n" + esc(nome) + ": " + esc(ev.nota || "errore") + '\n<a href="' + SALA_URL + '">Apri la sala</a>'); } catch (e) {} }
+    return json({ ok: true });
+  }
   if (p === "/v1/sala/coda" && method === "GET") return json({ ok: true, coda: (await kvGet(env, "sala:coda")) || [] });
   if (p === "/v1/sala/coda" && method === "POST") {
     const b = (await request.json().catch(() => null)) || {}; const done = new Set((b.fatti || []).map(String));
