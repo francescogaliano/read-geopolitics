@@ -304,7 +304,7 @@ main{padding-block:24px 64px}
 @media (min-width:1100px){#briefing.read.rl-on{display:block;max-width:760px}}
 .rl{margin:10px 0 28px}
 .rl-meta{font:500 12px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}.rl-meta b{color:var(--ok,#2E8B57);font-weight:600}
-.rl-bar{display:flex;gap:4px;margin:8px 0 6px}.thp .acc-close{display:none}.thp-top{display:flex;align-items:center;gap:10px;margin:0 0 10px}.thp-st{font:500 11.5px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.rl-start{margin:26px -16px 12px;padding:18px 16px 10px;background:var(--surface);border-top:3px solid var(--ink);border-bottom:1px solid var(--line)}.rl-sk{font:500 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rl-st{font:600 25px/1.15 var(--serif,Georgia),serif;margin:3px 0 6px}.rl-g.rl-gs{justify-content:flex-start;gap:10px;margin:26px 0 4px;padding-bottom:8px;border-bottom:2px solid var(--ink);text-transform:none;letter-spacing:0;color:var(--ink)}.rl-gs b{font:600 22px/1.2 var(--serif,Georgia),serif}.rl-gs>span{font:500 13px var(--mono,ui-monospace),monospace;color:var(--muted)}.rl-gs .rl-more{margin-left:auto}.aggh{display:flex;align-items:center;gap:8px;margin:18px 0 8px}.aggh .label{color:var(--sample-ink)}.aggh i{flex:1;height:1px;background:var(--sample-line)}.aggnote{font-size:12.5px;line-height:1.4;color:var(--muted);margin:-2px 0 8px}.aggh{margin-top:0!important}.rl-bar i{flex:1;height:3px;border-radius:2px;background:var(--line)}.rl-bar i.on{background:var(--accent)}
+.rl-bar{display:flex;gap:4px;margin:8px 0 6px}.rl-peeking{animation:rlPeek 1.6s ease 1}@keyframes rlPeek{0%{transform:none}30%,55%{transform:translateX(-46px)}100%{transform:none}}.rl-peek{position:absolute;right:0;top:35%;height:30%;width:46px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:12.5px;font-weight:600;color:var(--accent);background:linear-gradient(90deg,transparent,var(--surface-2));pointer-events:none;opacity:0;animation:rlPeekG 1.6s ease 1;z-index:3}@keyframes rlPeekG{0%,100%{opacity:0}30%,55%{opacity:1}}@media (prefers-reduced-motion:reduce){.rl-peeking,.rl-peek{animation:none}}.thp .acc-close{display:none}.thp-top{display:flex;align-items:center;gap:10px;margin:0 0 10px}.thp-st{font:500 11.5px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.rl-start{margin:26px -16px 12px;padding:18px 16px 10px;background:var(--surface);border-top:3px solid var(--ink);border-bottom:1px solid var(--line)}.rl-sk{font:500 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rl-st{font:600 25px/1.15 var(--serif,Georgia),serif;margin:3px 0 6px}.rl-g.rl-gs{justify-content:flex-start;gap:10px;margin:26px 0 4px;padding-bottom:8px;border-bottom:2px solid var(--ink);text-transform:none;letter-spacing:0;color:var(--ink)}.rl-gs b{font:600 22px/1.2 var(--serif,Georgia),serif}.rl-gs>span{font:500 13px var(--mono,ui-monospace),monospace;color:var(--muted)}.rl-gs .rl-more{margin-left:auto}.aggh{display:flex;align-items:center;gap:8px;margin:18px 0 8px}.aggh .label{color:var(--sample-ink)}.aggh i{flex:1;height:1px;background:var(--sample-line)}.aggnote{font-size:12.5px;line-height:1.4;color:var(--muted);margin:-2px 0 8px}.aggh{margin-top:0!important}.rl-bar i{flex:1;height:3px;border-radius:2px;background:var(--line)}.rl-bar i.on{background:var(--accent)}
 .rl-g{display:flex;justify-content:space-between;align-items:baseline;font:600 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .rl-more{background:none;border:0;color:var(--accent);font:600 12px var(--sans);cursor:pointer;padding:0;text-transform:none;letter-spacing:0}
 .rl-i{display:flex;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 6px;color:var(--ink);font:inherit;cursor:pointer;border-radius:0}
@@ -5765,6 +5765,44 @@ document.addEventListener("click",e=>{
 
 document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]"))return;e.preventDefault();const h=RL.hist.pop();if(!h){rlBackBtn();return}
   RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}rlBackBtn()});
+/* v-swipe: sul telefono, nel pannello, si scorre di lato. Verso destra = indietro (il pannello da cui arrivi, se no la storia prima); verso sinistra = avanti (il pannello da cui sei appena tornato, se no la storia dopo). */
+RL.fwd=[];
+{const _ng=rlNavGo;rlNavGo=function(f,a,self){if(!RL.back)RL.fwd=[];return _ng(f,a,self)}}
+function rlApplyNav(h){RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}RL.cur={...h};delete RL.cur.tg;rlBackBtn()}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]")||!RL.cur||!AGS.el)return;RL.fwd.push({...RL.cur,tg:AGS.el.querySelector(".ags-tg").innerHTML})},true);
+function rlForward(){const h=RL.fwd.pop();if(!h||!AGS.el)return false;if(RL.cur)RL.hist.push({...RL.cur,tg:AGS.el.querySelector(".ags-tg").innerHTML});rlApplyNav(h);return true}
+/* v-swipe-a: le prime 2 volte che si apre una storia sul telefono, il pannello «spinge» a sinistra e lascia intravedere la storia dopo, per insegnare lo scorrimento */
+function rlPeek(){let n=0;try{n=+localStorage.getItem("rg-swipe-peek")||0}catch(_){}if(n>=2)return;
+  const w=AGS.el;if(!w||!AGS.open)return;let co=false;try{co=matchMedia("(pointer:coarse)").matches||innerWidth<=700}catch(_){}if(!co)return;
+  const nx=w.querySelector(".ags-tg .rl-nx"),l=w.querySelector(".ags-l");if(!nx||!l)return;
+  try{localStorage.setItem("rg-swipe-peek",String(n+1))}catch(_){}
+  const nm=nx.textContent.replace(/^Prossima:\s*/,"").replace(/\s*›\s*$/,"");
+  const g=document.createElement("div");g.className="rl-peek";g.textContent=nm+" ›";l.parentNode.appendChild(g);
+  l.classList.add("rl-peeking");setTimeout(()=>{l.classList.remove("rl-peeking");g.remove()},1800)}
+{const f=rlOpen;rlOpen=function(...a){const w=AGS.el,was=!!(AGS.open&&w&&w.classList.contains("on"));const r=f.apply(this,a);if(!was)setTimeout(rlPeek,650);return r}}
+function rlSwipeGo(dir){const w=AGS.el;if(!w)return false;
+  if(dir<0){if(RL.hist.length){const b=w.querySelector(".ags-back");if(b){b.click();return true}}const p=w.querySelector(".ags-tg .rl-pv");if(p){p.click();return true}return false}
+  if(RL.fwd.length&&rlForward())return true;const n=w.querySelector(".ags-tg .rl-nx");if(n){n.click();return true}return false}
+(function(){const coarse=()=>{try{return matchMedia("(pointer:coarse)").matches||innerWidth<=700}catch(_){return false}};
+  let w=null,l=null,x0=0,y0=0,t0=0,dx=0,hz=null,ok=false;
+  const skip=t=>{if(!t||!t.closest)return true;if(t.closest("input,textarea,select,svg,canvas,.ags-hd,[data-noswipe]"))return true;
+    for(let n=t;n&&n!==l;n=n.parentElement){const cs=getComputedStyle(n);if(n.scrollWidth>n.clientWidth+2&&/(auto|scroll)/.test(cs.overflowX))return true}return false};
+  document.addEventListener("touchstart",e=>{ok=false;w=AGS.el;if(!w||!AGS.open||!coarse()||w.dataset.mode==="quiz"||e.touches.length>1)return;l=w.querySelector(".ags-l");if(!l||!l.contains(e.target)||skip(e.target))return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();dx=0;hz=null;ok=true;l.style.transition="none"},{passive:true});
+  document.addEventListener("touchmove",e=>{if(!ok)return;const x=e.touches[0].clientX,y=e.touches[0].clientY;dx=x-x0;const dy=y-y0;
+    if(hz===null&&(Math.abs(dx)>10||Math.abs(dy)>10))hz=Math.abs(dx)>Math.abs(dy)*1.4;if(!hz)return;
+    const can=dx>0?!!(RL.hist.length||w.querySelector(".ags-tg .rl-pv")):!!(RL.fwd.length||w.querySelector(".ags-tg .rl-nx"));
+    const k=can?1:.25;l.style.transform=`translateX(${dx*k}px)`;l.style.opacity=String(1-Math.min(.4,Math.abs(dx*k)/600))},{passive:true});
+  document.addEventListener("touchend",()=>{if(!ok)return;ok=false;const fast=Date.now()-t0<450;
+    const go=hz&&(Math.abs(dx)>innerWidth*.28||(fast&&Math.abs(dx)>60));const dir=dx>0?-1:1;
+    l.style.transition="transform .16s ease,opacity .16s ease";
+    if(!go){l.style.transform="";l.style.opacity="";return}
+    l.style.transform=`translateX(${dx>0?"":"-"}45%)`;l.style.opacity="0";
+    setTimeout(()=>{const done=rlSwipeGo(dir);l.style.transition="none";l.style.transform=`translateX(${dx>0?"-":""}30%)`;
+      requestAnimationFrame(()=>{l.style.transition="transform .18s ease,opacity .18s ease";l.style.transform="";l.style.opacity="";if(done)l.scrollTop=0})},150)},{passive:true});
+  document.addEventListener("touchcancel",()=>{if(!ok)return;ok=false;l.style.transform="";l.style.opacity=""},{passive:true});
+})();
+
 /* il glossario si apre nel pannello (prima: un fumetto che, dentro il pannello, restava nascosto sotto) */
 /* v96b: la parola del glossario apre il fumetto con la sintesi, anche sopra il pannello, così non si perde la lettura; «Apri nel pannello» per chi vuole di più */
 {const _og=openGloss;openGloss=function(btn){_og(btn);const d=document.getElementById("gloss");if(!d)return;if(AGS.open)d.classList.add("gl-top");const a=document.createElement("div");a.className="gs gl-more";a.innerHTML=`<button type="button" class="linkbtn" data-gl-open="${esc(btn.dataset.gl)}">Apri nel pannello ›</button>`;d.appendChild(a)}}
