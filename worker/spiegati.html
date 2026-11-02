@@ -97,12 +97,11 @@ function storia(x){var L=[];
  var v=vstato(x.vreq);if(v&&!(x.video&&x.video.ig&&v.c==="ok"))L.push({at:"9999",t:v.h,d:v.c==="warn"?"w":"",raw:1,now:1});
  L.sort(function(a,b){return String(a.at).localeCompare(String(b.at))});
  return '<ul class="life">'+L.map(function(l){return '<li><span class="h">'+(l.now?"ora":l.day?dt(l.at):dth(l.at))+'</span><span class="d '+(l.d||"")+'"></span><span>'+(l.raw?l.t:e(l.t))+'</span></li>'}).join("")+'</ul>'}
-function copione(x){var c=x.copione;
- if(!c)return '<div class="cop small">Nessun copione salvato. Dal prossimo video il copione resta qui, anche se scarti il reel.</div>';
- var F=c.frasi||[];
+function copione(x){var c=x.copione,F=(c&&c.frasi)||[];
+ var ed='<div class="ce"'+(c?' hidden':'')+'><textarea rows="'+Math.max(6,F.length+2)+'" data-cp>'+e(F.map(function(f){return f.t}).join("\n"))+'</textarea><p class="small">Una frase per riga, nell\'ordine in cui la voce le dice. '+(c?'La regia resta sulle parole che non cambi.':'La regia la propone la routine.')+'</p></div>';
+ if(!c)return '<div class="cop"><div><b style="font-size:15px;display:inline">Nessun copione salvato</b></div><p class="small">Puoi scriverlo tu qui sotto, oppure chiedere il video e lo scrive la routine. In entrambi i casi resta qui, anche se scarti il reel.</p>'+ed+'<div class="row" style="margin-top:8px"><button class="btn pri" data-a="sp_copione_salva">Salva copione</button></div></div>';
  return '<div class="cop"><div><b style="font-size:15px;display:inline">Copione salvato</b> · '+F.length+' frasi · '+(c.fonte==="modificato"?"modificato da te il ":"della routine, ")+dth(c.at)+'</div>'+
-  '<ol class="cv">'+F.map(function(f){return '<li>'+e(f.t)+'</li>'}).join("")+'</ol>'+
-  '<div class="ce" hidden>'+F.map(function(f,i){return '<textarea rows="2" data-f="'+i+'">'+e(f.t)+'</textarea>'}).join("")+'<textarea rows="2" data-f="new" placeholder="Aggiungi una frase (facoltativo)"></textarea><p class="small">Svuota una frase per toglierla. La regia resta sulle parole che non cambi.</p></div>'+
+  '<ol class="cv">'+F.map(function(f){return '<li>'+e(f.t)+'</li>'}).join("")+'</ol>'+ed+
   '<div class="row" style="margin-top:8px"><button class="btn" data-ui="cped">Modifica</button><button class="btn pri" data-a="sp_copione_salva" hidden>Salva copione</button><button class="btn pri" data-a="sp_fai_video" data-cop="1">Rifai il video da questo copione</button></div></div>'}
 function opz(){return '<div class="row"><select data-o="voce"><option value="mia">La mia voce</option><option value="gemini">Voce Gemini</option><option value="musica">Solo musica</option></select><select data-o="durata"><option value="standard">60-75 s</option><option value="corta">45 s</option></select><select data-o="modo"><option value="auto">Fa tutto</option><option value="tappe">Prima il copione</option></select></div>'}
 function checks(c){var h="";if(c.err.length)h+='<ul class="chk e">'+c.err.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';if(c.avv.length)h+='<ul class="chk a">'+c.avv.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';return h}
@@ -140,7 +139,7 @@ document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]
  if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito? Potrai rimetterlo quando vuoi."))return;
  if(a==="sp_telegram"&&!confirm(x.tg_at?"Rilanciarlo sul canale Telegram? Gli iscritti ricevono un nuovo messaggio.":"Inviarlo ora sul canale Telegram?"))return;
  if(a==="sp_video"){o.ig=it.querySelector('[data-v=ig]').value;o.mp4=it.querySelector('[data-v=mp4]').value}
- if(a==="sp_copione_salva"){o.frasi=[];it.querySelectorAll(".ce textarea").forEach(function(t){o.frasi.push({t:t.value})})}
+ if(a==="sp_copione_salva"){o.frasi=it.querySelector("[data-cp]").value.split("\n").map(function(t){return {t:t.trim()}}).filter(function(f){return f.t})}
  if(a==="sp_fai_video"){o.opzioni={};it.querySelectorAll("[data-o]").forEach(function(s){o.opzioni[s.dataset.o]=s.value});
   if(b.dataset.cop){o.usa_copione=true;if(!confirm("Rifare il video da questo copione? La routine non riscrive le frasi: parte dallo storyboard. Il reel arriva in bozza."))return}
   else if(!confirm(x.copione?"Fare un video nuovo con un copione riscritto da zero? Il copione salvato verrà sostituito da quello nuovo.":"Chiedere il video di questo Spiegato? Parte la routine e il reel arriva in bozza."))return}
