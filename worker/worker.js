@@ -1116,7 +1116,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dc-f details{margin-top:12px}.dc-f summary{font-size:13px;color:#8FA0AE;cursor:pointer}
 .tab .bdg{background:#E5B45A;color:#0B1830;border-radius:9px;padding:0 6px;font-size:12px;margin-left:4px}
 </style>
-<main><div class="hdr"><div><h1>Pannello Read Geopolitics</h1><div class="sub" id="acc">carico…</div></div><button type="button" class="gearb" id="gearb" aria-label="Canali e uscita"><span class="gdot" id="gdot"></span><span class="gtx" id="chsum">carico…</span><span class="gic">⚙</span></button></div>
+<main><div class="hdr"><div><h1>Read Geopolitics</h1><div class="sub" id="acc">carico…</div></div><button type="button" class="gearb" id="gearb" aria-label="Canali e uscita"><span class="gdot" id="gdot"></span><span class="gtx" id="chsum">carico…</span><span class="gic">⚙</span></button></div>
 <nav class="sw" id="sw"><button type="button" class="on" data-sw="og">Pannello</button><a href="/ig/sala">Sala di controllo</a><button type="button" data-sw="st">Statistiche</button></nav>
 <div class="card chan" id="chan" hidden><div class="chh"><b>Canali e uscita</b><button type="button" class="chx" id="chx" aria-label="Chiudi">✕</button></div>
 <details class="chr"><summary><span class="ic">⏱</span><div class="cht"><b>Uscita</b><div class="s"><span class="dot" id="usd"></span><span id="ussum">carico…</span></div></div><span class="gear">⚙</span></summary>
@@ -1777,6 +1777,7 @@ function fitTabs(){const bar=document.getElementById("tabs"),tm=document.getElem
 {const o=document.querySelector('.tab[data-t="og"]');if(o&&window.MutationObserver)new MutationObserver(()=>{clearTimeout(window._ft);window._ft=setTimeout(fitTabs,60)}).observe(o,{childList:true,subtree:true,characterData:true})}
 window.addEventListener("resize",()=>{clearTimeout(window._ft);window._ft=setTimeout(fitTabs,120)});setTimeout(fitTabs,0);
 document.querySelectorAll("#sw [data-sw]").forEach(b=>b.onclick=()=>setTab(b.dataset.sw));
+setTimeout(()=>{if(location.hash==="#st")setTab("st");{const m=/^#tab=(og|list|rq|wk|pd|ut|lk|dc)$/.exec(location.hash);if(m)setTab(m[1])}if(location.hash==="#canali"){const c=document.getElementById("chan");c.hidden=false;document.getElementById("gearb").classList.add("on")}},0);
 document.getElementById("gearb").onclick=e=>{e.stopPropagation();const tmm=document.getElementById("tbm");if(tmm)tmm.hidden=true;const c=document.getElementById("chan");c.hidden=!c.hidden;document.getElementById("gearb").classList.toggle("on",!c.hidden)};document.getElementById("chx").onclick=()=>{document.getElementById("chan").hidden=true;document.getElementById("gearb").classList.remove("on")};document.addEventListener("click",e=>{const m=document.getElementById("tbm");if(m&&!m.hidden&&!e.target.closest("#tbm"))m.hidden=true});
 /* v67: Proposte · decisioni su dossier, idee e richieste. Le porta la routine del sito, che poi applica le scelte nell'artifact */
 let DC=null,DCMORE={},DCT=null;
