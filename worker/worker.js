@@ -5034,6 +5034,13 @@ function spCheck(s) {
   const ents = new Set(Object.keys(s.ent || {}));
   JSON.stringify(s.steps || []).replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, (_, k) => { if (!ents.has(k)) avv.push("nome cliccabile senza scheda: " + k); return ""; });
   if (s.steps && s.steps.some((st) => !(st.map && st.map.v))) avv.push("alcuni passi senza inquadratura della mappa");
+  try { // v85: tetti della politica fonti (come nel briefing): nessuna testata oltre il 20%, Al Jazeera oltre il 10% mai
+    const H = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+    const F = (s.fonti || []).map((f) => H(f.url)).filter(Boolean), n = F.length, C = {};
+    F.forEach((h) => { C[h] = (C[h] || 0) + 1; });
+    if (n >= 5) for (const h in C) { const q = C[h] / n; if (/aljazeera\.(com|net)$/.test(h) ? q > 0.1 : q > 0.2) avv.push("troppe fonti da " + h + ": " + C[h] + " su " + n + " (tetto " + (/aljazeera/.test(h) ? "10%" : "20%") + ")"); }
+    (s.steps || []).forEach((st, i) => { if (st && /^\s*al jazeera\s*$/i.test(String(st.src || ""))) avv.push("passo " + (i + 1) + ": Al Jazeera unica fonte"); });
+  } catch (e) {}
   return { err, avv: [...new Set(avv)] };
 }
 function spCard(r) {
