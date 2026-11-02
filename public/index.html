@@ -354,6 +354,18 @@ div.rl-r{cursor:default}.rl-sh+.rl-r,.rl-sl+.rl-r{border-top:0}button.rl-r:hover
 .rl-avv{border-top:0;border-bottom:1px solid var(--line)}
 .rl-alt{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding:12px 4px;font-size:13.5px;color:var(--muted)}.rl-alt span{font:600 11px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase}
 .rl-alt button{background:none;border:0;color:var(--accent);font:inherit;font-size:14px;padding:8px 0;min-height:40px;cursor:pointer}
+/* v95: «Anche oggi» compatto */
+.rl-end{margin:34px 0 16px;text-align:center}.rl-endr{display:flex;align-items:center;gap:12px;color:var(--muted)}.rl-endr::before,.rl-endr::after{content:"";flex:1;height:1px;background:var(--line)}
+.rl-endr span{font:600 11px var(--mono,ui-monospace),monospace;letter-spacing:.12em;text-transform:uppercase}.rl-end p{margin:8px 0 0;font-size:13.5px;color:var(--muted)}.rl-end p b{color:var(--ok,#2E8B57);font-weight:600}
+.rl-ao{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rl-aoh{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 6px}.rl-aoh b{font:600 17px/1.3 var(--serif,Georgia),serif;color:var(--ink)}.rl-aoh span{font:500 11px var(--mono,ui-monospace),monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rl-ar2{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:9px 14px;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer}.rl-ar2:hover{background:var(--surface-2)}
+.rl-aic{flex:0 0 34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:17px;background:var(--surface-2)}
+.rl-atx{flex:1;min-width:0}.rl-atx b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}.rl-atx>span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.rl-amt{flex:none;font:600 12px var(--mono,ui-monospace),monospace;color:var(--muted);font-variant-numeric:tabular-nums}.rl-amt .ok{color:var(--ok,#2E8B57)}.rl-amt .ko{color:var(--low,#C2453A)}.rl-ach{flex:none;color:var(--muted)}
+.rl-abet .rl-atx b{color:#E0962A}.rl-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#E0962A;margin-left:7px;vertical-align:middle}.rl-dot[hidden]{display:none}
+.rl-ao .rl-alt{border-top:1px solid var(--line);padding:8px 14px 10px}
+.rl-sp{border:0;padding:0}.rl-sp::before{display:none}.rl-sp .rl-bet{margin-top:0;padding-top:0;border-top:0}
 .rls{padding:6px 10px 18px}
 .rls-m{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 8px}
 .rls-h{font:600 23px/1.28 var(--serif,Georgia),serif;margin:0 0 14px;color:var(--ink)}
@@ -5497,8 +5509,12 @@ function rlBetHTML(b){const B=S.bet;if(!B||!S.briefings[0]||b!==S.briefings[0]||
   <div class="rl-bo"><button type="button" data-bt="si" aria-pressed="${m==="si"}"><span>${esc(B.a||"Sì")}</span><i aria-hidden="true">›</i></button><button type="button" data-bt="no" aria-pressed="${m==="no"}"><span>${esc(B.b||"No")}</span><i aria-hidden="true">›</i></button></div>
   <p class="rl-bn">${m?`<b>✓ Hai detto ${esc(m==="si"?(B.a||"Sì"):(B.b||"No"))}.</b> ${gg?`Il ${esc(gg)} trovi qui com'è andata: tu, gli altri lettori e l'AI.`:""}${c.tot?` Finora ${c.tot} voti.`:""} <button type="button" class="linkbtn" data-bt="x">Togli</button>`:`Un tocco. L'AI ha già fatto la sua stima: la vedi solo alla fine.`}</p>
   ${st.n?`<div class="rl-sc"><div><b>${st.ok} su ${st.n}</b>pronostici giusti</div><div><b>${Math.round(100*st.ok/st.n)}%</b>la tua precisione</div></div>`:""}</div>`}
-function rlBetFill(){let b=null;try{b=currentBrief()}catch(_){}document.querySelectorAll(".rl-betw").forEach(w=>{w.innerHTML=b?rlBetHTML(b):""})}
 {const _bf=betFill;betFill=function(){try{_bf()}catch(_){}try{rlBetFill()}catch(_){}}}
+function rlBetFill(){let b=null;try{b=currentBrief()}catch(_){}document.querySelectorAll(".rl-betw").forEach(w=>{w.innerHTML=b?rlBetHTML(b):""});
+  /* v95: anche la riga compatta del pronostico: «da fare» con il pallino finché non voti, poi la tua scelta */
+  const B=S.bet;document.querySelectorAll('.rl-ar2[data-rl-a="bet"]').forEach(r=>{const m=B?vtMine(B.poll):"";const mt=r.querySelector(".rl-amt");if(mt)mt.textContent=m?"✓ "+(m==="si"?(B.a||"Sì"):(B.b||"No")):"da fare";const d=r.querySelector(".rl-dot");if(d)d.hidden=!!m;
+    const sp=r.querySelector(".rl-atx span");if(sp&&B)sp.textContent=String(B.sticker||B.titolo||"").replace(/\*/g,"")})}
+/* v95: «Anche oggi» compatto: un riquadro separato dalle notizie («Fine delle notizie»), una riga per cosa (icona, mezza frase, numero); il contenuto si apre nel pannello */
 function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>t.id===id);
   const fine=v=>v.esito==="avvenuto"||v.esito==="smentito";
   const ver=b.verifiche||[],fin=ver.filter(fine),altri=ver.filter(v=>!fine(v));
@@ -5509,29 +5525,44 @@ function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>
   const drow=v=>{const e=rlYes(v.esito),m=vtMine("p:"+v.data+":"+(v.n||0)),q=rlQd(v),ai=q&&q.attesa==="probabile"?"si":q&&q.attesa==="improbabile"?"no":"";const lab=e==="si"?(q&&q.a||"Sì"):(q&&q.b||"No");
     return `<div class="rl-r"><span class="rl-ic">🎯</span><span class="rl-tx"><span class="rl-k2">Pronostico del ${esc(fmtDM(v.data))} · è andata: ${esc(lab)}</span>${q&&(q.sticker||q.titolo)?`<b>${esc(String(q.sticker||q.titolo).replace(/\*/g,""))}</b> `:""}${esc(v.riga)}<small>${m==="si"||m==="no"?`<b class="${m===e?"ok":"ko"}">${m===e?"✓ Ci hai preso":"✗ Non ci hai preso"}</b> · `:""}${ai?`L'AI ${ai===e?"ci aveva preso":"aveva sbagliato"}`:""}${src(v.fonte)}</small></span></div>`};
   const last=!!(S.briefings[0]&&b===S.briefings[0]);
-  const al=tl("since:avvisi");
-  const AL=al?`<button type="button" class="rl-r rl-avv" data-rl-t="since:avvisi"><span class="rl-ic">🔔</span><span class="rl-tx"><b>${esc(al.t)}</b><small>${esc(al.s||"")}</small></span><span class="rl-ar" aria-hidden="true">›</span></button>`:"";
-  const sum=[a?`<b class="ok">${a} ${plur(a,"avvenuto","avvenuti")}</b>`:"",sm?`<b class="ko">${sm} ${plur(sm,"smentito","smentiti")}</b>`:"",sc?`${sc} non ${plur(sc,"successo","successi")} entro la data`:"",na?`${na} ancora da vedere`:""].filter(Boolean).join(" · ");
-  const R=(ver.length||vd.length||last)?`<section class="rl-s" style="--rlc:var(--ok,#2E8B57)"><div class="rl-sh"><b>🧾 Il rendiconto</b><span>Avevamo detto · com'è andata</span></div>
-   ${ver.length?`<p class="rl-sl">I segnali indicati nei giorni scorsi, verificati stamattina: ${sum}.</p>`:""}${vd.map(drow).join("")}${fin.map(vrow).join("")}
-   ${altri.length?`<button type="button" class="rl-m2" data-rl-alt aria-expanded="${!!RL.alt}">${RL.alt?"Nascondi ‹":`Vedi ${plur(altri.length,"l'altro","gli altri "+altri.length)} ›`}</button>${RL.alt?altri.map(v=>`<div class="rl-r"><span class="rl-ic mu">${v.esito==="scaduto"?"–":"…"}</span><span class="rl-tx">${esc(v.segnale)}<small>${v.esito==="scaduto"?"Non successo entro la data":"Ancora da vedere"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span></div>`).join(""):""}`:""}
-   <div class="rl-betw">${rlBetHTML(b)}</div></section>`:"";
+  const P={};const R=[];
+  const row=(k,ic,t,sub,mt,attr,cls)=>`<button type="button" class="rl-ar2${cls?" "+cls:""}" ${attr||`data-rl-a="${k}"`}><span class="rl-aic" aria-hidden="true">${ic}</span><span class="rl-atx"><b>${t}</b><span>${esc(sub||"")}</span></span>${mt?`<span class="rl-amt">${mt}</span>`:""}<span class="rl-ach" aria-hidden="true">›</span></button>`;
+  const al=tl("since:avvisi");if(al)R.push(row("","🔔",esc(al.t),al.s,"",'data-rl-t="since:avvisi"'));
+  /* il rendiconto */
+  if(ver.length||vd.length){const sum=[a?`<b class="ok">${a} ${plur(a,"avvenuto","avvenuti")}</b>`:"",sm?`<b class="ko">${sm} ${plur(sm,"smentito","smentiti")}</b>`:"",sc?`${sc} non ${plur(sc,"successo","successi")} entro la data`:"",na?`${na} ancora da vedere`:""].filter(Boolean).join(" · ");
+    P.rend={t:"🧾 Il rendiconto",s:"Avevamo detto · com'è andata",h:`<div class="rl-s rl-sp">${ver.length?`<p class="rl-sl">I segnali indicati nei giorni scorsi, verificati stamattina: ${sum}.</p>`:""}${vd.map(drow).join("")}${fin.map(vrow).join("")}${altri.length?`<button type="button" class="rl-m2" data-rl-alt>Vedi ${plur(altri.length,"l'altro","gli altri "+altri.length)} ›</button><div class="rl-altri" hidden>${altri.map(v=>`<div class="rl-r"><span class="rl-ic mu">${v.esito==="scaduto"?"–":"…"}</span><span class="rl-tx">${esc(v.segnale)}<small>${v.esito==="scaduto"?"Non successo entro la data":"Ancora da vedere"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span></div>`).join("")}</div>`:""}</div>`};
+    const first=vd.length?vd[0].riga:(fin.find(v=>v.esito==="avvenuto")||fin[0]||{}).segnale||(ver[0]||{}).segnale;
+    R.push(row("rend","🧾","Il rendiconto",first?"Avevamo detto: "+first:"Avevamo detto, com'è andata",(a||sm)?[a?`<span class="ok">${a}✓</span>`:"",sm?`<span class="ko">${sm}✗</span>`:""].filter(Boolean).join(" "):ver.length?String(ver.length):""))}
+  /* il pronostico (la scommessa del giorno): la riga c'è solo sul briefing di oggi; si riempie quando arriva la domanda */
+  if(last){const B=S.bet&&S.bet.day===b.data?S.bet:null;const m=B?vtMine(B.poll):"";
+    P.bet={t:"🎯 Il tuo pronostico",s:"",h:`<div class="rl-s rl-sp"><div class="rl-betw">${rlBetHTML(b)}</div></div>`};
+    R.push(row("bet","🎯",`Il tuo pronostico<i class="rl-dot"${m?" hidden":""}></i>`,B?String(B.sticker||B.titolo||"").replace(/\*/g,""):"La domanda di oggi: rispondi con un tocco",B?(m?"✓ "+(m==="si"?(B.a||"Sì"):(B.b||"No")):"da fare"):"","","rl-abet"))}
+  /* cosa è cambiato */
   const ch=(b.cambiato||[]).filter(x=>x&&x.testo);const lm=prevBrief(b)?levelMoves(b):[];
-  const C=ch.length?`<section class="rl-s" style="--rlc:var(--accent)"><div class="rl-sh"><b>🔄 Cosa è cambiato da ieri</b><span>${ch.length} ${plur(ch.length,"sviluppo","sviluppi")}</span></div>${ch.map(x=>{const v=VERSO[x.verso]||VERSO.svolta;const sid=x.storia_id&&S.stories[x.storia_id]?x.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-rl-go="${esc(sid)}"`:""}><span class="rl-tx"><span class="rl-v v-${esc(x.verso||"svolta")}">${esc(v[1])}</span>${esc(x.testo)}</span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`}).join("")}${lm.length&&has("since:cambiato")?`<button type="button" class="rl-m2" data-rl-t="since:cambiato">${lm.length} ${plur(lm.length,"paese cambia","paesi cambiano")} livello di tensione ›</button>`:""}</section>`:"";
-  const ac=b.accadde;let A="";
+  if(ch.length){P.camb={t:"🔄 Cosa è cambiato da ieri",s:fmtDate(b.data,true),h:`<div class="rl-s rl-sp">${ch.map(x=>{const v=VERSO[x.verso]||VERSO.svolta;const sid=x.storia_id&&S.stories[x.storia_id]?x.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-rl-go="${esc(sid)}"`:""}><span class="rl-tx"><span class="rl-v v-${esc(x.verso||"svolta")}">${esc(v[1])}</span>${esc(x.testo)}</span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`}).join("")}${lm.length&&has("since:cambiato")?`<button type="button" class="rl-m2" data-rl-t="since:cambiato">${lm.length} ${plur(lm.length,"paese cambia","paesi cambiano")} livello di tensione ›</button>`:""}</div>`};
+    const x0=ch[0],v0=VERSO[x0.verso]||VERSO.svolta;R.push(row("camb","🔄","Cosa è cambiato da ieri",v0[1]+": "+x0.testo,String(ch.length)))}
+  /* accadde oggi */
+  const ac=b.accadde;
   if(ac&&ac.testo){const d=new Date(b.data+"T12:00:00");const y=parseInt(ac.anno,10);const ago=y?d.getFullYear()-y:0;const th=S.threads[ac.filone_id];
-    A=`<section class="rl-s" style="--rlc:#E0962A"><div class="rl-sh"><b>📜 Accadde oggi</b><span>${d.getDate()} ${MONTHS[d.getMonth()]}${ago>0?` · ${ago} ${plur(ago,"anno","anni")} fa`:""}</span></div>${y?`<div class="rl-y">${y}</div>`:""}<p class="rl-at">${esc(ac.testo)}</p>${ac.legame?`<p class="rl-al">${esc(ac.legame)}</p>`:""}<p class="rl-af">${th?`<button type="button" class="linkbtn" data-thread="${esc(th.id)}">Il filone ›</button> `:""}${ac.fonte&&ac.fonte.url?`<a class="src-inline" href="${esc(ac.fonte.url)}" target="_blank" rel="noopener">${esc(ac.fonte.nome||"fonte")}</a>`:""}</p></section>`}
+    P.acc={t:"📜 Accadde oggi",s:`${d.getDate()} ${MONTHS[d.getMonth()]}${ago>0?` · ${ago} ${plur(ago,"anno","anni")} fa`:""}`,h:`<div class="rl-s rl-sp">${y?`<div class="rl-y">${y}</div>`:""}<p class="rl-at">${esc(ac.testo)}</p>${ac.legame?`<p class="rl-al">${esc(ac.legame)}</p>`:""}<p class="rl-af">${th?`<button type="button" class="linkbtn" data-thread="${esc(th.id)}">Il filone ›</button> `:""}${ac.fonte&&ac.fonte.url?`<a class="src-inline" href="${esc(ac.fonte.url)}" target="_blank" rel="noopener">${esc(ac.fonte.nome||"fonte")}</a>`:""}</p></div>`};
+    R.push(row("acc","📜",`Accadde oggi${y?" · "+y:""}`,ac.testo,""))}
+  /* tendenza lenta e lenti: aprono le sezioni che ci sono già */
   let w=null;if(has("sub:slow")){try{w=slowFor(b)}catch(_){}}
-  const W=w?`<section class="rl-s" style="--rlc:#3FAE6C"><div class="rl-sh"><b>🐢 Tendenza lenta</b><span>${esc(fmtDate(w.data))} · ${esc(w.minuti||4)} minuti</span></div><button type="button" class="rl-r" data-rl-t="sub:slow"><span class="rl-tx"><span class="rl-wt">${esc(w.titolo)}</span><small class="rl-c2">${esc(w.sommario||"")}</small></span><span class="rl-ar" aria-hidden="true">›</span></button></section>`:"";
-  let Lz="";if(has("sub:lenti")){const on=prefs().lenti||{};const ok=x=>x&&(typeof x==="string"?x:x.testo);
+  if(w)R.push(row("","🐢","Tendenza lenta",w.titolo,esc((w.minuti||4)+" min"),'data-rl-t="sub:slow"'));
+  if(has("sub:lenti")){const on=prefs().lenti||{};const ok=x=>x&&(typeof x==="string"?x:x.testo);
     const L=[["tasca","In tasca",b.lente_tasca],["venture","Venture",b.lente_venture],["scitech","Scienza e tecnologia",b.lente_scitech],["viaggi","Viaggi",b.lente_viaggi]].filter(([k,,x])=>on[k]!==false&&(x||[]).filter(ok).length);
-    if(L.length)Lz=`<section class="rl-s" style="--rlc:#9B6FD6"><div class="rl-sh"><b>🔍 Le lenti</b><span>La giornata vista da vicino</span></div>${L.map(([k,n,x])=>{const f=x.filter(ok)[0];const t=typeof f==="string"?f:f.testo;return `<button type="button" class="rl-r" data-rl-t="sub:lenti"><span class="rl-ic">${LENSICO[k]||""}</span><span class="rl-tx"><b>${esc(n)}.</b> ${esc(clip(t,170))}</span><span class="rl-ar" aria-hidden="true">›</span></button>`}).join("")}</section>`}
+    if(L.length)R.push(row("","🔍","Le lenti",L.map(x=>x[1]).join(" · "),String(L.length),'data-rl-t="sub:lenti"'))}
+  RL.box=P;
   const alt=[has("since:numeri")&&["since:numeri","📈 Numeri"],has("sub:scoperte")&&["sub:scoperte","🔬 Scoperte"],has("since:lettori")&&["since:lettori","👥 I lettori, ieri"],has("sub:log")&&["sub:log","Come lavoriamo"]].filter(Boolean);
   const X=alt.length?`<div class="rl-alt"><span>Altro</span>${alt.map(([id,l])=>`<button type="button" data-rl-t="${id}">${l}</button>`).join("")}</div>`:"";
-  const body=AL+R+C+A+W+Lz;
   if(last&&!S.bet&&!RL.betW){RL.betW=1;let k=0;const iv=setInterval(()=>{if(S.bet||++k>40){clearInterval(iv);if(S.bet)rlBetFill()}},250)}
-  return body||X?`<div class="rl-g">Anche oggi</div>${body}${X}`:""}
-document.addEventListener("click",e=>{if(e.target.closest("[data-rl-alt]")){e.preventDefault();RL.alt=!RL.alt;rlBuild()}});
+  if(!R.length&&!X)return"";
+  /* il separatore: le notizie finiscono qui (con quante storie hai aperto) */
+  const N=RL.ids.length,n=RL.ids.filter(id=>rlLette(b.data).has(id)).length;
+  return `<div class="rl-end"><div class="rl-endr"><span>Fine delle notizie</span></div>${N?`<p>${n>=N?`Hai visto le storie di oggi: <b>${n} su ${N} ✓</b>`:`Hai aperto ${n} ${plur(N,"storia","storie")} su ${N}`}</p>`:""}</div>
+  <section class="rl-ao" aria-label="Anche oggi"><div class="rl-aoh"><b>Anche oggi</b><span>${R.length} ${plur(R.length,"cosa","cose")}</span></div>${R.join("")}${X}</section>`}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-rl-alt]");if(t){e.preventDefault();const d=t.nextElementSibling;if(d){if(!t.dataset.lab)t.dataset.lab=t.textContent;d.hidden=!d.hidden;t.textContent=d.hidden?t.dataset.lab:"Nascondi ‹"}return}
+  const r=e.target.closest("[data-rl-a]");if(r){e.preventDefault();const x=(RL.box||{})[r.dataset.rlA];if(!x)return;const b=currentBrief();rlOpenBox(x.t,x.s||(b?fmtDate(b.data,true):""),x.h);if(r.dataset.rlA==="bet")rlBetFill();try{track("anche-"+r.dataset.rlA)}catch(_){}}});
 function rlBuild(){const el=document.getElementById("briefing");const b=typeof currentBrief==="function"?currentBrief():null;if(!el||!b||!S.stories)return;
   el.classList.add("rl-on");
   const old=el.querySelector(":scope>.rl");if(old)old.remove();
