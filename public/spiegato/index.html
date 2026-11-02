@@ -85,6 +85,7 @@ details.src{border-top:0;margin-top:8px}
 .next button.shr-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:600}
 .next button.shr-row span{color:var(--mut);font-weight:400;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#112243;border:1px solid #2C4670;color:var(--fg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:80;opacity:0;transition:opacity .25s;pointer-events:none}.toast.on{opacity:1}
+.corr{border-top:1px solid var(--line,rgba(255,255,255,.15));margin-top:22px;padding-top:12px}.corr p{margin:6px 0;font-size:15px;opacity:.85}
 .bozza{background:var(--gold);color:#0B1830;padding:6px 10px;border-radius:4px;display:inline-block;margin-top:16px}
 .vidb video{width:100%;max-width:360px;aspect-ratio:9/16;background:#000;border-radius:10px;display:block;margin:0 0 10px}
 .err{padding:60px 18px;text-align:center;color:var(--mut)}
@@ -123,8 +124,8 @@ document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");v
 
 function page(){var s=SP,h="";
  h+='<div class="wrap"><div class="crumb mono"><a href="/#spiegati">Spiegati</a>'+(s.tema?' › <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Tema")+'</a>':'')+'</div>';
- if(s.bozza)h+='<p class="bozza mono">Anteprima della bozza · non è ancora sul sito</p>';h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
- h+='<div class="meta mono"><span>Spiegato al '+dl(s.data,true)+'</span><span>'+s.min+' minuti</span><span>'+(s.fonti||[]).length+' fonti</span>'+(s.fiducia?'<span>Fiducia: '+e(s.fiducia)+'</span>':'')+'<button type="button" class="shr" data-share="1">↗ Condividi</button></div></div>';
+ if(s.bozza)h+='<p class="bozza mono">'+(s.anteprima_di==="correzione"?"Anteprima della correzione · sul sito c'è ancora la versione attuale":s.anteprima_di==="versione"?"Versione "+e(s.versione)+" · non più sul sito":"Anteprima della bozza · non è ancora sul sito")+'</p>';h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
+ h+='<div class="meta mono"><span>Spiegato al '+dl(s.data,true)+'</span><span>'+s.min+' minuti</span><span>'+(s.fonti||[]).length+' fonti</span>'+(s.fiducia?'<span>Fiducia: '+e(s.fiducia)+'</span>':'')+(s.corretto&&s.corretto.length?'<span>Corretto il '+dl(s.corretto[s.corretto.length-1].data)+'</span>':'')+'<button type="button" class="shr" data-share="1">↗ Condividi</button></div></div>';
  h+='<section class="scrolly"><div class="stage" id="stage"><svg id="map" role="img" aria-label="'+e(s.map_alt||"Mappa del racconto")+'"></svg><div class="prog" id="prog">'+s.steps.map(function(){return "<i></i>"}).join("")+'</div><div class="cap mono" id="cap"></div><div class="cnt" id="cnt"><b id="cntb"></b><span class="mono" id="cnts"></span></div><div class="note" id="note"></div></div><div class="steps">';
  var chn=0,chName="";
  s.steps.forEach(function(st,i){if(st.ch){chn++;chName=st.ch}st._cap=chn+" · "+chName;
@@ -138,6 +139,7 @@ function page(){var s=SP,h="";
  if(s.letture){var L=s.letture;h+='<section class="blk"><h2>Due letture</h2><div class="vs"><div class="pro"><span class="mono">'+e(L.pro.k)+'</span><p>'+rich(L.pro.t)+'</p><small>'+rich(L.pro.chi)+'</small></div><div class="con"><span class="mono">'+e(L.con.k)+'</span><p>'+rich(L.con.t)+'</p><small>'+rich(L.con.chi)+'</small></div></div>'+(L.analisi?'<p class="an"><span class="lab">Analisi</span>'+rich(L.analisi)+'</p>':'')+'</section>'}
  if(s.osservare&&s.osservare.length)h+='<section class="blk"><h2>Da osservare</h2>'+s.osservare.map(function(o){return '<div class="w"><span>'+rich(o.t)+'</span><i>'+e(o.q)+'</i></div>'}).join("")+'</section>';
  h+='<section class="blk next"><button type="button" class="shr-row" data-share="1">↗ Condividi questo Spiegato <span>link ›</span></button>'+(s.tema?'<a href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Il tema")+' <span>storie ›</span></a>':'')+(s.altri||[]).map(function(a){return '<a href="'+e(a.href)+'">'+e(a.t)+' <span>'+e(a.k||"")+' ›</span></a>'}).join("")+'<a href="/#spiegati">Altri Spiegati <span>›</span></a></section>';
+ if(s.corretto&&s.corretto.length)h+='<div class="corr"><span class="mono">Correzioni</span>'+s.corretto.map(function(c){return '<p><b>'+dl(c.data)+'</b> · '+e(c.nota)+'</p>'}).join("")+'</div>';
  h+='<details class="more src"><summary>'+(s.fonti||[]).length+' fonti <span>›</span></summary><ol class="src-l">'+(s.fonti||[]).map(function(f){return '<li><a href="'+e(f.url)+'" target="_blank" rel="noopener">'+e(f.nome)+'</a>'+(f.nota?(/^\(/.test(f.nota)?' ':', ')+e(f.nota):'')+'</li>'}).join("")+'</ol><p class="end">'+e(s.nota_mappa||"Mappa schematica; percorsi indicativi.")+'</p></details></div>';
  document.getElementById("root").innerHTML=h;
  document.title=String(s.titolo).replace(/\*/g,"")+" · Spiegato · Read Geopolitics";
@@ -236,8 +238,8 @@ function progress(id){var mx=0,key="rg-sp-"+id;try{mx=+(localStorage.getItem(key
 
 var id=(new URLSearchParams(location.search).get("id")||"").replace(/[^a-z0-9-]/g,"");
 function fail(){document.getElementById("root").innerHTML='<p class="err">Questo Spiegato non è disponibile. <a href="/#spiegati">Vai a tutti gli Spiegati</a></p>'}
-var kq=(new URLSearchParams(location.search).get("k")||"").replace(/[^a-f0-9]/g,"");
-function load(){return fetch(RG_API+"/api/spiegato?id="+id+(kq?"&k="+kq:""),{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).catch(function(){
+var kq=(new URLSearchParams(location.search).get("k")||"").replace(/[^a-f0-9]/g,""),vq=(new URLSearchParams(location.search).get("v")||"").replace(/[^a-z0-9]/g,"");
+function load(){return fetch(RG_API+"/api/spiegato?id="+id+(kq?"&k="+kq:"")+(kq&&vq?"&v="+vq:""),{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).catch(function(){
  return fetch("/spiegato/"+id+".json",{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()})})}
 if(!id)fail();else load().then(function(j){SP=j;SP.ent=SP.ent||{};
  if(SP.tema&&!SP.ent.tema)SP.ent.tema={tipo:"Tema",nome:SP.tema_nome||"",testo:"Tutte le storie del tema, dall'inizio a oggi.",go:"Apri il tema",href:"/#t="+SP.tema};
