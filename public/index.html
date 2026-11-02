@@ -304,7 +304,7 @@ main{padding-block:24px 64px}
 @media (min-width:1100px){#briefing.read.rl-on{display:block;max-width:760px}}
 .rl{margin:10px 0 28px}
 .rl-meta{font:500 12px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}.rl-meta b{color:var(--ok,#2E8B57);font-weight:600}
-.rl-bar{display:flex;gap:4px;margin:8px 0 6px}.rl-start{margin:26px -16px 12px;padding:18px 16px 10px;background:var(--surface);border-top:3px solid var(--ink);border-bottom:1px solid var(--line)}.rl-sk{font:500 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rl-st{font:600 25px/1.15 var(--serif,Georgia),serif;margin:3px 0 6px}.rl-g.rl-gs{justify-content:flex-start;gap:10px;margin:26px 0 4px;padding-bottom:8px;border-bottom:2px solid var(--ink);text-transform:none;letter-spacing:0;color:var(--ink)}.rl-gs b{font:600 22px/1.2 var(--serif,Georgia),serif}.rl-gs>span{font:500 13px var(--mono,ui-monospace),monospace;color:var(--muted)}.rl-gs .rl-more{margin-left:auto}.aggh{display:flex;align-items:center;gap:8px;margin:18px 0 8px}.aggh .label{color:var(--sample-ink)}.aggh i{flex:1;height:1px;background:var(--sample-line)}.aggnote{font-size:12.5px;line-height:1.4;color:var(--muted);margin:-2px 0 8px}.aggh{margin-top:0!important}.rl-bar i{flex:1;height:3px;border-radius:2px;background:var(--line)}.rl-bar i.on{background:var(--accent)}
+.rl-bar{display:flex;gap:4px;margin:8px 0 6px}.thp .acc-close{display:none}.thp-top{display:flex;align-items:center;gap:10px;margin:0 0 10px}.thp-st{font:500 11.5px var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.rl-start{margin:26px -16px 12px;padding:18px 16px 10px;background:var(--surface);border-top:3px solid var(--ink);border-bottom:1px solid var(--line)}.rl-sk{font:500 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rl-st{font:600 25px/1.15 var(--serif,Georgia),serif;margin:3px 0 6px}.rl-g.rl-gs{justify-content:flex-start;gap:10px;margin:26px 0 4px;padding-bottom:8px;border-bottom:2px solid var(--ink);text-transform:none;letter-spacing:0;color:var(--ink)}.rl-gs b{font:600 22px/1.2 var(--serif,Georgia),serif}.rl-gs>span{font:500 13px var(--mono,ui-monospace),monospace;color:var(--muted)}.rl-gs .rl-more{margin-left:auto}.aggh{display:flex;align-items:center;gap:8px;margin:18px 0 8px}.aggh .label{color:var(--sample-ink)}.aggh i{flex:1;height:1px;background:var(--sample-line)}.aggnote{font-size:12.5px;line-height:1.4;color:var(--muted);margin:-2px 0 8px}.aggh{margin-top:0!important}.rl-bar i{flex:1;height:3px;border-radius:2px;background:var(--line)}.rl-bar i.on{background:var(--accent)}
 .rl-g{display:flex;justify-content:space-between;align-items:baseline;font:600 11.5px/1.4 var(--mono,ui-monospace),monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .rl-more{background:none;border:0;color:var(--accent);font:600 12px var(--sans);cursor:pointer;padding:0;text-transform:none;letter-spacing:0}
 .rl-i{display:flex;gap:12px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 6px;color:var(--ink);font:inherit;cursor:pointer;border-radius:0}
@@ -5741,6 +5741,28 @@ function rlBackBtn(){const w=AGS.el;if(!w)return;let b=w.querySelector(".ags-bac
 {const f=rlOpenB;rlOpenB=function(...a){return rlNavGo(f,a,rlOpenB)}}
 {const f=rlOpenBox;rlOpenBox=function(...a){return rlNavGo(f,a,rlOpenBox)}}
 {const f=mapOpen;mapOpen=function(...a){return rlNavGo(f,a,mapOpen)}}
+/* v-temi-pannello: un tema si apre nel pannello di lato (dal basso sul telefono), uguale da ovunque: lista di Temi, Esplora, storie, dossier. Dentro c'è lo stesso contenuto che prima si apriva nella lista. */
+function thPanTitle(t){return ((t.bandiere||[]).map(p=>flag(p)).filter(Boolean).join("")+" "+(t.titolo||thShort(t))).trim()}
+function thPanHTML(t){const ST={attivo:"in corso",dormiente:"fermo",chiuso:"concluso"};
+  let body="";try{body=themeArc(t,()=>true,0)}catch(e){body=`<p class="muted">Non riesco a mostrare questo tema.</p>`}
+  return `<div class="thp" data-thp="${esc(t.id)}"><div class="thp-top">${exFolBtn("filoni",t.id,t.titolo)}<span class="thp-st">${esc(ST[t.stato]||t.stato||"")}</span></div>${body}</div>`}
+function thOpen(id,lay,sec){const t=S.threads[id];if(!t)return false;if(lay)S.tlLayer[id]=lay;
+  rlOpenBox(thPanTitle(t),"Tema",thPanHTML(t));
+  const w=AGS.el;if(w){const l=w.querySelector(".ags-l");if(sec){requestAnimationFrame(()=>{const el=l&&l.querySelector("#dsec-"+CSS.escape(sec));if(el){if(el.tagName==="DETAILS")el.open=true;l.scrollTop=Math.max(0,el.offsetTop-12)}})}else if(l)l.scrollTop=0}
+  try{track("tema-pannello")}catch(_){}return true}
+function dosOpenBox(d,sec){rlOpenBox("🧭 "+d.titolo,"Dossier",`<div class="thp">${dossierHTML(d)}</div>`);if(sec)requestAnimationFrame(()=>{const l=AGS.el&&AGS.el.querySelector(".ags-l");const el=l&&l.querySelector("#dsec-"+CSS.escape(sec));if(el){if(el.tagName==="DETAILS")el.open=true;l.scrollTop=Math.max(0,el.offsetTop-12)}})}
+{const _od=openDossier;openDossier=function(id,sec){const d=S.dossier[id];if(!d)return;if(d.stato!=="pronto")return _od.apply(this,arguments);try{closeGloss()}catch(_){}
+  const tid=dosHome(d);if(tid){S.tlDosPick=S.tlDosPick||{};S.tlDosPick[tid]=id;thOpen(tid,"q",sec)}else dosOpenBox(d,sec)}}
+document.addEventListener("click",e=>{
+  const ds=e.target.closest(".thp [data-dsec]");if(ds){e.preventDefault();e.stopImmediatePropagation();const l=AGS.el&&AGS.el.querySelector(".ags-l");const sc=l&&l.querySelector("#dsec-"+CSS.escape(ds.dataset.dsec));if(sc){sc.open=true;l.scrollTo({top:Math.max(0,sc.getBoundingClientRect().top-l.getBoundingClientRect().top+l.scrollTop-12),behavior:"smooth"})}return}
+  const ly=e.target.closest(".thp [data-lay]");if(ly){e.preventDefault();e.stopImmediatePropagation();const k=ly.dataset.layT;S.tlLayer[k]=ly.dataset.lay;const t=S.threads[k];const l=AGS.el&&AGS.el.querySelector(".ags-l");
+    if(t&&l){const box=l.querySelector(".rl-box");if(box){box.innerHTML=thPanHTML(t);try{glossify(box)}catch(_){}}l.scrollTop=0}return}
+  const b=e.target.closest("[data-tl-theme],[data-tl-chip],[data-thread]");if(!b)return;
+  const id=b.dataset.tlTheme!==undefined?b.dataset.tlTheme:b.dataset.tlChip!==undefined?b.dataset.tlChip:b.dataset.thread;
+  if(!id)return;
+  if(id.startsWith("dos:")){const d=S.dossier[id.slice(4)];if(!d)return;e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();dosOpenBox(d);return}
+  if(!S.threads[id])return;e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();thOpen(id)},true);
+
 document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-back]"))return;e.preventDefault();const h=RL.hist.pop();if(!h){rlBackBtn();return}
   RL.back=true;try{if(h.self===mapOpen){S.selCountry=h.sel;renderPanel();highlightSel()}h.self.apply(null,h.a);if(h.self===rlOpenBox&&h.tg)AGS.el.querySelector(".ags-tg").innerHTML=h.tg;try{rlBetFill()}catch(_){}}finally{RL.back=false}rlBackBtn()});
 /* il glossario si apre nel pannello (prima: un fumetto che, dentro il pannello, restava nascosto sotto) */
@@ -5783,7 +5805,7 @@ function exList(o){const W=exWeek();let L=W.cur.filter(s=>(!o.area||storyArea(s)
     h+=`<div class="extb"><span class="label">Di cosa si parla qui</span><div class="extbar">${sg.map(g=>`<i style="flex:${g[2]};background:${g[3]}" title="${esc(g[1])} · ${g[2]}"></i>`).join("")}</div><div class="extleg">${sg.map(g=>g[0]?`<button type="button" data-exl="tema|${esc(g[0])}"><i style="background:${g[3]}"></i>${esc(g[1])} <span>${g[2]}</span></button>`:`<span class="exalt"><i style="background:${g[3]}"></i>altri <span>${g[2]}</span></span>`).join("")}</div></div>`}}
   if(!o.paese){const pz=exCount(L,s=>(s.paesi||[]).filter(i=>!o.area||AREA_OF[i]===o.area||(o.area==="italia"&&i==="ITA"))).slice(0,12);if(pz.length>1)h+=`<div class="excoins"><span class="label">Chi c’entra</span><div class="excs">${pz.map(x=>`<button type="button" class="excoin" data-exl="paese|${x[0]}" title="${esc(cName(x[0]))}"><span class="fl" style="--c:${exCol(exLv(x[0]))}">${flag(x[0])}</span><small>${esc(cName(x[0]).split(" ")[0])}</small><em>${x[1]}</em></button>`).join("")}</div></div>`}
   if(o.paese)h+=`<p class="exmore"><button type="button" class="linkbtn" data-exl="scheda|${o.paese}">La scheda del paese ›</button></p>`;
-  if(o.tema)h+=`<p class="exmore"><button type="button" class="linkbtn" data-thread="${esc(o.tema)}">Tutto il tema in Temi ›</button></p>`;
+  if(o.tema)h+=`<p class="exmore"><button type="button" class="linkbtn" data-thread="${esc(o.tema)}">Tutto il tema ›</button></p>`;
   let cur="";L.forEach(s=>{if(s.data!==cur){cur=s.data;h+=`<div class="exday">${esc(exDay(s.data))}</div>`}h+=exStoryRow(s)});
   if(!L.length)h+=`<p class="hint">Nessuna storia negli ultimi 7 giorni.</p>`;
   rlOpenBox(tit,exPl(L.length,"storia","storie")+" · ultimi 7 giorni",h+"</div>")}
