@@ -88,7 +88,7 @@ function render(){
  else frase=[nb?(nb===1?"Una routine ha un problema":nb+" routine hanno un problema"):"",nd?(nd===1?"una cosa aspetta te":nd+" cose aspettano te"):""].filter(Boolean).join(", ")+".";
  frase=frase.charAt(0).toUpperCase()+frase.slice(1);
  if(S.errore)frase='Ultimo rapporto scartato: '+S.errore+'.';
- h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.rapporto?"ultimo controllo "+hm(S.rapporto):"nessun controllo ancora")+'</div></section>';
+ h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.foto?"routine viste alle "+hm(S.foto)+" · "+(function(){var x=hm(S.prossimo_controllo),h=+x.slice(0,2);return h>=7&&h<=23?"prossimo controllo alle "+x:"prossimo controllo domani alle 07:07"})()+'<br>bozze e conferme del mattino: in tempo reale':"nessun controllo ancora")+'</div></section>';
  h+='<h2>Cosa devi fare<small>solo ciò che richiede te</small></h2>';
  p.problemi.forEach(function(x){h+='<div class="todo '+x.e+'"><b>'+e(x.nome)+': '+e(x.msg)+'</b><p>'+(x.e==="bad"?"Rilanciala: riparte da capo.":"È andata, ma in modo strano: controlla che abbia fatto tutto.")+'</p><button class="btn" data-rl="'+x.id+'">Rilancia</button><button class="btn sec" data-ig="'+e(x.key)+'">Va bene così</button><div class="res" hidden></div></div>'});
  p.dafare.forEach(function(x){h+='<div class="todo warn"><b>'+e(x.testo)+'</b><p>'+e(x.perche)+'</p><a class="btn" href="'+e(x.link)+'">Apri il pannello</a><button class="btn sec" data-ig="'+e(x.key)+'">Non serve, nascondi</button><div class="res" hidden></div></div>'});
@@ -100,6 +100,8 @@ function render(){
   if(!placed&&r.fired>now){placed=true;h+='<div class="ev now"><span class="h">'+hm(now)+'</span><span class="dot" style="background:var(--acc)"></span><span><b>Adesso</b></span></div>'}
   var c,t;
   if(r.status==="PREVISTO"){c="wait later";t="in programma"}
+  else if(r.status==="VISTO"){c="ok";t="→ fatta (lo dicono i risultati)"}
+  else if(r.status==="ATTESA"){c="wait";t="→ conferma al prossimo controllo"}
   else if(r.status==="MANCATO"){c="bad";t="→ non è partita"}
   else if(/FAIL|ERROR|CANCEL/.test(r.status)){c="bad";t="→ si è rotta"+(r.fail?" ("+r.fail+")":"")}
   else if(!r.finished){if(Date.now()-Date.parse(r.fired)>5400000){c="bad";t="→ ferma, non ha finito"}else{c="run";t="→ in corso"}}

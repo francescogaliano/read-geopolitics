@@ -4766,6 +4766,17 @@ function salaEsito(t, mem, now, runsToday) {
   return { e: "ok", msg: "" };
 }
 
+async function salaLive(env, oggi) { // v77: conferme in tempo reale dai risultati, senza aspettare il guardiano
+  const L = {};
+  try { const b = await env.DB.prepare("SELECT updated_at FROM docs WHERE type='briefings' AND key=?1").bind(oggi).first(); if (b && b.updated_at) L.sito = b.updated_at; } catch (e) {}
+  try { const p = await env.DB.prepare("SELECT created_at FROM podcast WHERE date=?1").bind(oggi).first(); if (p && p.created_at) L.podcast = p.created_at; } catch (e) {}
+  try { const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
+    const ds = (rs.results || []).map((r) => { try { return JSON.parse(r.v); } catch (e) { return null; } }).filter((d) => d && d.created_at && !/^(req-|icon-|alt)/.test(String(d.format || "")));
+    if (ds.length) L.igbozza = ds.map((d) => d.created_at).sort()[0]; } catch (e) {}
+  const dn = [L.podcast, L.igbozza, L.sito].filter(Boolean).sort()[0]; if (dn) L.briefing = dn; // il briefing c'è se l'hanno già usato podcast, Instagram o sito
+  return L;
+}
+const SALA_LIVE = [[/briefing del mattino/i, "briefing", "il briefing di oggi c'è"], [/podcast/i, "podcast", "la puntata di oggi è pubblicata"], [/^ig-bozza$/i, "igbozza", "la bozza di oggi è nel pannello"], [/^sito-pubblico$/i, "sito", "il briefing di oggi è sul sito"]];
 async function salaStato(env) {
   const rep = await kvGet(env, "sala:rep"), mem = (await kvGet(env, "sala:mem")) || {}, ign = (await kvGet(env, "sala:ign")) || {};
   const now = Date.now(), oggi = romeToday();
@@ -4774,9 +4785,24 @@ async function salaStato(env) {
   const progetti = SALA_PROG.map((p) => ({ id: p.id, nome: p.nome, routine: [], problemi: [], dafare: [], giornata: [] }));
   const P = (id) => progetti.find((p) => p.id === id);
   const tr = rep ? rep.triggers.filter(salaTracked) : [];
+  const live = await salaLive(env, oggi);
+  let foto = null; try { foto = ((await env.DB.prepare("SELECT updated_at FROM kv WHERE k='sala:inbox'").first()) || {}).updated_at || null; } catch (e) {}
+  const fotoT = Date.parse(foto || (rep && rep.at) || 0);
   for (const t of tr) {
-    const st = salaEsito(t, mem, now, runs), p = P(salaProg(t.name));
-    const lr = t.last_run;
+    let st = salaEsito(t, mem, now, runs); const p = P(salaProg(t.name));
+    let lr = t.last_run;
+    { // v77: conferma dai risultati (più fresca del guardiano) oppure attesa dichiarata se l'orario è passato dopo l'ultimo controllo
+      const lv = SALA_LIVE.find((x) => x[0].test(t.name || "")); const E = lv && live[lv[1]];
+      if (E && (!lr || E > lr.fired_at)) {
+        st = { e: "ok", msg: lv[2] + " (" + salaHM(E) + ")" };
+        lr = { status: "VISTO", fired_at: E, finished_at: E };
+        if (!runs.some((r) => r.id === t.id && r.fired >= E.slice(0, 10))) p.giornata.push({ id: t.id, nome: t.name, fired: E, finished: E, status: "VISTO", dur: null });
+        else for (const r of runs) if (r.id === t.id && !r.finished) { r.finished = E; r.status = "VISTO"; }
+      } else if (t.next_run_at && Date.parse(t.next_run_at) < now && fotoT && Date.parse(t.next_run_at) > fotoT - 60000 && (!lr || lr.fired_at < t.next_run_at) && st.e !== "bad") {
+        st = { e: "wait", msg: "doveva partire alle " + salaHM(t.next_run_at) + " · conferma al prossimo controllo" };
+        if (romeDate(t.next_run_at) === oggi) p.giornata.push({ id: t.id, nome: t.name, fired: t.next_run_at, status: "ATTESA" });
+      }
+    }
     const m = mem[t.id] || {};
     p.routine.push({ id: t.id, nome: t.name, cron: t.cron_expression, info: t.info || null, durata: salaMed(m.durs || []), giri: m.durs ? m.durs.length : 0, e: st.e, msg: st.msg, ultimo: lr ? lr.fired_at : null, ultimo_fine: lr ? lr.finished_at : null, prossimo: t.next_run_at, richiesta: !t.cron_expression, in_coda: coda.some((c) => c.id === t.id) });
     if ((st.e === "bad" || st.e === "warn") && !(st.key && ign[st.key] && ign[st.key] > new Date().toISOString())) p.problemi.push({ key: st.key, id: t.id, nome: t.name, e: st.e, msg: st.msg });
@@ -4806,7 +4832,8 @@ async function salaStato(env) {
   }
   const silente = !rep || now - Date.parse(rep.at) > 135 * 60000;
   const ib = await kvGet(env, "sala:inbox_done");
-  return { ok: true, errore: ib && ib.err ? ib.err : "", oggi, rapporto: rep ? rep.at : null, silente, guardiano: guard ? "collegato" : "da collegare", coda: coda.map((c) => c.id), progetti: progetti.filter((p) => p.id === "rg" || p.routine.length) };
+  const prox = (() => { const d = new Date(now); d.setUTCSeconds(0, 0); d.setUTCMinutes(7); if (d.getTime() <= now) d.setUTCHours(d.getUTCHours() + 1); return d.toISOString(); })();
+  return { ok: true, errore: ib && ib.err ? ib.err : "", oggi, rapporto: rep ? rep.at : null, foto: foto || (rep ? rep.at : null), prossimo_controllo: prox, silente, guardiano: guard ? "collegato" : "da collegare", coda: coda.map((c) => c.id), progetti: progetti.filter((p) => p.id === "rg" || p.routine.length) };
 }
 
 async function salaFire(env, text) { // avvia subito il guardiano (API della routine), che poi rilancia le routine in coda
