@@ -5032,8 +5032,25 @@ async function spCandidati(env) {
 function spDiff(a, b) { // v78: cosa cambia tra due versioni, passo per passo (testo leggibile)
   const out = [], P = (x) => spPlain(x || "");
   for (const k of ["titolo", "dek"]) if (P(a[k]) !== P(b[k])) out.push({ dove: k === "titolo" ? "Titolo" : "Sottotitolo", prima: P(a[k]), dopo: P(b[k]) });
-  const A = a.steps || [], B = b.steps || [], n = Math.max(A.length, B.length);
-  for (let i = 0; i < n; i++) { const x = A[i] ? P(A[i].t) + (A[i].why ? " " + P(A[i].why) : "") : "", y = B[i] ? P(B[i].t) + (B[i].why ? " " + P(B[i].why) : "") : ""; if (x !== y) out.push({ dove: "Passo " + (i + 1) + (B[i] && B[i].k ? " · " + B[i].k : ""), prima: x || "(non c'era)", dopo: y || "(tolto)" }); }
+  // v79: i passi si allineano per contenuto (un passo aggiunto non fa sembrare cambiati tutti quelli dopo)
+  const T = (x) => P(x.t) + (x.why ? " " + P(x.why) : ""), A = (a.steps || []).map(T), B = (b.steps || []).map(T), n = A.length, m = B.length;
+  const L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0; const gapA = [], gapB = [];
+  const W = (t) => new Set(String(t).toLowerCase().split(/[^a-zà-ù0-9]+/).filter((w) => w.length > 3)), sim = (x, y) => { const p = W(x), q = W(y); let c = 0; for (const w of p) if (q.has(w)) c++; return c / Math.max(1, Math.min(p.size, q.size)); };
+  const flush = () => { // in un tratto diverso: un passo vecchio e uno nuovo simili = cambiato; il resto = nuovo o tolto
+    const pair = {}, used = new Set();
+    for (const x of gapA) { let best = -1, bs = 0.5; for (const y of gapB) if (!used.has(y)) { const v = sim(A[x], B[y]); if (v > bs) { bs = v; best = y; } } if (best >= 0) { pair[best] = x; used.add(best); } }
+    const tolti = gapA.filter((x) => !Object.values(pair).includes(x));
+    for (const y of gapB) out.push({ dove: "Passo " + (y + 1) + ((b.steps[y] || {}).k ? " · " + b.steps[y].k : "") + (pair[y] === undefined ? " · nuovo" : " · cambiato"), prima: pair[y] === undefined ? "" : A[pair[y]], dopo: B[y] });
+    for (const x of tolti) out.push({ dove: "Passo tolto (era il " + (x + 1) + ")", prima: A[x], dopo: "(tolto)" });
+    gapA.length = 0; gapB.length = 0; };
+  while (i < n || j < m) {
+    if (i < n && j < m && A[i] === B[j]) { flush(); i++; j++; }
+    else if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) gapB.push(j++);
+    else gapA.push(i++);
+  }
+  flush();
   for (const k of ["numeri", "letture", "osservare", "divergenze", "fonti"]) if (JSON.stringify(a[k] || null) !== JSON.stringify(b[k] || null)) out.push({ dove: { numeri: "In numeri", letture: "Due letture", osservare: "Da osservare", divergenze: "Divergenze tra fonti", fonti: "Fonti" }[k], prima: "", dopo: "cambiato" });
   if (JSON.stringify((a.scheda || {}).paesi || []) !== JSON.stringify((b.scheda || {}).paesi || [])) out.push({ dove: "Paesi sulla mappa del sito", prima: ((a.scheda || {}).paesi || []).join(", "), dopo: ((b.scheda || {}).paesi || []).join(", ") });
   return out;
