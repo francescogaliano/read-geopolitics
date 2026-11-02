@@ -834,6 +834,11 @@ async function draftPublish(env, origin, id, by) {
   if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
 }
+async function autoProgrammati(env) { // v83: ogni 5 minuti, leggero: pubblica solo le bozze con un'uscita programmata arrivata
+  const st = await igSettings(env); if (st.paused) return;
+  const now = Date.now();
+  for (const d of await kvList(env, "draft:", 20)) if (d.status === "bozza" && d.programma && Date.parse(d.programma) <= now) { try { await draftPublish(env, "https://auto.invalid", d.id, "programma"); } catch (e) {} }
+}
 async function autoPublish(env) {
   const st = await igSettings(env);
   if (st.paused) return;
@@ -841,6 +846,7 @@ async function autoPublish(env) {
   for (const d of await kvList(env, "draft:", 20)) {
     if (d.status === "in_elaborazione") { await draftFinish(env, "https://auto.invalid", d.id); continue; }
     if (d.status !== "bozza") continue;
+    if (d.programma) continue; // v83: le uscite programmate le fa solo il controllo ogni 5 minuti (autoProgrammati), così i due giri non si pestano i piedi
     const f = st.formats[d.format];
     if (!f || f.mode !== "auto") continue;
     if (Date.parse(d.publish_at) > now) continue;
@@ -966,6 +972,15 @@ async function panelApi(env, origin, b) {
     if (r.stato !== "in_coda") throw { status: 409, code: "bad_status", detail: r.stato };
     r.stato = "annullata"; await kvSet(env, "req:" + r.id, r);
     return { ok: true };
+  }
+  if (act === "draft_programma" || act === "draft_canale") { // v83
+    const d = await kvGet(env, "draft:" + String(b.id)); if (!d) throw { status: 404, code: "draft_not_found" };
+    if (d.status !== "bozza") throw { status: 409, code: "bad_status", detail: d.status };
+    if (act === "draft_programma") {
+      if (b.at) { const t = Date.parse(String(b.at)); if (!t || t < Date.now() + 60000) throw { status: 400, code: "orario", detail: "scegli un orario nel futuro" }; if (t > Date.now() + 14 * 86400000) throw { status: 400, code: "orario", detail: "al massimo tra 14 giorni" }; d.programma = new Date(t).toISOString(); }
+      else delete d.programma;
+    } else { const k = String(b.ch || ""); if (!["tt", "th", "tg"].includes(k)) throw { status: 400, code: "canale" }; d.canali = { ...(d.canali || {}), [k]: !!b.on }; }
+    await kvSet(env, "draft:" + d.id, d); return { ok: true, draft: d };
   }
   if (act === "publish") { const d = await draftPublish(env, origin, String(b.id), "panel"); return { ok: d.status === "pubblicata", draft: d }; }
   if (act === "discard" || act === "caption") {
@@ -1115,6 +1130,8 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .dc-ok{font-size:12.5px;color:#7BD39A;margin-top:6px}.fb-r .dc-t{font-weight:500;white-space:pre-wrap}.fb-ok{opacity:.6}.fbn{border-color:#E5B45A;padding:10px 14px}.fbn-h{display:flex;justify-content:space-between;align-items:center;gap:10px}.fbn-h b{color:#E5B45A;font-size:15px}.fbn-h button{background:none;border:0;color:#7FB2F0;font:600 14px system-ui;cursor:pointer;padding:4px 0}.fbn-r{font-size:14px;color:#C9D3DB;padding:5px 0 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fbn-ref{font:600 11.5px ui-monospace,monospace;color:#8FA0AE;background:#0E151B;border:1px solid #27353F;border-radius:5px;padding:1px 5px;margin-right:7px;vertical-align:1px}.fb-im{margin-top:8px}.fb-rs{margin-top:8px;padding:8px 10px;border-left:2px solid #7BD39A;background:rgba(123,211,154,.06);font-size:13.5px;white-space:pre-wrap;color:#C9D3DB}.fb-rs b{display:block;font-size:12px;color:#7BD39A;font-weight:600;margin-bottom:2px}.fb-rp textarea{width:100%;box-sizing:border-box;margin-top:8px;min-height:90px;border:1px solid #34475A;border-radius:8px;background:#0f1722;color:#EEF2F6;font:inherit;font-size:14px;padding:8px 10px}.fb-im img{max-width:220px;max-height:300px;border-radius:8px;border:1px solid #27353F;cursor:zoom-in;display:block}.fb-im button{background:none;border:1px solid #27353F;border-radius:8px;color:#7FB2F0;padding:6px 10px;font:inherit;font-size:13.5px;cursor:pointer}.fb-r .dc-m a{color:#7FB2F0}
 .dc-f details{margin-top:12px}.dc-f summary{font-size:13px;color:#8FA0AE;cursor:pointer}
 .tab .bdg{background:#E5B45A;color:#0B1830;border-radius:9px;padding:0 6px;font-size:12px;margin-left:4px}
+.prg{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:13.5px;color:#C9D3DB}.prg input{background:#0E151B;color:#E4EAEF;border:1px solid #27353F;border-radius:8px;padding:6px 8px;font:inherit;width:auto}.prgf{display:flex;gap:8px;align-items:center}
+.cht2{display:flex;gap:6px;align-items:center}.chsw{opacity:.8}.chsw.on{color:#7BD39A;border-color:#2F5F4B;opacity:1}
 </style>
 <main><div class="hdr"><div><h1>Read Geopolitics</h1><div class="sub" id="acc">carico…</div></div><button type="button" class="gearb" id="gearb" aria-label="Canali e uscita"><span class="gdot" id="gdot"></span><span class="gtx" id="chsum">carico…</span><span class="gic">⚙</span></button></div>
 <nav class="sw" id="sw"><button type="button" class="on" data-sw="og">Pannello</button><a href="/ig/sala">Sala di controllo</a><button type="button" data-sw="st">Statistiche</button></nav>
@@ -1243,27 +1260,29 @@ function nTags(s){return String(s||"").split(NL).join(" ").split(" ").filter(w=>
 function ttOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.tiktok&&D.tiktok.collegato}
 function thOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.threads&&D.threads.collegato}
 function igRow(x){if(x.status!=="pubblicata")return "";const tm=x.published_at?new Date(x.published_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· uscito'+(tm?" alle "+tm:"")+'</span></div>'+(x.permalink?'<a href="'+esc(x.permalink)+'" target="_blank">Apri ›</a>':'<span></span>')+'</div>'}
-function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=!!(D.tiktok.settings&&D.tiktok.settings.auto)&&x.status!=="pubblicata";
+function chEff(x,k,g){return x.canali&&typeof x.canali[k]==="boolean"?x.canali[k]:g}
+function chTog(x,k,on,manual){if(x.status!=="bozza")return on?'<span class="tg">auto</span>':manual;const own=x.canali&&typeof x.canali[k]==="boolean";return '<span class="cht2">'+(on?'':manual)+'<button class="sm chsw'+(on?' on':'')+'" data-ch="'+k+'" data-on="'+(on?0:1)+'" title="'+(own?'scelta solo per questo post':'come nelle preferenze')+'">'+(on?'auto ✓':'auto ✗')+'</button></span>'}
+function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=chEff(x,"tt",!!(D.tiktok.settings&&D.tiktok.settings.auto))&&x.status!=="pubblicata";
  const lab={invio:"invio in corso",in_elaborazione:"TikTok sta elaborando",nella_casella:"nella casella: scegli il suono e pubblica",pubblicato:(t&&t.marked?"pubblicato (segnato da te)":"pubblicato"),errore:"non inviato"};
- const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"da inviare");let act='<span></span>';
- if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm tts">Invia</button>';
+ const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.tt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ if(!t)act=chTog(x,"tt",auto,'<button class="sm tts">Invia</button>');
  else if(t.status==="errore")act='<button class="sm tts">Riprova</button>';
  else if(t.status==="nella_casella")act='<button class="sm ttm">Fatto</button>';
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  else if(t.status==="pubblicato")act='<button class="sm ttl">Link</button>';
  else if(t.status==="in_elaborazione")act='<button class="sm ttk">Aggiorna</button>';
  return '<div class="dr"><span class="ic">TT</span><div>TikTok <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
-function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=!!(D.threads.settings&&D.threads.settings.auto)&&x.status!=="pubblicata";
+function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=chEff(x,"th",!!(D.threads.settings&&D.threads.settings.auto))&&x.status!=="pubblicata";
  const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"uscito",errore:"non pubblicato"};
- const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"da pubblicare");let act='<span></span>';
- if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm thsd">Pubblica</button>';
+ const st=t?(lab[t.status]||t.status):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.th==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ if(!t)act=chTog(x,"th",auto,'<button class="sm thsd">Pubblica</button>');
  else if(t.status==="errore")act='<button class="sm thsd">Riprova</button>';
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  else if(t.status==="in_elaborazione")act='<button class="sm thk">Aggiorna</button>';
  return '<div class="dr"><span class="ic">TH</span><div>Threads <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
-function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=!!D.telegram.settings.post&&x.status!=="pubblicata";
- const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo dopo Instagram":"da inviare");let act='<span></span>';
- if(!t)act=auto?'<span class="tg">auto</span>':'<button class="sm tgs">Invia</button>';else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
+function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=chEff(x,"tg",!!D.telegram.settings.post)&&x.status!=="pubblicata";
+ const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.tg==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ if(!t)act=chTog(x,"tg",auto,'<button class="sm tgs">Invia</button>');else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  return '<div class="dr"><span class="ic">TG</span><div>Telegram <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
 function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];let m="";
  if(open&&!x.video_url&&x.image_urls&&x.image_urls.length)m+='<button class="mi ed">Modifica immagini</button>';
@@ -1558,13 +1577,15 @@ async function load(){
  const cardOf=x=>{
   const open=x.status==="bozza"||x.status==="errore";const m=menuHtml(x);
   const tm=x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
-  const pl=x.status==="bozza"?(x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
+  const pg=x.programma?new Date(x.programma):null,pgs=pg?pg.toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+  const pl=x.status==="bozza"?(pg?"PROGRAMMATO "+pgs.toUpperCase():x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
   let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
   const rows=igRow(x)+ttRow(x)+thRow(x)+tgRow(x);
   return '<div class="card dc" data-id="'+x.id+'"><div class="dh"><div style="min-width:0"><b>'+esc(dTitle(x))+'</b><div class="sub">'+dSub(x)+'</div></div><span class="pill p-'+x.status+'">'+esc(pl)+'</span></div>'
   +stripHtml(x)
   +((pri||m)?'<div class="pri">'+(pri||'<span style="flex:1"></span>')+(m?'<button class="btn more mo" type="button" aria-label="Altre azioni">⋯</button>':'')+'</div>':'')
   +(m?'<div class="menu" hidden>'+m+'</div>':'')
+  +(x.status==="bozza"?'<div class="prg">'+(pg?'<span>Esce da sola '+esc(pgs)+' (entro 5 minuti)</span><button class="sm prgx">Annulla</button>':'<button class="sm prgo">Programma uscita</button><span class="prgf" hidden><input type="datetime-local" class="prgt"><button class="sm prgk">Conferma</button></span>')+'</div>':'')
   +(open?capsHtml(x):'<details class="capd"><summary class="sub">Didascalie</summary>'+capsHtml(x)+'</details>')
   +(rows?'<div class="dist"><div class="lab">'+(x.status==="pubblicata"?"Canali":"Dopo Instagram")+'</div>'+rows+'</div>':'')
   +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'};
@@ -1588,6 +1609,10 @@ async function load(){
  L.querySelectorAll(":scope>.card[data-id]").forEach(c=>wire(c));
  function wire(c){const id=c.dataset.id;const q=s=>c.querySelector(s);
   if(q(".mo"))q(".mo").onclick=()=>{const mn=q(".menu");mn.hidden=!mn.hidden};
+  if(q(".prgo"))q(".prgo").onclick=()=>{q(".prgo").hidden=true;q(".prgf").hidden=false;const d=new Date(Date.now()+3600000);d.setMinutes(d.getMinutes()<30?30:60,0,0);const p=n=>String(n).padStart(2,"0");q(".prgt").value=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes())};
+  if(q(".prgk"))q(".prgk").onclick=async e=>{const v=q(".prgt").value;if(!v)return;e.target.disabled=true;const r=await api({action:"draft_programma",id,at:new Date(v).toISOString()});if(!r.ok){say("Errore: "+(r.detail||r.error));e.target.disabled=false;return}load()};
+  if(q(".prgx"))q(".prgx").onclick=async e=>{e.target.disabled=true;await api({action:"draft_programma",id,at:null});load()};
+  c.querySelectorAll(".chsw").forEach(b=>b.onclick=async()=>{b.disabled=true;const r=await api({action:"draft_canale",id,ch:b.dataset.ch,on:b.dataset.on==="1"});if(!r.ok){say("Errore: "+(r.detail||r.error));b.disabled=false;return}load()});
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
   const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
   if(q(".tgs"))q(".tgs").onclick=async e=>{if(!await ask("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")say(r.tg.error);load()};
@@ -2659,10 +2684,11 @@ async function ttCheck(env, id) {
   await kvSet(env, "tt:" + id, x);
   return x;
 }
+function dCanale(d, k, glob) { return d && d.canali && typeof d.canali[k] === "boolean" ? d.canali[k] : !!glob; } // v83: scelta di questo post, altrimenti le preferenze
 async function ttAuto(env, id) { // dopo una pubblicazione Instagram riuscita
   const st = await ttSettings(env);
-  if (!st.auto) return;
   const d = await kvGet(env, "draft:" + id);
+  if (!dCanale(d, "tt", st.auto)) return;
   if (!d || !TT_TYPES.includes(d.type) || (await kvGet(env, "tt:" + id))) return;
   if (!(await kvGet(env, "tt_token"))) return;
   await ttSend(env, id, "auto", false);
@@ -2788,8 +2814,8 @@ async function thSend(env, id, by, force) {
 }
 async function thAuto(env, id) { // dopo una pubblicazione Instagram riuscita
   const st = await thSettings(env);
-  if (!st.auto) return;
   const d = await kvGet(env, "draft:" + id);
+  if (!dCanale(d, "th", st.auto)) return;
   if (!d || !TH_TYPES.includes(d.type) || (await kvGet(env, "th:" + id))) return;
   if (!(await kvGet(env, "th_token"))) return;
   await thSend(env, id, "auto", false);
@@ -3588,8 +3614,8 @@ async function tgRetry(env) {
 }
 async function tgAuto(env, id) {
   const st = await tgSettings(env);
-  if (!st.post || !st.chat || !env.TG_BOT_TOKEN) return;
   const d = await kvGet(env, "draft:" + id);
+  if (!dCanale(d, "tg", st.post) || !st.chat || !env.TG_BOT_TOKEN) return;
   if (!d || !["reel", "carousel", "image"].includes(d.type) || (await kvGet(env, "tg:" + id))) return;
   await tgSendDraft(env, id, "auto");
 }
@@ -4885,7 +4911,7 @@ async function salaStato(env) {
   try {
     const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
     for (const row of rs.results || []) { const d = JSON.parse(row.v); const f = row.k.slice(("draft:" + oggi + "-").length);
-      if (d.status === "bozza" && !/^alt/.test(f)) P("rg").dafare.push({ key: "draft:" + row.k, testo: "Pubblica " + (d.type === "reel" ? "il reel" : "il carosello") + ": " + String(d.caption || "").split("\n")[0].slice(0, 90), perche: "È nelle Bozze del pannello da " + salaHM(d.created_at || d.updated_at || new Date().toISOString()) + ".", link: "/ig/panel" }); }
+      if (d.status === "bozza" && !/^alt/.test(f) && !d.programma) P("rg").dafare.push({ key: "draft:" + row.k, testo: "Pubblica " + (d.type === "reel" ? "il reel" : "il carosello") + ": " + String(d.caption || "").split("\n")[0].slice(0, 90), perche: "È nelle Bozze del pannello da " + salaHM(d.created_at || d.updated_at || new Date().toISOString()) + ".", link: "/ig/panel" }); }
     const rq = await env.DB.prepare("SELECT v FROM kv WHERE k LIKE 'req:%' AND updated_at > ?1").bind(new Date(now - 3 * 86400000).toISOString()).all();
     for (const row of rq.results || []) { const r = JSON.parse(row.v); if (r.stato === "copione") P("rg").dafare.push({ key: "req:" + r.id, testo: "Approva il copione della richiesta «" + String(r.titolo || r.template || r.id).slice(0, 60) + "»", perche: "La routine aspetta il tuo via per continuare.", link: "/ig/panel" }); }
   } catch (e) {}
@@ -5362,6 +5388,7 @@ async function salaRoute(request, env, p, method, url) {
 
 export default {
   async scheduled(event, env, ctx) {
+    if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} return; } // v83: solo le uscite programmate
     // rinnovo del token Instagram: se mancano meno di 30 giorni
     try {
       const t = await kvGet(env, "ig_token");
