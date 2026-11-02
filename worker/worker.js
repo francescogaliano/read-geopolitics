@@ -739,15 +739,16 @@ async function reqCreate(env, tpl, o) { // richiesta di un contenuto: dal pannel
     const id = rid().slice(0, 10);
     const op = o.opzioni && typeof o.opzioni === "object" ? o.opzioni : null;
     const opzioni = tpl.id === "iconografica" ? { voce: ["mia", "gemini", "musica"].includes(op && op.voce) ? op.voce : "mia", durata: (op && op.durata) === "corta" ? "corta" : "standard", modo: (op && op.modo) === "tappe" ? "tappe" : "auto" } : null;
-    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), ...(o.copione ? { copione: o.copione, copione_fisso: true } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
+    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), ...(o.copione ? { copione: o.copione, copione_fisso: true } : {}), ...(o.solo_copertina ? { solo_copertina: o.solo_copertina } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
     await reqFire(env, r);
     await kvSet(env, "req:" + id, r);
     return r;
 }
-function reqCopione(frasi) { // v77: frasi del copione {t, regia[]} (dalla routine o modificate nel pannello)
+function reqCopione(frasi, copertina) { // v77: frasi del copione {t, regia[]} (dalla routine o modificate nel pannello); v80: + titolo della copertina
   const fr = Array.isArray(frasi) ? frasi.slice(0, 40).filter((x) => x && String(x.t || "").trim()) : [];
   if (!fr.length) return null;
-  return { frasi: fr.map((x) => ({ t: clip(String(x.t).trim(), 400), regia: (Array.isArray(x.regia) ? x.regia : []).slice(0, 20).map((y) => ({ parola: clip(y.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo"].includes(y.tipo) ? y.tipo : "oggetto" })) })), at: new Date().toISOString() };
+  const tc = copertina && typeof copertina === "object" ? String(copertina.titolo || "").trim().slice(0, 140) : "";
+  return { ...(tc ? { copertina: { titolo: tc } } : {}), frasi: fr.map((x) => ({ t: clip(String(x.t).trim(), 400), regia: (Array.isArray(x.regia) ? x.regia : []).slice(0, 20).map((y) => ({ parola: clip(y.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo"].includes(y.tipo) ? y.tipo : "oggetto" })) })), at: new Date().toISOString() };
 }
 async function reqFire(env, r) { // avvio immediato della routine (API trigger); se fallisce, la richiesta resta in coda
     if (!(env.RICHIESTE_ROUTINE_ID && env.RICHIESTE_ROUTINE_TOKEN)) return;
@@ -2260,10 +2261,11 @@ async function igPrivate(request, env, p, method) {
     if (!r) return fail(404, "req_not_found");
     const note = clip(b.note, 400);
     if (b.action === "claim") { if (r.stato !== "in_coda") return fail(409, "bad_status", r.stato); r.stato = "in_lavorazione"; r.started_at = new Date().toISOString(); }
-    else if (b.action === "done") { r.stato = "pronta"; r.draft_id = clip(b.draft_id, 80); r.done_at = new Date().toISOString(); if (note) r.esito = note; const cp = reqCopione(b.frasi); if (cp) r.copione = cp; }
+    else if (b.action === "done") { r.stato = "pronta"; r.draft_id = clip(b.draft_id, 80); r.done_at = new Date().toISOString(); if (note) r.esito = note; const cp = reqCopione(b.frasi, b.copertina); if (cp) r.copione = cp;
+      if (r.solo_copertina && r.solo_copertina.draft_id && r.draft_id && r.draft_id !== r.solo_copertina.draft_id) { const od = await kvGet(env, "draft:" + r.solo_copertina.draft_id); if (od && od.status === "bozza") { od.status = "scartata"; od.scartata_da = "copertina aggiunta: sostituita da " + r.draft_id; await kvSet(env, "draft:" + od.id, od); } } }
     else if (b.action === "fail") { r.stato = "errore"; r.esito = note || "senza dettagli"; r.done_at = new Date().toISOString(); }
     else if (b.action === "copione") { // iconografica a tappe: la routine lascia il copione e si ferma; riparte quando Francesco approva dal pannello
-      const cp = reqCopione(b.frasi);
+      const cp = reqCopione(b.frasi, b.copertina);
       if (!cp) return fail(400, "frasi_mancanti");
       r.copione = cp;
       r.stato = "copione"; if (note) r.esito = note;
@@ -4985,7 +4987,8 @@ async function spLinkVideo(env, d) { // v75: quando esce su Instagram il reel ch
 async function spSaveCopione(env, q) { // v77: copia il copione del video nello Spiegato da cui è nato
   const m = /^spiegato:([a-z0-9-]+)$/.exec((q && q.origine) || ""); if (!m) return;
   const r = await kvGet(env, "sp:" + m[1]); if (!r) return;
-  r.copione = { frasi: q.copione.frasi, at: q.copione.at || new Date().toISOString(), req: q.id, fonte: "routine" };
+  const ct = (q.copione.copertina || (r.copione && r.copione.copertina)) || null;
+  r.copione = { frasi: q.copione.frasi, ...(ct ? { copertina: ct } : {}), at: q.copione.at || new Date().toISOString(), req: q.id, fonte: q.copione_fisso && r.copione && r.copione.fonte === "modificato" ? "modificato" : "routine" };
   spLog(r, "Copione del video salvato (" + q.copione.frasi.length + " frasi)");
   await kvSet(env, "sp:" + r.id, r);
 }
@@ -5177,9 +5180,24 @@ async function spPanelApi(env, b) {
   if (act === "sp_copione_salva") { // v77: il copione del video modificato a mano; la regia resta sulle parole che ci sono ancora
     const prev = (r.copione && r.copione.frasi) || [];
     const fr = (Array.isArray(b.frasi) ? b.frasi : []).map((x, i) => { const t = String((x && x.t) || "").trim(); const low = t.toLowerCase(); return { t, regia: ((prev[i] && prev[i].regia) || []).filter((y) => low.includes(String(y.parola || "").toLowerCase())) }; });
-    const cp = reqCopione(fr); if (!cp) return { ok: false, error: "il copione è vuoto" };
+    const cp = reqCopione(fr, { titolo: b.copertina }); if (!cp) return { ok: false, error: "il copione è vuoto" };
     r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato" }; spLog(r, "Copione del video scritto o modificato da te (" + cp.frasi.length + " frasi)");
     r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
+  }
+  if (act === "sp_solo_copertina") { // v80: aggiunge (o rifà) solo la copertina al reel in bozza: niente nuovo montaggio, niente nuovi controlli sul resto
+    const v = r.video_req ? await spReqState(env, r.video_req) : null; const q = r.video_req ? await kvGet(env, "req:" + r.video_req) : null;
+    const d = q && q.draft_id ? await kvGet(env, "draft:" + q.draft_id) : null;
+    if (!d || d.status !== "bozza" || !d.video_url) return { ok: false, error: "nessun reel in bozza a cui aggiungere la copertina" };
+    const tit = String((b.copertina || (r.copione && r.copione.copertina && r.copione.copertina.titolo) || "")).trim().slice(0, 140);
+    if (tit.length < 3) return { ok: false, error: "scrivi il titolo della copertina" };
+    if (r.copione) { r.copione.copertina = { titolo: tit }; }
+    const tpl = IG_TEMPLATES.find((x) => x.id === "iconografica");
+    const note = "SPIEGATO: " + id + "\nSOLO COPERTINA: il reel è già fatto e approvato nel contenuto (bozza " + d.id + "). Rifai SOLO la copertina con questo titolo: «" + tit + "» (le parole tra asterischi vanno in oro) e mettila in testa al video esistente (campo solo_copertina). Non toccare il resto.";
+    let rq;
+    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note, opzioni: { ...(q.opzioni || {}), modo: "auto" }, origine: "spiegato:" + id, copione: r.copione ? { frasi: r.copione.frasi, copertina: { titolo: tit }, at: r.copione.at } : null, solo_copertina: { draft_id: d.id, video_url: d.video_url, caption: d.caption, titolo: tit } }); }
+    catch (e) { return { ok: false, error: e && e.code === "troppe_richieste_in_coda" ? "troppe richieste in coda: riprova più tardi" : "richiesta non creata" }; }
+    r.video_req = rq.id; r.aggiornato = now; spLog(r, "Copertina chiesta per il reel in bozza: «" + tit + "»"); await kvSet(env, "sp:" + id, r);
+    return { ok: true, req: rq.id, fire: rq.fire || "in coda" };
   }
   if (act === "sp_fai_video") { // v75: chiede l'iconografica dello Spiegato (stessa coda e stessa routine delle richieste del pannello)
     if (r.stato !== "pubblicato") return { ok: false, error: "prima pubblica lo Spiegato: il video si fa sul testo approvato" };
@@ -5191,7 +5209,7 @@ async function spPanelApi(env, b) {
     if (fisso && !(r.copione && r.copione.frasi && r.copione.frasi.length)) return { ok: false, error: "nessun copione salvato per questo Spiegato" };
     const note2 = fisso ? note + "\nCOPIONE FISSO: le frasi sono già scritte e approvate (campo copione della richiesta). Non riscriverle e non cambiarne l'ordine: parti dallo storyboard (I4) usando la loro regia." : note;
     let rq;
-    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note: note2, opzioni: { voce: o.voce, durata: o.durata, modo: fisso ? "auto" : o.modo }, origine: "spiegato:" + id, copione: fisso ? { frasi: r.copione.frasi, at: r.copione.at } : null }); }
+    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note: note2, opzioni: { voce: o.voce, durata: o.durata, modo: fisso ? "auto" : o.modo }, origine: "spiegato:" + id, copione: fisso ? { frasi: r.copione.frasi, ...(r.copione.copertina ? { copertina: r.copione.copertina } : {}), at: r.copione.at } : null }); }
     catch (e) { return { ok: false, error: e && e.code === "troppe_richieste_in_coda" ? "troppe richieste in coda: riprova più tardi" : "richiesta non creata" }; }
     r.video_req = rq.id; r.aggiornato = now; spLog(r, fisso ? "Video chiesto dal copione salvato" : "Video chiesto"); await kvSet(env, "sp:" + id, r);
     return { ok: true, req: rq.id, fire: rq.fire || "in coda" };
