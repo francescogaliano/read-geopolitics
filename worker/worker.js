@@ -5087,7 +5087,7 @@ async function spPanelApi(env, b) {
     const prev = (r.copione && r.copione.frasi) || [];
     const fr = (Array.isArray(b.frasi) ? b.frasi : []).map((x, i) => { const t = String((x && x.t) || "").trim(); const low = t.toLowerCase(); return { t, regia: ((prev[i] && prev[i].regia) || []).filter((y) => low.includes(String(y.parola || "").toLowerCase())) }; });
     const cp = reqCopione(fr); if (!cp) return { ok: false, error: "il copione è vuoto" };
-    r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato" }; spLog(r, "Copione del video modificato da te (" + cp.frasi.length + " frasi)");
+    r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato" }; spLog(r, "Copione del video scritto o modificato da te (" + cp.frasi.length + " frasi)");
     r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
   }
   if (act === "sp_fai_video") { // v75: chiede l'iconografica dello Spiegato (stessa coda e stessa routine delle richieste del pannello)
