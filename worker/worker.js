@@ -739,10 +739,15 @@ async function reqCreate(env, tpl, o) { // richiesta di un contenuto: dal pannel
     const id = rid().slice(0, 10);
     const op = o.opzioni && typeof o.opzioni === "object" ? o.opzioni : null;
     const opzioni = tpl.id === "iconografica" ? { voce: ["mia", "gemini", "musica"].includes(op && op.voce) ? op.voce : "mia", durata: (op && op.durata) === "corta" ? "corta" : "standard", modo: (op && op.modo) === "tappe" ? "tappe" : "auto" } : null;
-    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
+    const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), ...(o.copione ? { copione: o.copione, copione_fisso: true } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
     await reqFire(env, r);
     await kvSet(env, "req:" + id, r);
     return r;
+}
+function reqCopione(frasi) { // v77: frasi del copione {t, regia[]} (dalla routine o modificate nel pannello)
+  const fr = Array.isArray(frasi) ? frasi.slice(0, 40).filter((x) => x && String(x.t || "").trim()) : [];
+  if (!fr.length) return null;
+  return { frasi: fr.map((x) => ({ t: clip(String(x.t).trim(), 400), regia: (Array.isArray(x.regia) ? x.regia : []).slice(0, 20).map((y) => ({ parola: clip(y.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo"].includes(y.tipo) ? y.tipo : "oggetto" })) })), at: new Date().toISOString() };
 }
 async function reqFire(env, r) { // avvio immediato della routine (API trigger); se fallisce, la richiesta resta in coda
     if (!(env.RICHIESTE_ROUTINE_ID && env.RICHIESTE_ROUTINE_TOKEN)) return;
@@ -2255,16 +2260,17 @@ async function igPrivate(request, env, p, method) {
     if (!r) return fail(404, "req_not_found");
     const note = clip(b.note, 400);
     if (b.action === "claim") { if (r.stato !== "in_coda") return fail(409, "bad_status", r.stato); r.stato = "in_lavorazione"; r.started_at = new Date().toISOString(); }
-    else if (b.action === "done") { r.stato = "pronta"; r.draft_id = clip(b.draft_id, 80); r.done_at = new Date().toISOString(); if (note) r.esito = note; }
+    else if (b.action === "done") { r.stato = "pronta"; r.draft_id = clip(b.draft_id, 80); r.done_at = new Date().toISOString(); if (note) r.esito = note; const cp = reqCopione(b.frasi); if (cp) r.copione = cp; }
     else if (b.action === "fail") { r.stato = "errore"; r.esito = note || "senza dettagli"; r.done_at = new Date().toISOString(); }
     else if (b.action === "copione") { // iconografica a tappe: la routine lascia il copione e si ferma; riparte quando Francesco approva dal pannello
-      const fr = Array.isArray(b.frasi) ? b.frasi.slice(0, 40) : [];
-      if (!fr.length) return fail(400, "frasi_mancanti");
-      r.copione = { frasi: fr.map((x) => ({ t: clip(x.t, 400), regia: (Array.isArray(x.regia) ? x.regia : []).slice(0, 20).map((y) => ({ parola: clip(y.parola, 60), tipo: ["oggetto", "azione", "attore", "luogo"].includes(y.tipo) ? y.tipo : "oggetto" })) })), at: new Date().toISOString() };
+      const cp = reqCopione(b.frasi);
+      if (!cp) return fail(400, "frasi_mancanti");
+      r.copione = cp;
       r.stato = "copione"; if (note) r.esito = note;
     }
     else return fail(400, "bad_action", "action: claim | done | fail | copione");
     await kvSet(env, "req:" + r.id, r);
+    if (r.copione && (b.action === "done" || b.action === "copione")) await spSaveCopione(env, r); // v77: il copione resta nello Spiegato anche se il reel si scarta
     return json({ ok: true, request: r });
   }
   if (method === "GET" && p === "/v1/ig/regia_pref") return json({ ok: true, pref: (await kvGet(env, "regia_pref")) || {} });
@@ -4408,6 +4414,7 @@ async function mailTickBroadcast(env, cfg, src, today) {
     return;
   }
   await kvSet(env, key, { id, ts, n: sy.total });
+  if (src && src.spiegato && src.spiegato.id) { try { const r = await kvGet(env, "sp:" + src.spiegato.id); if (r) { r.nl = today; await kvSet(env, "sp:" + r.id, r); } } catch (e) {} } // v77
   const rc = (await env.DB.prepare("SELECT id FROM users WHERE newsletter_at IS NOT NULL AND unsub_at IS NULL AND email IS NOT NULL").all()).results || [];
   for (let i = 0; i < rc.length; i += 50) await env.DB.batch(rc.slice(i, i + 50).map((r) => env.DB.prepare("INSERT OR REPLACE INTO mail_log (date,user_id,ts,ok,err) VALUES (?1,?2,?3,1,'broadcast')").bind(today, r.id, ts)));
   let copia = "";
@@ -4973,13 +4980,34 @@ async function spLinkVideo(env, d) { // v75: quando esce su Instagram il reel ch
   if (!d || !d.req_id || !d.permalink) return;
   const q = await kvGet(env, "req:" + d.req_id); const m = q && /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); if (!m) return;
   const r = await kvGet(env, "sp:" + m[1]); if (!r) return;
-  r.video = { ig: d.permalink, mp4: (r.video && r.video.mp4) || null }; r.aggiornato = new Date().toISOString(); await kvSet(env, "sp:" + m[1], r);
+  r.video = { ig: d.permalink, mp4: (r.video && r.video.mp4) || null }; r.aggiornato = new Date().toISOString(); spLog(r, "Video uscito su Instagram"); await kvSet(env, "sp:" + m[1], r);
 }
-async function spTelegram(env, r) { // v75: alla prima pubblicazione, un messaggio sul canale Telegram (l'anteprima del link mostra titolo e sottotitolo)
+async function spSaveCopione(env, q) { // v77: copia il copione del video nello Spiegato da cui è nato
+  const m = /^spiegato:([a-z0-9-]+)$/.exec((q && q.origine) || ""); if (!m) return;
+  const r = await kvGet(env, "sp:" + m[1]); if (!r) return;
+  r.copione = { frasi: q.copione.frasi, at: q.copione.at || new Date().toISOString(), req: q.id, fonte: "routine" };
+  spLog(r, "Copione del video salvato (" + q.copione.frasi.length + " frasi)");
+  await kvSet(env, "sp:" + r.id, r);
+}
+function spLog(r, t) { r.log = (Array.isArray(r.log) ? r.log : []).concat([{ at: new Date().toISOString(), t: String(t).slice(0, 200) }]).slice(-40); }
+function spNlDate(iso) { // la mattina in cui uno Spiegato pubblicato entra nella newsletter (finestra 7:00 → 7:00, ora di Roma)
+  if (!iso) return null;
+  const d = new Date(iso), day = d.toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
+  return iso < romeLocal(day, "07:00") ? day : new Date(Date.parse(day + "T12:00:00Z") + 86400000).toISOString().slice(0, 10);
+}
+async function spNext(env) { // prossimo giro della routine Spiegati, dal rapporto del guardiano
+  try {
+    const g = (await kvGet(env, "sp:routine")) || {}; if (!g.id) return null;
+    const row = await env.DB.prepare("SELECT v FROM kv WHERE k='sala:inbox'").first(); if (!row) return null;
+    const t = ((JSON.parse(row.v) || {}).t || []).find((x) => x && x.id === g.id);
+    return t && t.next_run_at ? t.next_run_at : null;
+  } catch (e) { return null; }
+}
+async function spTelegram(env, r, nuovo = true) { // v75: alla prima pubblicazione, un messaggio sul canale Telegram (l'anteprima del link mostra titolo e sottotitolo)
   try {
     const st = await tgSettings(env); if (!st.chat || !env.TG_BOT_TOKEN) return "canale non impostato";
     const c = spCard(r), u = SITE + "/spiegato/?id=" + r.id + "&utm_source=telegram&utm_medium=canale&utm_campaign=spiegato";
-    const t = "📖 <b>Nuovo Spiegato</b>\n" + esc(c.q) + "\n\n" + esc(c.breve) + "\n\n<a href=\"" + esc(u) + "\">Leggilo, con la mappa</a> · " + c.min + " minuti";
+    const t = "📖 <b>" + (nuovo ? "Nuovo Spiegato" : "Spiegato") + "</b>\n" + esc(c.q) + "\n\n" + esc(c.breve) + "\n\n<a href=\"" + esc(u) + "\">Leggilo, con la mappa</a> · " + c.min + " minuti";
     const x = await tgCall(env, "sendMessage", { chat_id: st.chat, text: t, parse_mode: "HTML", link_preview_options: { url: u, prefer_large_media: true } });
     return x && x.ok !== false ? "inviato" : "errore";
   } catch (e) { return "errore"; }
@@ -4998,7 +5026,7 @@ async function spNewsletter(env, date) { // v75: lo Spiegato pubblicato tra le 7
     const L = (await spAll(env)).filter((r) => r.stato === "pubblicato" && r.pubblicato_il >= da && r.pubblicato_il < a).sort((x, y) => String(y.pubblicato_il).localeCompare(String(x.pubblicato_il)));
     if (!L.length) return null;
     const c = spCard(L[0]);
-    return { q: c.q, text: c.breve, meta: c.min + " minuti · con la mappa", url: SITE + "/spiegato/?id=" + c.id + "&utm_source=email&utm_medium=newsletter_spiegato&utm_campaign=" + date };
+    return { id: c.id, q: c.q, text: c.breve, meta: c.min + " minuti · con la mappa", url: SITE + "/spiegato/?id=" + c.id + "&utm_source=email&utm_medium=newsletter_spiegato&utm_campaign=" + date };
   } catch (e) { return null; }
 }
 async function spPanelApi(env, b) {
@@ -5009,10 +5037,13 @@ async function spPanelApi(env, b) {
     for (const r of all) out.push({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, creato: r.creato, pubblicato_il: r.pubblicato_il || null,
       vreq: r.video_req ? await spReqState(env, r.video_req) : null,
       passi: ((r.spec && r.spec.steps) || []).length, fonti: ((r.spec && r.spec.fonti) || []).length, check: spCheck(r.spec), video: r.video || null, note: r.note || "",
+      tg_at: r.tg_at || null, ritirato_il: r.ritirato_il || null, copione: r.copione || null, log: r.log || [],
+      nl: r.nl || null, nl_data: r.pubblicato_il ? spNlDate(r.pubblicato_il) : null,
       anteprima: SITE + "/spiegato/?id=" + r.id + (r.stato === "pubblicato" ? "" : "&k=" + (await spKey(env, r.id))) });
     out.sort((a, c) => String(c.creato).localeCompare(String(a.creato)));
+    for (const x of out) if (x.nl_data && !x.nl) { const bc = await kvGet(env, "mail_bc:" + x.nl_data); x.nl_stato = bc && bc.id ? "inviata" : bc && bc.gia ? "inviata" : x.nl_data <= romeToday() ? "non risulta" : "in arrivo"; } // newsletter: inviata quella mattina?
     const g = (await kvGet(env, "sp:routine")) || {};
-    return { ok: true, spiegati: out, richieste: ((await kvGet(env, "sp:richieste")) || []).slice().reverse().slice(0, 10), routine: g.id ? "collegata" : "" };
+    return { ok: true, spiegati: out, prossimo: await spNext(env), richieste: ((await kvGet(env, "sp:richieste")) || []).slice().reverse().slice(0, 10), routine: g.id ? "collegata" : "" };
   }
   if (act === "sp_chiedi") { // v75: richiesta a comando di uno Spiegato su una domanda scelta da Francesco
     const q = String(b.q || "").trim().slice(0, 300);
@@ -5036,23 +5067,42 @@ async function spPanelApi(env, b) {
   if (act === "sp_pubblica") {
     const c = spCheck(r.spec); if (c.err.length) return { ok: false, error: "Da correggere: " + c.err.join("; ") };
     const prima = !r.pubblicato_il;
+    if (r.stato === "ritirato") spLog(r, "Rimesso sul sito");
     r.stato = "pubblicato"; r.pubblicato_il = r.pubblicato_il || now; r.aggiornato = now; await kvSet(env, "sp:" + id, r);
     let tg = "";
     if (prima && !r.tg_at) { tg = await spTelegram(env, r); if (tg === "inviato") { r.tg_at = now; await kvSet(env, "sp:" + id, r); } }
     return { ok: true, telegram: tg };
   }
-  if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true }; }
+  if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; r.ritirato_il = now; spLog(r, "Ritirato dal sito"); await kvSet(env, "sp:" + id, r); return { ok: true }; }
   if (act === "sp_scarta") { if (r.stato === "pubblicato") return { ok: false, error: "è pubblicato: prima ritiralo" }; await kvDel(env, "sp:" + id); return { ok: true }; }
+  if (act === "sp_telegram") { // v77: «Invia ora» sul canale (per chi non l'ha avuto alla pubblicazione, o per rilanciarlo)
+    if (r.stato !== "pubblicato") return { ok: false, error: "si invia solo uno Spiegato pubblicato" };
+    const tg = await spTelegram(env, r, !r.tg_at);
+    if (tg !== "inviato") return { ok: false, error: "Telegram: " + tg };
+    if (r.tg_at) spLog(r, "Rilanciato sul canale Telegram");
+    r.tg_at = r.tg_at || now; r.tg_n = (r.tg_n || 0) + 1; r.aggiornato = now; await kvSet(env, "sp:" + id, r);
+    return { ok: true, telegram: tg };
+  }
+  if (act === "sp_copione_salva") { // v77: il copione del video modificato a mano; la regia resta sulle parole che ci sono ancora
+    const prev = (r.copione && r.copione.frasi) || [];
+    const fr = (Array.isArray(b.frasi) ? b.frasi : []).map((x, i) => { const t = String((x && x.t) || "").trim(); const low = t.toLowerCase(); return { t, regia: ((prev[i] && prev[i].regia) || []).filter((y) => low.includes(String(y.parola || "").toLowerCase())) }; });
+    const cp = reqCopione(fr); if (!cp) return { ok: false, error: "il copione è vuoto" };
+    r.copione = { ...cp, req: (r.copione && r.copione.req) || null, fonte: "modificato" }; spLog(r, "Copione del video modificato da te (" + cp.frasi.length + " frasi)");
+    r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true };
+  }
   if (act === "sp_fai_video") { // v75: chiede l'iconografica dello Spiegato (stessa coda e stessa routine delle richieste del pannello)
     if (r.stato !== "pubblicato") return { ok: false, error: "prima pubblica lo Spiegato: il video si fa sul testo approvato" };
     const tpl = IG_TEMPLATES.find((x) => x.id === "iconografica");
     if (!tpl || !tpl.pronto) return { ok: false, error: "l'iconografica non è attiva" };
     const o = b.opzioni && typeof b.opzioni === "object" ? b.opzioni : {};
     const note = "SPIEGATO: " + id + "\nLa storia è lo Spiegato pubblicato «" + spPlain(r.spec.titolo) + "» (fermo al " + r.spec.data + "): leggilo con GET $RG_API/api/spiegato?id=" + id + " e usa SOLO i suoi fatti, numeri, luoghi e fonti (ricetta I, passo I2-bis).";
+    const fisso = !!b.usa_copione;
+    if (fisso && !(r.copione && r.copione.frasi && r.copione.frasi.length)) return { ok: false, error: "nessun copione salvato per questo Spiegato" };
+    const note2 = fisso ? note + "\nCOPIONE FISSO: le frasi sono già scritte e approvate (campo copione della richiesta). Non riscriverle e non cambiarne l'ordine: parti dallo storyboard (I4) usando la loro regia." : note;
     let rq;
-    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note, opzioni: { voce: o.voce, durata: o.durata, modo: o.modo }, origine: "spiegato:" + id }); }
+    try { rq = await reqCreate(env, tpl, { param: spPlain(r.spec.titolo), note: note2, opzioni: { voce: o.voce, durata: o.durata, modo: fisso ? "auto" : o.modo }, origine: "spiegato:" + id, copione: fisso ? { frasi: r.copione.frasi, at: r.copione.at } : null }); }
     catch (e) { return { ok: false, error: e && e.code === "troppe_richieste_in_coda" ? "troppe richieste in coda: riprova più tardi" : "richiesta non creata" }; }
-    r.video_req = rq.id; r.aggiornato = now; await kvSet(env, "sp:" + id, r);
+    r.video_req = rq.id; r.aggiornato = now; spLog(r, fisso ? "Video chiesto dal copione salvato" : "Video chiesto"); await kvSet(env, "sp:" + id, r);
     return { ok: true, req: rq.id, fire: rq.fire || "in coda" };
   }
   if (act === "sp_video") {
