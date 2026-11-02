@@ -5003,6 +5003,41 @@ async function spNext(env) { // prossimo giro della routine Spiegati, dal rappor
     return t && t.next_run_at ? t.next_run_at : null;
   } catch (e) { return null; }
 }
+// v78: il prossimo Spiegato. Candidati = filoni con storie in più giorni degli ultimi 7, nel briefing di oggi, con dossier, senza uno Spiegato recente
+async function spCandidati(env) {
+  const oggi = romeToday(), da = new Date(Date.parse(oggi + "T12:00:00Z") - 6 * 86400000).toISOString().slice(0, 10).replace(/-/g, "");
+  const st = (await env.DB.prepare("SELECT key, json_extract(data,'$.filone_id') f FROM docs WHERE type='stories' AND key >= ?1").bind("s-" + da).all()).results || [];
+  const T = {};
+  for (const x of st) { if (!x.f) continue; const t = T[x.f] || (T[x.f] = { tema: x.f, n: 0, giorni: new Set(), storie: [] }); t.n++; t.giorni.add(String(x.key).slice(2, 10)); t.storie.push(x.key); }
+  let br = null; try { br = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1").bind(oggi).first(); } catch (e) {}
+  const inBr = new Set(); if (br) { try { const b = JSON.parse(br.data); const ids = [...(b.storie_mondo || []).slice(0, 3), ...(b.storie_italia || []).slice(0, 1)]; for (const x of st) if (ids.includes(x.key) && x.f) inBr.add(x.f); } catch (e) {} }
+  const dos = {}; try { for (const d of ((await env.DB.prepare("SELECT key, json_extract(data,'$.filoni') f, json_extract(data,'$.titolo') t FROM docs WHERE type='dossier'").all()).results || [])) { try { for (const f of JSON.parse(d.f || "[]")) dos[typeof f === "string" ? f : (f && f.id)] = d.t; } catch (e) {} } } catch (e) {}
+  const fatti = {}; for (const r of await spAll(env)) if (r.stato !== "ritirato" && r.spec && r.spec.tema) { const d = r.spec.data || ""; if (!fatti[r.spec.tema] || fatti[r.spec.tema] < d) fatti[r.spec.tema] = d; }
+  try { const j = await (await fetch(SITE + "/spiegati.json", { cf: { cacheTtl: 3600 }, signal: AbortSignal.timeout(4000) })).json(); for (const x of j.spiegati || []) if (x.tema && (!fatti[x.tema] || fatti[x.tema] < x.data)) fatti[x.tema] = x.data || "2026-01-01"; } catch (e) {}
+  const esc0 = (await kvGet(env, "sp:esclusi")) || {}, lim = new Date(Date.parse(oggi + "T12:00:00Z") - 21 * 86400000).toISOString().slice(0, 10);
+  const L = Object.values(T).filter((t) => t.giorni.size >= 2 || inBr.has(t.tema)).filter((t) => !(esc0[t.tema] && esc0[t.tema] >= oggi)).filter((t) => !(fatti[t.tema] && fatti[t.tema] >= lim));
+  const ids = L.map((t) => t.tema); const tit = {};
+  if (ids.length) for (const x of ((await env.DB.prepare("SELECT key, json_extract(data,'$.titolo') t FROM docs WHERE type='threads' AND key IN (" + ids.map((_, i) => "?" + (i + 1)).join(",") + ")").bind(...ids).all()).results || [])) tit[x.key] = x.t;
+  for (const t of L) {
+    t.punti = t.giorni.size * 2 + (inBr.has(t.tema) ? 3 : 0) + (dos[t.tema] ? 1 : 0);
+    const m = [t.n + (t.n === 1 ? " storia" : " storie") + " in " + t.giorni.size + (t.giorni.size === 1 ? " giorno" : " giorni") + " (ultimi 7)"];
+    if (inBr.has(t.tema)) m.push("in apertura del briefing di oggi"); if (dos[t.tema]) m.push("c'è il dossier"); m.push(fatti[t.tema] ? "ultimo Spiegato sul tema: " + fatti[t.tema] : "nessuno Spiegato sul tema");
+    t.titolo = tit[t.tema] || t.tema; t.motivo = m.join(" · "); t.giorni = t.giorni.size; t.storie = t.storie.sort().reverse().slice(0, 6);
+  }
+  L.sort((a, b) => b.punti - a.punti || b.n - a.n);
+  const pin = await kvGet(env, "sp:prossimo");
+  if (pin && pin.tema) { const i = L.findIndex((t) => t.tema === pin.tema); if (i > 0) L.unshift(L.splice(i, 1)[0]); if (i >= 0) L[0].scelto = true; }
+  return L.slice(0, 4);
+}
+function spDiff(a, b) { // v78: cosa cambia tra due versioni, passo per passo (testo leggibile)
+  const out = [], P = (x) => spPlain(x || "");
+  for (const k of ["titolo", "dek"]) if (P(a[k]) !== P(b[k])) out.push({ dove: k === "titolo" ? "Titolo" : "Sottotitolo", prima: P(a[k]), dopo: P(b[k]) });
+  const A = a.steps || [], B = b.steps || [], n = Math.max(A.length, B.length);
+  for (let i = 0; i < n; i++) { const x = A[i] ? P(A[i].t) + (A[i].why ? " " + P(A[i].why) : "") : "", y = B[i] ? P(B[i].t) + (B[i].why ? " " + P(B[i].why) : "") : ""; if (x !== y) out.push({ dove: "Passo " + (i + 1) + (B[i] && B[i].k ? " · " + B[i].k : ""), prima: x || "(non c'era)", dopo: y || "(tolto)" }); }
+  for (const k of ["numeri", "letture", "osservare", "divergenze", "fonti"]) if (JSON.stringify(a[k] || null) !== JSON.stringify(b[k] || null)) out.push({ dove: { numeri: "In numeri", letture: "Due letture", osservare: "Da osservare", divergenze: "Divergenze tra fonti", fonti: "Fonti" }[k], prima: "", dopo: "cambiato" });
+  if (JSON.stringify((a.scheda || {}).paesi || []) !== JSON.stringify((b.scheda || {}).paesi || [])) out.push({ dove: "Paesi sulla mappa del sito", prima: ((a.scheda || {}).paesi || []).join(", "), dopo: ((b.scheda || {}).paesi || []).join(", ") });
+  return out;
+}
 async function spTelegram(env, r, nuovo = true) { // v75: alla prima pubblicazione, un messaggio sul canale Telegram (l'anteprima del link mostra titolo e sottotitolo)
   try {
     const st = await tgSettings(env); if (!st.chat || !env.TG_BOT_TOKEN) return "canale non impostato";
@@ -5038,12 +5073,16 @@ async function spPanelApi(env, b) {
       vreq: r.video_req ? await spReqState(env, r.video_req) : null,
       passi: ((r.spec && r.spec.steps) || []).length, fonti: ((r.spec && r.spec.fonti) || []).length, check: spCheck(r.spec), video: r.video || null, note: r.note || "",
       tg_at: r.tg_at || null, ritirato_il: r.ritirato_il || null, copione: r.copione || null, log: r.log || [],
+      versione: r.n || 1, corr: r.corr || null, corretto: r.corretto || [], bozza_v: r.bozza ? { at: r.bozza.at, nota: r.bozza.nota, anteprima: SITE + "/spiegato/?id=" + r.id + "&k=" + (await spKey(env, r.id)) + "&v=bozza" } : null,
+      versioni: (r.versioni || []).map((v) => ({ n: v.n, at: v.at, fino: v.fino, nota: v.nota || "", anteprima: SITE + "/spiegato/?id=" + r.id + "&v=" + v.n })),
       nl: r.nl || null, nl_data: r.pubblicato_il ? spNlDate(r.pubblicato_il) : null,
       anteprima: SITE + "/spiegato/?id=" + r.id + (r.stato === "pubblicato" ? "" : "&k=" + (await spKey(env, r.id))) });
     out.sort((a, c) => String(c.creato).localeCompare(String(a.creato)));
     for (const x of out) if (x.nl_data && !x.nl) { const bc = await kvGet(env, "mail_bc:" + x.nl_data); x.nl_stato = bc && bc.id ? "inviata" : bc && bc.gia ? "inviata" : x.nl_data <= romeToday() ? "non risulta" : "in arrivo"; } // newsletter: inviata quella mattina?
     const g = (await kvGet(env, "sp:routine")) || {};
-    return { ok: true, spiegati: out, prossimo: await spNext(env), richieste: ((await kvGet(env, "sp:richieste")) || []).slice().reverse().slice(0, 10), routine: g.id ? "collegata" : "" };
+    for (const x of out) for (const v of x.versioni) v.anteprima += "&k=" + (await spKey(env, x.id));
+    let cand = []; try { cand = await spCandidati(env); } catch (e) {}
+    return { ok: true, spiegati: out, prossimo: await spNext(env), candidati: cand, richieste: ((await kvGet(env, "sp:richieste")) || []).slice().reverse().slice(0, 10), routine: g.id ? "collegata" : "" };
   }
   if (act === "sp_chiedi") { // v75: richiesta a comando di uno Spiegato su una domanda scelta da Francesco
     const q = String(b.q || "").trim().slice(0, 300);
@@ -5058,6 +5097,15 @@ async function spPanelApi(env, b) {
     const rt = String(b.rt || "").trim(), token = String(b.token || "").trim();
     if (!/^trig_[A-Za-z0-9]+$/.test(rt) || token.length < 20) return { ok: false, error: "Servono l'id della routine (trig_…) e il suo token." };
     await kvSet(env, "sp:routine", { id: rt, token, at: new Date().toISOString() }); return { ok: true };
+  }
+  if (act === "sp_prossimo_scegli" || act === "sp_prossimo_escludi" || act === "sp_prossimo_ora") { // v78
+    const tema = String(b.tema || ""); if (!/^t-[a-z0-9-]{1,80}$/.test(tema)) return { ok: false, error: "tema non valido" };
+    if (act === "sp_prossimo_scegli") { await kvSet(env, "sp:prossimo", { tema, at: new Date().toISOString() }); return { ok: true }; }
+    if (act === "sp_prossimo_escludi") { const E = (await kvGet(env, "sp:esclusi")) || {}; E[tema] = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10); await kvSet(env, "sp:esclusi", E); const p = await kvGet(env, "sp:prossimo"); if (p && p.tema === tema) await kvDel(env, "sp:prossimo"); return { ok: true }; }
+    const R = (await kvGet(env, "sp:richieste")) || [];
+    const x = { id: rid().slice(0, 8), q: "Tema: " + clip(b.titolo || tema, 200) + " (filone " + tema + "): scegli tu la domanda più utile per chi parte da zero", tema, stato: "in_coda", at: new Date().toISOString() };
+    R.push(x); await kvSet(env, "sp:richieste", R.slice(-30));
+    return { ok: true, fire: await spFire(env, "Richiesta dal pannello Spiegati: " + x.id) };
   }
   const id = String(b.id || "");
   if (!SP_ID.test(id)) return { ok: false, error: "id non valido" };
@@ -5075,6 +5123,32 @@ async function spPanelApi(env, b) {
   }
   if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; r.ritirato_il = now; spLog(r, "Ritirato dal sito"); await kvSet(env, "sp:" + id, r); return { ok: true }; }
   if (act === "sp_scarta") { if (r.stato === "pubblicato") return { ok: false, error: "è pubblicato: prima ritiralo" }; await kvDel(env, "sp:" + id); return { ok: true }; }
+  if (act === "sp_correggi") { // v78: Francesco chiede una correzione; la routine prepara la versione nuova come bozza
+    if (r.stato !== "pubblicato") return { ok: false, error: "si corregge uno Spiegato pubblicato (una bozza si rifà)" };
+    const testo = String(b.testo || "").trim().slice(0, 3000); if (testo.length < 5) return { ok: false, error: "scrivi cosa correggere" };
+    if (r.corr && (r.corr.stato === "in_coda" || r.corr.stato === "in_lavorazione")) return { ok: false, error: "c'è già una correzione in corso" };
+    r.corr = { id: rid().slice(0, 8), testo, at: now, stato: "in_coda" }; delete r.bozza; spLog(r, "Correzione chiesta: " + testo.slice(0, 120)); r.aggiornato = now; await kvSet(env, "sp:" + id, r);
+    return { ok: true, fire: await spFire(env, "Correzione dal pannello Spiegati: " + id + " (" + r.corr.id + ")") };
+  }
+  if (act === "sp_correggi_annulla") { if (r.corr && r.corr.stato === "in_coda") { r.corr.stato = "annullata"; await kvSet(env, "sp:" + id, r); } return { ok: true }; }
+  if (act === "sp_confronta") {
+    const altra = b.n === "bozza" ? (r.bozza && r.bozza.spec) : ((r.versioni || []).find((v) => String(v.n) === String(b.n)) || {}).spec;
+    if (!altra) return { ok: false, error: "versione non trovata" };
+    return { ok: true, diff: b.n === "bozza" ? spDiff(r.spec, altra) : spDiff(altra, r.spec) };
+  }
+  if (act === "sp_bozza_pubblica" || act === "sp_ripristina") {
+    let nuova, nota;
+    if (act === "sp_bozza_pubblica") { if (!r.bozza) return { ok: false, error: "nessuna correzione in bozza" }; nuova = r.bozza.spec; nota = r.bozza.nota || "correzioni nel testo"; }
+    else { const v = (r.versioni || []).find((x) => String(x.n) === String(b.n)); if (!v) return { ok: false, error: "versione non trovata" }; nuova = v.spec; nota = "tornati alla versione del " + String(v.at || "").slice(0, 10).split("-").reverse().join("/"); }
+    const c = spCheck(nuova); if (c.err.length) return { ok: false, error: "Da correggere: " + c.err.join("; ") };
+    const n = r.n || 1;
+    r.versioni = (r.versioni || []).concat([{ n, spec: r.spec, at: r.pubblicato_v_il || r.pubblicato_il, fino: now, nota: (r.corretto && r.corretto.length ? r.corretto[r.corretto.length - 1].nota : "prima versione") }]).slice(-8);
+    r.spec = nuova; r.n = n + 1; r.pubblicato_v_il = now; r.corretto = (r.corretto || []).concat([{ data: romeToday(), nota: String(nota).slice(0, 300) }]).slice(-10);
+    if (act === "sp_bozza_pubblica") { if (r.corr) r.corr.stato = "pubblicata"; delete r.bozza; }
+    spLog(r, (act === "sp_bozza_pubblica" ? "Pubblicata la versione " : "Rimessa online come versione ") + r.n + ": " + nota);
+    r.aggiornato = now; await kvSet(env, "sp:" + id, r); return { ok: true, versione: r.n };
+  }
+  if (act === "sp_bozza_scarta") { if (r.bozza) { delete r.bozza; if (r.corr) r.corr.stato = "scartata"; spLog(r, "Correzione scartata"); await kvSet(env, "sp:" + id, r); } return { ok: true }; }
   if (act === "sp_telegram") { // v77: «Invia ora» sul canale (per chi non l'ha avuto alla pubblicazione, o per rilanciarlo)
     if (r.stato !== "pubblicato") return { ok: false, error: "si invia solo uno Spiegato pubblicato" };
     const tg = await spTelegram(env, r, !r.tg_at);
@@ -5131,12 +5205,19 @@ async function spRoute(request, env, p, method, url) {
     const ok = r && (r.stato === "pubblicato" || (k && safeEq(k, await spKey(env, id))));
     if (!ok) return json({ ok: false, error: "not_found" }, 404);
     if (url.searchParams.get("meta") === "1") return json({ ok: true, titolo: spPlain(r.spec.titolo), dek: spPlain(r.spec.dek), kicker: r.spec.kicker || "Spiegato" }, 200, pub);
-    const spec = { ...r.spec, id: r.id, video: r.video || r.spec.video || null, bozza: r.stato !== "pubblicato" };
+    const vq = url.searchParams.get("v") || "";
+    if (vq && k && safeEq(k, await spKey(env, id))) { // v78: anteprima di una correzione o di una versione precedente
+      const alt = vq === "bozza" ? r.bozza && r.bozza.spec : ((r.versioni || []).find((v) => String(v.n) === vq) || {}).spec;
+      if (alt) return json({ ...alt, id: r.id, video: r.video || null, bozza: true, anteprima_di: vq === "bozza" ? "correzione" : "versione", versione: vq, corretto: r.corretto || [] }, 200, { "cache-control": "no-store" });
+    }
+    const spec = { ...r.spec, id: r.id, video: r.video || r.spec.video || null, bozza: r.stato !== "pubblicato", corretto: r.corretto || [] };
     return json(spec, 200, r.stato === "pubblicato" ? pub : { "cache-control": "no-store" });
   }
   if (p !== "/v1/spiegati") return null;
   if (!authorized(request, env)) return fail(401, "unauthorized");
-  if (method === "GET") return json({ ok: true, spiegati: (await spAll(env)).map((r) => ({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, tema: r.spec && r.spec.tema })), richieste: ((await kvGet(env, "sp:richieste")) || []).filter((x) => x.stato === "in_coda") });
+  if (method === "GET") return json({ ok: true, spiegati: (await spAll(env)).map((r) => ({ id: r.id, stato: r.stato, titolo: spPlain(r.spec && r.spec.titolo), data: r.spec && r.spec.data, tema: r.spec && r.spec.tema })), richieste: ((await kvGet(env, "sp:richieste")) || []).filter((x) => x.stato === "in_coda"),
+    correzioni: (await spAll(env)).filter((r) => r.corr && r.corr.stato === "in_coda").map((r) => ({ id: r.id, correzione: r.corr.id, testo: r.corr.testo, chiesta: r.corr.at })),
+    prossimo: await spCandidati(env).catch(() => []) });
   if (method === "POST") {
     const b = await request.json().catch(() => null);
     if (b && b.richiesta_fail) { // la routine non può fare la richiesta: la chiude con il motivo
@@ -5146,14 +5227,30 @@ async function spRoute(request, env, p, method, url) {
       try { await tgPriv(env, "📖 Richiesta di Spiegato non fatta: " + esc(x.q) + "\n" + esc(x.esito)); } catch (e) {}
       return json({ ok: true });
     }
-    if (!b || !b.spec) return fail(400, "json", "atteso { spec, note?, richiesta? }");
+    if (b && b.correzione_fail) { // v78: la routine non può fare la correzione
+      const r = await kvGet(env, "sp:" + String(b.id || "")); if (!r || !r.corr || r.corr.id !== String(b.correzione_fail)) return fail(404, "correzione_non_trovata");
+      r.corr.stato = "non_fatta"; r.corr.esito = String(b.note || "").slice(0, 400); spLog(r, "Correzione non fatta: " + r.corr.esito.slice(0, 150)); await kvSet(env, "sp:" + r.id, r);
+      try { await tgPriv(env, "📖 Correzione non fatta: " + esc(spPlain(r.spec.titolo)) + "\n" + esc(r.corr.esito)); } catch (e) {}
+      return json({ ok: true });
+    }
+    if (!b || !b.spec) return fail(400, "json", "atteso { spec, note?, richiesta?, correzione? }");
     const s = b.spec, c = spCheck(s);
     if (c.err.length) return json({ ok: false, error: "spec", detail: c.err, avvisi: c.avv }, 400);
     if (JSON.stringify(s).length > 180000) return fail(413, "too_large");
     const old = await kvGet(env, "sp:" + s.id);
-    if (old && old.stato === "pubblicato") return fail(409, "pubblicato", "uno Spiegato pubblicato non si riscrive: usa un id nuovo");
     const now = new Date().toISOString();
+    if (b.correzione) { // v78: versione corretta di uno Spiegato pubblicato → resta in bozza finché Francesco non la pubblica
+      if (!old || !old.corr || old.corr.id !== String(b.correzione)) return fail(404, "correzione_non_trovata", "id dello Spiegato o della correzione sbagliati");
+      if (s.data !== old.spec.data) return fail(400, "data", "una correzione non cambia la data dello Spiegato (" + old.spec.data + "): i fatti restano fermi a quel giorno");
+      const nota = String(b.nota_correzione || "").trim().slice(0, 300); if (nota.length < 5) return fail(400, "nota_correzione", "serve nota_correzione: una riga per i lettori su cosa è stato corretto");
+      old.bozza = { spec: s, at: now, nota }; old.corr.stato = "pronta"; spLog(old, "Correzione pronta in bozza: " + nota); old.aggiornato = now; await kvSet(env, "sp:" + s.id, old);
+      const ant = SITE + "/spiegato/?id=" + s.id + "&k=" + (await spKey(env, s.id)) + "&v=bozza";
+      try { await tgPriv(env, "📖 <b>Correzione pronta</b>\n" + esc(spPlain(s.titolo)) + "\n" + esc(nota) + "\n\nAnteprima: " + ant + "\nConfronta e pubblica: " + url.origin + "/ig/spiegati"); } catch (e) {}
+      return json({ ok: true, id: s.id, stato: "correzione_in_bozza", anteprima: ant, avvisi: c.avv });
+    }
+    if (old && old.stato === "pubblicato") return fail(409, "pubblicato", "uno Spiegato pubblicato non si riscrive: per correggerlo serve una correzione chiesta dal pannello");
     await kvSet(env, "sp:" + s.id, { id: s.id, stato: "bozza", spec: s, creato: (old && old.creato) || now, aggiornato: now, video: (old && old.video) || null, note: String(b.note || "").slice(0, 1000) });
+    try { const pin = await kvGet(env, "sp:prossimo"); if (pin && pin.tema === s.tema) await kvDel(env, "sp:prossimo"); } catch (e) {}
     if (b.richiesta) { const R = (await kvGet(env, "sp:richieste")) || []; const x = R.find((y) => y.id === String(b.richiesta)); if (x) { x.stato = "fatta"; x.spiegato = s.id; x.done_at = now; await kvSet(env, "sp:richieste", R); } }
     const k = await spKey(env, s.id), ant = SITE + "/spiegato/?id=" + s.id + "&k=" + k;
     try { await tgPriv(env, "📖 <b>Nuova bozza di Spiegato</b>\n" + esc(spPlain(s.titolo)) + "\n\nAnteprima: " + ant + "\nPubblica: " + url.origin + "/ig/spiegati"); } catch (e) {}

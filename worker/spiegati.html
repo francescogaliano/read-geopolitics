@@ -56,11 +56,20 @@ details p{color:var(--mut);font-size:14.5px}
 .cop ol{margin:6px 0 0;padding-left:22px}.cop li{margin:3px 0}
 .cop textarea{font:inherit;font-size:14.5px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);margin:4px 0;resize:vertical}
 [hidden]{display:none!important}a{color:var(--acc)}
+.next{border:1px solid var(--acc);border-radius:12px;padding:14px;margin:14px 0 4px}
+.next .q{font:600 19px/1.3 "Source Serif 4",Georgia,serif;margin:4px 0 6px}
+.alt{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:15px;align-items:center}.alt small{display:block;color:var(--mut);font-size:12.5px}
+.alt .btn{flex:0 0 auto;min-height:38px;line-height:38px}
+.diff{margin:8px 0;font-size:14px}.diff div{padding:8px 0;border-top:1px solid var(--line)}.diff b{display:block;font-size:13px;color:var(--mut)}.diff s{color:var(--bad);text-decoration:none;display:block}.diff s:before{content:"prima: ";color:var(--mut)}.diff u{color:var(--ok);text-decoration:none;display:block}.diff u:before{content:"dopo: ";color:var(--mut)}
+.ver{display:flex;justify-content:space-between;gap:8px;font-size:14.5px;padding:8px 0;border-top:1px solid var(--line);align-items:baseline;flex-wrap:wrap}.ver span{color:var(--mut);font-size:13.5px}
+.box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0}.box.w{border-color:var(--warn)}
+.box textarea{font:inherit;font-size:14.5px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);margin:6px 0;resize:vertical}
 .small{font-size:13.5px;color:var(--mut);margin:6px 0}
 </style></head><body><div class="wrap">
 <div class="top"><a href="/ig/panel">‹ Pannello</a><a href="https://www.readgeopolitics.com/#spiegati" target="_blank" rel="noopener">Sul sito ›</a></div>
 <h1>Spiegati</h1>
 <div class="kpi" id="kpi"></div>
+<div id="nx"></div>
 <div class="ask"><span class="mono">Chiedi uno Spiegato</span><textarea id="spq" rows="2" placeholder="La domanda o il tema, es. «Perché la Polonia litiga sulla Corte costituzionale?»"></textarea><button class="btn pri" id="spqb">Chiedi</button><div class="msg" id="spqm"></div><div id="rq"></div></div>
 <div id="out"><p class="none">Carico…</p></div>
 <details><summary>Come funziona</summary><p>La routine scrive le bozze due volte a settimana, o quando ne chiedi una qui sopra. Apri l'anteprima e pubblica. Lo Spiegato compare sul sito entro un minuto, parte un messaggio sul canale Telegram e la mattina dopo entra nella newsletter. Tocca uno Spiegato pubblicato per vedere la sua storia: dove è uscito, cosa manca, il video.</p><p>Il video: «Fai il video» chiede l'iconografica partendo dallo Spiegato. Il copione del video (le frasi e la regia) viene salvato qui. Se scarti il reel il copione resta: puoi modificarlo e rifare solo il video. Quando il reel esce su Instagram il link compare da solo sotto lo Spiegato.</p><p>Uno Spiegato pubblicato resta fermo alla sua data. Il blocco «Da allora» si riempie da solo con le storie successive. Per toglierlo dal sito usa «Ritira»; puoi rimetterlo in qualsiasi momento.</p></details>
@@ -94,7 +103,7 @@ function storia(x){var L=[];
  if(x.pubblicato_il)L.push(x.tg_at?{at:x.tg_at,t:"Inviato sul canale Telegram"}:{at:x.pubblicato_il,t:'Non inviato sul canale Telegram · <button class="lk" data-a="sp_telegram">Invia ora</button>',d:"n",raw:1});
  if(x.nl_data){var nl=x.nl||x.nl_stato==="inviata";L.push({at:(x.nl||x.nl_data)+"T07:30:00",t:nl?"Nella newsletter del mattino":x.nl_stato==="in arrivo"?"Entrerà nella newsletter di domattina":"Non risulta nella newsletter di quella mattina",d:nl?"":"n",day:1})}
  (x.log||[]).forEach(function(l){L.push({at:l.at,t:e(l.t),raw:1})});
- var v=vstato(x.vreq);if(v&&!(x.video&&x.video.ig&&v.c==="ok"))L.push({at:"9999",t:v.h,d:v.c==="warn"?"w":"",raw:1,now:1});
+ var v=vstato(x.vreq);if(v&&!(x.video&&x.video.ig&&v.c==="ok"))L.push({at:"9999",t:v.h,d:v.c==="warn"?"w":v.c==="ok"?"":"n",raw:1,now:1});
  L.sort(function(a,b){return String(a.at).localeCompare(String(b.at))});
  return '<ul class="life">'+L.map(function(l){return '<li><span class="h">'+(l.now?"ora":l.day?dt(l.at):dth(l.at))+'</span><span class="d '+(l.d||"")+'"></span><span>'+(l.raw?l.t:e(l.t))+'</span></li>'}).join("")+'</ul>'}
 function copione(x){var c=x.copione,F=(c&&c.frasi)||[];
@@ -103,6 +112,17 @@ function copione(x){var c=x.copione,F=(c&&c.frasi)||[];
  return '<div class="cop"><div><b style="font-size:15px;display:inline">Copione salvato</b> · '+F.length+' frasi · '+(c.fonte==="modificato"?"modificato da te il ":"della routine, ")+dth(c.at)+'</div>'+
   '<ol class="cv">'+F.map(function(f){return '<li>'+e(f.t)+'</li>'}).join("")+'</ol>'+ed+
   '<div class="row" style="margin-top:8px"><button class="btn" data-ui="cped">Modifica</button><button class="btn pri" data-a="sp_copione_salva" hidden>Salva copione</button><button class="btn pri" data-a="sp_fai_video" data-cop="1">Rifai il video da questo copione</button></div></div>'}
+function correggi(x){var c=x.corr;
+ if(x.bozza_v)return '<div class="box w"><b>Versione '+(x.versione+1)+' in bozza</b> · '+dth(x.bozza_v.at)+'<p class="small">Per i lettori: «'+e(x.bozza_v.nota)+'». Sul sito c\'è ancora la versione '+x.versione+'.</p><div class="diff" hidden></div><div class="row"><a class="btn" href="'+e(x.bozza_v.anteprima)+'" target="_blank" rel="noopener">Anteprima</a><button class="btn" data-a="sp_confronta" data-n="bozza">Confronta</button></div><div class="row" style="margin-top:8px"><button class="btn pri" data-a="sp_bozza_pubblica">Pubblica la correzione</button><button class="btn del" data-a="sp_bozza_scarta">Scarta</button></div></div>';
+ if(c&&(c.stato==="in_coda"||c.stato==="in_lavorazione"))return '<div class="box"><b>Correzione chiesta</b> · '+dth(c.at)+'<p class="small">«'+e(c.testo)+'»</p><p class="small">La routine prepara la versione nuova come bozza: ti arriva un avviso su Telegram. Sul sito resta questa finché non pubblichi.</p><button class="lk" data-a="sp_correggi_annulla">Annulla</button></div>';
+ var h=c&&c.stato==="non_fatta"?'<div class="box w"><b>Correzione non fatta</b><p class="small">'+e(c.esito)+'</p></div>':'';
+ return h+'<div class="box"><textarea rows="3" data-corr placeholder="Cosa cambiare, a parole tue. Es. «nel passo 3 manca perché è iniziata la guerra» o «togli gli USA dai paesi»"></textarea><p class="small">Si correggono errori, chiarezza, equilibrio e mappa. I fatti restano fermi al '+dt(x.data)+': gli sviluppi successivi vanno in «Da allora» o in uno Spiegato nuovo. In fondo alla pagina comparirà «Corretto il …».</p><button class="btn pri" data-a="sp_correggi">Chiedi la correzione</button></div>'}
+function versioni(x){var h='<div class="ver"><b>Versione '+x.versione+' · online</b><span>'+(x.corretto.length?"corretta il "+dt(x.corretto[x.corretto.length-1].data):"dal "+dt(x.pubblicato_il))+'</span></div>';
+ x.versioni.slice().reverse().forEach(function(v){h+='<div class="ver" data-vn="'+v.n+'"><span style="color:var(--fg)">Versione '+v.n+'</span><span>fino al '+dt(v.fino)+' · <a href="'+e(v.anteprima)+'" target="_blank" rel="noopener">Rivedi</a> · <button class="lk" data-a="sp_confronta" data-n="'+v.n+'">Confronta</button> · <button class="lk" data-a="sp_ripristina" data-n="'+v.n+'">Ripristina</button></span><div class="diff" hidden style="flex-basis:100%"></div></div>'});
+ if(!x.versioni.length)h+='<p class="small">Nessuna versione precedente.</p>';return h}
+function nx(r){var C=r.candidati||[],el=document.getElementById("nx");if(!C.length){el.innerHTML="";return}var t=C[0];
+ el.innerHTML='<h2>Il prossimo Spiegato</h2><div class="next" data-tema="'+e(t.tema)+'" data-tit="'+e(t.titolo)+'"><span class="mono">'+(t.scelto?"Scelto da te · ":"")+'Se non chiedi altro, al prossimo giro la routine scrive su</span><div class="q">'+e(t.titolo)+'</div><p class="small">'+e(t.motivo)+'. La domanda precisa la sceglie la routine.</p><div class="row"><button class="btn pri" data-p="sp_prossimo_ora">Fallo adesso</button><button class="btn" data-p="sp_prossimo_escludi">Non questo</button></div>'+
+ C.slice(1).map(function(a){return '<div class="alt" data-tema="'+e(a.tema)+'" data-tit="'+e(a.titolo)+'"><span>'+e(a.titolo)+'<small>'+e(a.motivo)+'</small></span><button class="btn" data-p="sp_prossimo_scegli">Scegli</button></div>'}).join("")+'<div class="msg"></div></div>'}
 function opz(){return '<div class="row"><select data-o="voce"><option value="mia">La mia voce</option><option value="gemini">Voce Gemini</option><option value="musica">Solo musica</option></select><select data-o="durata"><option value="standard">60-75 s</option><option value="corta">45 s</option></select><select data-o="modo"><option value="auto">Fa tutto</option><option value="tappe">Prima il copione</option></select></div>'}
 function checks(c){var h="";if(c.err.length)h+='<ul class="chk e">'+c.err.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';if(c.avv.length)h+='<ul class="chk a">'+c.avv.map(function(t){return '<li>'+e(t)+'</li>'}).join("")+'</ul>';return h}
 function bozza(x){var c=x.check||{err:[],avv:[]};
@@ -112,6 +132,7 @@ function pub(x){var on=OPEN[x.id]?" on":"",v=vstato(x.vreq);
  return '<div class="it p'+on+'" data-id="'+e(x.id)+'"><div class="pr'+on+'" data-ui="tog"><span class="ar">›</span><b>'+e(x.titolo)+'</b><div class="m">Pubblicato il '+dt(x.pubblicato_il)+' · fermo al '+dt(x.data)+' · '+x.passi+' passi · '+x.fonti+' fonti</div>'+chips(x)+'</div>'+
  '<div class="det"><div class="sec">La sua storia</div>'+storia(x)+
  '<div class="row" style="margin-top:10px"><a class="btn" href="'+e(x.anteprima)+'" target="_blank" rel="noopener">Apri</a><button class="btn" data-a="sp_telegram">'+(x.tg_at?"Rilancia su Telegram":"Invia su Telegram")+'</button><button class="btn del" data-a="sp_ritira">Ritira</button></div>'+
+ '<div class="sec">Correggi</div>'+correggi(x)+'<div class="sec">Versioni</div>'+versioni(x)+
  '<div class="sec">Video</div>'+copione(x)+
  '<div class="vid"><span class="small">'+(x.copione?"Oppure un video nuovo, con un copione riscritto da zero:":"Chiedi il video: la routine scrive il copione e lo salva qui.")+'</span>'+opz()+'<button class="btn'+(x.copione?"":" pri")+'" data-a="sp_fai_video">'+(x.copione?"Video nuovo da zero":v?"Rifai il video":"Fai il video")+'</button></div>'+
  '<details><summary>Link del video a mano</summary><div class="vid"><input data-v="ig" placeholder="Link del reel su Instagram" value="'+e(x.video&&x.video.ig||"")+'"><input data-v="mp4" placeholder="Oppure link di un file .mp4" value="'+e(x.video&&x.video.mp4||"")+'"><button class="btn" data-a="sp_video">Salva video</button></div></details>'+
@@ -127,7 +148,7 @@ function kpi(r,B,P){var vr=P.filter(function(x){var v=vstato(x.vreq);return v&&v
 var DATA=[];
 function load(){api({action:"sp_lista"}).then(function(r){r=r||{};rq(r);var L=r.spiegati||[],o=document.getElementById("out");DATA=L;
  var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}).sort(function(a,b){return String(b.pubblicato_il).localeCompare(String(a.pubblicato_il))}),R=L.filter(function(x){return x.stato==="ritirato"});
- kpi(r,B,P);
+ kpi(r,B,P);nx(r);
  o.innerHTML=(B.length?'<h2>Da decidere · '+B.length+'</h2>'+B.map(bozza).join(""):"")+
   '<h2>Pubblicati · '+P.length+'</h2>'+(P.length?P.map(pub).join(""):'<p class="none">Nessuno Spiegato pubblicato dal pannello.</p>')+'<p class="small">Oleshky è nel sito come file e non passa da qui.</p>'+
   (R.length?'<h2>Ritirati · '+R.length+'</h2>'+R.map(rit).join(""):"")})}
@@ -138,12 +159,20 @@ document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]
  if(a==="sp_scarta"&&!confirm("Scartare questa bozza? Non si recupera."))return;
  if(a==="sp_ritira"&&!confirm("Ritirarlo dal sito? Potrai rimetterlo quando vuoi."))return;
  if(a==="sp_telegram"&&!confirm(x.tg_at?"Rilanciarlo sul canale Telegram? Gli iscritti ricevono un nuovo messaggio.":"Inviarlo ora sul canale Telegram?"))return;
+ if(a==="sp_confronta"){ev.preventDefault();o.n=b.dataset.n;var dv=b.closest(".box,.ver").querySelector(".diff");if(!dv.hidden){dv.hidden=true;return}dv.hidden=false;dv.textContent="Carico…";api(o).then(function(r){dv.innerHTML=r&&r.ok?(r.diff.length?r.diff.map(function(d){return '<div><b>'+e(d.dove)+'</b>'+(d.prima?'<s>'+e(d.prima)+'</s>':'')+'<u>'+e(d.dopo)+'</u></div>'}).join(""):'<div>Nessuna differenza nel testo.</div>'):"Non riuscito: "+e(r&&r.error)});return}
+ if(a==="sp_correggi"){o.testo=it.querySelector("[data-corr]").value;if(o.testo.trim().length<5)return;if(!confirm("Chiedere la correzione? Parte la routine Spiegati; sul sito resta la versione attuale finché non pubblichi."))return}
+ if(a==="sp_bozza_pubblica"&&!confirm("Pubblicare la correzione? Sostituisce la versione online; la precedente resta tra le versioni e puoi ripristinarla."))return;
+ if(a==="sp_bozza_scarta"&&!confirm("Scartare la correzione in bozza?"))return;
+ if(a==="sp_ripristina"){o.n=b.dataset.n;if(!confirm("Rimettere online la versione "+o.n+"? Quella attuale resta tra le versioni."))return}
  if(a==="sp_video"){o.ig=it.querySelector('[data-v=ig]').value;o.mp4=it.querySelector('[data-v=mp4]').value}
  if(a==="sp_copione_salva"){o.frasi=it.querySelector("[data-cp]").value.split("\n").map(function(t){return {t:t.trim()}}).filter(function(f){return f.t})}
  if(a==="sp_fai_video"){o.opzioni={};it.querySelectorAll("[data-o]").forEach(function(s){o.opzioni[s.dataset.o]=s.value});
   if(b.dataset.cop){o.usa_copione=true;if(!confirm("Rifare il video da questo copione? La routine non riscrive le frasi: parte dallo storyboard. Il reel arriva in bozza."))return}
   else if(!confirm(x.copione?"Fare un video nuovo con un copione riscritto da zero? Il copione salvato verrà sostituito da quello nuovo.":"Chiedere il video di questo Spiegato? Parte la routine e il reel arriva in bozza."))return}
- b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":a==="sp_pubblica"?"Pubblicato ✓"+(r.telegram?" · Telegram: "+r.telegram:""):a==="sp_telegram"?"Inviato sul canale ✓":a==="sp_copione_salva"?"Copione salvato ✓":"Fatto ✓";setTimeout(load,700)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+ b.disabled=true;api(o).then(function(r){var m=it.querySelector(".msg");if(r&&r.ok){m.textContent=a==="sp_video"?"Video salvato ✓":a==="sp_fai_video"?"Richiesta inviata ✓ ("+(r.fire||"in coda")+")":a==="sp_pubblica"?"Pubblicato ✓"+(r.telegram?" · Telegram: "+r.telegram:""):a==="sp_telegram"?"Inviato sul canale ✓":a==="sp_copione_salva"?"Copione salvato ✓":a==="sp_correggi"?"Correzione chiesta ✓ · "+(r.fire||""):a==="sp_bozza_pubblica"?"Pubblicata la versione "+r.versione+" ✓":a==="sp_ripristina"?"Rimessa online ✓":"Fatto ✓";setTimeout(load,700)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
+document.addEventListener("click",function(ev){var b=ev.target.closest("[data-p]");if(!b)return;var w=b.closest("[data-tema]"),a=b.dataset.p;
+ if(a==="sp_prossimo_ora"&&!confirm("Far partire adesso la routine su questo tema? La bozza arriva qui."))return;
+ b.disabled=true;api({action:a,tema:w.dataset.tema,titolo:w.dataset.tit}).then(function(r){var m=document.querySelector("#nx .msg");if(r&&r.ok){m.textContent=a==="sp_prossimo_ora"?"Richiesta inviata ✓ · "+r.fire:a==="sp_prossimo_scegli"?"Scelto ✓":"Escluso per 14 giorni ✓";setTimeout(load,700)}else{b.disabled=false;m.textContent="Non riuscito: "+((r&&r.error)||"errore")}})});
 document.addEventListener("click",function(ev){var t=ev.target;
  if(t.id==="spqb"){var q=document.getElementById("spq").value.trim(),m=document.getElementById("spqm");if(q.length<5){m.textContent="Scrivi la domanda o il tema.";return}t.disabled=true;api({action:"sp_chiedi",q:q}).then(function(r){t.disabled=false;if(r&&r.ok){document.getElementById("spq").value="";m.textContent="Richiesta inviata ✓ · "+r.fire;load()}else m.textContent="Non riuscito: "+((r&&r.error)||"errore")})}
  if(t.dataset&&t.dataset.x){ev.preventDefault();api({action:"sp_chiedi_annulla",rid:t.dataset.x}).then(load)}
