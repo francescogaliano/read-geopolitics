@@ -141,7 +141,7 @@ document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");v
 
 /* GRAFICI (3/11/2026): un passo con "vis" mostra un grafico al posto della mappa. Tipi: serie, soglia, barre, punti, prima_dopo.
    Ogni numero del grafico deve essere già scritto nel testo del passo. */
-function nfmt(x){return typeof x==="number"?x.toLocaleString("it-IT",{maximumFractionDigits:2}):e(x)}
+function nfmt(x){if(typeof x!=="number")return e(x);var p=String(Math.round(x*100)/100).split(".");return p[0].replace(/\B(?=(\d{3})+(?!\d))/g,".")+(p[1]?","+p[1]:"")}
 function vcol(c,i){return COL[c]||c||[COL.gold,COL.blue,COL.grey,COL.green,COL.red][i%5]}
 function visHTML(v){var W0=340,H0=210,s="",t=v.tipo,u=v.unita?" "+e(v.unita):"";
  function T(x,y,str,a,cl,fill){return '<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'"'+(a?' text-anchor="'+a+'"':'')+' class="'+(cl||"")+'"'+(fill?' style="fill:'+fill+'"':'')+'>'+str+'</text>'}
