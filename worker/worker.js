@@ -225,6 +225,7 @@ async function dbPlan(env, w, cur, site, now) {
   if (w.if_version != null && (!cur || Number(w.if_version) !== cur.version))
     throw dbErr(409, "conflict", type + "/" + key + ": il documento è cambiato (version attuale " + (cur ? cur.version : "nessuna") + "): rileggilo e rifai la scrittura", { collection: type, doc_id: key, version: cur ? cur.version : null });
   const stmts = [];
+  if (op === "create" && cur) return { stmts, res: { collection: type, doc_id: key, status: "exists", version: cur.version } }; // crea solo se manca (trasloco)
   if (op === "delete") {
     if (!cur) return { stmts, res: { collection: type, doc_id: key, status: "absent" } };
     stmts.push(env.DB.prepare("DELETE FROM rdocs WHERE type=?1 AND key=?2").bind(type, key));
@@ -232,7 +233,7 @@ async function dbPlan(env, w, cur, site, now) {
     return { stmts, res: { collection: type, doc_id: key, status: "deleted" } };
   }
   let obj;
-  if (op === "set") { if (!dbIsObj(w.data)) throw dbErr(422, "bad_data", "data deve essere un oggetto"); if (dbHasDelete(w.data)) throw dbErr(422, "bad_data", "set non accetta __delete__ (usa update)"); obj = w.data; }
+  if (op === "set" || op === "create") { if (!dbIsObj(w.data)) throw dbErr(422, "bad_data", "data deve essere un oggetto"); if (dbHasDelete(w.data)) throw dbErr(422, "bad_data", "set non accetta __delete__ (usa update)"); obj = w.data; }
   else if (op === "update") { if (!dbIsObj(w.data)) throw dbErr(422, "bad_data", "data deve essere un oggetto"); obj = dbMerge(cur ? JSON.parse(cur.data) : {}, w.data); }
   else if (op === "str_replace") {
     if (!cur) throw dbErr(404, "not_found", type + "/" + key);
@@ -243,7 +244,7 @@ async function dbPlan(env, w, cur, site, now) {
     if (!n) throw dbErr(422, "old_absent", "old_str non trovato in " + f);
     if (n > 1 && !w.replace_all) throw dbErr(422, "old_not_unique", "old_str compare " + n + " volte in " + f + " (allarga il testo o usa replace_all)");
     obj[f] = w.replace_all ? obj[f].split(o).join(nw) : obj[f].replace(o, () => nw);
-  } else throw dbErr(422, "bad_op", "op: set, update, delete o str_replace");
+  } else throw dbErr(422, "bad_op", "op: set, create, update, delete o str_replace");
   const text = JSON.stringify(obj);
   if (text.length > 1000000) throw dbErr(413, "too_large", type + "/" + key + ": massimo 1.000.000 caratteri");
   const hash = await sha256(text);
