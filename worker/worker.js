@@ -3340,7 +3340,7 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
     let spR = null;
     try { const q = d.req_id ? await kvGet(env, "req:" + d.req_id) : null; const mm = q && /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); spR = mm ? await kvGet(env, "sp:" + mm[1]) : null; if (spR && spR.stato !== "pubblicato") spR = null; } catch (e) { spR = null; }
     if (spR) { const c = spCard(spR), u = SITE + "/spiegato/?id=" + spR.id + "&utm_source=telegram&utm_medium=canale&utm_campaign=spiegato_reel";
-      cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + "📖 Lo Spiegato completo, con la mappa e le fonti: <a href=\"" + esc(u) + "\">leggilo qui</a> · " + c.min + " minuti"; }
+      cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + "📖 Lo Spiegato completo, con le fonti: <a href=\"" + esc(u) + "\">leggilo qui</a> · " + c.min + " minuti"; }
     let r;
     if (d.type === "reel" && d.video_url) {
       /* v64: Telegram ricorda per un po' gli indirizzi che non è riuscito a scaricare, e da lì i «Riprova» falliscono tutti.
@@ -5234,7 +5234,7 @@ function spCheck(s) {
   if (!s.tema) avv.push("manca tema: niente «Da allora» e niente percorso");
   const ents = new Set(Object.keys(s.ent || {}));
   JSON.stringify(s.steps || []).replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, (_, k) => { if (!ents.has(k)) avv.push("nome cliccabile senza scheda: " + k); return ""; });
-  if (s.steps && s.steps.some((st) => !(st.map && st.map.v) && !(st.vis && st.vis.tipo))) avv.push("alcuni passi senza inquadratura della mappa né grafico");
+  if (s.steps && s.steps[0] && !(s.steps[0].map && s.steps[0].map.v) && !(s.steps[0].vis && s.steps[0].vis.tipo)) avv.push("il primo passo non ha né mappa né grafico"); // gli altri passi senza mappa né grafico tengono quello del passo prima
   // v-grafici (3/11/2026): ogni numero di un grafico deve essere già scritto nel testo del passo
   (s.steps || []).forEach((st, i) => {
     const v = st && st.vis; if (!v || !v.tipo) return;
@@ -5343,7 +5343,7 @@ async function spTelegram(env, r, nuovo = true) { // v75: alla prima pubblicazio
   try {
     const st = await tgSettings(env); if (!st.chat || !env.TG_BOT_TOKEN) return "canale non impostato";
     const c = spCard(r), u = SITE + "/spiegato/?id=" + r.id + "&utm_source=telegram&utm_medium=canale&utm_campaign=spiegato";
-    const t = "📖 <b>" + (nuovo ? "Nuovo Spiegato" : "Spiegato") + "</b>\n" + esc(c.q) + "\n\n" + esc(c.breve) + "\n\n<a href=\"" + esc(u) + "\">Leggilo, con la mappa</a> · " + c.min + " minuti";
+    const t = "📖 <b>" + (nuovo ? "Nuovo Spiegato" : "Spiegato") + "</b>\n" + esc(c.q) + "\n\n" + esc(c.breve) + "\n\n<a href=\"" + esc(u) + "\">Leggilo</a> · " + c.min + " minuti";
     const x = await tgCall(env, "sendMessage", { chat_id: st.chat, text: t, parse_mode: "HTML", link_preview_options: { url: u, prefer_large_media: true } });
     return x && x.ok !== false ? "inviato" : "errore";
   } catch (e) { return "errore"; }
@@ -5413,13 +5413,13 @@ async function spPanelApi(env, b) {
   const r = await kvGet(env, "sp:" + id);
   if (!r) return { ok: false, error: "Spiegato non trovato" };
   const now = new Date().toISOString();
-  if (act === "sp_pubblica") {
+  if (act === "sp_pubblica" || act === "sp_pubblica_muta") { // v-muta (3/11/2026): «Pubblica senza Telegram», il canale si avvisa dopo con «Invia su Telegram» (per esempio quando c'è il video)
     const c = spCheck(r.spec); if (c.err.length) return { ok: false, error: "Da correggere: " + c.err.join("; ") };
     const prima = !r.pubblicato_il;
     if (r.stato === "ritirato") spLog(r, "Rimesso sul sito");
     r.stato = "pubblicato"; r.pubblicato_il = r.pubblicato_il || now; r.aggiornato = now; await kvSet(env, "sp:" + id, r);
     let tg = "";
-    if (prima && !r.tg_at) { tg = await spTelegram(env, r); if (tg === "inviato") { r.tg_at = now; await kvSet(env, "sp:" + id, r); } }
+    if (act === "sp_pubblica" && prima && !r.tg_at) { tg = await spTelegram(env, r); if (tg === "inviato") { r.tg_at = now; await kvSet(env, "sp:" + id, r); } }
     return { ok: true, telegram: tg };
   }
   if (act === "sp_ritira") { r.stato = "ritirato"; r.aggiornato = now; r.ritirato_il = now; spLog(r, "Ritirato dal sito"); await kvSet(env, "sp:" + id, r); return { ok: true }; }
