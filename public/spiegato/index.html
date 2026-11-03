@@ -63,8 +63,8 @@ h1 em{font-style:normal;color:var(--gold)}
  .step{min-height:90vh;align-items:center;padding-top:0}
 }
 .ent{color:inherit;text-decoration:underline dotted;text-decoration-color:var(--gold);text-underline-offset:3px;text-decoration-thickness:2px;cursor:pointer}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#112243;border-top:1px solid #2C4670;padding:16px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -12px 30px rgba(0,0,0,.4)}
-.sheet.on{transform:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#112243;border-top:1px solid #2C4670;padding:16px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(calc(100% + 48px));visibility:hidden;transition:transform .25s ease;box-shadow:0 -12px 30px rgba(0,0,0,.4)}
+.sheet.on{transform:none;visibility:visible}
 .sheet .k{color:var(--gold)}.sheet h3{font:600 22px/1.2 "IBM Plex Serif",serif;margin:4px 0 8px}
 .sheet p{margin:0 0 12px;font-size:15.5px;color:#C8D3DE}
 .sheet .go{display:flex;justify-content:space-between;align-items:center;min-height:48px;border-top:1px solid var(--line);color:var(--blue);text-decoration:none;font-weight:600}
@@ -77,7 +77,7 @@ h2{font:600 24px/1.25 "IBM Plex Serif",Georgia,serif;margin:0;padding:0 0 12px}
 .w i{font-style:normal;font:500 12px "IBM Plex Mono",monospace;color:var(--gold);white-space:nowrap}
 .w.none{color:var(--mut)}
 .trio{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;padding-bottom:14px}
-.trio>div{min-width:0}.trio b{display:block;font:600 clamp(24px,7vw,34px)/1 "IBM Plex Serif",serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trio>div{min-width:0}.trio b{display:block;font:600 clamp(22px,6vw,34px)/1.05 "IBM Plex Serif",serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .trio span{display:block;font-size:13.5px;color:var(--mut);margin-top:6px;line-height:1.35}
 .trio .unk b{color:var(--gold)}
 details.more{border-top:1px solid var(--line)}
@@ -97,7 +97,7 @@ details.more summary span{transition:transform .2s}details.more[open] summary sp
 .src-l{font-size:14px;color:var(--mut);padding:0 0 0 20px}.src-l li{margin:4px 0}
 .end{padding:6px 0 60px;color:var(--mut);font-size:13px}
 details.src{border-top:0;margin-top:8px}
-@media (min-width:980px){.wrap.end-wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}.wrap.end-wrap>details.src{grid-column:1/-1}.trio b{font-size:40px}}
+@media (min-width:980px){.wrap.end-wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}.wrap.end-wrap>details.src{grid-column:1/-1}.trio b{font-size:clamp(28px,2.6vw,38px)}}
 .shr{all:unset;cursor:pointer;color:var(--gold);font:500 12px/1.4 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
 .next button.shr-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:600}
 .next button.shr-row span{color:var(--mut);font-weight:400;font-size:14px}
@@ -146,16 +146,16 @@ function vcol(c,i){return COL[c]||c||[COL.gold,COL.blue,COL.grey,COL.green,COL.r
 function visHTML(v){var W0=340,H0=210,s="",t=v.tipo,u=v.unita?" "+e(v.unita):"";
  function T(x,y,str,a,cl,fill){return '<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'"'+(a?' text-anchor="'+a+'"':'')+' class="'+(cl||"")+'"'+(fill?' style="fill:'+fill+'"':'')+'>'+str+'</text>'}
  if(t==="serie"){var P=v.punti||[],num=P.every(function(p){return !isNaN(+p.x)}),xs=P.map(function(p,i){return num?+p.x:i}),x0=Math.min.apply(0,xs),x1=Math.max.apply(0,xs),
-   vs=P.map(function(p){return +p.v}).concat(v.tetto?[+v.tetto.v]:[]),vmax=Math.max.apply(0,vs)*1.18,vmin=Math.min(0,Math.min.apply(0,vs)),L=34,R=W0-24,TP=26,B=H0-28,
+   vs=P.map(function(p){return +p.v}).concat(v.tetto?[+v.tetto.v]:[]),hi0=Math.max.apply(0,vs),lo0=Math.min.apply(0,vs),rg=Math.max(hi0-lo0,hi0*0.1,0.5),vmax=hi0+rg*0.45,vmin=Math.max(0,lo0-rg*0.55),L=34,R=W0-24,TP=26,B=H0-28,
    X=function(x){return x1===x0?(L+R)/2:L+(x-x0)/(x1-x0)*(R-L)},Y=function(y){return B-(y-vmin)/(vmax-vmin)*(B-TP)},sd=v.stima_da!=null?String(v.stima_da):null,inSt=false;
   s+='<line x1="'+L+'" y1="'+B+'" x2="'+R+'" y2="'+B+'" stroke="var(--line)"/>';
-  if(v.tetto){s+='<line x1="'+L+'" y1="'+Y(+v.tetto.v).toFixed(1)+'" x2="'+R+'" y2="'+Y(+v.tetto.v).toFixed(1)+'" stroke="'+COL.red+'" stroke-dasharray="5 4"/>'+T(L,Y(+v.tetto.v)-6,e(v.tetto.t||("Soglia "+nfmt(+v.tetto.v)+u)).toUpperCase(),"","vl",COL.red)}
+  if(v.tetto){s+='<line x1="'+L+'" y1="'+Y(+v.tetto.v).toFixed(1)+'" x2="'+R+'" y2="'+Y(+v.tetto.v).toFixed(1)+'" stroke="'+COL.red+'" stroke-dasharray="5 4"/>'+T(R,Y(+v.tetto.v)+15,e(v.tetto.t||("Soglia "+nfmt(+v.tetto.v)+u)).toUpperCase(),"end","vl",COL.red)}
   for(var i=1;i<P.length;i++){var gap=num&&xs[i]-xs[i-1]>1,st=sd&&(String(P[i].x)>=sd);s+='<line x1="'+X(xs[i-1]).toFixed(1)+'" y1="'+Y(+P[i-1].v).toFixed(1)+'" x2="'+X(xs[i]).toFixed(1)+'" y2="'+Y(+P[i].v).toFixed(1)+'" stroke="'+(st?COL.gold:COL.blue)+'" stroke-width="'+(gap?2:3)+'"'+(gap?' stroke-dasharray="3 5"':'')+'/>'}
   P.forEach(function(p,i){var st=sd&&(String(p.x)>=sd),c=st?COL.gold:COL.blue,y=Y(+p.v),above=i===0||+p.v>=+P[i-1].v;s+='<circle cx="'+X(xs[i]).toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="'+c+'"/>'+T(X(xs[i]),above?y-10:y+20,nfmt(+p.v)+e(v.unita||""),"middle","vv",c)+T(X(xs[i]),H0-8,e(p.x),"middle","vl")});
  }else if(t==="soglia"){var mx=+v.max||Math.max(+v.v,+v.soglia)*1.25,L=12,R=W0-12,X=function(x){return L+x/mx*(R-L)},y=90,ok=+v.v>=+v.soglia;
   s+='<rect x="'+L+'" y="'+y+'" width="'+(R-L)+'" height="34" rx="3" fill="var(--line)"/><rect class="gr" x="'+L+'" y="'+y+'" width="'+(X(+v.v)-L).toFixed(1)+'" height="34" rx="3" fill="'+(ok?COL.gold:COL.blue)+'"/>'
    +'<line x1="'+X(+v.soglia).toFixed(1)+'" y1="'+(y-16)+'" x2="'+X(+v.soglia).toFixed(1)+'" y2="'+(y+50)+'" stroke="'+COL.white+'" stroke-width="2"/>'
-   +T(X(+v.soglia),y-24,e(v.t_soglia||("Soglia "+nfmt(+v.soglia))).toUpperCase(),"middle","vl",COL.white)+T(Math.min(X(+v.v)+8,R-60),y+22,nfmt(+v.v)+" "+e(v.etichetta||""),"","vv",COL.gold)
+   +T(X(+v.soglia),y-24,e(v.t_soglia||("Soglia "+nfmt(+v.soglia))).toUpperCase(),"middle","vl",COL.white)+(X(+v.v)-L>(R-L)*0.55?T(X(+v.v)-8,y+22,nfmt(+v.v)+(v.etichetta?" "+e(v.etichetta):""),"end","vv","#0B1830"):T(X(+v.v)+8,y+22,nfmt(+v.v)+(v.etichetta?" "+e(v.etichetta):""),"","vv",COL.gold))
    +T(L,y+70,"0","","vl")+T(R,y+70,nfmt(mx)+u,"end","vl");
  }else if(t==="barre"){var V=v.voci||[],mx=Math.max.apply(0,V.map(function(x){return +x.v})),n=V.length,rowH=Math.min(46,(H0-8)/Math.max(1,n)),bw=W0-80;
   V.forEach(function(x,i){var y=6+i*rowH,w=Math.max(3,(+x.v)/mx*bw);s+=T(0,y+12,e(x.t),"","vb")+'<rect class="gr" x="0" y="'+(y+18)+'" width="'+w.toFixed(1)+'" height="'+Math.min(18,rowH-24)+'" rx="2" fill="'+vcol(x.col,i)+'"/>'+T(w+8,y+31,(x.circa?"≈ ":"")+nfmt(+x.v)+u,"","vv",vcol(x.col,i))});
@@ -251,7 +251,7 @@ function op(x,v){x.style.transition="opacity .5s";x.setAttribute("opacity",v)}
 function setStep(s){if(s===S)return;var st=SP.steps[s],sm=st.map||{},from=cur||sm.v,to=sm.v,a0=performance.now();S=s;ts=(performance.now()-t0)/1000;
  document.querySelectorAll("#prog i").forEach(function(i,k){i.classList.toggle("on",k<=s)});
  document.getElementById("cap").textContent=st._cap;
- var vb=document.getElementById("vis"),hv=!!(st.vis&&st.vis.tipo);vb.classList.toggle("on",hv);if(hv)vb.innerHTML=visHTML(st.vis);svg.style.opacity=hv?0:1;document.getElementById("stage").classList.toggle("has-vis",hv);
+ var vb=document.getElementById("vis"),hv=!!(st.vis&&st.vis.tipo);if(!hv&&!st.map&&vb.classList.contains("on"))return;vb.classList.toggle("on",hv);if(hv)vb.innerHTML=visHTML(st.vis);svg.style.opacity=hv?0:1;document.getElementById("stage").classList.toggle("has-vis",hv);
  var on={};(sm.on||[]).forEach(function(k){on[k]=1});
  Object.keys(lay).forEach(function(k){var o=lay[k];if(!o||!o.type)return;if(o.type==="point")o.es.forEach(function(x){op(x,on[k]?1:0)});else op(o.e,on[k]?1:0);
   if(o.type==="label"&&sm.relabel&&sm.relabel[k]!==undefined)o.e.textContent=sm.relabel[k];else if(o.type==="label")o.e.textContent=o.d.t});
