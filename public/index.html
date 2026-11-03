@@ -1828,13 +1828,13 @@ const LOCK_VIEWS={protagonisti:1,radar:1,timeline:1,archivio:1,dossier:1};
 function show(v,push){
   if(S.guest&&LOCK_VIEWS[v]){showLock({view:v});return}
   if(v==="idee"||(v==="dossier"&&!dosReady().length))v="briefing";
-  S.view=v;
+  const _pv=S.view;S.view=v;
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.view===v?"true":"false"));
   document.querySelectorAll(".view").forEach(el=>el.hidden=el.id!=="v-"+v);
   if(v==="mappa")drawMap();
   const ip=document.getElementById("ideePill");if(ip)ip.classList.toggle("on",v==="idee");
   const dp=document.getElementById("dosPill");if(dp)dp.classList.toggle("on",v==="dossier");
-  if(push!==false){try{history.replaceState(null,"","#"+v)}catch(e){}}
+  if(push!==false){try{if(_pv&&_pv!==v&&v!=="esplora"&&location.hash!=="#"+v&&!(history.state&&(history.state.ags||history.state.mdl)))history.pushState(null,"","#"+v);else history.replaceState(history.state,"","#"+v)}catch(e){}}
   window.scrollTo({top:0});
 }
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
@@ -1930,8 +1930,8 @@ function agsClose(nav){if(!AGS.open)return;AGS.open=false;const w=AGS.el;w.class
  if(AGS.pushed){AGS.pushed=false;if(!nav){AGS.skipPop=true;try{history.back()}catch(e){AGS.skipPop=false}}}}
 /* il tasto indietro chiude il pannello; questo ascoltatore viene prima degli altri e li ferma, così la pagina non torna in cima */
 const agsKeepY=()=>{const y=AGS.y||0;window.scrollTo(0,y);requestAnimationFrame(()=>window.scrollTo(0,y));setTimeout(()=>window.scrollTo(0,y),60)}; /* il browser, tornando indietro, rimetterebbe una vecchia posizione di scorrimento */
-window.addEventListener("popstate",e=>{if(AGS.skipPop){AGS.skipPop=false;e.stopImmediatePropagation();agsKeepY();return}if(AGS.open){AGS.pushed=false;agsClose();e.stopImmediatePropagation();agsKeepY()}});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&AGS.open)agsClose()});
+window.addEventListener("popstate",e=>{if(AGS.skipPop){AGS.skipPop=false;e.stopImmediatePropagation();agsKeepY();return}if(window.RG_popGuard&&window.RG_popGuard(e)){e.stopImmediatePropagation();agsKeepY();return}if(AGS.open){AGS.pushed=false;agsClose();e.stopImmediatePropagation();agsKeepY()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&AGS.open&&!document.getElementById("gloss"))agsClose()});
 document.addEventListener("click",e=>{const o=e.target.closest("[data-agg-open]");if(o){e.preventDefault();agsOpen(o.dataset.aggOpen)}});
 document.addEventListener("click",e=>{const g=e.target.closest("[data-agg-go]");if(!g)return;e.preventDefault();if(g.dataset.aggGo)S.aggOpen.add(g.dataset.aggGo);openStory(g.dataset.aggSt)});
 document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("agg-s")&&d.dataset.aggId){d.open?S.aggOpen.add(d.dataset.aggId):S.aggOpen.delete(d.dataset.aggId)}},true);
@@ -5653,7 +5653,7 @@ document.addEventListener("click",e=>{
   const ps=e.target.closest("[data-rl-pt]");if(ps){e.preventDefault();RL.pt=ps.dataset.rlPt==="1";try{localStorage.setItem("rg-rl-pt",RL.pt?"1":"0")}catch(_){}rlBuild();return}
   if(e.target.closest("[data-rl-oth]")){e.preventDefault();RL.oth=!RL.oth;rlBuild();return}
   if(e.target.closest("[data-rl-full]")){e.preventDefault();RL.full=!RL.full;const w=AGS.el;if(w)w.classList.toggle("ags-full",RL.full);const fb=w&&w.querySelector("[data-rl-full]");if(fb){fb.textContent=RL.full?"⤡":"⤢";fb.title=RL.full?"Riduci":"Schermo intero"}return}
-  if(e.target.closest("[data-rl-new]")){e.preventDefault();const u=location.pathname+"?pieno=1"+(RL.sel?"#s="+encodeURIComponent(RL.sel):"");window.open(u,"_blank","noopener");return}
+  if(e.target.closest("[data-rl-new]")){e.preventDefault();const u=location.pathname+"?pieno=1"+(RL.sel?"#s="+encodeURIComponent(RL.sel):RL.lnk?"#"+RL.lnk:"");window.open(u,"_blank","noopener");return}
 },true);
 /* v91: la storia nel pannello (passo 2 della proposta A): prima il perché conta, poi i fatti con le fonti per nome (senza [1][2]),
    poi le sezioni chiuse. Nessun id ripetuto: la vecchia scheda resta nascosta nella pagina. */
@@ -5789,6 +5789,34 @@ function rlProg(d){const el=document.getElementById("briefing");if(!el||!RL.ids)
 {const _sg=rlSegna;rlSegna=function(d,id){_sg(d,id);try{rlProg(d)}catch(_){}}}
 /* «📋 Log» in cima a Oggi apre il log nel pannello (prima puntava a una linguetta del vecchio impaginato, nascosta) */
 document.addEventListener("click",e=>{const b=e.target.closest(".logbadge[data-sub]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();try{rlTile("sub:log")}catch(_){}},true);
+/* v-nav: ↗ porta al contenuto del pannello; il tasto indietro torna al pannello precedente e chiude glossario, Il mio Read e Scrivici prima di uscire */
+RL.lnk=null;
+function rlLnk(v){RL.lnk=v||null;const b=AGS.el&&AGS.el.querySelector("[data-rl-new]");if(b)b.hidden=!RL.lnk&&!RL.sel}
+{const f=rlOpenBox;rlOpenBox=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
+{const f=rlOpen;rlOpen=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
+{const f=thOpen;thOpen=function(id,...a){const r=f.call(this,id,...a);if(r)rlLnk("tema="+encodeURIComponent(id));return r}}
+{const f=dosOpenBox;dosOpenBox=function(d,...a){const r=f.call(this,d,...a);rlLnk("dossier="+encodeURIComponent(d.id));return r}}
+{const f=mapOpen;mapOpen=function(...a){const r=f.apply(this,a);rlLnk(S.selCountry?"paese="+encodeURIComponent(S.selCountry):null);return r}}
+{const f=exGloss;exGloss=function(id,...a){const r=f.call(this,id,...a);rlLnk("voce=g|"+encodeURIComponent(id));return r}}
+{const f=exList;exList=function(o,...a){const r=f.call(this,o,...a);const k=o||{};rlLnk(k.paese&&!k.amb&&!k.area?"esplora/paese/"+k.paese:k.area&&!k.amb?"esplora/area/"+k.area:k.amb&&!k.area&&!k.paese?"esplora/tema/"+k.amb:k.tema?"tema="+encodeURIComponent(k.tema):null);return r}}
+/* modali senza voce nella cronologia: Il mio Read (#intPanel) e Scrivici (.fbk) */
+const MDL={ip:false,fb:false,skip:false};
+{const f=openPanel;openPanel=function(...a){const r=f.apply(this,a);if(!MDL.ip){MDL.ip=true;try{history.pushState({mdl:"ip"},"",location.href)}catch(_){}}return r}}
+{const f=closePanel;closePanel=function(...a){const r=f.apply(this,a);if(MDL.ip){MDL.ip=false;MDL.skip=true;try{history.back()}catch(_){MDL.skip=false}}return r}}
+{const f=fbkOpen;fbkOpen=function(...a){const r=f.apply(this,a);if(!MDL.fb){MDL.fb=true;try{history.pushState({mdl:"fb"},"",location.href)}catch(_){}}return r}}
+{const f=fbkClose;fbkClose=function(...a){const r=f.apply(this,a);if(MDL.fb){MDL.fb=false;MDL.skip=true;try{history.back()}catch(_){MDL.skip=false}}return r}}
+window.RG_popGuard=function(){
+  if(MDL.skip){MDL.skip=false;return true}
+  if(MDL.fb){MDL.fb=false;const s=MDL.skip;fbkClose();MDL.skip=s;return true}
+  if(MDL.ip){MDL.ip=false;const s=MDL.skip;closePanel();MDL.skip=s;return true}
+  if(document.getElementById("gloss")){try{closeGloss()}catch(_){}if(AGS.open){try{history.pushState({ags:1},"",location.href)}catch(_){}}return true}
+  if(AGS.open&&RL.hist&&RL.hist.length){const b=AGS.el&&AGS.el.querySelector(".ags-back");if(b){try{history.pushState({ags:1},"",location.href)}catch(_){}b.click();return true}}
+  return false};
+/* apertura dai link: #tema=…, #paese=…, #voce=g|… o a|… */
+(function(){let n=0;const go=()=>{const h=decodeURIComponent((location.hash||"").slice(1));const m=/^(tema|paese|voce)=(.+)$/.exec(h);if(!m)return;
+  if(!S.threads||!Object.keys(S.threads).length){if(++n<60)setTimeout(go,250);return}
+  try{if(m[1]==="tema")thOpen(m[2]);else if(m[1]==="paese"){S.selCountry=m[2];try{renderPanel();highlightSel()}catch(_){}mapOpen()}else{const i=m[2].indexOf("|"),k=m[2].slice(0,i),id=m[2].slice(i+1);if(k==="a")openActor(id);else exGloss(id)}}catch(_){}};
+  setTimeout(go,600)})();
 function rlSwipeGo(dir){const w=AGS.el;if(!w)return false;
   if(dir<0){if(RL.hist.length){const b=w.querySelector(".ags-back");if(b){b.click();return true}}const p=w.querySelector(".ags-tg .rl-pv");if(p){p.click();return true}return false}
   if(RL.fwd.length&&rlForward())return true;const n=w.querySelector(".ags-tg .rl-nx");if(n){n.click();return true}return false}
