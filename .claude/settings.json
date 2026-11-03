@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cp \"$CLAUDE_PROJECT_DIR/worker/kit/rgdb.py\" /tmp/rgdb.py 2>/dev/null || true"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/worker/kit/prepara.py\" || true"
           }
         ]
       }
