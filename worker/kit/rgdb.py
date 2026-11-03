@@ -17,7 +17,8 @@
 #                   (oppure --old-file / --new-file per testi lunghi)
 #   python3 rgdb.py batch FILE                              FILE = {"writes":[{op,collection,doc_id,data|file_path,if_version}]}
 #                                                           fino a 50 scritture, tutte o nessuna
-#   python3 rgdb.py push DIR                                scrive (set) ogni DIR/<coll>/<id>.json, a gruppi di 50
+#   python3 rgdb.py push DIR [--solo-nuovi]                 scrive (set) ogni DIR/<coll>/<id>.json, a gruppi di 50;
+#                                                           con --solo-nuovi crea solo i documenti che mancano (op create)
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
 
@@ -196,6 +197,7 @@ def main():
                 w["data"] = x["data"] if isinstance(x, dict) and set(x) >= {"doc_id", "data"} and isinstance(x["data"], dict) else x
         out(call("POST", "/v1/db/batch", {"writes": W}))
     elif cmd == "push":
+        nuovi = flag(a, "--solo-nuovi")
         if len(a) != 1:
             die("uso: push DIR")
         W = []
@@ -208,7 +210,7 @@ def main():
                     x = loadjson(open(os.path.join(d, f), encoding="utf-8").read(), c + "/" + f)
                     if isinstance(x, dict) and set(x) >= {"doc_id", "data"} and isinstance(x["data"], dict):
                         x = x["data"]
-                    W.append({"op": "set", "collection": c, "doc_id": f[:-5], "data": x})
+                    W.append({"op": "create" if nuovi else "set", "collection": c, "doc_id": f[:-5], "data": x})
         tot, grp, size = {}, [], 0
         def send(g):
             r = call("POST", "/v1/db/batch", {"writes": g})
