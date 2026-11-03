@@ -2,6 +2,7 @@ import KIT_POD from "./kit/podkit.tgz";
 import KIT_PUNTI from "./kit/puntikit.tgz";
 import KIT_RGSITE from "./kit/rgsite.py";
 import KIT_SALA from "./kit/sala.py";
+import KIT_RGDB from "./kit/rgdb.py";
 import SALA_HTML from "./sala.html";
 import SPIEGATI_HTML from "./spiegati.html";
 // Read Geopolitics API: Cloudflare Worker + D1
@@ -170,6 +171,192 @@ async function putMany(env, items) {
   }
   if (stmts.length) await env.DB.batch(stmts);
   return out;
+}
+
+// ================= DATABASE DELLE ROUTINE (v-db, 3/11/2026) =================
+// Prende il posto del database dell'artifact (che dal 3/11 chiede un permesso a ogni scrittura).
+// Le routine leggono e scrivono la tabella rdocs (privata, mai letta dalle rotte pubbliche) con le stesse operazioni di
+// ArtifactData: get, list/query, set, update (unione profonda, {"__delete__":true} toglie un campo), delete, str_replace, batch.
+// Ogni scrittura su una collezione del sito (ORDER + pubblico) aggiorna anche docs, con gli STESSI filtri di rgsite.py:
+// approfondimenti e dossier solo se stato=pronto e senza i campi interni, briefings senza «selezione».
+// Così il sito si aggiorna appena la routine scrive e la copia privata non esce mai.
+const DB_SITE = new Set([...ORDER, "pubblico"]);
+let RDOCS_OK = null;
+function rdocsTable(env) {
+  if (!RDOCS_OK) RDOCS_OK = env.DB.batch([
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS rdocs (type TEXT NOT NULL, key TEXT NOT NULL, version INTEGER NOT NULL, hash TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (type, key))"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS rrevisions (type TEXT NOT NULL, key TEXT NOT NULL, version INTEGER NOT NULL, data TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (type, key, version))"),
+  ]).catch((e) => { RDOCS_OK = null; throw e; });
+  return RDOCS_OK;
+}
+const dbIsObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+function dbMerge(a, b) {
+  const out = dbIsObj(a) ? { ...a } : {};
+  for (const [k, v] of Object.entries(b || {})) {
+    if (dbIsObj(v) && v.__delete__ === true) { delete out[k]; continue; }
+    out[k] = dbIsObj(v) ? dbMerge(out[k], v) : v;
+  }
+  return out;
+}
+function dbHasDelete(v) { return Array.isArray(v) ? v.some(dbHasDelete) : dbIsObj(v) ? (v.__delete__ === true || Object.values(v).some(dbHasDelete)) : false; }
+// = clean() di rgsite.py: la versione pubblica di un documento, o null se non va sul sito
+function dbPublic(type, x) {
+  if (!DB_SITE.has(type) || !dbIsObj(x)) return null;
+  const drop = (o, ks) => { const r = { ...o }; for (const k of ks) delete r[k]; return r; };
+  if (type === "approfondimenti") return x.stato === "pronto" ? drop(x, ["risposta_rapida"]) : null;
+  if (type === "dossier") return x.stato === "pronto" ? drop(x, ["domanda", "motivo", "auto", "proposto_il", "scartato_il"]) : null;
+  if (type === "briefings") return drop(x, ["selezione"]);
+  return x;
+}
+function dbErr(status, code, detail, extra) { return { status, code, detail, ...(extra || {}) }; }
+async function dbRows(env, type, keys) { // stato attuale di più documenti della stessa collezione: 1 SELECT su rdocs + 1 su docs
+  const ph = keys.map((_, i) => "?" + (i + 2)).join(",");
+  const [a, b] = await Promise.all([
+    env.DB.prepare("SELECT key, version, hash, data FROM rdocs WHERE type=?1 AND key IN (" + ph + ")").bind(type, ...keys).all(),
+    DB_SITE.has(type) ? env.DB.prepare("SELECT key, version, hash, published_at, status FROM docs WHERE type=?1 AND key IN (" + ph + ")").bind(type, ...keys).all() : { results: [] },
+  ]);
+  const r = new Map(), s = new Map();
+  for (const x of a.results || []) r.set(x.key, x);
+  for (const x of b.results || []) s.set(x.key, x);
+  return { r, s };
+}
+async function dbPlan(env, w, cur, site, now) {
+  const { op, collection: type, doc_id: key } = w;
+  if (w.if_version != null && (!cur || Number(w.if_version) !== cur.version))
+    throw dbErr(409, "conflict", type + "/" + key + ": il documento è cambiato (version attuale " + (cur ? cur.version : "nessuna") + "): rileggilo e rifai la scrittura", { collection: type, doc_id: key, version: cur ? cur.version : null });
+  const stmts = [];
+  if (op === "delete") {
+    if (!cur) return { stmts, res: { collection: type, doc_id: key, status: "absent" } };
+    stmts.push(env.DB.prepare("DELETE FROM rdocs WHERE type=?1 AND key=?2").bind(type, key));
+    if (site && site.status === "published") stmts.push(env.DB.prepare("UPDATE docs SET status='archived', updated_at=?3 WHERE type=?1 AND key=?2").bind(type, key, now));
+    return { stmts, res: { collection: type, doc_id: key, status: "deleted" } };
+  }
+  let obj;
+  if (op === "set") { if (!dbIsObj(w.data)) throw dbErr(422, "bad_data", "data deve essere un oggetto"); if (dbHasDelete(w.data)) throw dbErr(422, "bad_data", "set non accetta __delete__ (usa update)"); obj = w.data; }
+  else if (op === "update") { if (!dbIsObj(w.data)) throw dbErr(422, "bad_data", "data deve essere un oggetto"); obj = dbMerge(cur ? JSON.parse(cur.data) : {}, w.data); }
+  else if (op === "str_replace") {
+    if (!cur) throw dbErr(404, "not_found", type + "/" + key);
+    obj = JSON.parse(cur.data); const f = String(w.field || "");
+    if (typeof obj[f] !== "string") throw dbErr(422, "bad_field", "il campo " + f + " non è una stringa");
+    const o = String(w.old_str || ""); if (!o) throw dbErr(422, "bad_old", "old_str vuoto");
+    const n = obj[f].split(o).length - 1, nw = String(w.new_str ?? "");
+    if (!n) throw dbErr(422, "old_absent", "old_str non trovato in " + f);
+    if (n > 1 && !w.replace_all) throw dbErr(422, "old_not_unique", "old_str compare " + n + " volte in " + f + " (allarga il testo o usa replace_all)");
+    obj[f] = w.replace_all ? obj[f].split(o).join(nw) : obj[f].replace(o, () => nw);
+  } else throw dbErr(422, "bad_op", "op: set, update, delete o str_replace");
+  const text = JSON.stringify(obj);
+  if (text.length > 1000000) throw dbErr(413, "too_large", type + "/" + key + ": massimo 1.000.000 caratteri");
+  const hash = await sha256(text);
+  let res;
+  if (cur && cur.hash === hash) res = { collection: type, doc_id: key, status: "unchanged", version: cur.version };
+  else {
+    const version = cur ? cur.version + 1 : 1;
+    stmts.push(
+      env.DB.prepare("INSERT INTO rdocs (type,key,version,hash,data,updated_at) VALUES (?1,?2,?3,?4,?5,?6) ON CONFLICT(type,key) DO UPDATE SET version=?3, hash=?4, data=?5, updated_at=?6").bind(type, key, version, hash, text, now),
+      env.DB.prepare("INSERT OR REPLACE INTO rrevisions (type,key,version,data,created_at) VALUES (?1,?2,?3,?4,?5)").bind(type, key, version, text, now));
+    res = { collection: type, doc_id: key, status: cur ? "updated" : "created", version };
+  }
+  // il sito: stessa scrittura di putDoc, solo se la versione pubblica è cambiata
+  const pub = dbPublic(type, obj);
+  if (pub) {
+    const ptext = JSON.stringify(pub), phash = await sha256(ptext);
+    if (!site || site.hash !== phash || site.status !== "published") {
+      const m = meta(pub), pv = site ? site.version + 1 : 1, pa = m.pa || (site ? site.published_at : now);
+      stmts.push(
+        env.DB.prepare("INSERT INTO docs (type,key,title,topic,countries,published_at,status,version,hash,data,updated_at) VALUES (?1,?2,?3,?4,?5,?6,'published',?7,?8,?9,?10) " +
+          "ON CONFLICT(type,key) DO UPDATE SET title=?3, topic=?4, countries=?5, published_at=?6, status='published', version=?7, hash=?8, data=?9, updated_at=?10")
+          .bind(type, key, m.title, m.topic, m.countries, pa, pv, phash, ptext, now),
+        env.DB.prepare("INSERT OR REPLACE INTO revisions (type,key,version,data,created_at) VALUES (?1,?2,?3,?4,?5)").bind(type, key, pv, ptext, now));
+      res.sito = site ? "aggiornato" : "pubblicato";
+    } else res.sito = "invariato";
+  } else if (DB_SITE.has(type)) res.sito = "non pronto (resta fuori dal sito)";
+  return { stmts, res };
+}
+function dbWhere(where, binds) {
+  const ops = { eq: "=", "==": "=", ne: "!=", "!=": "!=", lt: "<", "<": "<", lte: "<=", "<=": "<=", gt: ">", ">": ">", gte: ">=", ">=": ">=" };
+  const parts = [];
+  if (!Array.isArray(where)) throw dbErr(422, "bad_where", "where: lista di [campo, operatore, valore]");
+  for (const c of where) {
+    if (!Array.isArray(c) || c.length !== 3) throw dbErr(422, "bad_where", "where: [campo, operatore, valore]");
+    const [f, op, v0] = c; if (!/^[A-Za-z0-9_.]{1,80}$/.test(String(f))) throw dbErr(422, "bad_field", "campo non valido: " + f);
+    const pth = "'$." + f + "'"; const cv = (v) => (v === true ? 1 : v === false ? 0 : v);
+    if (ops[op]) { if (v0 === null) { parts.push(`json_extract(data,${pth}) IS ${ops[op] === "=" ? "" : "NOT "}NULL`); continue; } binds.push(cv(v0)); parts.push(`json_extract(data,${pth}) ${ops[op]} ?${binds.length}`); }
+    else if (op === "in" || op === "not-in") {
+      const arr = Array.isArray(v0) ? v0 : []; if (!arr.length) { parts.push(op === "in" ? "0" : "1"); continue; }
+      const ph = arr.map((v) => { binds.push(cv(v)); return "?" + binds.length; }).join(",");
+      parts.push(`json_extract(data,${pth}) ${op === "in" ? "IN" : "NOT IN"} (${ph})`);
+    } else if (op === "array-contains") { binds.push(cv(v0)); parts.push(`EXISTS (SELECT 1 FROM json_each(data, ${pth}) WHERE value = ?${binds.length})`); }
+    else throw dbErr(422, "bad_op", "operatore non valido: " + op);
+  }
+  return parts;
+}
+async function dbApply(env, W) {
+  const now = new Date().toISOString(), seen = new Set(), byType = {};
+  for (const w of W) {
+    if (!w || typeof w !== "object") throw dbErr(422, "bad_writes", "ogni scrittura è un oggetto {op, collection, doc_id, ...}");
+    checkTypeKey(w.collection, w.doc_id);
+    const k = w.collection + "/" + w.doc_id; if (seen.has(k)) throw dbErr(422, "duplicate", "stesso documento due volte: " + k); seen.add(k);
+    (byType[w.collection] ||= []).push(w.doc_id);
+  }
+  const state = {};
+  for (const [t, keys] of Object.entries(byType)) state[t] = await dbRows(env, t, keys);
+  const plans = [];
+  for (const w of W) { const st = state[w.collection]; plans.push(await dbPlan(env, w, st.r.get(w.doc_id), st.s.get(w.doc_id), now)); }
+  const stmts = plans.flatMap((x) => x.stmts);
+  if (stmts.length) await env.DB.batch(stmts); // tutto o niente
+  return plans.map((x) => x.res);
+}
+async function dbBody(request, max) {
+  const t = await request.text(); if (t.length > max) throw dbErr(413, "too_large", "massimo " + max + " caratteri");
+  try { return JSON.parse(t || "{}"); } catch { throw dbErr(400, "invalid_json", "JSON non valido"); }
+}
+async function dbPrivate(request, env, p, method, url) {
+  await rdocsTable(env);
+  if (p === "/v1/db/batch") {
+    if (method !== "POST") return fail(405, "method");
+    const b = await dbBody(request, 4000000);
+    const W = b && Array.isArray(b.writes) ? b.writes : null;
+    if (!W || !W.length || W.length > 50) throw dbErr(422, "bad_writes", "writes: da 1 a 50 scritture");
+    return json({ ok: true, results: await dbApply(env, W) });
+  }
+  if (p === "/v1/db") { // elenco delle collezioni con il numero di documenti
+    const { results } = await env.DB.prepare("SELECT type, COUNT(*) n, MAX(updated_at) ultimo FROM rdocs GROUP BY type ORDER BY type").all();
+    return json({ ok: true, collections: results || [] });
+  }
+  const m = p.match(/^\/v1\/db\/([^/]+)(?:\/([^/]+))?(\/str_replace)?$/);
+  if (!m) return fail(404, "no_route");
+  const type = decodeURIComponent(m[1]), key = m[2] ? decodeURIComponent(m[2]) : null;
+  if (!TYPE_RE.test(type)) throw dbErr(422, "bad_type", "collezione non valida: " + type);
+  if (!key) {
+    if (method !== "GET") return fail(405, "method");
+    const lim = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "100", 10) || 100, 1), 1000);
+    const binds = [type]; const parts = ["type=?1"];
+    const wq = url.searchParams.get("where");
+    if (wq) { let where; try { where = JSON.parse(wq); } catch { throw dbErr(422, "bad_where", "where non è JSON"); } parts.push(...dbWhere(where, binds)); }
+    const ob = url.searchParams.get("order_by"), dir = url.searchParams.get("dir") === "desc" ? "DESC" : "ASC", cur = url.searchParams.get("cursor");
+    let order = "key ASC";
+    if (ob) { if (!/^[A-Za-z0-9_.]{1,80}$/.test(ob)) throw dbErr(422, "bad_order", "order_by non valido"); order = `json_extract(data,'$.${ob}') ${dir}, key ASC`; }
+    else if (cur) { binds.push(cur); parts.push("key > ?" + binds.length); }
+    binds.push(lim + 1);
+    const { results } = await env.DB.prepare(`SELECT key, version, data, updated_at FROM rdocs WHERE ${parts.join(" AND ")} ORDER BY ${order} LIMIT ?${binds.length}`).bind(...binds).all();
+    const rows = results || [], page = rows.slice(0, lim);
+    return json({ ok: true, collection: type, docs: page.map((r) => ({ doc_id: r.key, version: r.version, updated_at: r.updated_at, data: JSON.parse(r.data) })),
+      next_cursor: !ob && rows.length > lim ? page[page.length - 1].key : null, ...(ob && rows.length > lim ? { troncato: true } : {}) });
+  }
+  checkTypeKey(type, key);
+  if (method === "GET" && !m[3]) {
+    const r = await env.DB.prepare("SELECT version, data, updated_at FROM rdocs WHERE type=?1 AND key=?2").bind(type, key).first();
+    if (!r) return json({ ok: false, error: "not_found", collection: type, doc_id: key }, 404);
+    return json({ ok: true, collection: type, doc_id: key, version: r.version, updated_at: r.updated_at, data: JSON.parse(r.data) });
+  }
+  const op = m[3] ? (method === "POST" ? "str_replace" : null) : method === "PUT" ? "set" : method === "PATCH" ? "update" : method === "DELETE" ? "delete" : null;
+  if (!op) return fail(405, "method");
+  const body = op === "delete" ? {} : await dbBody(request, 2000000);
+  const ivq = op === "delete" ? url.searchParams.get("if_version") : body.if_version;
+  const iv = ivq == null || ivq === "" ? null : ivq;
+  const w = op === "str_replace" ? { field: body.field, old_str: body.old_str, new_str: body.new_str, replace_all: !!body.replace_all } : { data: body.data };
+  const [res] = await dbApply(env, [{ ...w, op, collection: type, doc_id: key, if_version: iv }]);
+  return json({ ok: true, ...res });
 }
 
 function romeNow() {
@@ -3971,9 +4158,10 @@ async function route(request, env) {
   }
 
   // ---------- KIT DELLE ROUTINE (solo con token): podcast e reel scaricano qui il loro kit, invece che dal database dell'artifact ----------
-  { const m = p.match(/^\/v1\/kit\/(podkit\.tgz|puntikit\.tgz|rgsite\.py|sala\.py)$/);
+  { const m = p.match(/^\/v1\/kit\/(podkit\.tgz|puntikit\.tgz|rgsite\.py|sala\.py|rgdb\.py)$/);
     if (m && method === "GET") {
       if (!authorized(request, env)) return json({ ok: false, error: "unauthorized" }, 401);
+      if (m[1] === "rgdb.py") return new Response(KIT_RGDB, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
       if (m[1] === "sala.py") return new Response(KIT_SALA, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
       if (m[1] === "rgsite.py") return new Response(KIT_RGSITE, { headers: { "content-type": "text/x-python; charset=utf-8", "cache-control": "no-store" } });
       return new Response(m[1] === "podkit.tgz" ? KIT_POD : KIT_PUNTI, { headers: { "content-type": "application/gzip", "cache-control": "no-store" } });
@@ -4109,6 +4297,7 @@ async function route(request, env) {
     if (p.startsWith("/v1/ig/")) return await igPrivate(request, env, p, method);
     if (p.startsWith("/v1/podcast/")) return await podPrivate(request, env, p, method);
     if (p === "/v1/svolte" || p === "/v1/giro") return await svPrivate(request, env, p, method);
+    if (p === "/v1/db" || p.startsWith("/v1/db/")) return await dbPrivate(request, env, p, method, url); // v-db: database delle routine
     if (p === "/v1/decidi" || p === "/v1/decidi/applicate") return await decPrivate(request, env, p, method);
 
     if (method === "GET" && p === "/v1/users") {
