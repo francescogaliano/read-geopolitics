@@ -5817,6 +5817,7 @@ window.RG_popGuard=function(){
   if(!S.threads||!Object.keys(S.threads).length){if(++n<60)setTimeout(go,250);return}
   try{if(m[1]==="tema")thOpen(m[2]);else if(m[1]==="paese"){S.selCountry=m[2];try{renderPanel();highlightSel()}catch(_){}mapOpen()}else{const i=m[2].indexOf("|"),k=m[2].slice(0,i),id=m[2].slice(i+1);if(k==="a")openActor(id);else exGloss(id)}}catch(_){}};
   setTimeout(go,600)})();
+document.addEventListener("keydown",e=>{if(e.key!=="Escape"||AGS.open)return;const f=document.getElementById("exFoc");if(f&&!f.hidden&&EX.unfocus)EX.unfocus()});
 function rlSwipeGo(dir){const w=AGS.el;if(!w)return false;
   if(dir<0){if(RL.hist.length){const b=w.querySelector(".ags-back");if(b){b.click();return true}}const p=w.querySelector(".ags-tg .rl-pv");if(p){p.click();return true}return false}
   if(RL.fwd.length&&rlForward())return true;const n=w.querySelector(".ags-tg .rl-nx");if(n){n.click();return true}return false}
@@ -5914,9 +5915,10 @@ function exDrawNet(W){const el=document.getElementById("exNet");if(!el||typeof d
   svg.on("click",()=>unfocus());let F0=null;
   function nbOf(d){const nb={};nb[d.id]=1;links.forEach(l=>{if(l.source.id===d.id)nb[l.target.id]=l.w;if(l.target.id===d.id)nb[l.source.id]=l.w});return nb}
   function focus(d){F0=d.id;const nb=nbOf(d);G.style("opacity",x=>nb[x.id]?1:.12);L.style("opacity",l=>l.source.id===d.id||l.target.id===d.id?1:.04).attr("stroke",l=>l.source.id===d.id||l.target.id===d.id?"var(--ink)":"var(--muted)");AL.style("opacity",.25);
-    const k=Wd<500?1.6:1.8;svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity.translate(Wd/2-d.x*k,Hh/2-d.y*k).scale(k));
+    const k=Wd<500?1.6:1.3;svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity.translate(Wd/2-d.x*k,Hh/2-d.y*k).scale(k));
     const ks=Object.keys(nb).filter(x=>x!==d.id).sort((a,b)=>nb[b]-nb[a]);const f=document.getElementById("exFoc");f.hidden=false;
-    f.innerHTML=`<div class="exfh"><span class="fl">${flag(d.id)}</span><span><b>${esc(cName(d.id))}</b><small>${exPl(d.n,"storia","storie")} · legato a ${exPl(ks.length,"paese","paesi")}${ks.length?": "+ks.slice(0,3).map(cName).join(", "):""}</small></span></div><div class="exfa"><button type="button" class="askbtn" data-exl="paese|${d.id}">Vedi le storie ›</button><button type="button" class="linkbtn" data-exl="scheda|${d.id}">Scheda</button><button type="button" class="linkbtn" data-exz="0">Tutto</button></div>`}
+    requestAnimationFrame(()=>{try{const r=f.getBoundingClientRect();if(r.bottom>innerHeight-8)f.scrollIntoView({block:"nearest",behavior:"smooth"})}catch(_){}});f.innerHTML=`<div class="exfh"><span class="fl">${flag(d.id)}</span><span><b>${esc(cName(d.id))}</b><small>${exPl(d.n,"storia","storie")} · legato a ${exPl(ks.length,"paese","paesi")}${ks.length?": "+ks.slice(0,3).map(cName).join(", "):""}</small></span></div><div class="exfa"><button type="button" class="askbtn" data-exl="paese|${d.id}">Vedi le storie ›</button><button type="button" class="linkbtn" data-exl="scheda|${d.id}">Scheda</button><button type="button" class="linkbtn" data-exz="0">Tutto</button></div>`}
+  EX.unfocus=()=>unfocus();
   function unfocus(){if(!F0)return;F0=null;G.style("opacity",1);L.style("opacity",1).attr("stroke","var(--muted)");AL.style("opacity",null);const f=document.getElementById("exFoc");if(f)f.hidden=true}}
 /* ---------- 📖 Chi e cosa ---------- */
 function exEntries(){if(EX.CC)return EX.CC;const W=exWeek();const out=[];const txt=s=>(s.titolo||"")+" "+(s.fatti||"");const curT=W.cur.map(txt),prevT=W.prev.map(txt);const used=new Set();
