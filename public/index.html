@@ -2877,7 +2877,7 @@ function renderPanel(){
   <h4>Situazione attuale</h4><p style="margin:0;font-size:14.5px">${esc(c.sintesi)}</p>
   ${dosMiniHTML(iso)}
   ${roots.length?`<div class="roots-links"><span class="label"><span class="ic" aria-hidden="true">🏛️</span>Da dove nasce</span> ${roots.map(t=>`<button class="linkbtn" data-roots="${esc(t.id)}">${esc(t.titolo)}</button>`).join(" · ")}</div>`:""}
-  <h4>Dinamiche in corso</h4><ul>${(c.dinamiche||[]).map(d=>`<li><span class="dyn-type" style="color:var(--arc-${esc(d.tipo)})">${esc(TYPES[d.tipo]||d.tipo)}</span>${d.con?`con <button class="linkbtn" data-country="${esc(d.con)}">${esc(cname(d.con))}</button> · `:""}${esc(d.testo)}</li>`).join("")||"<li class='muted'>—</li>"}</ul>
+  <h4>Dinamiche in corso</h4><p class="dyn-note">Rapporti segnalati per questo paese nei briefing: non sono tutte le sue relazioni.</p><ul>${(c.dinamiche||[]).map(d=>`<li><span class="dyn-type" style="color:var(--arc-${esc(d.tipo)})">${esc(TYPES[d.tipo]||d.tipo)}</span>${d.con?`con <button class="linkbtn" data-country="${esc(d.con)}">${esc(cname(d.con))}</button> · `:""}${esc(d.testo)}</li>`).join("")||"<li class='muted'>—</li>"}</ul>
   <h4>Effetti di riflesso</h4><ul>${(c.riflessi||[]).map(r=>`<li><button class="linkbtn" data-country="${esc(r.paese)}">${esc(cname(r.paese))}</button>: ${esc(r.testo)}</li>`).join("")||"<li class='muted'>—</li>"}</ul>
   ${(()=>{const lim=new Date();lim.setDate(lim.getDate()-30);const L=isoDay(lim);const br=S.brevi.filter(x=>(x.paesi||[]).includes(iso)&&x.data>=L).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,8);return br.length?`<h4>Ultime dal paese</h4><ul class="brevi">${br.map(x=>breveHTML(x,{date:true,noflag:true,skip:iso})).join("")}</ul>`:""})()}
   <h4>Storie collegate</h4><ul>${stories.map(s=>`<li><button class="linkbtn" data-story="${esc(s.id)}">${esc(s.titolo)}</button> <span class="muted" style="font-size:12px">${fmtDate(s.data)}</span></li>`).join("")||"<li class='muted'>—</li>"}</ul>
@@ -5894,17 +5894,19 @@ function exGrid(W){const A=AREE.map(a=>({a,L:W.cur.filter(s=>storyArea(s)===a.id
     cols.forEach(c=>{const k=n(r,c),d=k?Math.round(14+32*Math.sqrt(k/mx)):0;h+=k?`<button type="button" class="exgx" data-exl="inc|${r.a.id}|${c.id}" aria-label="${esc(r.a.n)}, ${esc(c.n)}: ${exPl(k,"storia","storie")}" title="${esc(r.a.n)} · ${esc(c.n)} · ${k}"><i style="width:${d}px;height:${d}px;--c:${exCol(r.l)}"><em>${k}</em></i></button>`:`<span class="exgx z">·</span>`})});
   return h+`</div><p class="exhelp">Ogni cerchio è un incrocio <b>dove × di cosa</b> degli ultimi 7 giorni: più è grande, più storie. Il colore è la tensione dell’area. Tocca un cerchio, una riga o una colonna.</p>`}
 /* ---------- 🕸️ Legami ---------- */
-function exNetHTML(){return `<div class="exnw"><div id="exNet" class="exnet"></div><div class="exzc"><button type="button" data-exz="in" aria-label="Ingrandisci">+</button><button type="button" data-exz="out" aria-label="Riduci">−</button><button type="button" data-exz="0" aria-label="Tutto">⤢</button></div><div id="exFoc" class="exfoc" hidden></div></div><p class="exhelp">I paesi sono raggruppati per <b>area</b>; il filo li lega se compaiono nelle stesse storie della settimana. <b>Tocca un paese</b> per metterlo a fuoco con i suoi legami. Pizzica o usa + / − per ingrandire.</p>`}
+function exNetHTML(){return `<div class="exnw"><div id="exNet" class="exnet"></div><div class="exzc"><button type="button" data-exz="in" aria-label="Ingrandisci">+</button><button type="button" data-exz="out" aria-label="Riduci">−</button><button type="button" data-exz="0" aria-label="Tutto">⤢</button></div><div id="exFoc" class="exfoc" hidden></div></div><p class="exhelp">I paesi sono raggruppati per <b>area</b>; il <b>filo pieno</b> li lega se compaiono nelle stesse storie degli ultimi 7 giorni (più è spesso, più storie); il <b>tratteggio</b> è un rapporto scritto nella scheda del paese, lo stesso che vedi nella Mappa. Non sono tutte le relazioni di un paese: solo quelle di cui si è parlato. <b>Tocca un paese</b> per metterlo a fuoco con i suoi legami. Pizzica o usa + / − per ingrandire.</p>`}
 function exDrawNet(W){const el=document.getElementById("exNet");if(!el||typeof d3==="undefined")return;const Wd=el.clientWidth,Hh=Wd<500?Math.round(Wd*1.35):Math.round(Math.min(680,Math.max(460,Wd*1.2)));
   const cnt={},lk={};W.cur.forEach(s=>{const p=(s.paesi||[]).filter(i=>S.countries[i]||AREA_OF[i]);p.forEach(i=>{cnt[i]=(cnt[i]||0)+1});for(let a=0;a<p.length;a++)for(let b=a+1;b<p.length;b++){const k=[p[a],p[b]].sort().join("|");lk[k]=(lk[k]||0)+1}});
   const ar=AREE.filter(a=>Object.keys(cnt).some(i=>AREA_OF[i]===a.id));const anch={};ar.forEach((a,i)=>{const t=-Math.PI/2+i*2*Math.PI/ar.length;anch[a.id]={x:Wd/2+Math.cos(t)*Wd*.33,y:Hh/2+Math.sin(t)*Hh*.33}});
   const nodes=Object.keys(cnt).map(i=>({id:i,n:cnt[i],l:exLv(i),a:AREA_OF[i]}));const links=Object.keys(lk).map(k=>{const x=k.split("|");return {source:x[0],target:x[1],w:lk[k]}});
+  /* anche i rapporti scritti nelle schede dei paesi (gli stessi della Mappa), tratteggiati, fra i paesi già presenti */
+  {const seen=new Set(Object.keys(lk));Object.keys(cnt).forEach(i=>((S.countries[i]||{}).dinamiche||[]).forEach(d=>{const j=d&&d.con;if(!j||j===i||!cnt[j])return;const k=[i,j].sort().join("|");if(seen.has(k))return;seen.add(k);links.push({source:i,target:j,w:0,d:1})}))}
   const r=d=>10+Math.sqrt(d.n)*4;
   const NS={COD:"RD Congo",ARE:"Emirati",MMR:"Myanmar",BEL:"Belgio",LTU:"Lituania",NLD:"Paesi Bassi",CAF:"Rep. Centrafricana",BIH:"Bosnia"},nm=i=>{const n=NS[i]&&(cName(i)===i||cName(i).length>16)?NS[i]:cName(i);return n};
   const svg=d3.select(el).html("").append("svg").attr("viewBox",`0 0 ${Wd} ${Hh}`).attr("width",Wd).attr("height",Hh);const root=svg.append("g");
   const AL=root.append("g").selectAll("text").data(ar).join("text").attr("class","exnal").attr("text-anchor","middle").attr("x",a=>Math.max(50,Math.min(Wd-50,Wd/2+(anch[a.id].x-Wd/2)*1.42))).attr("y",a=>Math.max(14,Math.min(Hh-6,Hh/2+(anch[a.id].y-Hh/2)*1.42))).style("display",Wd<500?"none":null).text(a=>a.n.replace(" e Nord Africa","").replace(" ed Europa orientale"," ed Est").replace(" subsahariana","").replace(" e Pacifico",""));
   const sim=d3.forceSimulation(nodes).force("link",d3.forceLink(links).id(d=>d.id).distance(55).strength(l=>.015+l.w*.004)).force("charge",d3.forceManyBody().strength(-70)).force("x",d3.forceX(d=>(anch[d.a]||{x:Wd/2}).x).strength(.6)).force("y",d3.forceY(d=>(anch[d.a]||{y:Hh/2}).y).strength(.6)).force("collide",d3.forceCollide().radius(d=>r(d)+(Wd<500?9:14)));
-  const L=root.append("g").selectAll("line").data(links).join("line").attr("stroke","var(--muted)").attr("stroke-opacity",d=>Math.min(.55,.1+d.w*.05)).attr("stroke-width",d=>Math.min(6,.6+d.w*.5));
+  const L=root.append("g").selectAll("line").data(links).join("line").attr("stroke","var(--muted)").attr("stroke-opacity",d=>d.d?.5:Math.min(.55,.1+d.w*.05)).attr("stroke-width",d=>d.d?1.2:Math.min(6,.6+d.w*.5)).attr("stroke-dasharray",d=>d.d?"4 4":null);
   const G=root.append("g").selectAll("g").data(nodes).join("g").attr("class","exnn").style("cursor","pointer").on("click",(e,d)=>{e.stopPropagation();focus(d)});
   const GI=G.append("g").attr("class","exni");GI.append("circle").attr("r",r).attr("fill",d=>exCol(d.l)).attr("fill-opacity",.9).attr("stroke","var(--bg)").attr("stroke-width",2);
   GI.append("text").attr("text-anchor","middle").attr("dy","0.36em").attr("class","exnf fl").style("font-size",d=>Math.max(12,r(d)*.85)+"px").text(d=>flag(d.id));
@@ -5913,7 +5915,7 @@ function exDrawNet(W){const el=document.getElementById("exNet");if(!el||typeof d
   const zoom=d3.zoom().scaleExtent([.6,5]).filter(e=>e.type==="wheel"?e.ctrlKey||e.metaKey:e.type==="touchstart"?e.touches.length>1:!e.button).on("zoom",e=>{const k=e.transform.k;root.attr("transform",e.transform);GI.attr("transform",`scale(${1/Math.sqrt(k)})`);AL.style("display",k>1.35||Wd<500?"none":null)});svg.call(zoom).on("dblclick.zoom",null);
   EX.zoom=how=>{if(how==="in")svg.transition().duration(300).call(zoom.scaleBy,1.5);else if(how==="out")svg.transition().duration(300).call(zoom.scaleBy,1/1.5);else{unfocus();svg.transition().duration(400).call(zoom.transform,d3.zoomIdentity)}};
   svg.on("click",()=>unfocus());let F0=null;
-  function nbOf(d){const nb={};nb[d.id]=1;links.forEach(l=>{if(l.source.id===d.id)nb[l.target.id]=l.w;if(l.target.id===d.id)nb[l.source.id]=l.w});return nb}
+  function nbOf(d){const nb={};nb[d.id]=1;links.forEach(l=>{if(l.source.id===d.id)nb[l.target.id]=l.w||.5;if(l.target.id===d.id)nb[l.source.id]=l.w||.5});return nb}
   function focus(d){F0=d.id;const nb=nbOf(d);G.style("opacity",x=>nb[x.id]?1:.12);L.style("opacity",l=>l.source.id===d.id||l.target.id===d.id?1:.04).attr("stroke",l=>l.source.id===d.id||l.target.id===d.id?"var(--ink)":"var(--muted)");AL.style("opacity",.25);
     const k=Wd<500?1.6:1.3;svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity.translate(Wd/2-d.x*k,Hh/2-d.y*k).scale(k));
     const ks=Object.keys(nb).filter(x=>x!==d.id).sort((a,b)=>nb[b]-nb[a]);const f=document.getElementById("exFoc");f.hidden=false;
@@ -5923,15 +5925,15 @@ function exDrawNet(W){const el=document.getElementById("exNet");if(!el||typeof d
 /* ---------- 📖 Chi e cosa ---------- */
 function exEntries(){if(EX.CC)return EX.CC;const W=exWeek();const out=[];const txt=s=>(s.titolo||"")+" "+(s.fatti||"");const curT=W.cur.map(txt),prevT=W.prev.map(txt);const used=new Set();
   Object.values(S.attori||{}).forEach(a=>{if(!a||!a.nome)return;const ids=new Set(a.storie||[]);const c=W.cur.filter(s=>ids.has(s.id)).length,p=W.prev.filter(s=>ids.has(s.id)).length;used.add(a.id);
-    out.push({k:"a",id:a.id,n:a.nome,t:a.tipo==="persona"?"persona":"organizzazione",sp:a.ruolo||"",c,p})});
+    out.push({k:"a",id:a.id,n:a.nome,t:a.tipo==="persona"?"persona":"organizzazione",sp:a.ruolo||"",pa:a.paese||"",c,p})});
   Object.values(S.glossario||{}).forEach(g=>{if(!g||!g.termine||!g.spiegazione)return;const a=typeof actorFor==="function"?actorFor(g.id):null;if(a&&used.has(a.id))return;
     const names=[g.termine].concat(g.alias||[]).filter(x=>x&&x.length>=3);const hit=t=>names.some(nm=>t.indexOf(nm)>=0);
     out.push({k:"g",id:g.id,n:g.termine,t:EX_TIPI[g.tipo]?g.tipo:"termine",sp:g.spiegazione,c:curT.filter(hit).length,p:prevT.filter(hit).length})});
   EX.CC=out;return out}
 function exTrend(x){if(!x.c)return"";if(!x.p)return `<span class="extr nu">nuovo</span>`;return x.c>x.p?`<span class="extr up">▲</span>`:x.c<x.p?`<span class="extr dn">▼</span>`:`<span class="extr eq">=</span>`}
 function exCC(){const E=exEntries();const top=E.filter(x=>x.c&&(EX.cc==="tutti"||x.t===EX.cc)).sort((a,b)=>b.c-a.c||b.p-a.p||a.n.localeCompare(b.n)).slice(0,EX.cc==="tutti"?10:20);const mx=Math.max(1,...top.map(x=>x.c));
-  let h=`<div class="exch"><b>Di chi e di cosa si parla</b><span>ultimi 7 giorni · rispetto ai 7 prima</span></div><div class="exct" role="tablist"><button type="button" role="tab" aria-selected="${EX.cc==="tutti"}" data-excc="tutti">Tutto</button>${Object.keys(EX_TIPI).map(k=>`<button type="button" role="tab" aria-selected="${EX.cc===k}" data-excc="${k}">${EX_TIPI[k][0]} ${EX_TIPI[k][1]}</button>`).join("")}</div>`;
-  h+=top.length?`<ol class="exrk">${top.map((x,i)=>`<li><button type="button" data-exe="${x.k}|${esc(x.id)}"><span class="exrn">${i+1}</span><span class="exri" title="${EX_TIPI[x.t][2]}">${EX_TIPI[x.t][0]}</span><span class="exrb"><span class="exrt"><b>${esc(x.n)}</b>${exTrend(x)}</span><small>${esc(clip(x.sp,140))}</small><span class="exbar"><i style="width:${Math.round(100*x.c/mx)}%"></i></span></span><span class="exrc">${x.c}</span></button></li>`).join("")}</ol>`:`<p class="hint">Niente questa settimana.</p>`;
+  let h=`<div class="exch"><b>Di chi e di cosa si parla</b><span>in quante storie degli ultimi 7 giorni · ▲▼ rispetto ai 7 prima</span></div><div class="exct" role="tablist"><button type="button" role="tab" aria-selected="${EX.cc==="tutti"}" data-excc="tutti">Tutto</button>${Object.keys(EX_TIPI).map(k=>`<button type="button" role="tab" aria-selected="${EX.cc===k}" data-excc="${k}">${EX_TIPI[k][0]} ${EX_TIPI[k][1]}</button>`).join("")}</div>`;
+  h+=top.length?`<ol class="exrk">${top.map((x,i)=>`<li><button type="button" data-exe="${x.k}|${esc(x.id)}"><span class="exrn">${i+1}</span><span class="exri" title="${EX_TIPI[x.t][2]}${x.pa&&flag(x.pa)?" · "+esc(cName(x.pa)):""}">${EX_TIPI[x.t][0]}${x.pa&&flag(x.pa)?`<span class="exrf fl" aria-hidden="true">${flag(x.pa)}</span>`:""}</span><span class="exrb"><span class="exrt"><b>${esc(x.n)}</b>${exTrend(x)}</span><small>${esc(clip(x.sp,140))}</small></span><span class="exrc">${x.c}<small>${x.c===1?"storia":"storie"}</small></span></button></li>`).join("")}</ol>`:`<p class="hint">Niente questa settimana.</p>`;
   const nG=Object.keys(S.glossario||{}).length,nA=Object.keys(S.attori||{}).length;
   h+=`<div class="exar"><div class="exarh"><b>📖 Tutte le voci</b><span>${nG} voci di glossario e ${nA} schede di protagonisti</span></div><div class="exabc">${"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c=>`<button type="button" data-exabc="${c}">${c}</button>`).join("")}</div></div>`;return h}
 function exNorm(x){return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase()}
@@ -6683,6 +6685,77 @@ setTimeout(()=>{try{scrollifyAll()}catch(_){}},50);
 setTimeout(pullF,300);
 {const p=parse(location.hash);if(p!==undefined){X.page=p;_show("esplora",false);renderEx();const top0=()=>window.scrollTo(0,0);setTimeout(top0,0);window.addEventListener("load",()=>setTimeout(top0,50),{once:true})}}
 })();
+/* v-temiA: Temi filtrati come il briefing. Al posto delle pillole dei temi, del menu «Filtra» e delle pillole delle categorie:
+   una ricerca, le categorie sottolineate col numero, una riga di testo per Mondo/Italia, dossier e regione.
+   I temi restano nei loro riquadri. */
+S.tlQ=S.tlQ||"";S.tlAmb=S.tlAmb||"";
+{const st=document.createElement("style");st.textContent=`
+#tlChips,#tlFilt,#tlDosF,#threadView .tl-cats{display:none!important}
+.tla{margin:0 0 6px}
+.tla-q{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:4px 0}
+.tla-q input{flex:1;min-width:0;width:auto!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--ink);font:inherit;font-size:16px;padding:8px 0!important;margin:0!important;outline:none;-webkit-appearance:none;appearance:none}
+.tla-q input::placeholder{color:var(--muted)}
+.tla-q:focus-within{border-bottom-color:var(--accent)}
+.tla-c{display:flex;gap:18px;align-items:flex-end;margin:10px 0 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tla-c::-webkit-scrollbar{display:none}
+.tla-c button{flex:none;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 0;font:600 14.5px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tla-c button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tla-c button:not([aria-selected="true"]):hover{color:var(--ink)}
+.tla-o{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:10px 0 0;font-size:13.5px;color:var(--muted)}
+.tla-o button{background:none;border:0;padding:4px 0;font:inherit;color:var(--muted);cursor:pointer}
+.tla-o button[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.tla-o .sep{width:1px;height:14px;background:var(--line)}
+.tla-o .ck{display:inline-flex;align-items:center;gap:7px}
+.tla-o .ck i{width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;line-height:1}
+.tla-o .ck[aria-pressed="true"] i{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.tla-o label{display:inline-flex;align-items:center;gap:4px}
+.tla-o select{width:auto!important;min-width:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--accent);font:inherit;font-size:13.5px;padding:4px 2px!important;margin:0!important;cursor:pointer;max-width:220px}
+.tla-o .clr{color:var(--accent)}
+#threadView .tl-grp{display:flex;gap:10px;align-items:baseline;font:600 22px/1.2 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:26px 0 0;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+#threadView .tl-grp:first-child{margin-top:14px}
+#threadView .tl-grp span{font:500 13px var(--mono);color:var(--muted)}
+#threadView .tl-sub{font:600 11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
+#threadView .tl-leg{margin:8px 0 4px}
+.exri{position:relative;flex-basis:32px}
+.exrf{position:absolute;right:-4px;bottom:-5px;font-size:13px;line-height:1;background:var(--bg);border-radius:3px;padding:1px}
+.exrc small{display:block;font:400 11.5px var(--sans);color:var(--muted)}
+.dyn-note{font-size:12.5px;color:var(--muted);margin:-4px 0 8px}
+`;document.head.appendChild(st)}
+function tlaNorm(x){return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
+function tlaMatch(t,q){if(!q)return true;const hay=tlaNorm([t.titolo,t.breve,t.descrizione,...(t.bandiere||[]).map(p=>{try{return cname(p)}catch(_){return p}}),(thLast(t)||{}).testo].join(" "));return tlaNorm(q).split(/\s+/).filter(Boolean).every(w=>hay.includes(w))}
+function tlaKeep(t){if(!t)return false;if(t.id===S.flt.f)return true;if(S.tlAmb==="ita"&&!isIta(t))return false;if(S.tlAmb==="mondo"&&isIta(t))return false;return tlaMatch(t,S.tlQ)}
+function tlaBar(){const tv=document.getElementById("threadView");if(!tv)return;
+  let b=document.getElementById("tlA");
+  if(!b){b=document.createElement("div");b.id="tlA";b.className="tla";
+    b.innerHTML=`<label class="tla-q"><span aria-hidden="true">🔎</span><input type="search" id="tlAq" placeholder="Cerca un tema, un paese…" autocomplete="off" enterkeyhint="search" aria-label="Cerca un tema o un paese"></label><div class="tla-c" id="tlAc" role="tablist" aria-label="Categorie dei temi"></div><div class="tla-o" id="tlAo"></div>`;
+    tv.parentNode.insertBefore(b,tv);const q=b.querySelector("#tlAq");q.value=S.tlQ;let tm;
+    q.addEventListener("input",()=>{clearTimeout(tm);tm=setTimeout(()=>{S.tlQ=q.value.trim();renderTimeline()},200)})}
+  const TC=S.tlCat||"";
+  const L=Object.values(S.threads||{}).filter(t=>t&&t.stato!=="chiuso"&&tlaKeep(t)&&(!S.tlDosOnly||dosForThread(t.id)));
+  const cnt={};L.forEach(t=>{const c=thCat(t);cnt[c]=(cnt[c]||0)+1});
+  const cats=TCAT.filter(c=>cnt[c[0]]||TC===c[0]);
+  const ac=b.querySelector("#tlAc");
+  ac.innerHTML=`<button type="button" role="tab" data-tl-cat="" aria-selected="${!TC}">Tutti · ${L.length}</button>`+cats.map(c=>`<button type="button" role="tab" data-tl-cat="${c[0]}" aria-selected="${TC===c[0]}">${c[1]} ${esc(c[2].split(" ")[0])} · ${cnt[c[0]]||0}</button>`).join("");
+  const on=ac.querySelector('[aria-selected="true"]');if(on&&TC)ac.scrollLeft=Math.max(0,on.offsetLeft-ac.clientWidth/2+on.offsetWidth/2);
+  const nDos=Object.values(S.threads||{}).filter(t=>t&&dosForThread(t.id)).length+(typeof dosOrphans==="function"?dosOrphans().length:0);
+  const fr=document.getElementById("fRegion");const any=S.tlQ||S.tlAmb||S.tlDosOnly||TC||S.flt.r||S.flt.t||S.flt.a;
+  b.querySelector("#tlAo").innerHTML=[["","Tutto"],["mondo","Mondo"],["ita","Italia"]].map(([k,l])=>`<button type="button" data-tla-amb="${k}" aria-pressed="${S.tlAmb===k}">${l}</button>`).join("")
+    +(nDos?`<span class="sep"></span><button type="button" class="ck" data-tla-dos="1" aria-pressed="${!!S.tlDosOnly}"><i aria-hidden="true">${S.tlDosOnly?"✓":""}</i>Solo con dossier · ${nDos}</button>`:"")
+    +(fr&&fr.options.length>1?`<span class="sep"></span><label>Regione:<select id="tlAr" aria-label="Regione">${[...fr.options].map(o=>`<option value="${esc(o.value)}"${o.value===(S.flt.r||"")?" selected":""}>${esc(o.value?o.textContent:"tutte")}</option>`).join("")}</select></label>`:"")
+    +(any?`<span class="sep"></span><button type="button" class="clr" data-tla-clear="1">Togli i filtri</button>`:"");
+  tv.querySelectorAll(".tl-grp").forEach(g=>{if(g.querySelector("span"))return;const m=/^(.*?)\s·\s(\d+)$/.exec(g.textContent.trim());if(m)g.innerHTML=`${esc(m[1])}<span>${m[2]}</span>`});
+  if(S.tlQ){tv.querySelectorAll(".acc.dos-only").forEach(c=>{if(!tlaMatch({titolo:c.textContent},S.tlQ))c.remove()});
+    if(!tv.querySelector(".acc")){const s=tv.querySelector(".state");const msg=`Nessun tema per «${esc(S.tlQ)}». Prova con un paese o una parola del titolo.`;if(s)s.innerHTML=msg;else tv.insertAdjacentHTML("afterbegin",`<div class="state">${msg}</div>`)}}}
+{const _rtA=renderTimeline;renderTimeline=function(){
+  const keep=S.threads;if((S.tlMode||"temi")==="temi")S.threads=Object.fromEntries(Object.entries(keep||{}).filter(([id,t])=>tlaKeep(t)));
+  let r;try{r=_rtA.apply(this,arguments)}finally{S.threads=keep}
+  try{if((S.tlMode||"temi")==="temi")tlaBar()}catch(e){console.warn("temi A",e)}
+  return r}}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-tla-amb]");if(a){S.tlAmb=a.dataset.tlaAmb;renderTimeline();return}
+  const d=e.target.closest("[data-tla-dos]");if(d){S.tlDosOnly=!S.tlDosOnly;renderTimeline();return}
+  const c=e.target.closest("[data-tla-clear]");if(c){S.tlQ="";S.tlAmb="";S.tlDosOnly=false;S.tlCat="";S.flt.r=S.flt.t=S.flt.a="";["fRegion","fTheme","fAmb"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});const q=document.getElementById("tlAq");if(q)q.value="";renderTimeline()}});
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="tlAr"){S.flt.r=e.target.value;const fr=document.getElementById("fRegion");if(fr)fr.value=e.target.value;renderTimeline()}});
 
 })();
 </script>
