@@ -6687,7 +6687,7 @@ setTimeout(pullF,300);
 })();
 /* v-temiA: Temi filtrati come il briefing. Al posto delle pillole dei temi, del menu «Filtra» e delle pillole delle categorie:
    una ricerca, le categorie sottolineate col numero, una riga di testo per Mondo/Italia, dossier e regione.
-   I temi sono righe come le storie del briefing: bandiere e nome in alto, l'ultimo fatto come titolo, la barra della tensione a sinistra. */
+   I temi restano nei loro riquadri. */
 S.tlQ=S.tlQ||"";S.tlAmb=S.tlAmb||"";
 {const st=document.createElement("style");st.textContent=`
 #tlChips,#tlFilt,#tlDosF,#threadView .tl-cats{display:none!important}
@@ -6716,23 +6716,6 @@ S.tlQ=S.tlQ||"";S.tlAmb=S.tlAmb||"";
 #threadView .tl-grp span{font:500 13px var(--mono);color:var(--muted)}
 #threadView .tl-sub{font:600 11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
 #threadView .tl-leg{margin:8px 0 4px}
-.acc.tla-card{border:0;border-radius:0;background:transparent;border-bottom:1px solid var(--line);border-left:3px solid var(--lv,var(--line));margin:0;box-shadow:none;overflow:visible}
-.acc.tla-card:hover{border-color:var(--line);border-left-color:var(--lv,var(--accent))}
-.acc.tla-card .thc{display:block;position:relative;padding:12px 36px 12px 16px;border:0;border-radius:0;margin:0;background:transparent}
-.acc.tla-card .thc .nm{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font:600 11.5px/1.35 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);padding-right:0}
-.acc.tla-card.has-star .thc .nm{padding-right:26px}
-.acc.tla-card .thc .f{font-size:14px;letter-spacing:2px;text-transform:none;line-height:1}
-.acc.tla-card .thc .tlv{margin-left:0;vertical-align:0}
-.acc.tla-card .thc .dos-badge{border:0;padding:0;margin:0;font-size:11px}
-.acc.tla-card .thc .stt{color:var(--muted)}
-.acc.tla-card .thc .l{display:block;font:600 16.5px/1.32 var(--sans);color:var(--ink);margin-top:4px}
-.acc.tla-card .thc .n{display:block;font:13.5px/1.4 var(--sans);color:var(--muted);margin-top:4px}
-.acc.tla-card .thc .go{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:22px}
-.acc.tla-card.sel{border:0;border-left:3px solid var(--accent);border-bottom:1px solid var(--line);box-shadow:none}
-.acc.tla-card.sel .thc{background:var(--accent-soft)}
-.acc.tla-card.sel .go{transform:translateY(-50%) rotate(90deg)}
-.acc.tla-card .th-star{top:8px;right:34px}
-.acc.tla-card .acc-b{border-top:1px solid var(--line)}
 .exri{position:relative;flex-basis:32px}
 .exrf{position:absolute;right:-4px;bottom:-5px;font-size:13px;line-height:1;background:var(--bg);border-radius:3px;padding:1px}
 .exrc small{display:block;font:400 11.5px var(--sans);color:var(--muted)}
@@ -6741,15 +6724,6 @@ S.tlQ=S.tlQ||"";S.tlAmb=S.tlAmb||"";
 function tlaNorm(x){return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
 function tlaMatch(t,q){if(!q)return true;const hay=tlaNorm([t.titolo,t.breve,t.descrizione,...(t.bandiere||[]).map(p=>{try{return cname(p)}catch(_){return p}}),(thLast(t)||{}).testo].join(" "));return tlaNorm(q).split(/\s+/).filter(Boolean).every(w=>hay.includes(w))}
 function tlaKeep(t){if(!t)return false;if(t.id===S.flt.f)return true;if(S.tlAmb==="ita"&&!isIta(t))return false;if(S.tlAmb==="mondo"&&isIta(t))return false;return tlaMatch(t,S.tlQ)}
-themeCard=function(t,sel,evOk,nf){const l=thLast(t),n=thNext(t),today=isoDay(new Date());
-  const star=S.owner&&!S.static?`<button type="button" class="th-star" data-star="${esc(t.id)}" aria-pressed="${prefs().seguiti.includes(t.id)}" title="Segui questo tema: avviso in cima al briefing quando si muove">${prefs().seguiti.includes(t.id)?"★":"☆"}</button>`:"";
-  const cat=thCat(t),tens=TCAT_T.has(cat),lv=tens?thLv(t):0,ci=(TCAT.find(x=>x[0]===cat)||TCAT[6])[1];
-  const fl=(t.bandiere||[]).length||t.icona||tens?thFlags(t):ci;
-  const k=thKids(t.id).filter(x=>x.stato!=="chiuso"),p=thPar(t);
-  const meta=[l.data?dShort(l.data):"",n?`prossimo: ${clip(n.titolo,60)} · ${countdown(n,today)}`:"",k.length?"dentro: "+k.map(x=>x.breve||x.titolo).join(" · "):"",p?"fa parte di: "+thShort(p):""].filter(Boolean).join(" · ");
-  return `<div class="acc tla-card${sel?" sel":""}${star?" has-star":""}${lv?" tens":""}"${lv?` style="--lv:var(--l${lv})"`:""} id="acc-${esc(t.id)}">${star}<button class="thc" data-tl-theme="${sel?"":esc(t.id)}" aria-expanded="${sel}"><span class="nm"><span class="f" aria-hidden="true">${fl}</span>${esc(thShort(t))}${lv?`<span class="tlv" title="Tensione più alta tra i paesi del tema, scala 1–5">${lv}</span>`:""}${t.stato!=="attivo"?`<span class="stt ${esc(t.stato)}">${esc(t.stato)}</span>`:""}${dosForThread(t.id)?'<span class="dos-badge">🧭 dossier</span>':""}</span><span class="l">${esc(l.testo?clip(l.testo,150):t.descrizione||t.titolo||"")}</span>${meta?`<span class="n">${esc(meta)}</span>`:""}<span class="go" aria-hidden="true">›</span></button>${sel?`<div class="acc-b">${themeArc(t,evOk,nf)}</div>`:""}</div>`};
-orphanCard=function(d){const key="dos:"+d.id,sel=S.flt.f===key;
-  return `<div class="acc tla-card dos-only${sel?" sel":""}" id="acc-${esc(key)}"><button class="thc" data-tl-theme="${sel?"":esc(key)}" aria-expanded="${sel}"><span class="nm"><span class="f" aria-hidden="true">${dosFlags(d)}</span>${esc(d.titolo)}<span class="dos-badge">🧭 dossier</span></span><span class="l">${esc(dosLead(d,140))}</span><span class="n">aggiornato ${esc(fmtDate(d.aggiornato||d.richiesto_il))}</span><span class="go" aria-hidden="true">›</span></button>${sel?`<div class="acc-b"><div class="lay-q">${dossierHTML(d)}</div><button class="acc-close" data-tl-theme="">▲ Chiudi</button></div>`:""}</div>`};
 function tlaBar(){const tv=document.getElementById("threadView");if(!tv)return;
   let b=document.getElementById("tlA");
   if(!b){b=document.createElement("div");b.id="tlA";b.className="tla";
