@@ -3340,7 +3340,7 @@ async function tgSendDraft(env, id, by) { // un carosello o un reel già pronto 
     let spR = null;
     try { const q = d.req_id ? await kvGet(env, "req:" + d.req_id) : null; const mm = q && /^spiegato:([a-z0-9-]+)$/.exec(q.origine || ""); spR = mm ? await kvGet(env, "sp:" + mm[1]) : null; if (spR && spR.stato !== "pubblicato") spR = null; } catch (e) { spR = null; }
     if (spR) { const c = spCard(spR), u = SITE + "/spiegato/?id=" + spR.id + "&utm_source=telegram&utm_medium=canale&utm_campaign=spiegato_reel";
-      cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + "📖 Lo Spiegato completo, con la mappa e le fonti: <a href=\"" + esc(u) + "\">leggilo qui</a> · " + c.min + " minuti"; }
+      cap = (tit ? "<b>" + esc(tgClip(tit, 200)) + "</b>\n\n" : "") + "📖 Lo Spiegato completo, con le fonti: <a href=\"" + esc(u) + "\">leggilo qui</a> · " + c.min + " minuti"; }
     let r;
     if (d.type === "reel" && d.video_url) {
       /* v64: Telegram ricorda per un po' gli indirizzi che non è riuscito a scaricare, e da lì i «Riprova» falliscono tutti.
