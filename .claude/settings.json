@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cp \"$CLAUDE_PROJECT_DIR/worker/kit/rgdb.py\" /tmp/rgdb.py 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 /tmp/rgdb.py *)"
+    ]
+  }
+}
