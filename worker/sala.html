@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Sala di controllo</title><meta name="theme-color" content="#111417"><link rel="icon" href="/ig/panel.svg" type="image/svg+xml">
+<title>Sala di controllo</title><meta name="theme-color" content="#0E151B"><link rel="icon" href="/ig/panel.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F6F5F1;--fg:#1D2329;--mut:#66707A;--line:#DEDBD3;--acc:#2F5D8A;--ok:#2E8B57;--warn:#B7791F;--bad:#C0392B;--wait:#A3ABB2}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368;--wait:#5C666E}}
-:root[data-theme="dark"]{--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368;--wait:#5C666E}
+:root{color-scheme:dark;--bg:#0E151B;--fg:#E4EAEF;--mut:#8FA0AE;--line:#27353F;--card:#16212A;--acc:#86B4EA;--ok:#7FD1A0;--warn:#E5B45A;--bad:#E57368;--wait:#5C6B78}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
 body{font:16px/1.5 Inter,system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px 60px}
@@ -54,10 +52,27 @@ details p{margin:0 0 14px;color:var(--mut);max-width:68ch}
 label{display:block;margin:8px 0;font-size:14px;color:var(--mut)}
 input{display:block;width:100%;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font:inherit}
 .empty{padding:40px 0;text-align:center;color:var(--mut)}
-.rgh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 0}.rgh h1,.rgh .h{font:600 22px Georgia,"Source Serif 4",serif;margin:0;color:var(--fg)}.rgh a.gearb{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:17px;min-height:40px;box-sizing:border-box}
-.sw{display:flex;gap:4px;margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;padding:4px}.sw>a{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:var(--mut);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}.sw>a.on{background:var(--fg);color:var(--bg)}@media(max-width:520px){.sw>a{font-size:13px;padding:9px 2px}}
+
+/* come il pannello (/ig/panel): stessi colori, caratteri, testata, selettore e pulsanti delle sezioni */
+html,body{background:var(--bg);color:var(--fg)}body{font:16px/1.45 system-ui,sans-serif}
+.wrap{padding:16px 16px 60px}
+h1,h2,.next .q,.light h1{font-family:Georgia,serif}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hdr h1{font:600 22px Georgia,serif;margin:6px 0 2px;color:var(--fg)}.hdr .sub{color:var(--mut);font-size:14px}
+.gearb{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;font-size:17px;color:var(--fg);white-space:nowrap;margin-top:4px;min-height:40px}
+.sw{display:flex;gap:4px;margin:14px 0 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.sw>a{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:#B9C4CF;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.sw>a.on{background:var(--fg);color:var(--bg)}@media(max-width:520px){.sw>a{font-size:13px;padding:9px 2px}}
+.tabs{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:16px 0 8px;position:relative}
+.tabs .tab,.tbm .tab{all:unset;box-sizing:border-box;cursor:pointer;flex:none;background:var(--card);color:#C9D3DB;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-weight:600;font-size:14px;white-space:nowrap;line-height:1.2}
+.tabs>.tab.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tabs .tbx{margin-left:auto}.tabs .tbx.on{border-color:var(--acc);color:var(--acc)}
+.tbm{position:absolute;right:0;top:100%;margin-top:6px;background:var(--card);border:1px solid #33434F;border-radius:12px;padding:6px;min-width:200px;z-index:60;display:flex;flex-direction:column;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.tbm .tab{border:0;background:transparent;text-align:left;color:var(--fg);padding:10px 12px;border-radius:8px;font-weight:500;font-size:15px}
+.tbm .tab.on{color:var(--acc)}
+.btn{background:var(--acc);color:var(--bg);border-radius:10px}.btn.sec{background:#27353F;border-color:#27353F;color:var(--fg)}
 </style></head><body><div class="wrap">
-<div class="rgh"><span class="h">Read Geopolitics</span><a class="gearb" href="/ig/panel#canali" aria-label="Canali e uscita">⚙</a></div><nav class="sw"><a href="/ig/panel">Pannello</a><a href="/ig/sala" class="on">Sala di controllo</a><a href="/ig/panel#st">Statistiche</a></nav><div class="top"><button class="proj" id="projBtn">…</button><button class="mono" id="rf">aggiorna</button></div>
+<div class="hdr"><div><h1>Read Geopolitics</h1><div class="sub" id="hsub">carico…</div></div><a class="gearb" href="/ig/panel#canali" aria-label="Canali e uscita">⚙</a></div><nav class="sw"><a href="/ig/panel">Pannello</a><a href="/ig/sala" class="on">Sala di controllo</a><a href="/ig/panel#st">Statistiche</a></nav><div class="top"><button class="proj" id="projBtn">…</button><button class="mono" id="rf">aggiorna</button></div>
 <div class="plist" id="plist"></div>
 <div id="main"><div class="empty">Carico…</div></div>
 </div>
@@ -90,6 +105,7 @@ function render(){
  else frase=[nb?(nb===1?"Una routine ha un problema":nb+" routine hanno un problema"):"",nd?(nd===1?"una cosa aspetta te":nd+" cose aspettano te"):""].filter(Boolean).join(", ")+".";
  frase=frase.charAt(0).toUpperCase()+frase.slice(1);
  if(S.errore)frase='Ultimo rapporto scartato: '+S.errore+'.';
+ try{document.getElementById("hsub").textContent=(S.silente?"Guardiano muto":TIT[luce])}catch(_){}
  h+='<section class="light '+luce+'"><div class="lamp"></div><h1>'+(S.silente?"Guardiano muto":TIT[luce])+'</h1><p>'+e(frase)+'</p><div class="mono" style="margin-top:12px">'+(S.foto?"routine viste alle "+hm(S.foto)+" · "+(function(){var x=hm(S.prossimo_controllo),h=+x.slice(0,2);return h>=7&&h<=23?"prossimo controllo alle "+x:"prossimo controllo domani alle 07:07"})()+'<br>bozze e conferme del mattino: in tempo reale':"nessun controllo ancora")+'</div></section>';
  h+='<h2>Cosa devi fare<small>solo ciò che richiede te</small></h2>';
  p.problemi.forEach(function(x){h+='<div class="todo '+x.e+'"><b>'+e(x.nome)+': '+e(x.msg)+'</b><p>'+(x.e==="bad"?"Rilanciala: riparte da capo.":"È andata, ma in modo strano: controlla che abbia fatto tutto.")+'</p><button class="btn" data-rl="'+x.id+'">Rilancia</button><button class="btn sec" data-ig="'+e(x.key)+'">Va bene così</button><div class="res" hidden></div></div>'});

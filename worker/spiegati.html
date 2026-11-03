@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Spiegati</title><meta name="theme-color" content="#111417"><link rel="icon" href="/ig/panel.svg" type="image/svg+xml">
+<title>Spiegati</title><meta name="theme-color" content="#0E151B"><link rel="icon" href="/ig/panel.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F6F5F1;--fg:#1D2329;--mut:#66707A;--line:#DEDBD3;--acc:#2F5D8A;--ok:#2E8B57;--warn:#B7791F;--bad:#C0392B}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368}}
-:root[data-theme="dark"]{--bg:#111417;--fg:#E6E9EC;--mut:#8D979F;--line:#262C31;--acc:#7FA9D6;--ok:#5FBF8A;--warn:#E0A84A;--bad:#E57368}
+:root{color-scheme:dark;--bg:#0E151B;--fg:#E4EAEF;--mut:#8FA0AE;--line:#27353F;--card:#16212A;--acc:#86B4EA;--ok:#7FD1A0;--warn:#E5B45A;--bad:#E57368;--wait:#5C6B78}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg)}
 body{font:16px/1.5 Inter,system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px 60px}
@@ -65,11 +63,27 @@ details p{color:var(--mut);font-size:14.5px}
 .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0}.box.w{border-color:var(--warn)}
 .box textarea{font:inherit;font-size:14.5px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);margin:6px 0;resize:vertical}
 .small{font-size:13.5px;color:var(--mut);margin:6px 0}
-.rgh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 0}.rgh h1,.rgh .h{font:600 22px Georgia,"Source Serif 4",serif;margin:0;color:var(--fg)}.rgh a.gearb{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:17px;min-height:40px;box-sizing:border-box}
-.sw{display:flex;gap:4px;margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;padding:4px}.sw>a{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:var(--mut);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}.sw>a.on{background:var(--fg);color:var(--bg)}@media(max-width:520px){.sw>a{font-size:13px;padding:9px 2px}}
-.ptabs{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}.ptabs::-webkit-scrollbar{display:none}.ptabs a{flex:none;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-weight:600;font-size:14px;color:var(--fg);text-decoration:none;white-space:nowrap}.ptabs a.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* come il pannello (/ig/panel): stessi colori, caratteri, testata, selettore e pulsanti delle sezioni */
+html,body{background:var(--bg);color:var(--fg)}body{font:16px/1.45 system-ui,sans-serif}
+.wrap{padding:16px 16px 60px}
+h1,h2,.next .q,.light h1{font-family:Georgia,serif}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hdr h1{font:600 22px Georgia,serif;margin:6px 0 2px;color:var(--fg)}.hdr .sub{color:var(--mut);font-size:14px}
+.gearb{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;font-size:17px;color:var(--fg);white-space:nowrap;margin-top:4px;min-height:40px}
+.sw{display:flex;gap:4px;margin:14px 0 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.sw>a{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:#B9C4CF;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.sw>a.on{background:var(--fg);color:var(--bg)}@media(max-width:520px){.sw>a{font-size:13px;padding:9px 2px}}
+.tabs{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;margin:16px 0 8px;position:relative}
+.tabs .tab,.tbm .tab{all:unset;box-sizing:border-box;cursor:pointer;flex:none;background:var(--card);color:#C9D3DB;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-weight:600;font-size:14px;white-space:nowrap;line-height:1.2}
+.tabs>.tab.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tabs .tbx{margin-left:auto}.tabs .tbx.on{border-color:var(--acc);color:var(--acc)}
+.tbm{position:absolute;right:0;top:100%;margin-top:6px;background:var(--card);border:1px solid #33434F;border-radius:12px;padding:6px;min-width:200px;z-index:60;display:flex;flex-direction:column;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.tbm .tab{border:0;background:transparent;text-align:left;color:var(--fg);padding:10px 12px;border-radius:8px;font-weight:500;font-size:15px}
+.tbm .tab.on{color:var(--acc)}
+.btn{background:#27353F;border-color:#27353F;border-radius:10px}.btn.pri{background:var(--acc);color:var(--bg);border-color:var(--acc)}.kpi div,.next{background:var(--card);border-color:var(--line)}
 </style></head><body><div class="wrap">
-<div class="rgh"><span class="h">Read Geopolitics</span><a class="gearb" href="/ig/panel#canali" aria-label="Canali e uscita">⚙</a></div><nav class="sw"><a href="/ig/panel" class="on">Pannello</a><a href="/ig/sala">Sala di controllo</a><a href="/ig/panel#st">Statistiche</a></nav><div class="ptabs"><a href="/ig/panel#tab=og">Oggi</a><a href="/ig/panel#tab=list">Bozze</a><a href="/ig/panel#tab=rq">Richieste</a><a href="/ig/panel#tab=wk">Settimana</a><a class="on">Spiegati</a><a href="/ig/panel#tab=pd">Podcast</a><a href="/ig/panel#tab=ut">Utenti</a><a href="/ig/panel#tab=lk">Link</a><a href="/ig/panel#tab=dc">Proposte</a></div>
+<div class="hdr"><div><h1>Read Geopolitics</h1><div class="sub" id="hsub">carico…</div></div><a class="gearb" href="/ig/panel#canali" aria-label="Canali e uscita">⚙</a></div><nav class="sw"><a href="/ig/panel" class="on">Pannello</a><a href="/ig/sala">Sala di controllo</a><a href="/ig/panel#st">Statistiche</a></nav><div class="tabs" id="tabs"><a class="tab" href="/ig/panel#tab=og">Oggi</a><a class="tab" href="/ig/panel#tab=list">Bozze</a><a class="tab" href="/ig/panel#tab=rq">Richieste</a><a class="tab" href="/ig/panel#tab=wk">Settimana</a><a class="tab on" href="/ig/spiegati">Spiegati</a><a class="tab" href="/ig/panel#tab=pd">Podcast</a><a class="tab" href="/ig/panel#tab=ut">Utenti</a><a class="tab" href="/ig/panel#tab=lk">Link</a><a class="tab" href="/ig/panel#tab=dc">Proposte</a><button class="tab tbx" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden></div></div>
 <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h1>Spiegati</h1><a href="https://www.readgeopolitics.com/#spiegati" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none;font-size:15px">Sul sito ›</a></div>
 <div class="kpi" id="kpi"></div>
 <div id="nx"></div>
@@ -149,7 +163,7 @@ function rq(r){var R=(r&&r.richieste)||[],h=R.map(function(x){return '<div class
  document.getElementById("rq").innerHTML=h}
 function kpi(r,B,P){var vr=P.filter(function(x){var v=vstato(x.vreq);return v&&v.c==="warn"}).length,n=r.prossimo?new Date(r.prossimo):null,nx="—",nl="prossimo giro";
  if(n&&!isNaN(n)){var f=new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",weekday:"short",hour:"2-digit",minute:"2-digit"}).formatToParts(n),g={};f.forEach(function(x){g[x.type]=x.value});nx=String(g.weekday).replace(".","");nl="prossimo giro "+g.hour+":"+g.minute}
- document.getElementById("kpi").innerHTML='<div><b>'+P.length+'</b><span>pubblicati</span></div><div'+(B.length?' class="w"':'')+'><b>'+B.length+'</b><span>da decidere</span></div><div'+(vr?' class="w"':'')+'><b>'+vr+'</b><span>video da rivedere</span></div><div><b>'+e(nx)+'</b><span>'+e(nl)+'</span></div>'}
+ document.getElementById("hsub").textContent=P.length+(P.length===1?" pubblicato":" pubblicati")+(B.length?" · "+B.length+" da decidere":""); document.getElementById("kpi").innerHTML='<div><b>'+P.length+'</b><span>pubblicati</span></div><div'+(B.length?' class="w"':'')+'><b>'+B.length+'</b><span>da decidere</span></div><div'+(vr?' class="w"':'')+'><b>'+vr+'</b><span>video da rivedere</span></div><div><b>'+e(nx)+'</b><span>'+e(nl)+'</span></div>'}
 var DATA=[];
 function load(){api({action:"sp_lista"}).then(function(r){r=r||{};rq(r);var L=r.spiegati||[],o=document.getElementById("out");DATA=L;
  var B=L.filter(function(x){return x.stato==="bozza"}),P=L.filter(function(x){return x.stato==="pubblicato"}).sort(function(a,b){return String(b.pubblicato_il).localeCompare(String(a.pubblicato_il))}),R=L.filter(function(x){return x.stato==="ritirato"});
@@ -185,4 +199,9 @@ document.addEventListener("click",function(ev){var t=ev.target;
  if(t.id==="rtb"){api({action:"sp_routine",rt:document.getElementById("rt").value,token:document.getElementById("rtk").value}).then(function(r){document.getElementById("spqm").textContent=r&&r.ok?"Routine collegata ✓":"Non riuscito: "+((r&&r.error)||"errore");load()})}});
 load();
 try{var pt=document.querySelector(".ptabs .on");pt.parentNode.scrollLeft=pt.offsetLeft-pt.parentNode.clientWidth/2+pt.clientWidth/2}catch(_){}
-</script></body></html>
+</script><script>/* come il pannello: tanti pulsanti quanti ne stanno nella riga, gli altri in «Altro» */
+(function(){var bar=document.getElementById("tabs"),tm=document.getElementById("tbm"),tx=document.getElementById("tbx");if(!bar)return;var all=[].slice.call(bar.querySelectorAll("a.tab"));
+function fit(){all.forEach(function(x){bar.insertBefore(x,tx)});tx.hidden=true;if(bar.scrollWidth>bar.clientWidth+1){tx.hidden=false;for(var i=all.length-1;i>0&&bar.scrollWidth>bar.clientWidth+1;i--)tm.insertBefore(all[i],tm.firstChild)}
+ var cur=bar.parentNode.querySelector(".tab.on"),inM=cur&&tm.contains(cur);tx.textContent=(inM?cur.textContent:"Altro")+" ▾";tx.classList.toggle("on",!!inM);tm.hidden=true}
+tx.onclick=function(e){e.stopPropagation();tm.hidden=!tm.hidden};document.addEventListener("click",function(){tm.hidden=true});
+var t;window.addEventListener("resize",function(){clearTimeout(t);t=setTimeout(fit,120)});fit();})();</script></body></html>
