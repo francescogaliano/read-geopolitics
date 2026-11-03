@@ -5234,7 +5234,17 @@ function spCheck(s) {
   if (!s.tema) avv.push("manca tema: niente «Da allora» e niente percorso");
   const ents = new Set(Object.keys(s.ent || {}));
   JSON.stringify(s.steps || []).replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, (_, k) => { if (!ents.has(k)) avv.push("nome cliccabile senza scheda: " + k); return ""; });
-  if (s.steps && s.steps.some((st) => !(st.map && st.map.v))) avv.push("alcuni passi senza inquadratura della mappa");
+  if (s.steps && s.steps.some((st) => !(st.map && st.map.v) && !(st.vis && st.vis.tipo))) avv.push("alcuni passi senza inquadratura della mappa né grafico");
+  // v-grafici (3/11/2026): ogni numero di un grafico deve essere già scritto nel testo del passo
+  (s.steps || []).forEach((st, i) => {
+    const v = st && st.vis; if (!v || !v.tipo) return;
+    if (!["serie", "soglia", "barre", "punti", "prima_dopo"].includes(v.tipo)) { err.push("passo " + (i + 1) + ": grafico di tipo sconosciuto " + v.tipo); return; }
+    const txt = String((st.t || "") + " " + (st.why || "") + " " + (v.titolo || "") + " " + (v.nota || "")).replace(/\./g, "");
+    const nums = [];
+    if (v.tipo === "serie") (v.punti || []).forEach((p) => nums.push(p.v)); else if (v.tipo === "soglia") nums.push(v.v, v.soglia);
+    else (v.voci || []).forEach((x) => nums.push(x.v, x.prima, x.dopo));
+    nums.filter((n) => typeof n === "number").forEach((n) => { const f = n.toLocaleString("it-IT", { maximumFractionDigits: 2 }).replace(/\./g, ""); if (!txt.includes(f)) avv.push("passo " + (i + 1) + ": il numero " + f + " del grafico non è nel testo"); });
+  });
   return { err, avv: [...new Set(avv)] };
 }
 function spCard(r) {

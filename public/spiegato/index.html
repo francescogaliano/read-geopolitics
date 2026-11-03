@@ -31,6 +31,23 @@ h1 em{font-style:normal;color:var(--gold)}
 .stage .prog i{width:14px;height:3px;background:var(--line);border-radius:2px;transition:background .3s}
 .stage .prog i.on{background:var(--gold)}
 .stage .cap{position:absolute;left:12px;top:22px;color:var(--gold)}
+.stage svg#map{transition:opacity .4s}
+.stage .vis{position:absolute;left:14px;right:14px;top:44px;bottom:12px;display:flex;flex-direction:column;gap:8px;opacity:0;pointer-events:none;transition:opacity .4s;overflow:hidden}
+.stage .vis.on{opacity:1}
+.stage.has-vis .cnt,.stage.has-vis .note{opacity:0!important}
+.vis .vk{color:var(--gold)}
+.vis .vt{font:600 clamp(17px,2.4vw,22px)/1.25 "IBM Plex Serif",Georgia,serif;color:var(--fg);text-wrap:balance}
+.vis .vt b{color:var(--gold);font-weight:600}
+.vis svg{flex:0 1 auto;min-height:0;width:100%;height:auto;max-height:24vh}
+.vis .vs{width:100%;max-width:62ch}
+@media (min-width:980px){.stage .vis{left:8%;right:8%;top:60px;bottom:40px;justify-content:center;gap:12px}.vis svg{max-height:48vh}.vis .vt{font-size:26px}.vis .vs{font-size:12px}}
+.vis svg text{font-family:"IBM Plex Mono",monospace;font-size:11.5px;fill:var(--mut)}
+.vis svg .vv{font-size:14px;font-weight:500}
+.vis svg .vb{fill:var(--fg);font-family:"IBM Plex Sans",sans-serif;font-size:13px}
+.vis svg .vl{font-size:10.5px;letter-spacing:.06em}
+.vis .vs{font-size:10.5px;line-height:1.4;color:var(--mut);letter-spacing:.02em;text-transform:none}
+.vis .gr{transform-box:fill-box;transform-origin:left;animation:grow .7s ease-out}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .steps{position:relative;z-index:2;padding-bottom:20vh}
 .step{min-height:74vh;display:flex;align-items:flex-start;padding-top:58vh}
 .step.first{min-height:84vh}
@@ -122,11 +139,42 @@ document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");v
  if(a){ev.preventDefault();var d=SP.ent[a.dataset.e];if(!d)return;document.getElementById("shk").textContent=d.tipo||"";document.getElementById("sht").textContent=d.nome||"";document.getElementById("shp").textContent=d.testo||"";var g=document.getElementById("shg");g.firstChild.textContent=(d.go||"Apri")+" ";g.href=a.getAttribute("href");sh.classList.add("on");return}
  if(ev.target.closest("#shx")||(!ev.target.closest("#sheet")&&sh.classList.contains("on")))sh.classList.remove("on")});
 
+/* GRAFICI (3/11/2026): un passo con "vis" mostra un grafico al posto della mappa. Tipi: serie, soglia, barre, punti, prima_dopo.
+   Ogni numero del grafico deve essere già scritto nel testo del passo. */
+function nfmt(x){return typeof x==="number"?x.toLocaleString("it-IT",{maximumFractionDigits:2}):e(x)}
+function vcol(c,i){return COL[c]||c||[COL.gold,COL.blue,COL.grey,COL.green,COL.red][i%5]}
+function visHTML(v){var W0=340,H0=210,s="",t=v.tipo,u=v.unita?" "+e(v.unita):"";
+ function T(x,y,str,a,cl,fill){return '<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'"'+(a?' text-anchor="'+a+'"':'')+' class="'+(cl||"")+'"'+(fill?' style="fill:'+fill+'"':'')+'>'+str+'</text>'}
+ if(t==="serie"){var P=v.punti||[],num=P.every(function(p){return !isNaN(+p.x)}),xs=P.map(function(p,i){return num?+p.x:i}),x0=Math.min.apply(0,xs),x1=Math.max.apply(0,xs),
+   vs=P.map(function(p){return +p.v}).concat(v.tetto?[+v.tetto.v]:[]),vmax=Math.max.apply(0,vs)*1.18,vmin=Math.min(0,Math.min.apply(0,vs)),L=34,R=W0-24,TP=26,B=H0-28,
+   X=function(x){return x1===x0?(L+R)/2:L+(x-x0)/(x1-x0)*(R-L)},Y=function(y){return B-(y-vmin)/(vmax-vmin)*(B-TP)},sd=v.stima_da!=null?String(v.stima_da):null,inSt=false;
+  s+='<line x1="'+L+'" y1="'+B+'" x2="'+R+'" y2="'+B+'" stroke="var(--line)"/>';
+  if(v.tetto){s+='<line x1="'+L+'" y1="'+Y(+v.tetto.v).toFixed(1)+'" x2="'+R+'" y2="'+Y(+v.tetto.v).toFixed(1)+'" stroke="'+COL.red+'" stroke-dasharray="5 4"/>'+T(L,Y(+v.tetto.v)-6,e(v.tetto.t||("Soglia "+nfmt(+v.tetto.v)+u)).toUpperCase(),"","vl",COL.red)}
+  for(var i=1;i<P.length;i++){var gap=num&&xs[i]-xs[i-1]>1,st=sd&&(String(P[i].x)>=sd);s+='<line x1="'+X(xs[i-1]).toFixed(1)+'" y1="'+Y(+P[i-1].v).toFixed(1)+'" x2="'+X(xs[i]).toFixed(1)+'" y2="'+Y(+P[i].v).toFixed(1)+'" stroke="'+(st?COL.gold:COL.blue)+'" stroke-width="'+(gap?2:3)+'"'+(gap?' stroke-dasharray="3 5"':'')+'/>'}
+  P.forEach(function(p,i){var st=sd&&(String(p.x)>=sd),c=st?COL.gold:COL.blue,y=Y(+p.v),above=i===0||+p.v>=+P[i-1].v;s+='<circle cx="'+X(xs[i]).toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="'+c+'"/>'+T(X(xs[i]),above?y-10:y+20,nfmt(+p.v)+e(v.unita||""),"middle","vv",c)+T(X(xs[i]),H0-8,e(p.x),"middle","vl")});
+ }else if(t==="soglia"){var mx=+v.max||Math.max(+v.v,+v.soglia)*1.25,L=12,R=W0-12,X=function(x){return L+x/mx*(R-L)},y=90,ok=+v.v>=+v.soglia;
+  s+='<rect x="'+L+'" y="'+y+'" width="'+(R-L)+'" height="34" rx="3" fill="var(--line)"/><rect class="gr" x="'+L+'" y="'+y+'" width="'+(X(+v.v)-L).toFixed(1)+'" height="34" rx="3" fill="'+(ok?COL.gold:COL.blue)+'"/>'
+   +'<line x1="'+X(+v.soglia).toFixed(1)+'" y1="'+(y-16)+'" x2="'+X(+v.soglia).toFixed(1)+'" y2="'+(y+50)+'" stroke="'+COL.white+'" stroke-width="2"/>'
+   +T(X(+v.soglia),y-24,e(v.t_soglia||("Soglia "+nfmt(+v.soglia))).toUpperCase(),"middle","vl",COL.white)+T(Math.min(X(+v.v)+8,R-60),y+22,nfmt(+v.v)+" "+e(v.etichetta||""),"","vv",COL.gold)
+   +T(L,y+70,"0","","vl")+T(R,y+70,nfmt(mx)+u,"end","vl");
+ }else if(t==="barre"){var V=v.voci||[],mx=Math.max.apply(0,V.map(function(x){return +x.v})),n=V.length,rowH=Math.min(46,(H0-8)/Math.max(1,n)),bw=W0-80;
+  V.forEach(function(x,i){var y=6+i*rowH,w=Math.max(3,(+x.v)/mx*bw);s+=T(0,y+12,e(x.t),"","vb")+'<rect class="gr" x="0" y="'+(y+18)+'" width="'+w.toFixed(1)+'" height="'+Math.min(18,rowH-24)+'" rx="2" fill="'+vcol(x.col,i)+'"/>'+T(w+8,y+31,(x.circa?"≈ ":"")+nfmt(+x.v)+u,"","vv",vcol(x.col,i))});
+  H0=Math.max(60,6+n*rowH);
+ }else if(t==="punti"){var ogni=+v.ogni||1,V=v.voci||[],k=0,per=25,r=4.6,dx=W0/per;
+  V.forEach(function(x,j){var c=vcol(x.col,j),m=Math.round(+x.v/ogni);for(var q=0;q<m;q++){s+='<circle cx="'+(dx/2+(k%per)*dx).toFixed(1)+'" cy="'+(8+Math.floor(k/per)*13)+'" r="'+r+'" fill="'+c+'"/>';k++}});
+  var yl=8+Math.ceil(k/per)*13+8;V.forEach(function(x,j){s+=T(0,yl+j*16,"● "+e(x.t)+" "+nfmt(+x.v),"","vb",vcol(x.col,j))});H0=yl+V.length*16;
+ }else if(t==="prima_dopo"){var V=v.voci||[],mx=Math.max.apply(0,V.map(function(x){return Math.max(+x.prima,+x.dopo)})),bw=W0-90,rowH=58;
+  V.forEach(function(x,i){var y=4+i*rowH,a=(+x.prima)/mx*bw,b=(+x.dopo)/mx*bw;s+=T(0,y+12,e(x.t),"","vb")+'<rect x="0" y="'+(y+18)+'" width="'+a.toFixed(1)+'" height="12" rx="2" fill="'+COL.muted+'"/>'+T(a+6,y+28,nfmt(+x.prima)+u,"","vl")
+   +'<rect class="gr" x="0" y="'+(y+34)+'" width="'+b.toFixed(1)+'" height="12" rx="2" fill="'+COL.gold+'"/>'+T(b+6,y+44,nfmt(+x.dopo)+u,"","vv",COL.gold)});
+  H0=4+V.length*rowH;
+ }else return "";
+ return '<span class="vk mono">'+e(v.k||"")+'</span>'+(v.titolo?'<span class="vt">'+e(v.titolo).replace(/\*([^*]+)\*/g,"<b>$1</b>")+'</span>':'')+'<svg viewBox="-4 0 '+(W0+8)+' '+H0+'" preserveAspectRatio="xMidYMin meet" role="img" aria-label="'+e(v.alt||v.titolo||"Grafico")+'">'+s+'</svg>'+(v.nota?'<span class="vs mono">'+rich(v.nota)+'</span>':'');
+}
 function page(){var s=SP,h="";
  h+='<div class="wrap"><div class="crumb mono"><a href="/#spiegati">Spiegati</a>'+(s.tema?' › <a class="ent" data-e="tema" href="/#t='+e(s.tema)+'">'+e(s.tema_nome||"Tema")+'</a>':'')+'</div>';
  if(s.bozza)h+='<p class="bozza mono">'+(s.anteprima_di==="correzione"?"Anteprima della correzione · sul sito c'è ancora la versione attuale":s.anteprima_di==="versione"?"Versione "+e(s.versione)+" · non più sul sito":"Anteprima della bozza · non è ancora sul sito")+'</p>';h+='<div class="mono kick">'+e(s.kicker||"Spiegato")+'</div><h1>'+e(s.titolo).replace(/\*([^*]+)\*/g,"<em>$1</em>")+'</h1><p class="dek">'+rich(s.dek)+'</p>';
  h+='<div class="meta mono"><span>Spiegato al '+dl(s.data,true)+'</span><span>'+s.min+' minuti</span><span>'+(s.fonti||[]).length+' fonti</span>'+(s.fiducia?'<span>Fiducia: '+e(s.fiducia)+'</span>':'')+(s.corretto&&s.corretto.length?'<span>Corretto il '+dl(s.corretto[s.corretto.length-1].data)+'</span>':'')+'<button type="button" class="shr" data-share="1">↗ Condividi</button></div></div>';
- h+='<section class="scrolly"><div class="stage" id="stage"><svg id="map" role="img" aria-label="'+e(s.map_alt||"Mappa del racconto")+'"></svg><div class="prog" id="prog">'+s.steps.map(function(){return "<i></i>"}).join("")+'</div><div class="cap mono" id="cap"></div><div class="cnt" id="cnt"><b id="cntb"></b><span class="mono" id="cnts"></span></div><div class="note" id="note"></div></div><div class="steps">';
+ h+='<section class="scrolly"><div class="stage" id="stage"><svg id="map" role="img" aria-label="'+e(s.map_alt||"Mappa del racconto")+'"></svg><div class="prog" id="prog">'+s.steps.map(function(){return "<i></i>"}).join("")+'</div><div class="cap mono" id="cap"></div><div class="cnt" id="cnt"><b id="cntb"></b><span class="mono" id="cnts"></span></div><div class="note" id="note"></div><div class="vis" id="vis"></div></div><div class="steps">';
  var chn=0,chName="";
  s.steps.forEach(function(st,i){if(st.ch){chn++;chName=st.ch}st._cap=chn+" · "+chName;
   h+='<div class="step'+(st.ch?' first':'')+'" data-s="'+i+'"><div class="t">'+(st.ch?'<span class="ch">Capitolo '+chn+' · '+e(st.ch)+'</span>':'')+'<span class="mono">'+e(st.k)+'</span><p>'+rich(st.t)+'</p>'+(st.src?'<span class="src">'+e(st.src)+'</span>':'')+(st.why?'<span class="why">'+rich(st.why)+'</span>':'')+'</div></div>'});
@@ -203,6 +251,7 @@ function op(x,v){x.style.transition="opacity .5s";x.setAttribute("opacity",v)}
 function setStep(s){if(s===S)return;var st=SP.steps[s],sm=st.map||{},from=cur||sm.v,to=sm.v,a0=performance.now();S=s;ts=(performance.now()-t0)/1000;
  document.querySelectorAll("#prog i").forEach(function(i,k){i.classList.toggle("on",k<=s)});
  document.getElementById("cap").textContent=st._cap;
+ var vb=document.getElementById("vis"),hv=!!(st.vis&&st.vis.tipo);vb.classList.toggle("on",hv);if(hv)vb.innerHTML=visHTML(st.vis);svg.style.opacity=hv?0:1;document.getElementById("stage").classList.toggle("has-vis",hv);
  var on={};(sm.on||[]).forEach(function(k){on[k]=1});
  Object.keys(lay).forEach(function(k){var o=lay[k];if(!o||!o.type)return;if(o.type==="point")o.es.forEach(function(x){op(x,on[k]?1:0)});else op(o.e,on[k]?1:0);
   if(o.type==="label"&&sm.relabel&&sm.relabel[k]!==undefined)o.e.textContent=sm.relabel[k];else if(o.type==="label")o.e.textContent=o.d.t});
