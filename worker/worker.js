@@ -707,7 +707,7 @@ const unpack = (row) => ({ ...JSON.parse(row.data), key: row.key });
 // ================= INSTAGRAM (login Instagram, senza Pagina Facebook) =================
 // Secret richiesto: IG_APP_SECRET   |   Il token non viene mai mostrato né restituito.
 const IG_APP_ID = "1786208542590699";
-const IG_SCOPE = "instagram_business_basic,instagram_business_content_publish";
+const IG_SCOPE = "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights"; // v86: + statistiche dei post
 const IG_GRAPH = "https://graph.instagram.com/v23.0";
 
 let KV_OK = null; // v26: la tabella si crea una volta per istanza, non a ogni lettura (era un viaggio in più verso il database ogni volta)
@@ -1379,7 +1379,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="set"><label><input type="checkbox" id="pause"> in pausa (blocca anche l&#39;automatico)</label>
 <div class="row"><span>Uscita dei contenuti</span><select id="mode"><option value="approva">chiedi approvazione</option><option value="auto">pubblica da solo</option></select></div>
 <div class="row"><span>Ora predefinita</span><input type="time" id="time" value="08:30"><button class="g" id="sv">Salva</button></div></div></details>
-<div class="chr chs"><span class="ic">IG</span><div class="cht"><b>Instagram</b><div class="s"><span class="dot" id="igd"></span><span id="igs">carico…</span></div></div><span></span></div>
+<div class="chr chs"><span class="ic">IG</span><div class="cht"><b>Instagram</b><div class="s"><span class="dot" id="igd"></span><span id="igs">carico…</span></div></div><a href="/ig/connect" style="font-size:13px;font-weight:600;padding:10px 4px">Ricollega</a></div>
 <details class="chr" id="ttc"><summary><span class="ic">TT</span><div class="cht"><b>TikTok</b><div class="s"><span class="dot" id="ttdot"></span><span id="tts">carico…</span></div></div><span class="tg" id="tttag"></span></summary>
 <div class="set"><div class="row"><span>Invio</span><select id="ttmode" style="max-width:100%"><option value="bozza">bozza nella casella TikTok</option><option value="diretto">pubblica direttamente (serve l&#39;audit)</option></select></div>
 <label><input type="checkbox" id="ttauto"> invia da solo dopo Instagram</label>
@@ -2365,7 +2365,7 @@ const IG_KIT = {
 async function igPublic(request, env, p, url) {
   const redirect = url.origin + "/ig/callback";
   if (p === "/ig/connect") {
-    if (!safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "")) return htmlPage("Accesso negato", "<p>Chiave mancante o errata.</p>", 401);
+    if (!safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "") && !(await sessionOk(request, env))) return htmlPage("Accesso negato", "<p>Entra prima nel pannello, oppure usa la chiave.</p>", 401); // v86: basta essere entrati nel pannello
     if (!env.IG_APP_SECRET) return htmlPage("Manca IG_APP_SECRET", "<p>Aggiungi il secret IG_APP_SECRET al Worker e riprova.</p>", 500);
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "ig_state", { state, exp: Date.now() + 10 * 60000 });
@@ -2503,6 +2503,34 @@ async function igCall(method, path, t, params = {}) {
   const j = await gj(res);
   if (!res.ok || j.error) throw { status: 502, code: "instagram_error", detail: j.error || j };
   return j;
+}
+// v86: statistiche dei post Instagram (serve il permesso instagram_business_manage_insights: ricollegare Instagram una volta)
+const IG_MET_REEL = "views,reach,saved,shares,likes,comments,total_interactions,ig_reels_avg_watch_time,reels_skip_rate";
+const IG_MET_FEED = "views,reach,saved,shares,likes,comments,total_interactions,follows,profile_visits";
+async function igStats(env, n) {
+  const t = await igToken(env);
+  const me = await igCall("GET", "/me", t, { fields: "username,followers_count,media_count" });
+  const list = await igCall("GET", `/${t.user_id}/media`, t, { fields: "id,caption,media_type,media_product_type,timestamp,permalink", limit: String(Math.min(+n || 30, 50)) });
+  const post = [];
+  for (const m of list.data || []) {
+    const reel = m.media_product_type === "REELS";
+    const x = { id: m.id, data: m.timestamp, tipo: reel ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carosello" : String(m.media_type || "").toLowerCase(), titolo: String(m.caption || "").split("\n")[0].slice(0, 120), link: m.permalink || null };
+    try {
+      const r = await igCall("GET", `/${m.id}/insights`, t, { metric: reel ? IG_MET_REEL : IG_MET_FEED });
+      for (const v of r.data || []) x[v.name] = v.values && v.values[0] ? v.values[0].value : (v.total_value ? v.total_value.value : null);
+    } catch (e) { x.errore = String((e && e.detail && (e.detail.message || e.detail.error_user_msg)) || (e && e.code) || e).slice(0, 200); }
+    post.push(x);
+  }
+  const out = { at: new Date().toISOString(), account: { username: me.username, follower: me.followers_count, post: me.media_count }, post };
+  await kvSet(env, "ig_stats:last", out);
+  await kvSet(env, "ig_stats:" + romeToday(), out);
+  return out;
+}
+async function igStatsTick(env) { // dal cron: una fotografia al giorno, dopo le 22 di Roma (i post del giorno hanno avuto tempo)
+  const ora = +new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", hour: "2-digit", hourCycle: "h23" }).format(new Date());
+  if (ora < 22) return;
+  if (await kvGet(env, "ig_stats:" + romeToday())) return;
+  await igStats(env, 30);
 }
 async function igWaitReady(t, id, tries = 8, ms = 2000) {
   for (let i = 0; i < tries; i++) {
@@ -2645,6 +2673,11 @@ async function igPrivate(request, env, p, method) {
     let permalink = null;
     try { permalink = (await igCall("GET", `/${pub.id}`, t, { fields: "permalink" })).permalink; } catch (e) {}
     return json({ ok: true, media_id: pub.id, permalink });
+  }
+  if (method === "GET" && p === "/v1/ig/statistiche") { // v86: legge le statistiche dei post e le salva (ig_stats:last)
+    const u = new URL(request.url);
+    if (u.searchParams.get("fresche") !== "1") { const c = await kvGet(env, "ig_stats:last"); if (c) return json({ ok: true, cache: true, ...c }); }
+    return json({ ok: true, ...(await igStats(env, u.searchParams.get("n"))) });
   }
   return fail(404, "no_route");
 }
@@ -5677,6 +5710,7 @@ export default {
     try { await tgRetry(env); } catch (e) {} // v65: post del giorno su Telegram, se l'invio automatico si è interrotto
     try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
     try { await salaTick(env); } catch (e) {} // v73: sala di controllo, avvisi
+    try { await igStatsTick(env); } catch (e) {} // v86: statistiche Instagram, una volta al giorno
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await numAperti(env, false); } catch (e) {} // v63: numeri da fonti aperte, una volta al giorno dopo le 7
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
