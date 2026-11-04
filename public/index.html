@@ -6821,6 +6821,10 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="tlAr"){S.flt.
   }
   document.addEventListener("click",e=>{if(e.target.closest(".nv-fol [data-ptfall]"))setTimeout(()=>{const x=document.querySelector(".nv-fol");if(x){x.remove();nvFol()}},0)});
   document.addEventListener("click",e=>{if(e.target.closest("[data-fol]"))setTimeout(()=>{const x=document.querySelector(".nv-fol");if(x)x.remove();nvFol()},50)},true);
+  /* Tutte / Per te (e «le altre storie», «tutte le brevi»): la lista si ricostruisce, ma la riga dell'interruttore resta ferma e il blocco dei temi seguiti c'è già, senza salti */
+  let nvAnc=null;
+  window.addEventListener("click",e=>{const b=e.target.closest("[data-rl-pt],[data-rl-oth],[data-rl-all]");if(!b)return;const sel=b.closest(".rl-sw")?".rl-sw":b.matches("[data-rl-oth]")?"[data-rl-oth]":"[data-rl-all]";const r=b.closest(".rl-sw")||b;nvAnc={sel,y:r.getBoundingClientRect().top};setTimeout(()=>{nvAnc=null},400)},true);
+  (function(){const br=document.getElementById("briefing");if(!br)return;new MutationObserver(()=>{nvFol();if(nvAnc){const n=br.querySelector(".rl "+nvAnc.sel);if(n){window.scrollBy(0,n.getBoundingClientRect().top-nvAnc.y)}nvAnc=null}}).observe(br,{childList:true})})();
   let nvT=0;new MutationObserver(()=>{clearTimeout(nvT);nvT=setTimeout(()=>{nvTema();nvStella();nvFol()},60)}).observe(document.body,{childList:true,subtree:true});
 })();
 
