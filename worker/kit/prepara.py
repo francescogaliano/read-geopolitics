@@ -5,6 +5,7 @@ Lo lancia l'hook SessionStart di .claude/settings.json, prima che l'agente
 inizi: cosi' le routine trovano i kit gia' pronti e non scaricano codice.
   - /tmp/rgdb.py                     client del database
   - /tmp/pod/kit/                    kit del podcast (da worker/kit/podkit.tgz)
+  - /tmp/ico/kit/                    kit dei video iconografici (da worker/kit/puntikit.tgz)
   - $HOME/igkit/*.mjs, package.json  kit Instagram, identico a quello servito
     da /ig/kit/ (viene da IG_KIT in worker/worker.js); reel.mjs anche in /tmp/reel
 Non fallisce mai: ogni passo e' indipendente, l'esito va in /tmp/prepara.log.
@@ -37,6 +38,16 @@ def podcast():
     return f"{len(os.listdir('/tmp/pod/kit'))} file"
 
 
+def iconografiche():
+    os.makedirs("/tmp/ico/kit", exist_ok=True)
+    with tarfile.open(os.path.join(KIT, "puntikit.tgz")) as t:
+        try:
+            t.extractall("/tmp/ico/kit", filter="data")
+        except TypeError:
+            t.extractall("/tmp/ico/kit")
+    return f"{len(os.listdir('/tmp/ico/kit'))} file"
+
+
 def instagram():
     src = open(os.path.join(WORKER, "worker.js"), encoding="utf-8").read()
     blk = src[src.index("const IG_KIT = {"):]
@@ -59,6 +70,7 @@ def instagram():
 
 passo("rgdb", rgdb)
 passo("podcast", podcast)
+passo("iconografiche", iconografiche)
 passo("instagram", instagram)
 try:
     with open("/tmp/prepara.log", "w") as f:
