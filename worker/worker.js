@@ -1136,6 +1136,8 @@ async function panelApi(env, origin, b, ctx) {
   }
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
   if (act === "vote_stats") return { ok: true, v: await voteStats(env) };
+  if (act === "ig_stats") return await igStatsPanel(env, !!b.fresche); // v87
+  if (act === "iscritti_stats") return await iscrittiStats(env); // v87
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
@@ -1339,6 +1341,18 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .lkr{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #27353F}.lkr:first-of-type{margin-top:8px}.lkt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.lkt b{font-size:14px}.lkt span{font-size:13px;color:#8FA0AE;overflow-wrap:anywhere}.lka{font-size:13.5px;text-decoration:none;padding:0 4px}
 #st .vw-top{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-top:10px}#st .vw-kp{display:flex;gap:20px}#st .vw-kp div{font-size:12.5px;color:#8FA0AE}#st .vw-kp b{display:block;font-size:22px;color:#EEF2F6;line-height:1.1}#st .vw-days{display:flex;align-items:flex-end;gap:4px;height:52px}#st .vw-days div{width:30px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#8FA0AE}#st .vw-days b{font-size:11px;color:#C9D4DC}#st .vw-days i{display:block;width:100%;background:#86B4EA;border-radius:2px}#st .vw-hd{display:flex;justify-content:space-between;margin:16px 0 2px;font:600 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:#8FA0AE}#st .vw-r{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid #26333F}#st .vw-d{font:500 12px ui-monospace,monospace;color:#8FA0AE;width:36px;flex:none;padding-top:2px}#st .vw-m{flex:1;min-width:0}#st .vw-t{font-size:14px;color:#EEF2F6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#st .vw-ty{font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#E8B050;margin-right:8px}#st .vw-o{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:3px;font-size:12.5px;color:#8FA0AE}#st .vw-o i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}#st .vw-o b{color:#DCE3EA;font-weight:600}#st .vw-z{color:#8FA0AE;font-size:12.5px}#st .vw-n{font-size:15px;font-weight:600;color:#EEF2F6;width:32px;text-align:right;flex:none}#st .vw-more summary{cursor:pointer;color:#86B4EA;font-size:13px;padding:8px 0;border-top:1px solid #26333F}#st .vw-sc{margin-top:12px;padding-top:10px;border-top:1px solid #26333F;font-size:13.5px;color:#C9D4DC}#st .vw-sc b{color:#EEF2F6}#st .vw-sc .vw-z{margin-top:3px}#st .vw-f{margin-top:12px;font-size:12px;color:#6F8090}#st .vtd{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}#st .vtd div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8FA0AE}#st .vtd i{display:block;width:100%;background:#86B4EA;border-radius:3px 3px 1px 1px}#st .vti{display:grid;gap:6px;margin-top:12px;font-size:13px;color:#C9D4DC}#st .vti b{display:block;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;text-transform:uppercase}#st .vtl{margin-top:8px;display:grid;gap:10px}#st .vtk{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase;margin-top:16px}#st .vts2{display:grid;gap:4px;margin-top:6px;font-size:12.5px}#st .vts2 div{display:grid;grid-template-columns:1fr auto auto;gap:10px}#st .vts2 b{font-weight:600;color:#86B4EA}#st .vts2 em{font-style:normal;color:#8FA0AE}#st .vtp{border-top:1px solid #27353F;padding-top:9px;min-width:0}#st .vth{display:flex;gap:8px;align-items:baseline;font-size:13.5px}#st .vth span{font:600 11px ui-monospace,monospace;color:#8FA0AE;flex:none}#st .vth b{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#st .vth em{font-style:normal;font-size:12px;color:#8FA0AE;flex:none}#st .vtb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:6px}#st .vtg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#8FA0AE;margin-top:5px}#st .vtg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 #st .ppl{font:600 11px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-transform:uppercase}#st .ppb{font:700 32px/1.1 Georgia,serif;margin-top:6px}#st .ppb small{font:500 14px system-ui;color:#8FA0AE;margin-left:8px}#st .ppw{display:flex;align-items:flex-end;gap:8px;height:116px;margin-top:20px}#st .ppw>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#8FA0AE;white-space:nowrap}#st .ppw i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:#3A5A7A}#st .ppw .cur i{background:#F2B84B}#st .ppw b{color:#E6ECF1;font-size:13px}#st .ppt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}#st .ppt>div{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 10px}#st .ppt b{display:block;font:700 22px Georgia,serif}#st .ppt span{font-size:12px;color:#8FA0AE}#st .ppbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}#st .ppbar i{display:block}#st .ppg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:#8FA0AE}#st .ppg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}#st .ppi{font-size:13.5px;border-top:1px solid #27353F;margin-top:12px;padding-top:10px;color:#C9D4DC}#st .ppi b{color:#F2B84B}#st .pps{font-size:12px;color:#8FA0AE;margin-top:8px}
+.sst{display:flex;gap:20px;border-bottom:1px solid #27353F;margin:12px 0 4px;overflow-x:auto;scrollbar-width:none}.sst button{all:unset;cursor:pointer;padding:12px 0;font-weight:600;font-size:14.5px;color:#8FA0AE;white-space:nowrap}.sst button.on{color:#E4EAEF;box-shadow:inset 0 -2px 0 #F2B84B}
+#st .ssl{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#8FA0AE;text-transform:uppercase;margin:22px 0 8px}
+#st .igh{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px}#st .igh b{display:block;font:600 40px/1 Georgia,serif}#st .igh span{font-size:13px;color:#8FA0AE}#st .igq{text-align:right;font:500 11px/1.7 ui-monospace,monospace;color:#8FA0AE}#st .igq a{text-decoration:none}
+#st .sgn,#st .tap{display:flex;gap:14px;align-items:center;padding:12px 14px;background:#16212A;border:0;border-left:4px solid #5E7180;border-radius:8px;margin:0 0 8px}#st .sgb{display:flex;flex-direction:column;align-items:center;min-width:70px;text-align:center}#st .sgb b{font:700 24px/1 Georgia,serif;font-variant-numeric:tabular-nums}#st .sgb span{font:600 10px ui-monospace,monospace;color:#8FA0AE;padding-top:4px}#st .sgt{display:flex;flex-direction:column;gap:2px;min-width:0}#st .sgt i{font:700 11px ui-monospace,monospace;font-style:normal;letter-spacing:.08em}#st .sgt b{font-size:15px;line-height:1.3}#st .sgt span{font-size:13.5px;color:#A9B6C1;line-height:1.4}
+#st .tap{all:unset;box-sizing:border-box;width:100%;display:flex;gap:14px;align-items:center;padding:14px;background:#16212A;border-left:4px solid;border-radius:8px;cursor:pointer}#st .tap .sgb b{font-size:28px}#st .tap em{font-style:normal;color:#86B4EA;margin-left:auto}#st .tap .sgt span{color:#E4EAEF;font-size:14px}#st .tapa{text-align:center;color:#34475A;padding:3px 0}
+#st .dga{margin-top:18px;padding:14px;border:1px solid #5A4520;border-radius:8px;background:rgba(242,184,75,.06);display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.45}#st .dga i{font:700 11px ui-monospace,monospace;font-style:normal;letter-spacing:.08em;color:#F2B84B}
+#st .fb{margin:0 0 9px}#st .fb>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:4px}#st .fb small{color:#8FA0AE}#st .fb b{font-variant-numeric:tabular-nums}#st .fb>i{display:block;height:10px;background:#1A2630;border-radius:5px;overflow:hidden}#st .fb u{display:block;height:10px;border-radius:5px}
+#st .igg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;max-width:560px}#st .igt{all:unset;box-sizing:border-box;position:relative;aspect-ratio:4/5;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;padding:6px;color:#fff}#st .igt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}#st .igt:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,0) 35%,rgba(0,0,0,0) 55%,rgba(0,0,0,.7))}#st .igt>span,#st .igt>b{position:relative;z-index:1}#st .igs{font:600 9px ui-monospace,monospace;letter-spacing:.04em}#st .igt>b{font:700 18px/1 Georgia,serif;font-variant-numeric:tabular-nums}#st .igt>i{position:absolute;left:0;right:0;bottom:0;height:5px;z-index:2}#st .igt.on{outline:3px solid #F2B84B;outline-offset:-3px}
+#st .igl{display:flex;gap:10px;align-items:center;font-size:12px;color:#8FA0AE;margin-top:8px;max-width:560px}#st .igl i{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#22313C,#3E6B5A,#6FCB9F)}
+#st .igf,#st .igd{display:flex;align-items:flex-end;gap:4px;height:100px}#st .igf>div,#st .igd>div{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:#8FA0AE}#st .igf i,#st .igd i{display:block;width:100%;border-radius:3px 3px 0 0;background:#3A5A7A}#st .igf b,#st .igd b{font-size:11px;color:#E4EAEF}#st .igdx{display:flex;justify-content:space-between;font:500 11px ui-monospace,monospace;color:#8FA0AE;margin-top:4px}
+.igsh{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#16212A;border-top:2px solid #5E7180;border-radius:14px 14px 0 0;padding:14px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow:auto}.igsh-h{display:flex;justify-content:space-between;gap:10px}.igsh-h span{font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:#8FA0AE;display:block;margin-bottom:4px}.igsh-h b{font:600 17px/1.3 Georgia,serif}.igsh-h button{all:unset;cursor:pointer;width:44px;height:44px;flex:none;text-align:center;font-size:24px;color:#8FA0AE}.igsh-n{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center}.igsh-n b{display:block;font:700 22px Georgia,serif;font-variant-numeric:tabular-nums}.igsh-n span{font-size:12px;color:#8FA0AE}.igsh p{margin:0;font-size:14.5px;line-height:1.45;color:#C9D3DB}.igsh-a{display:flex;align-items:center;justify-content:center;min-height:46px;border:1px solid #34475A;border-radius:10px;color:#E4EAEF!important;text-decoration:none;font-weight:600}
+@media (min-width:700px){#st .igg,#st .igl{max-width:760px}#st .igg{grid-template-columns:repeat(5,minmax(0,1fr))}}@media (min-width:900px){.igsh{left:auto;top:0;width:380px;border-radius:0;border-top:0;border-left:2px solid #5E7180;max-height:none;padding-top:20px}}
 #cnl .cit{border-top:1px solid #27353F;padding:11px 0 6px}#cnl .cit:first-of-type{margin-top:8px}#cnl .cih{display:flex;align-items:center;gap:8px}#cnl .cih b{flex:1;font-size:14.5px}#cnl .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 11px system-ui;background:#1E2A33;flex:none}#cnl .cp{font:600 11px ui-monospace,monospace;border-radius:999px;padding:2px 8px;white-space:nowrap}#cnl .cp.wait{color:#F2B84B;border:1px solid #5A4A22}#cnl .cp.ok{color:#7BD39A;border:1px solid #2F5F4B}#cnl .cp.no{color:#8FA0AE;border:1px solid #27353F}#cnl .cp.bad{color:#FF9A9A;border:1px solid #5A3434}#cnl .cpv{margin:8px 0 0 32px;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:9px 11px;font-size:13.5px;line-height:1.45;color:#DCE4EA}#cnl .cta{margin:8px 0 0 32px;width:calc(100% - 32px)}#cnl .cwh{margin:6px 0 2px 32px;font-size:12.5px;color:#8FA0AE}#cnl .cwh a{color:#86B4EA}.cwh .linkb{background:none;border:0;padding:0;color:#86B4EA;font:inherit;cursor:pointer;text-decoration:underline}#cnl .cac{display:flex;gap:8px;margin:8px 0 4px 32px}#cnl .sm{border:1px solid #3A4C5C;background:transparent;color:#E6ECF1;border-radius:8px;padding:6px 10px;font:600 13px system-ui}#cnl .sm.d{color:#FF9A9A;border-color:#5A3434}
 #og .ogh .ogbar{height:6px;border-radius:3px;background:#27353F;margin-top:10px;overflow:hidden}#og .ogh .ogbar i{display:block;height:100%;background:#7FD1A0}
 .ogn{font:600 11px ui-monospace,monospace;background:#0B1830;color:#E4EAEF;border-radius:99px;padding:2px 7px;margin-left:4px}.ogn.ok{background:#1f4a33;color:#7FD1A0}
@@ -1401,7 +1415,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 </div>
 <div class="card fbn" id="fbn" hidden></div><details class="card" id="svb" hidden><summary class="svh"><span class="lab">Svolte</span><span class="chsum" id="svsum"></span><span class="svn" id="svn" hidden></span><span class="chev">▾</span></summary><div class="svbd"><div id="svl"></div><div class="svg" id="svg" hidden></div></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
-<div class="tabs" id="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><a class="tab" href="/ig/spiegati">Spiegati</a><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="lk">Link</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab tbx" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden></div><button class="tab" data-t="st" hidden>Statistiche</button></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
+<div class="tabs" id="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><a class="tab" href="/ig/spiegati">Spiegati</a><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="lk">Link</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab tbx" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden></div><button class="tab" data-t="st" hidden>Statistiche</button></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden><nav class="sst" id="sst" aria-label="Statistiche"><button type="button" data-ss="pan" class="on">Panoramica</button><button type="button" data-ss="ig">Instagram</button><button type="button" data-ss="sito">Sito</button><button type="button" data-ss="isc">Iscritti</button></nav><div id="stp"></div><div id="sti" hidden></div><div id="sts" hidden></div><div id="stu" hidden></div></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -1970,19 +1984,19 @@ const stN=n=>Number(n||0).toLocaleString("it-IT");
 const stPct=(a,b)=>b?Math.round(a/b*100):0;
 const stHb=(name,n,max,tot,showN)=>'<div class="hb"><span>'+esc(name)+'</span><div class="tr"><div class="fl" style="width:'+Math.max(2,Math.round(n/(max||1)*100))+'%"></div></div><span class="n">'+(showN?stN(n)+' ':'')+'<small>'+stPct(n,tot)+'%</small></span></div>';
 function stLi(lab,n){return '<div class="li"><span>'+esc(lab)+'</span><span>'+stN(n)+'</span></div>'}
-async function loadStats(force){const el=document.getElementById("st");el.innerHTML='<div class="card sub">Carico le statistiche da GoatCounter…</div>';
+async function loadStats(force){const el=document.getElementById("sts");el.innerHTML='<div class="card sub">Carico le statistiche da GoatCounter…</div>';
  const r=await api({action:"stats",days:STP,force:!!force});
  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche non disponibili</b><div class="err" style="margin-top:6px">'+esc(r.detail||r.error||"errore")+'</div>'+(r.error==="gc_missing"?'<div class="sub" style="margin-top:6px">In Cloudflare: rg-api → Settings → Variables and Secrets → aggiungi il secret GC_TOKEN con la chiave API di GoatCounter (permessi di sola lettura).</div>':'')+'</div>';return}
  stRender(r.stats);vtStats()}
-function ppHtml(s){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
- if(W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
+function ppHtml(s,part){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
+ if(part!=="sito"&&W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
   h+='<div class="card pp"><div class="ppl">Il numero della settimana · nuovi iscritti</div><div class="ppb">'+cur.n+'<small>finora · settimana dal '+fd(cur.da)+'</small></div><div class="ppw">'+W.map((w,i)=>'<div class="'+(i===W.length-1?'cur':'')+'"><b>'+w.n+'</b><i style="height:'+Math.max(3,Math.round(w.n/mx*80))+'px"></i>dal '+fd(w.da)+'</div>').join("")+'</div>'+(F.length?'<div class="ppi">Da dove sono arrivati '+(cur.n?'questa settimana':'la settimana scorsa')+': '+F.slice(0,4).map((x,i)=>i?esc(x.name)+' '+x.n:'<b>'+esc(x.name)+' '+x.n+'</b>').join(" · ")+'</div>':'')+'</div>'}
  const P=s.persone||{},pn=P.nuove||0,po=P.tornate||0,pt=pn+po;
- h+='<div class="card pp"><div class="ppl">Persone sul sito · ultimi '+s.days+' giorni</div>'+(pt?'<div class="ppb">≈ '+stN(pt)+'<small>persone diverse</small></div><div class="ppt"><div><b>'+stN(pn)+'</b><span>prima volta</span></div><div><b>'+stN(po)+'</b><span>tornate</span></div><div><b>'+Math.round(po/pt*100)+'%</b><span>tornano</span></div></div><div class="pps">Stima: chi cambia telefono o browser conta come nuovo.'+(s.start<"2026-10-22"?' Il conteggio è attivo dal 22 ottobre.':'')+'</div>':'<div class="pps">Il conteggio è attivo dal 22 ottobre: i numeri arrivano con le prossime visite.</div>')+'</div>';
- const I=s.iscritti;if(I&&I.tot){const ft=Math.max(1,I.f1+I.f2+I.f4);
+ if(part!=="isc")h+='<div class="card pp"><div class="ppl">Persone sul sito · ultimi '+s.days+' giorni</div>'+(pt?'<div class="ppb">≈ '+stN(pt)+'<small>persone diverse</small></div><div class="ppt"><div><b>'+stN(pn)+'</b><span>prima volta</span></div><div><b>'+stN(po)+'</b><span>tornate</span></div><div><b>'+Math.round(po/pt*100)+'%</b><span>tornano</span></div></div><div class="pps">Stima: chi cambia telefono o browser conta come nuovo.'+(s.start<"2026-10-22"?' Il conteggio è attivo dal 22 ottobre.':'')+'</div>':'<div class="pps">Il conteggio è attivo dal 22 ottobre: i numeri arrivano con le prossime visite.</div>')+'</div>';
+ const I=s.iscritti;if(part!=="sito"&&I&&I.tot){const ft=Math.max(1,I.f1+I.f2+I.f4);
   h+='<div class="card pp"><div class="ppl">Iscritti · chi è entrato con l&#39;email</div><div class="ppt"><div><b>'+stN(I.tot)+'</b><span>in tutto</span></div><div><b>'+stN(I.att)+'</b><span>passati in '+s.days+' gg</span></div><div><b class="dw">'+stN(I.spar)+'</b><span>spariti 14+ gg</span></div></div><div class="pps" style="margin-top:12px">Quanti giorni sono venuti, da quando sono iscritti</div><div class="ppbar"><i style="flex:'+I.f1+';background:#3A5A7A"></i><i style="flex:'+I.f2+';background:#86B4EA"></i><i style="flex:'+I.f4+';background:#F2B84B"></i></div><div class="ppg"><span><i style="background:#3A5A7A"></i>1 giorno · '+I.f1+'</span><span><i style="background:#86B4EA"></i>2–3 giorni · '+I.f2+'</span><span><i style="background:#F2B84B"></i>4 o più · '+I.f4+'</span></div>'+(I.f1*2>ft?'<div class="ppi">Più di metà degli iscritti è venuta <b>un giorno solo</b>: l&#39;email del mattino è il modo per riportarli.</div>':I.torn?'<div class="ppi"><b>'+I.torn+'</b> iscritti di prima sono tornati negli ultimi '+s.days+' giorni.</div>':'')+'</div>'}
  return h}
-async function vtStats(){const el=document.getElementById("st");if(!el)return;const r=await api({action:"vote_stats"});if(!r.ok||!r.v)return;const V=r.v;
+async function vtStats(){const el=document.getElementById("sts");if(!el)return;const r=await api({action:"vote_stats"});if(!r.ok||!r.v)return;const V=r.v;
  const fd=d=>(+String(d).slice(8,10))+"/"+(+String(d).slice(5,7));const pc=(x,t)=>t?Math.round(100*x/t):0;
  let h='<div class="card pp vw"><div class="ppl">Voti dei lettori · solo per te</div>';
  if(!V.voti){h+='<div class="sub" style="margin-top:8px">Ancora nessun voto.</div></div>'}
@@ -2001,7 +2015,7 @@ async function vtStats(){const el=document.getElementById("st");if(!el)return;co
    h+='<div class="vw-sc"><b>Scenari chiusi</b> · agente '+ag+' su '+PC.length+' · lettori '+(vot.length?rd+' su '+vot.length:'nessun voto')+'<div class="vw-z">Ultimo: '+esc(z.domanda||z.titolo||"")+' → <span style="color:#7BD39A">'+esc(z.esito_titolo||(z.voci[z.esito_i]||{}).titolo||"")+'</span> (l&#39;agente lo dava al '+((z.voci[z.esito_i]||{}).prob||0)+'%)</div></div>'}
   h+='<div class="vw-f">Qui tutti i voti; sul sito i risultati compaiono da '+V.min+' voti in su.</div></div>'}
  const last=[...el.querySelectorAll(".card.pp")].pop();if(last)last.insertAdjacentHTML("afterend",h);else el.insertAdjacentHTML("afterbegin",h)}
-function stRender(s){const el=document.getElementById("st");const E=s.events||{};const ev=k=>E[k]||0;
+function stRender(s){const el=document.getElementById("sts");const E=s.events||{};const ev=k=>E[k]||0;
  const ch=s.prev_visits?Math.round((s.visits-s.prev_visits)/s.prev_visits*100):null;
  const dn=["dom","lun","mar","mer","gio","ven","sab"];
  const mx=Math.max(1,...s.day_list.map(d=>d.n));const many=s.day_list.length>10;
@@ -2010,7 +2024,7 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  h+='<div class="kpi"><div class="l">Storie aperte</div><div class="v">'+stN(ev("storia-aperta"))+'</div><div class="d">'+stN(ev("fonte-aperta"))+' fonti aperte</div></div>';
  h+='<div class="kpi"><div class="l">Ascolti podcast</div><div class="v">'+stN(ev("podcast-play")+ev("podcast-play-ascolta"))+'</div><div class="d">'+stN(ev("podcast-finito"))+' fino in fondo</div></div>';
  h+='<div class="kpi"><div class="l">Nuovi iscritti</div><div class="v">'+stN(s.joined)+'</div><div class="d">'+(s.seen?'su '+stN(s.seen)+' che hanno visto l&#39;invito':'iscritti nel periodo')+'</div></div></div></div>';
- h+=ppHtml(s);h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
+ h+=ppHtml(s,"sito");h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach(d=>{const t=dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+' '+(+d.day.slice(8))+': '+d.n+' visite'+(d.post?' · '+d.post:'');h+='<div class="col" title="'+esc(t)+'">'+(!many||d.n===mx?'<span class="bv">'+d.n+'</span>':'')+'<div class="bar'+(d.post?' pb':'')+'" style="height:'+Math.max(1,Math.round(d.n/mx*100))+'%"></div></div>'});
  h+='</div><div class="xl" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach((d,i)=>{const lab=(!many||i%5===0||i===s.day_list.length-1)?dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+'<br>'+(+d.day.slice(8)):'';const pk=d.post?d.post.split("+").map(x=>({carosello:"C",reel:"R",post:"P"}[x]||"P")).join("+"):"";h+='<div>'+lab+(d.post&&!many?'<br><span class="post" title="'+esc(d.post)+'">'+pk+'</span>':'')+'</div>'});
@@ -2034,7 +2048,100 @@ function stRender(s){const el=document.getElementById("st");const E=s.events||{}
  el.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{STP=+b.dataset.sp;loadStats(false)});
  const rf=document.getElementById("strf");if(rf)rf.onclick=e=>{e.preventDefault();loadStats(true)};
 }
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;loadStats(false)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
+// v87: Statistiche con sottoschede: Panoramica, Instagram, Sito (GoatCounter, com'era), Iscritti
+let SS="pan",SS_SITO=false,IGD=null,IGSEL=null;
+const IGF={G:"Il mondo in 40 secondi",S:"Una storia in 40 secondi",I:"Spiegati da zero",N:"Notizia in carosello",C:"La settimana",W:"La parola",P:"Annunci su RG",A:"Altri post"};
+const IGSG={G:"MONDO 40″",S:"STORIA 40″",I:"SPIEGATO",N:"NOTIZIA",C:"SETTIMANA",W:"PAROLA",P:"ANNUNCIO",A:"ALTRO"};
+const SC={v:"#6FCB9F",a:"#E5B45A",r:"#E0705F",g:"#5E7180",b:"#86B4EA"};
+function ssOpen(k){SS=k;document.querySelectorAll("#sst [data-ss]").forEach(b=>b.classList.toggle("on",b.dataset.ss===k));
+ [["pan","stp"],["ig","sti"],["sito","sts"],["isc","stu"]].forEach(([a,id])=>{document.getElementById(id).hidden=a!==k});
+ igsClose();
+ if(k==="pan")ssPan();else if(k==="ig")igsLoad(false);else if(k==="sito"){if(!SS_SITO){SS_SITO=true;loadStats(false)}}else if(k==="isc")ssIsc()}
+document.getElementById("sst").onclick=e=>{const b=e.target.closest("[data-ss]");if(b)ssOpen(b.dataset.ss)};
+const igT=p=>Date.parse(String(p.data||"").slice(0,19)+"Z");
+const igSkC=s=>s==null?SC.g:s<55?SC.v:s<=70?SC.a:SC.r;
+const igK=v=>v>=1000?(v/1000).toFixed(1).replace(".",",")+"k":String(v);
+function igsPrep(r){const at=Date.parse(r.at);const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+ const P=(r.post||[]).filter(p=>p.views!=null).map((p,i)=>({...p,i,f:p.formato||"A",reel:p.tipo==="reel",fresco:at-igT(p)<48*36e5}));
+ const F={};P.forEach(p=>{(F[p.f]=F[p.f]||[]).push(p)});
+ const fs=Object.keys(F).map(k=>{const all=F[k],b=all.filter(p=>!p.fresco),u=b.length?b:all;const sk=u.filter(p=>p.skip_rate!=null||p.reels_skip_rate!=null).map(p=>+p.reels_skip_rate);
+  return {k,n:all.length,nb:b.length,v:avg(u.map(p=>p.views)),sk:sk.length?avg(sk):null}}).sort((a,b)=>b.v-a.v);
+ return {r,at,P,fs}}
+async function igsLoad(fresh){const el=document.getElementById("sti");
+ if(!IGD||fresh){el.innerHTML='<div class="card sub">'+(fresh?'Chiedo i numeri a Instagram: qualche secondo…':'Carico…')+'</div>';
+  const r=await api({action:"ig_stats",fresche:!!fresh});
+  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche Instagram non disponibili</b><div class="sub" style="margin-top:6px">'+esc(r.error||r.detail||"errore")+'</div><button class="btn" id="igrf" style="margin-top:10px">Aggiorna da Instagram</button></div>';const b=document.getElementById("igrf");if(b)b.onclick=()=>igsLoad(true);return}
+  IGD=igsPrep(r)}
+ igsRender()}
+function igSegnali(d){const ok=d.fs.filter(f=>f.nb>=2),out=[];if(!ok.length)return out;
+ const best=ok[0];out.push({k:"FUNZIONA",c:SC.v,big:stN(Math.round(best.v)),u:"VISTE MEDIE",t:IGF[best.k],d:best.sk!=null&&best.sk<55?"Trattiene: scorre via solo il "+Math.round(best.sk)+"% nei primi secondi, e Instagram lo mostra anche a chi non ti segue.":"Il formato con più visualizzazioni, su "+best.nb+" post."});
+ const lenti=ok.filter(f=>f.sk!=null&&f.sk>70&&f!==best).sort((a,b)=>b.sk-a.sk);const worst=lenti[0]||(ok.length>1?ok[ok.length-1]:null);
+ if(worst)out.push(worst.sk!=null&&worst.sk>70?{k:"NON FUNZIONA",c:SC.r,big:Math.round(worst.sk/10)+" su 10",u:"SCORRONO VIA",t:IGF[worst.k],d:"Si perdono quasi tutti nei primi 3 secondi: il reel resta quasi solo ai follower."}:{k:"RENDE MENO",c:SC.r,big:stN(Math.round(worst.v)),u:"VISTE MEDIE",t:IGF[worst.k],d:"Il formato con meno visualizzazioni, su "+worst.nb+" post."});
+ const fo=d.P.filter(p=>p.follows>0).sort((a,b)=>b.follows-a.follows)[0];
+ if(fo)out.push({k:"PORTA FOLLOWER",c:SC.b,big:"+"+fo.follows,u:"FOLLOWER",t:"«"+fo.titolo+"»",d:"Il post che ha portato più nuovi follower. Per i reel Instagram non dà questo numero."});
+ return out}
+function igsRender(){const d=IGD,el=document.getElementById("sti");if(!d)return;const A=d.r.account||{};
+ const ora=new Date(d.r.at);const quando=ora.toLocaleDateString("it-IT",{day:"numeric",month:"short"})+", "+ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+ let h='<div class="igh"><div><b>'+stN(A.follower)+'</b><span>follower · @'+esc(A.username||"")+'</span></div><div class="igq">ULTIMI '+d.P.length+' POST<br>DATI DEL '+esc(quando.toUpperCase())+'<br><a href="#" id="igrf">AGGIORNA DA INSTAGRAM</a></div></div>';
+ if(d.r.avviso)h+='<div class="sub" style="color:#E5B45A">Aggiornamento non riuscito ('+esc(d.r.avviso)+'): mostro l&#39;ultima fotografia.</div>';
+ const S=igSegnali(d);
+ if(S.length)h+='<div class="ssl" style="color:#F2B84B">Cosa osservare</div>'+S.map(s=>'<div class="sgn" style="border-left-color:'+s.c+'"><div class="sgb"><b style="color:'+s.c+'">'+esc(s.big)+'</b><span>'+s.u+'</span></div><div class="sgt"><i style="color:'+s.c+'">'+s.k+'</i><b>'+esc(s.t)+'</b><span>'+esc(s.d)+'</span></div></div>').join("");
+ const mx=Math.max(1,...d.fs.map(f=>f.v));const bc=f=>f===d.fs[0]?SC.v:f.sk!=null&&f.sk>70?SC.r:f.sk!=null&&f.sk>=55?SC.a:SC.g;
+ h+='<div class="ssl">Visualizzazioni medie per formato</div>'+d.fs.map(f=>'<div class="fb"><div><span>'+esc(IGF[f.k])+' <small>· '+f.n+' post'+(f.sk!=null?' · scorre via '+Math.round(f.sk)+'%':'')+'</small></span><b>'+stN(Math.round(f.v))+'</b></div><i><u style="width:'+Math.max(3,f.v/mx*100)+'%;background:'+bc(f)+'"></u></i></div>').join("");
+ h+='<p class="note" style="margin-top:6px">Esclusi dalle medie i post di meno di due giorni: stanno ancora crescendo.</p>';
+ const vmax=Math.max(1,...d.P.map(p=>p.views));const shade=v=>{const x=Math.pow(v/vmax,.6),a=[34,49,60],b=[111,203,159];return "rgb("+a.map((c,j)=>Math.round(c+(b[j]-c)*x)).join(",")+")"};
+ h+='<div class="ssl" style="display:flex;justify-content:space-between"><span>La griglia</span><span style="letter-spacing:0;text-transform:none;font-family:system-ui">tocca un post</span></div><div class="igg">'+d.P.map(p=>'<button type="button" class="igt'+(IGSEL===p.i?' on':'')+'" data-ig="'+p.i+'" style="background:'+shade(p.views)+'" aria-label="'+esc(p.titolo)+'">'+(p.img?'<img src="'+esc(p.img)+'" alt="" loading="lazy" onerror="this.remove()">':'')+'<span class="igs">'+IGSG[p.f]+'</span><b>'+igK(p.views)+'</b><i style="background:'+shade(p.views)+'"></i></button>').join("")+'</div><div class="igl"><span>meno viste</span><i></i><span>più viste</span></div>';
+ const ST=d.r.storia||[];
+ h+='<div class="ssl">Follower giorno per giorno</div>';
+ if(ST.length>=2){const fm=Math.min(...ST.map(x=>x.f)),fM=Math.max(...ST.map(x=>x.f)),rg=Math.max(1,fM-fm);
+  h+='<div class="igf">'+ST.slice(-14).map((x,i,a)=>{const dl=i?x.f-a[i-1].f:0;return '<div><b>'+(i&&dl?(dl>0?'+':'')+dl:'')+'</b><i style="height:'+(8+Math.round((x.f-fm)/rg*60))+'px"></i><span>'+(+x.d.slice(8))+'</span></div>'}).join("")+'</div><p class="note">Da '+stN(ST[0].f)+' a '+stN(ST[ST.length-1].f)+' follower in '+ST.length+' fotografie.</p>'}
+ else h+='<p class="note">Una fotografia al giorno, dopo le 22: la curva compare dalla seconda sera.</p>';
+ el.innerHTML=h;
+ document.getElementById("igrf").onclick=e=>{e.preventDefault();igsLoad(true)};
+ el.querySelectorAll("[data-ig]").forEach(b=>b.onclick=()=>igsOpen(+b.dataset.ig))}
+function igsClose(){IGSEL=null;const x=document.getElementById("igsh");if(x)x.remove();document.querySelectorAll(".igt.on").forEach(b=>b.classList.remove("on"))}
+function igsOpen(i){const d=IGD;if(!d)return;if(IGSEL===i){igsClose();return}igsClose();IGSEL=i;const x=d.P.find(p=>p.i===i);if(!x)return;
+ const b=document.querySelector('.igt[data-ig="'+i+'"]');if(b)b.classList.add("on");
+ const f=d.fs.find(z=>z.k===x.f)||{v:0};const sk=x.reels_skip_rate;
+ const col=x.reel?igSkC(sk):(x.views>=f.v?SC.v:SC.g);
+ const g=x.fresco?"Pubblicato da meno di due giorni: sta ancora crescendo.":x.reel&&sk!=null&&sk<55?"Ha trattenuto chi lo ha visto: per questo Instagram lo ha mostrato anche fuori dai follower.":x.reel&&sk!=null?"La maggior parte è andata via nei primi 3 secondi: è rimasto quasi solo ai follower.":(x.views>=f.v?"Sopra":"Sotto")+" la media del suo formato ("+stN(Math.round(f.v))+" viste).";
+ const dt=new Date(igT(x));
+ const sec=x.ig_reels_avg_watch_time?(x.ig_reels_avg_watch_time/1000).toFixed(1).replace(".",",")+" s":null;
+ const ex=[x.saved?x.saved+" salvataggi":"",x.shares?x.shares+" condivisioni":"",x.comments?x.comments+" commenti":"",sec?"guardato in media "+sec:"",x.profile_visits?x.profile_visits+" visite al profilo":""].filter(Boolean).join(" · ");
+ const el=document.createElement("div");el.id="igsh";el.className="igsh";el.style.borderTopColor=col;
+ el.innerHTML='<div class="igsh-h"><div><span>'+esc(dt.toLocaleDateString("it-IT",{day:"numeric",month:"short"}).toUpperCase()+" · "+IGF[x.f].toUpperCase())+'</span><b>'+esc(x.titolo)+'</b></div><button type="button" aria-label="Chiudi" id="igshx">×</button></div><div class="igsh-n"><div><b>'+stN(x.views)+'</b><span>viste</span></div><div><b>'+stN(x.reach)+'</b><span>persone</span></div><div><b style="color:'+col+'">'+(x.reel?(sk!=null?Math.round(sk)+"%":"—"):(x.follows?"+"+x.follows:"0"))+'</b><span>'+(x.reel?"scorre via":"nuovi follower")+'</span></div></div><p>'+esc(g)+'</p>'+(ex?'<div class="sub" style="font-size:13px">'+esc(ex)+'</div>':'')+(x.link?'<a class="igsh-a" href="'+esc(x.link)+'" target="_blank" rel="noopener">Apri su Instagram</a>':'');
+ document.body.appendChild(el);document.getElementById("igshx").onclick=igsClose}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&IGSEL!=null)igsClose()});
+async function ssPan(){const el=document.getElementById("stp");el.innerHTML='<div class="card sub">Carico…</div>';
+ const [s,ig,u]=await Promise.all([api({action:"stats",days:7}).catch(()=>({})),IGD?Promise.resolve(null):api({action:"ig_stats"}).catch(()=>({})),api({action:"iscritti_stats"}).catch(()=>({}))]);
+ if(ig&&ig.ok)IGD=igsPrep(ig);const S=s&&s.ok?s.stats:null;
+ const G=u&&u.ok?u.giorni:[];const n7=G.slice(7).reduce((a,x)=>a+x.n,0),p7=G.slice(0,7).reduce((a,x)=>a+x.n,0);
+ const fIg=u&&u.ok?((u.fonti.find(x=>x.name==="Instagram")||{}).n||0):0;
+ const best=IGD&&IGD.fs.find(f=>f.nb>=2);
+ const T=[
+  {go:"ig",k:"INSTAGRAM",c:SC.v,big:IGD?stN((IGD.r.account||{}).follower):"—",u:"FOLLOWER",d:best?"Rende di più «"+IGF[best.k]+"»: "+stN(Math.round(best.v))+" visualizzazioni in media.":"Numeri dei post e dei formati."},
+  {go:"sito",k:"SITO",c:SC.b,big:S?stN(S.visits):"—",u:"VISITE · 7 GIORNI",d:S?((S.persone&&(S.persone.nuove+S.persone.tornate))?"≈ "+stN(S.persone.nuove+S.persone.tornate)+" persone diverse. ":"")+(S.refs&&S.refs[0]?"Arrivano soprattutto da "+S.refs[0].name+".":""):"Statistiche del sito non disponibili."},
+  {go:"isc",k:"ISCRITTI",c:SC.a,big:u&&u.ok?stN(u.tot):"—",u:"ISCRITTI",d:u&&u.ok?stN(u.nl)+" ricevono la mail · "+stN(fIg)+" arrivati da Instagram.":""}];
+ let h='<p class="note" style="margin:14px 0 10px;font-size:14px">Il percorso di chi ti scopre: da Instagram al sito, dal sito all&#39;iscrizione. Tocca una tappa per i dettagli.</p>';
+ h+=T.map((t,i)=>'<button type="button" class="tap" data-go="'+t.go+'" style="border-left-color:'+t.c+'"><div class="sgb"><b>'+t.big+'</b><span>'+t.u+'</span></div><div class="sgt"><i style="color:'+t.c+'">'+t.k+'</i><span>'+esc(t.d)+'</span></div><em>→</em></button>'+(i<T.length-1?'<div class="tapa">↓</div>':'')).join("");
+ const W=[];
+ if(G.length)W.push({c:p7>=5&&n7<p7*.6?SC.a:n7>p7*1.4&&n7>=3?SC.v:null,t:"Iscritti nuovi: <b>"+n7+"</b> negli ultimi 7 giorni, <b>"+p7+"</b> nei 7 prima."});
+ if(S&&S.prev_visits>=10){const c=Math.round((S.visits-S.prev_visits)/S.prev_visits*100);W.push({c:c<=-15?SC.a:c>=15?SC.v:null,t:"Visite al sito: <b>"+(c>0?"+":"")+c+"%</b> rispetto ai 7 giorni prima."})}
+ if(S&&S.seen>=5)W.push({c:null,t:"Lascia l&#39;email il <b>"+Math.round(S.joined/S.seen*100)+"%</b> di chi vede l&#39;invito sul sito."});
+ if(W.length)h+='<div class="dga"><i>DA GUARDARE ADESSO</i>'+W.map(w=>'<div'+(w.c?' style="border-left:3px solid '+w.c+';padding-left:10px"':'')+'>'+w.t+'</div>').join("")+'</div>';
+ el.innerHTML=h;el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>ssOpen(b.dataset.go))}
+async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<div class="card sub">Carico…</div>';
+ const [u,s]=await Promise.all([api({action:"iscritti_stats"}).catch(()=>({})),api({action:"stats",days:7}).catch(()=>({}))]);
+ if(!u||!u.ok){el.innerHTML='<div class="card"><b>Numeri degli iscritti non disponibili</b><div class="sub">'+esc((u&&(u.error||u.detail))||"errore")+'</div></div>';return}
+ let h='<div class="card pp"><div class="ppt"><div><b>'+stN(u.tot)+'</b><span>iscritti</span></div><div><b>'+stN(u.nl)+'</b><span>ricevono la mail</span></div><div><b>'+stN(u.att7)+'</b><span>tornati sul sito in 7 giorni</span></div></div></div>';
+ const G=u.giorni,mx=Math.max(1,...G.map(x=>x.n));const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
+ h+='<div class="card pp"><div class="ppl">Nuovi iscritti al giorno · ultime due settimane</div><div class="igd">'+G.map((x,i)=>'<div><b>'+(x.n||"")+'</b><i style="height:'+Math.max(2,Math.round(x.n/mx*80))+'px;background:'+(i>=7?"#F2B84B":"#3A5A7A")+'"></i></div>').join("")+'</div><div class="igdx"><span>'+fd(G[0].d)+'</span><span>'+fd(G[7].d)+'</span><span>oggi</span></div><div class="pps">In giallo gli ultimi 7 giorni.</div></div>';
+ const ft=u.fonti.reduce((a,x)=>a+x.n,0),fm=Math.max(1,...u.fonti.map(x=>x.n));
+ h+='<div class="card"><h3>Da dove sono arrivati</h3><p class="note">Tutti gli iscritti, dalla prima volta che sono entrati.</p>'+u.fonti.slice(0,6).map(x=>stHb(x.name,x.n,fm,ft,true)).join("")+'</div>';
+ if(s&&s.ok)h+=ppHtml(s.stats,"isc");
+ h+='<div class="card"><div class="li"><span>Seguono almeno un tema</span><span>'+stN(u.seguono)+'</span></div><div class="li"><span>Hanno smesso di ricevere la mail</span><span>'+stN(u.unsub)+'</span></div></div><p class="note">L&#39;elenco delle persone, l&#39;invio della mail e il registro restano in Pannello → Utenti.</p>';
+ el.innerHTML=h}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
 document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 document.getElementById("tbx").onclick=e=>{e.stopPropagation();const m=document.getElementById("tbm");m.hidden=!m.hidden};
 /* v82: pulsanti delle sezioni, tanti quanti ne stanno nella riga; gli altri in «Altro» (nell'ordine) */
@@ -2244,7 +2351,7 @@ load().then(()=>{
  setTimeout(()=>{
   if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}
   if(!PROP)loadProp(false);
-  setTimeout(()=>{if(!ST_GEN){ST_GEN=true;loadStats(false)}},1500);
+  setTimeout(()=>{if(!SS_SITO){SS_SITO=true;loadStats(false)}},1500); /* v87: precarica solo la sottoscheda Sito */
  },400);
 }).catch(()=>{});
 // ---------- Podcast: puntata del giorno e storia Instagram (disegnata qui, nel telefono) ----------
@@ -2510,11 +2617,11 @@ const IG_MET_FEED = "views,reach,saved,shares,likes,comments,total_interactions,
 async function igStats(env, n) {
   const t = await igToken(env);
   const me = await igCall("GET", "/me", t, { fields: "username,followers_count,media_count" });
-  const list = await igCall("GET", `/${t.user_id}/media`, t, { fields: "id,caption,media_type,media_product_type,timestamp,permalink", limit: String(Math.min(+n || 30, 50)) });
+  const list = await igCall("GET", `/${t.user_id}/media`, t, { fields: "id,caption,media_type,media_product_type,timestamp,permalink,thumbnail_url,media_url", limit: String(Math.min(+n || 30, 50)) });
   const post = [];
   for (const m of list.data || []) {
     const reel = m.media_product_type === "REELS";
-    const x = { id: m.id, data: m.timestamp, tipo: reel ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carosello" : String(m.media_type || "").toLowerCase(), titolo: String(m.caption || "").split("\n")[0].slice(0, 120), link: m.permalink || null };
+    const x = { id: m.id, data: m.timestamp, tipo: reel ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carosello" : String(m.media_type || "").toLowerCase(), titolo: String(m.caption || "").split("\n")[0].slice(0, 120), link: m.permalink || null, img: m.thumbnail_url || m.media_url || null }; // v87: copertina per la griglia (link del CDN, scade dopo qualche giorno: si rinnova con la fotografia di ogni sera)
     try {
       const r = await igCall("GET", `/${m.id}/insights`, t, { metric: reel ? IG_MET_REEL : IG_MET_FEED });
       for (const v of r.data || []) x[v.name] = v.values && v.values[0] ? v.values[0].value : (v.total_value ? v.total_value.value : null);
@@ -2522,6 +2629,9 @@ async function igStats(env, n) {
     post.push(x);
   }
   const out = { at: new Date().toISOString(), account: { username: me.username, follower: me.followers_count, post: me.media_count }, post };
+  // v87: numeri dell'account nelle ultime 24 ore e, una volta a settimana, chi sono i follower. Ogni lettura è separata: se una fallisce le altre restano.
+  try { out.giorno = await igAccountIns(t); } catch (e) {}
+  try { const old = await kvGet(env, "ig_demo"); if (!old || Date.now() - Date.parse(old.at) > 6 * 86400000) await kvSet(env, "ig_demo", await igDemo(t)); } catch (e) {}
   await kvSet(env, "ig_stats:last", out);
   await kvSet(env, "ig_stats:" + romeToday(), out);
   return out;
@@ -2531,6 +2641,59 @@ async function igStatsTick(env) { // dal cron: una fotografia al giorno, dopo le
   if (ora < 22) return;
   if (await kvGet(env, "ig_stats:" + romeToday())) return;
   await igStats(env, 30);
+}
+// v87: numeri dell'account (ultime 24 ore): persone raggiunte e visualizzazioni divise tra follower e non follower, click sul link in bio, follow e unfollow
+const igErr = (e) => String((e && e.detail && (e.detail.message || e.detail.error_user_msg)) || (e && e.code) || e).slice(0, 160);
+async function igAccountIns(t) {
+  const until = Math.floor(Date.now() / 1000), since = until - 86400, giorno = {}, errori = {};
+  const Q = [["reach", "follow_type"], ["views", "follow_type"], ["profile_links_taps", ""], ["accounts_engaged", ""], ["follows_and_unfollows", "follow_type"]];
+  for (const [m, bd] of Q) {
+    const ask = async (b) => { const q = { metric: m, period: "day", metric_type: "total_value", since: String(since), until: String(until) }; if (b) q.breakdown = b; return igCall("GET", `/${t.user_id}/insights`, t, q); };
+    let r = null;
+    try { r = await ask(bd); } catch (e) { if (bd) { try { r = await ask(""); } catch (e2) { errori[m] = igErr(e2); } } else errori[m] = igErr(e); }
+    const v = r && (r.data || [])[0];
+    if (v && v.total_value) { const o = { tot: v.total_value.value }; const b = (v.total_value.breakdowns || [])[0]; if (b) for (const x of b.results || []) o[String((x.dimension_values || [])[0] || "").toLowerCase()] = x.value; giorno[m] = o; }
+  }
+  return { da: new Date(since * 1000).toISOString(), giorno, errori };
+}
+async function igDemo(t) { // chi sono i follower (serve averne almeno 100)
+  const o = { at: new Date().toISOString(), errori: {} };
+  for (const bd of ["country", "city", "age", "gender"]) {
+    try {
+      const r = await igCall("GET", `/${t.user_id}/insights`, t, { metric: "follower_demographics", period: "lifetime", metric_type: "total_value", timeframe: "this_month", breakdown: bd });
+      const b = ((((r.data || [])[0] || {}).total_value || {}).breakdowns || [])[0];
+      o[bd] = ((b && b.results) || []).map((x) => ({ k: (x.dimension_values || [])[0], n: x.value })).sort((a, z) => z.n - a.n).slice(0, 15);
+    } catch (e) { o.errori[bd] = igErr(e); }
+  }
+  return o;
+}
+// v87: Statistiche → Instagram nel pannello. Il formato di ogni post viene dalla bozza che l'ha pubblicato (media_id → modello).
+const IG_FMT = { "oggi-reel": "G", "settimana-reel": "G", "reel-storia": "S", filone: "N", "due-letture": "N", numero: "N", "settimana-apre": "C", "settimana-sintesi": "C", parola: "W", "sito-reel": "P", "sito-schermate": "P" };
+async function igStatsPanel(env, fresche) {
+  let s = null, avviso = null;
+  if (fresche) { try { s = await igStats(env, 30); } catch (e) { avviso = igErr(e); } }
+  if (!s) s = await kvGet(env, "ig_stats:last");
+  if (!s) return { ok: false, error: avviso || "Nessuna fotografia ancora: tocca «Aggiorna da Instagram»." };
+  const fmt = {};
+  try {
+    const r = await env.DB.prepare("SELECT k, json_extract(v,'$.template') AS t, json_extract(v,'$.media_id') AS m FROM kv WHERE k LIKE 'draft:%' AND json_extract(v,'$.media_id') IS NOT NULL").all();
+    for (const x of r.results || []) fmt[String(x.m)] = x.t ? (IG_FMT[x.t] || "A") : /-icon-|-punti$/.test(x.k) ? "I" : "A";
+  } catch (e) {}
+  let storia = [];
+  try { const r = await env.DB.prepare("SELECT substr(k,10) AS d, json_extract(v,'$.account.follower') AS f FROM kv WHERE k LIKE 'ig_stats:20%' ORDER BY k DESC LIMIT 30").all(); storia = (r.results || []).map((x) => ({ d: x.d, f: +x.f || 0 })).reverse(); } catch (e) {}
+  return { ok: true, at: s.at, account: s.account, post: (s.post || []).map((p) => ({ ...p, formato: fmt[String(p.id)] || "A" })), storia, avviso };
+}
+// v87: Statistiche → Iscritti (solo numeri: l'elenco resta in Utenti)
+async function iscrittiStats(env) {
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }), D = 86400000, now = Date.now();
+  const giorni = []; for (let i = 13; i >= 0; i--) giorni.push({ d: fmt.format(new Date(now - i * D)), n: 0 });
+  const rows = await env.DB.prepare("SELECT created_at FROM users WHERE created_at>=?1").bind(new Date(now - 15 * D).toISOString()).all();
+  for (const r of rows.results || []) { const g = giorni.find((x) => x.d === fmt.format(new Date(r.created_at))); if (g) g.n++; }
+  const src = {}; const rs = await env.DB.prepare("SELECT source, COUNT(*) AS n FROM users GROUP BY source").all();
+  for (const r of rs.results || []) { const k = statSrc(r.source); src[k] = (src[k] || 0) + (+r.n || 0); }
+  const q = await env.DB.prepare("SELECT COUNT(*) AS tot, SUM(CASE WHEN newsletter_at IS NOT NULL AND unsub_at IS NULL THEN 1 ELSE 0 END) AS nl, SUM(CASE WHEN unsub_at IS NOT NULL THEN 1 ELSE 0 END) AS unsub, SUM(CASE WHEN segui IS NOT NULL AND segui NOT IN ('','[]') THEN 1 ELSE 0 END) AS seguono FROM users").first();
+  let att7 = 0; try { const a = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) AS n FROM seen_log WHERE day>=?1").bind(fmt.format(new Date(now - 6 * D))).first(); att7 = +(a && a.n) || 0; } catch (e) {}
+  return { ok: true, giorni, fonti: Object.entries(src).map(([name, n]) => ({ name, n })).sort((a, z) => z.n - a.n), tot: +(q && q.tot) || 0, nl: +(q && q.nl) || 0, unsub: +(q && q.unsub) || 0, seguono: +(q && q.seguono) || 0, att7 };
 }
 async function igWaitReady(t, id, tries = 8, ms = 2000) {
   for (let i = 0; i < tries; i++) {
