@@ -954,7 +954,7 @@ async function draftCreate(env, origin, b) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : romeToday();
   const id = `${date}-${format}`;
   const old = await kvGet(env, "draft:" + id);
-  if (old && ["pubblicata", "in_pubblicazione"].includes(old.status) && !b.force) throw { status: 409, code: "already_published", detail: id };
+  if (old && ["pubblicata", "in_pubblicazione", "in_coda"].includes(old.status) && !b.force) throw { status: 409, code: "already_published", detail: id };
   const isReel = b.type === "reel" || !!b.video_b64;
   { // guardia: una richiesta del pannello in formato reel non può diventare un carosello in silenzio
     const rq = b.req_id ? await kvGet(env, "req:" + String(b.req_id).slice(0, 40)) : null;
@@ -1007,10 +1007,10 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
 async function draftPublish(env, origin, id, by) {
   const d = await kvGet(env, "draft:" + id);
   if (!d) throw { status: 404, code: "draft_not_found" };
-  if (d.status !== "bozza" && d.status !== "errore") throw { status: 409, code: "bad_status", detail: d.status };
+  if (d.status !== "bozza" && d.status !== "errore" && d.status !== "in_coda") throw { status: 409, code: "bad_status", detail: d.status };
   d.status = "in_pubblicazione"; d.started_at = new Date().toISOString(); d.by = by; await kvSet(env, "draft:" + id, d);
   try {
-    const out = await igPublishUrls(null, env, origin, { type: d.type, image_urls: d.image_urls, video_url: d.video_url, caption: igCaption(d.caption), thumb_offset: d.thumb_ms });
+    const out = await igPublishUrls(null, env, origin, { type: d.type, image_urls: d.image_urls, video_url: d.video_url, caption: igCaption(d.caption), thumb_offset: d.thumb_ms, wait_short: by === "panel" });
     if (!out.ok) throw out;
     if (out.pending) { d.status = "in_elaborazione"; d.creation_id = out.creation_id; delete d.error; await kvSet(env, "draft:" + id, d); return d; }
     d.status = "pubblicata"; d.published_at = new Date().toISOString(); d.permalink = out.permalink || null; d.media_id = out.media_id || null; delete d.error;
@@ -1021,6 +1021,48 @@ async function draftPublish(env, origin, id, by) {
   if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
   if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
+}
+// v85: una bozza rimasta «in pubblicazione» (pagina chiusa o richiesta interrotta): cerca su Instagram se il post è uscito
+const igNorm = (s) => String(s || "").replace(/\s+/g, " ").trim();
+async function draftAllinea(env, id) {
+  const d = await kvGet(env, "draft:" + id);
+  if (!d) throw { status: 404, code: "draft_not_found" };
+  if (d.status !== "in_pubblicazione") return { found: false, draft: d, nota: "stato " + d.status };
+  if (d.type === "story") return { found: false, draft: d, nota: "le storie non si possono cercare: controlla a mano" };
+  const t = await igToken(env);
+  const since = Date.parse(d.started_at || d.queued_at || 0) - 5 * 60000;
+  const want = igNorm(igCaption(d.caption)).slice(0, 60);
+  const r = await igCall("GET", `/${t.user_id}/media`, t, { fields: "id,caption,permalink,timestamp", limit: "10" });
+  const recenti = (r.data || []).filter((m) => Date.parse(m.timestamp) >= since);
+  const m = recenti.find((x) => want && igNorm(x.caption).slice(0, 60) === want);
+  if (!m) return { found: false, draft: d, dubbio: recenti.length > 0, nota: recenti.length ? "su Instagram c'è un post di quel momento che non riesco ad abbinare" : "su Instagram non risulta" };
+  d.status = "pubblicata"; d.published_at = m.timestamp || new Date().toISOString(); d.permalink = m.permalink || null; d.media_id = m.id; d.allineata = true; delete d.error;
+  await kvSet(env, "draft:" + id, d);
+  try { await ttAuto(env, id); } catch (e) {}
+  try { await thAuto(env, id); } catch (e) {}
+  try { await tgAuto(env, id); } catch (e) {}
+  try { await spLinkVideo(env, d); } catch (e) {}
+  return { found: true, draft: d };
+}
+async function codaPubblica(env) { // v85: ogni 5 minuti: pubblica le bozze in coda, chiude i reel in elaborazione, sblocca quelle rimaste a metà
+  const now = Date.now();
+  for (const d of await kvList(env, "draft:", 20)) {
+    try {
+      if (d.status === "in_coda" && now - Date.parse(d.queued_at || 0) > 90000) await draftPublish(env, "https://auto.invalid", d.id, "coda");
+      else if (d.status === "in_elaborazione" && d.creation_id) await draftFinish(env, "https://auto.invalid", d.id);
+      else if (d.status === "in_pubblicazione" && now - Date.parse(d.started_at || 0) > 10 * 60000) {
+        const a = await draftAllinea(env, d.id);
+        if (!a.found) {
+          const x = await kvGet(env, "draft:" + d.id);
+          if (x && x.status === "in_pubblicazione") {
+            x.status = "errore";
+            x.error = a.dubbio ? "Pubblicazione interrotta. Su Instagram c'è un post uscito in quel momento che non riesco ad abbinare: controlla prima di ripubblicare." : "Pubblicazione interrotta e su Instagram non risulta: puoi ripubblicare.";
+            await kvSet(env, "draft:" + d.id, x);
+          }
+        }
+      }
+    } catch (e) {}
+  }
 }
 async function autoProgrammati(env) { // v83: ogni 5 minuti, leggero: pubblica solo le bozze con un'uscita programmata arrivata
   const st = await igSettings(env); if (st.paused) return;
@@ -1063,7 +1105,7 @@ form{width:min(340px,90vw)}h1{font:600 22px Georgia,serif;margin:0 0 14px}input,
 button{background:#86B4EA;color:#0E151B;font-weight:600;border:0}.e{color:#FF9A9A;font-size:14px;min-height:20px}</style>
 <form id="f"><h1>Pannello Instagram</h1><a href="/ig/logout" style="float:right;font-size:14px">Esci</a><input type="password" id="p" placeholder="Password" autocomplete="current-password" autofocus><button>Entra</button><div class="e" id="e">${msg || ""}</div></form>
 <script>document.getElementById("f").onsubmit=async e=>{e.preventDefault();const r=await fetch("/ig/login",{method:"POST",body:JSON.stringify({password:document.getElementById("p").value})});const j=await r.json().catch(()=>({}));if(j.ok)location.href="/ig/panel";else document.getElementById("e").textContent=j.error==="troppi_tentativi"?"Troppi tentativi: riprova tra 15 minuti.":"Password errata."}</script>`;
-async function panelApi(env, origin, b) {
+async function panelApi(env, origin, b, ctx) {
   const act = b.action;
   if (String(act || "").startsWith("tt_")) { const r = await ttPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("th_")) { const r = await thPanelApi(env, b); if (r) return r; }
@@ -1120,9 +1162,9 @@ async function panelApi(env, origin, b) {
   if (act === "draft_reset") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
-    if (!["in_pubblicazione", "in_elaborazione", "errore"].includes(d.status)) throw { status: 409, code: "bad_status", detail: d.status };
+    if (!["in_pubblicazione", "in_elaborazione", "errore", "in_coda"].includes(d.status)) throw { status: 409, code: "bad_status", detail: d.status };
     d.status = "bozza"; d.reset_at = new Date().toISOString();
-    delete d.error; delete d.creation_id; delete d.started_at; delete d.by; delete d.checked_at;
+    delete d.error; delete d.creation_id; delete d.started_at; delete d.by; delete d.checked_at; delete d.queued_at;
     await kvSet(env, "draft:" + d.id, d);
     return { ok: true, draft: d };
   }
@@ -1170,11 +1212,20 @@ async function panelApi(env, origin, b) {
     } else { const k = String(b.ch || ""); if (!["tt", "th", "tg"].includes(k)) throw { status: 400, code: "canale" }; d.canali = { ...(d.canali || {}), [k]: !!b.on }; }
     await kvSet(env, "draft:" + d.id, d); return { ok: true, draft: d };
   }
-  if (act === "publish") { const d = await draftPublish(env, origin, String(b.id), "panel"); return { ok: d.status === "pubblicata", draft: d }; }
+  if (act === "publish") { // v85: la pubblicazione va in coda e prosegue dietro le quinte: il pannello si può chiudere
+    const id = String(b.id); const d = await kvGet(env, "draft:" + id);
+    if (!d) throw { status: 404, code: "draft_not_found" };
+    if (d.status !== "bozza" && d.status !== "errore") throw { status: 409, code: "bad_status", detail: d.status };
+    d.status = "in_coda"; d.queued_at = new Date().toISOString(); d.by = "panel"; delete d.error; await kvSet(env, "draft:" + id, d);
+    const job = draftPublish(env, origin, id, "panel").catch(() => {});
+    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(job); else await job;
+    return { ok: true, queued: true, draft: d };
+  }
+  if (act === "allinea") { const a = await draftAllinea(env, String(b.id)); return { ok: a.found, draft: a.draft, nota: a.nota || null }; }
   if (act === "discard" || act === "caption") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
-    if (["pubblicata", "in_pubblicazione"].includes(d.status)) throw { status: 409, code: "already_published" };
+    if (["pubblicata", "in_pubblicazione", "in_coda"].includes(d.status)) throw { status: 409, code: "already_published" };
     if (act === "discard") d.status = "scartata"; else d.caption = String(b.caption || "").slice(0, 2200);
     await kvSet(env, "draft:" + d.id, d);
     return { ok: true, draft: d };
@@ -1182,13 +1233,13 @@ async function panelApi(env, origin, b) {
   if (act === "addimage") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
-    if (["pubblicata", "in_pubblicazione"].includes(d.status)) throw { status: 409, code: "already_published" };
+    if (["pubblicata", "in_pubblicazione", "in_coda"].includes(d.status)) throw { status: 409, code: "already_published" };
     return { ok: true, url: await igStoreImage(env, origin, b.data_base64) };
   }
   if (act === "images") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
-    if (["pubblicata", "in_pubblicazione"].includes(d.status)) throw { status: 409, code: "already_published" };
+    if (["pubblicata", "in_pubblicazione", "in_coda"].includes(d.status)) throw { status: 409, code: "already_published" };
     const ids = (Array.isArray(b.urls) ? b.urls : []).map((u) => { const m = String(u).match(/\/ig\/img\/([0-9a-f]{32})\.jpg$/); return m ? m[1] : null; });
     if (ids.length < 2 || ids.length > 10 || ids.some((x) => !x)) throw { status: 400, code: "images_2_to_10" };
     for (const id of ids) if (!(await kvGet(env, "img:" + id))) throw { status: 404, code: "image_missing", detail: id };
@@ -1277,7 +1328,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 @media(max-width:520px){.tabs{gap:6px}.tabs .tab{padding:9px 10px;font-size:14px}}
 .card.ogs{background:transparent;border:0;border-bottom:1px solid #1E2A33;border-radius:0;margin:0}.ogs .ogt{padding:12px 0;align-items:flex-start}.ogs .ogb{padding:0 0 14px 38px}.ogs .ogc{flex:0 0 26px;width:26px;height:26px;padding:0;font-size:12px}.ogs.rec .ogc{border-color:#E5B45A}.ogw{flex:none;max-width:42%;text-align:right;font-size:12.5px;color:#86B4EA;padding-top:3px;cursor:pointer}.ogw.ok{color:#7FD1A0}.ogw.y{color:#E5B45A}.ogg{font:600 11px system-ui;letter-spacing:.08em;text-transform:uppercase;color:#8FA0AE;margin:24px 0 2px}.ogg.y{color:#E5B45A}.ogh2{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}.ogh2 b{font-size:18px}.ogbar2{height:3px;border-radius:3px;background:#27353F;margin:8px 0 4px;overflow:hidden}.ogbar2 i{display:block;height:100%;background:#7FD1A0}.ogv{border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 8px}.ogv.sel{border-color:#86B4EA;background:#13202B}.ogv label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.ogv input{margin-top:4px;accent-color:#86B4EA;width:auto}.ogk{font:600 11px system-ui;color:#8FA0AE;text-transform:uppercase;letter-spacing:.06em}.ogl{display:inline-block;margin:4px 0 0 26px;color:#86B4EA;font-size:14px}.ogwk{display:flex;gap:4px;margin-top:8px}.ogwk div{flex:1;text-align:center;font-size:11px;color:#8FA0AE}.ogwk i{display:block;height:6px;border-radius:3px;margin-bottom:4px;background:#5A3540}.ogwk .a i{background:#7FD1A0}.ogwk .b i{background:#E5B45A}.ogwk div{cursor:pointer;border-radius:6px;padding:2px 0 4px}.ogwk div.sel{background:#1B2A36;color:#E4EAEF}.ogdy{border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin-top:10px;display:grid;gap:6px}.ogleg{font-size:12px;color:#8FA0AE;margin-top:8px}.ogleg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 10px}.ogleg i:first-child{margin-left:0}
 .arc{padding:0}.arc>summary,.arw>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 14px}.arc>summary::-webkit-details-marker,.arw>summary::-webkit-details-marker{display:none}.arc>summary b{flex:1}.arw>summary span:first-child{flex:1;font-weight:600;font-size:14px}.arw{border-top:1px solid #27353F}.arw>summary{padding:10px 14px}.arc[open]>summary .chev,.arw[open]>summary .chev,.orow.on .ohd .chev{transform:rotate(180deg)}.orow{border-top:1px solid #1E2A33}.ohd{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 14px}.oic{width:22px;text-align:center;color:#8FA0AE;flex:none}.otx{flex:1;min-width:0}.otx b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.otx .sub{font-size:12px}.obody{padding:0 8px 10px}.obody .card{margin:0}.dc .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.dc .dh b{font-size:16px;display:block;overflow-wrap:anywhere}
-.pill{flex:none;font:700 10.5px ui-monospace,monospace;border-radius:6px;padding:3px 7px;letter-spacing:.05em;background:#27353F;color:#C5D0D8}.p-bozza{background:#5A4A22;color:#F2B84B}.p-pubblicata{background:#1F4A2E;color:#7BD39A}.p-errore{background:#4A2222;color:#FF9A9A}.p-in_elaborazione,.p-in_pubblicazione{background:#22364A;color:#86B4EA}
+.pill{flex:none;font:700 10.5px ui-monospace,monospace;border-radius:6px;padding:3px 7px;letter-spacing:.05em;background:#27353F;color:#C5D0D8}.p-bozza{background:#5A4A22;color:#F2B84B}.p-pubblicata{background:#1F4A2E;color:#7BD39A}.p-errore{background:#4A2222;color:#FF9A9A}.p-in_elaborazione,.p-in_pubblicazione{background:#22364A;color:#86B4EA}.p-in_coda{background:#22364A;color:#86B4EA}
 .dc .pri{display:flex;gap:8px;align-items:center;margin-top:10px}.btn.main{flex:1;background:#F2B84B;color:#16120A;font-weight:700}.btn.more{width:46px;padding-left:0;padding-right:0;background:#27353F;color:#E4EAEF}
 .menu{margin-top:8px;background:#0E151B;border:1px solid #27353F;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}.menu[hidden]{display:none!important}.mi{background:transparent;color:#E4EAEF;text-align:left;border:0;border-top:1px solid #27353F;border-radius:0;padding:11px 12px;font-weight:500}.mi:first-child{border-top:0}.mi.d{color:#FF9A9A}
 .seg{display:flex;background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:3px;gap:3px;margin-top:12px}.seg button{flex:1;background:transparent;color:#8FA0AE;padding:7px 0;border-radius:7px;font-size:13.5px}.seg button.on{background:#27353F;color:#E4EAEF;font-weight:600}
@@ -1434,7 +1485,7 @@ function lkRender(){const el=document.getElementById("lk");if(el.dataset.ok)retu
   return '<div class="lkr"><div class="lkt"><b>'+esc(r[0])+'</b><span>'+(v?esc(v):'<i>ancora non disponibile</i>')+'</span></div>'+(v?'<button class="g" data-copy="'+esc(v)+'">Copia</button>':'')+(isUrl?'<a class="lka" href="'+esc(v)+'" target="_blank" rel="noopener">Apri</a>':'')+'</div>'}).join("")+'</div>').join("");
  el.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>podCopy(b,b.dataset.copy))}
 const TYL={carousel:"carosello",reel:"reel",image:"post",story:"storia"};
-const STL={bozza:"DA APPROVARE",pubblicata:"PUBBLICATA",errore:"ERRORE",in_elaborazione:"IN ELABORAZIONE",in_pubblicazione:"IN PUBBLICAZIONE",scartata:"SCARTATA"};
+const STL={bozza:"DA APPROVARE",pubblicata:"PUBBLICATA",errore:"ERRORE",in_elaborazione:"IN ELABORAZIONE",in_pubblicazione:"IN PUBBLICAZIONE",in_coda:"IN CODA",scartata:"SCARTATA"};
 const DNS=["dom","lun","mar","mer","gio","ven","sab"];
 let MAILERR=false;
 const NL=String.fromCharCode(10);
@@ -1474,7 +1525,7 @@ function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="
  return '<div class="dr"><span class="ic">TG</span><div>Telegram <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
 function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];let m="";
  if(open&&!x.video_url&&x.image_urls&&x.image_urls.length)m+='<button class="mi ed">Modifica immagini</button>';
- if(x.status==="in_pubblicazione"||x.status==="in_elaborazione")m+='<button class="mi rst">Reset a bozza (solo se bloccata)</button>';
+ if(x.status==="in_pubblicazione"||x.status==="in_elaborazione"||x.status==="in_coda")m+='<button class="mi rst">Reset a bozza (solo se bloccata)</button>';
  if(ttOk(x)){if(x.type==="reel")m+='<button class="mi ttc">Copia didascalia TikTok</button>';if(t&&(t.status==="in_elaborazione"||t.status==="nella_casella"))m+='<button class="mi ttk">Aggiorna stato TikTok</button>';if(t&&t.status==="nella_casella")m+='<button class="mi ttf">Reinvia a TikTok</button>'}
  if(thOk(x)&&h&&h.status==="in_elaborazione")m+='<button class="mi thk">Aggiorna stato Threads</button>';
  if(open)m+='<button class="mi d dis">Scarta la bozza</button>';
@@ -1770,7 +1821,7 @@ async function load(){
   const tm=x.publish_at?new Date(x.publish_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";
   const pg=x.programma?new Date(x.programma):null,pgs=pg?pg.toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
   const pl=x.status==="bozza"?(pg?"PROGRAMMATO "+pgs.toUpperCase():x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
-  let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
+  let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="in_pubblicazione")pri='<button class="btn main alg">Controlla su Instagram</button>';else if(x.status==="in_coda")pri='<div class="sub">In coda: esce da sola entro pochi minuti, puoi chiudere il pannello.</div>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
   const rows=igRow(x)+ttRow(x)+thRow(x)+tgRow(x);
   return '<div class="card dc" data-id="'+x.id+'"><div class="dh"><div style="min-width:0"><b>'+esc(dTitle(x))+'</b><div class="sub">'+dSub(x)+'</div></div><span class="pill p-'+x.status+'">'+esc(pl)+'</span></div>'
   +stripHtml(x)
@@ -1780,7 +1831,7 @@ async function load(){
   +(open?capsHtml(x):'<details class="capd"><summary class="sub">Didascalie</summary>'+capsHtml(x)+'</details>')
   +(rows?'<div class="dist"><div class="lab">'+(x.status==="pubblicata"?"Canali":"Dopo Instagram")+'</div>'+rows+'</div>':'')
   +(x.error?'<div class="err">'+esc(x.error)+'</div>':'')+'</div>'};
- const isNew=x=>x.status==="bozza"||x.status==="errore"||x.status==="in_elaborazione"||x.status==="in_pubblicazione"||String(x.date||"")>=String(d.today||"")||!!EDIT[x.id];
+ const isNew=x=>x.status==="bozza"||x.status==="errore"||x.status==="in_elaborazione"||x.status==="in_pubblicazione"||x.status==="in_coda"||String(x.date||"")>=String(d.today||"")||!!EDIT[x.id];
  const NW=d.drafts.filter(isNew),OL=d.drafts.filter(x=>!isNew(x));
  VPRE=0;let h=NW.length?NW.map(cardOf).join(""):'<div class="card sub">Niente da approvare: le bozze di oggi non sono ancora arrivate.</div>';
  if(OL.length){const MS=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
@@ -1810,7 +1861,8 @@ async function load(){
   if(q(".tgs"))q(".tgs").onclick=async e=>{if(!await ask("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")say(r.tg.error);load()};
   autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");
   if(q(".pub"))q(".pub").onclick=async e=>{if(!await ask("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
-    if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok&&r.draft&&r.draft.error)say("Errore: "+r.draft.error);load()};
+    if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok)say("Errore: "+((r.draft&&r.draft.error)||JSON.stringify(r)));load()};
+  if(q(".alg"))q(".alg").onclick=async e=>{e.target.disabled=true;e.target.textContent="Cerco su Instagram…";const r=await api({action:"allinea",id});if(!r.ok)say("Non l\u2019ho trovato su Instagram ("+(r.nota||"nessun dettaglio")+"). Riprovo da solo ogni 5 minuti; dopo 10 minuti, se non c\u2019è, la bozza torna ripubblicabile.");load()};
   const X=d.drafts.find(z=>z.id===id);
   if(q(".ed"))q(".ed").onclick=()=>{EDIT[id]=X.image_urls.slice();load()};
   if(EDIT[id]){
@@ -2046,7 +2098,7 @@ setTimeout(()=>{api({action:"dec_get"}).then(r=>{if(r&&r.ok){DC=r;dcRender()}}).
 function dayState(date,e){
   const ds=D.drafts.filter(x=>x.date===date&&x.status!=="scartata");
   const pub=ds.find(x=>x.status==="pubblicata");if(pub)return {c:"ok",t:"Pubblicato"+(pub.permalink?' · <a href="'+esc(pub.permalink)+'" target="_blank">apri</a>':"")};
-  const w=ds.find(x=>x.status==="in_elaborazione"||x.status==="in_pubblicazione");if(w)return {c:"warn",t:"In elaborazione su Instagram: apri Bozze e premi Controlla e pubblica"};
+  const w=ds.find(x=>x.status==="in_elaborazione"||x.status==="in_pubblicazione"||x.status==="in_coda");if(w)return {c:"warn",t:"In pubblicazione: si completa da sola entro pochi minuti"};
   const b=ds.find(x=>x.status==="bozza");if(b)return {c:"warn",t:"Bozza pronta, "+(b.mode==="auto"&&b.publish_at?"esce da sola alle "+when(b.publish_at):"aspetta il tuo ok")+" (vedi Bozze)"};
   const er=ds.find(x=>x.status==="errore");if(er)return {c:"warn",t:"Errore di pubblicazione: vedi Bozze"};
   if(date<D.today)return {c:"mut",t:"Nessun contenuto prodotto"};
@@ -2184,6 +2236,9 @@ function renderReq(){
 }
 setTab("og");
 load().then(()=>{
+ /* v85: mentre una bozza è in coda o in pubblicazione il pannello si aggiorna da solo, e quando ci torni sopra */
+ setInterval(()=>{if(document.hidden)return;const busy=((D&&D.drafts)||[]).some(x=>x.status==="in_coda"||x.status==="in_pubblicazione"||x.status==="in_elaborazione");const ae=document.activeElement;if(busy&&!(ae&&/^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName))&&!Object.keys(EDIT).length&&!document.querySelector(".ask,dialog[open]"))load()},10000);
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
  /* v27: misura e precarica. Appena le bozze sono a schermo: tempo registrato (anonimo) e le altre tab si caricano in sottofondo, così al tocco sono pronte. */
  try{const n=performance.getEntriesByType("navigation")[0]||{};const c=navigator.connection||{};fetch("/api/perf",{method:"POST",body:JSON.stringify({src:"pannello",net:c.effectiveType||"",m:{html:n.responseEnd||0,dom:n.domContentLoadedEventEnd||0,bozze:performance.now()}}),keepalive:true}).catch(()=>{})}catch(e){}
  setTimeout(()=>{
@@ -2564,7 +2619,7 @@ async function igPrivate(request, env, p, method) {
       if (typeof b.video_url !== "string" || !/^https:\/\//.test(b.video_url)) return fail(400, "bad_video_url", "video_url: URL https pubblico (mp4)");
       const tr = await igToken(env);
       const cr = (await igCall("POST", `/${tr.user_id}/media`, tr, { media_type: "REELS", video_url: b.video_url, caption: String(b.caption || "").slice(0, 2200), share_to_feed: "true", ...(Number.isFinite(+b.thumb_offset) && +b.thumb_offset > 0 ? { thumb_offset: String(Math.round(+b.thumb_offset)) } : {}) })).id;
-      try { await igWaitReady(tr, cr, 36, 2500); } catch (e) { if (e && e.code === "container_not_ready") return json({ ok: true, pending: true, creation_id: cr }); throw e; }
+      try { await igWaitReady(tr, cr, b.wait_short ? 4 : 36, 2500); } catch (e) { if (e && e.code === "container_not_ready") return json({ ok: true, pending: true, creation_id: cr }); throw e; }
       if (b.dry_run) return json({ ok: true, dry_run: true, creation_id: cr, note: "contenitore creato, NON pubblicato" });
       return await finishOnly(tr, tr.user_id, cr);
     }
@@ -4141,7 +4196,7 @@ async function igScelte(env) {
 }
 // ============ fine proposte ============
 
-async function route(request, env) {
+async function route(request, env, ctx) {
   const url = new URL(request.url);
   const p = url.pathname.replace(/\/+$/, "") || "/";
   const method = request.method;
@@ -4279,7 +4334,7 @@ async function route(request, env) {
   if (method === "POST" && p === "/ig/api") {
     const b = await request.json().catch(() => null);
     if (!b || !(await panelAuth(request, env, b))) return fail(401, "unauthorized");
-    return json(await panelApi(env, url.origin, b));
+    return json(await panelApi(env, url.origin, b, ctx));
   }
   if (method === "POST" && p === "/ig/test") {
     const b = await request.json().catch(() => null);
@@ -5606,7 +5661,7 @@ async function salaRoute(request, env, p, method, url) {
 
 export default {
   async scheduled(event, env, ctx) {
-    if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} return; } // v83: solo le uscite programmate
+    if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} return; } // v83: solo le uscite programmate
     // rinnovo del token Instagram: se mancano meno di 30 giorni
     try {
       const t = await kvGet(env, "ig_token");
@@ -5640,9 +5695,9 @@ export default {
     try { await mailTick(env); } catch (e) { try { await kvSet(env, "mail_last", { ts: new Date().toISOString(), ok: false, msg: String((e && e.message) || e) }); } catch (_) {} }
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE (k LIKE 'img:%' OR k LIKE 'vid:%' OR k LIKE 'vidc:%') AND updated_at < ?1").bind(new Date(Date.now() - 14 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'req:%' AND updated_at < ?1").bind(new Date(Date.now() - 60 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'draft:%' AND updated_at < ?1").bind(new Date(Date.now() - 90 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE (k LIKE 'sess:%' AND updated_at < ?1) OR (k LIKE 'rl:%' AND updated_at < ?2)").bind(new Date(Date.now() - 31 * 86400000).toISOString(), new Date(Date.now() - 86400000).toISOString()).run(); } catch (e) {}
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await route(request, env);
+      return await route(request, env, ctx);
     } catch (e) {
       if (e && e.status) return fail(e.status, e.code, e.detail);
       return fail(503, "db_error", String((e && e.message) || e));
