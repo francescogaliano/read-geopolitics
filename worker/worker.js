@@ -1379,7 +1379,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="set"><label><input type="checkbox" id="pause"> in pausa (blocca anche l&#39;automatico)</label>
 <div class="row"><span>Uscita dei contenuti</span><select id="mode"><option value="approva">chiedi approvazione</option><option value="auto">pubblica da solo</option></select></div>
 <div class="row"><span>Ora predefinita</span><input type="time" id="time" value="08:30"><button class="g" id="sv">Salva</button></div></div></details>
-<div class="chr chs"><span class="ic">IG</span><div class="cht"><b>Instagram</b><div class="s"><span class="dot" id="igd"></span><span id="igs">carico…</span></div></div><span></span></div>
+<div class="chr chs"><span class="ic">IG</span><div class="cht"><b>Instagram</b><div class="s"><span class="dot" id="igd"></span><span id="igs">carico…</span></div></div><a href="/ig/connect" style="font-size:13px;font-weight:600;padding:10px 4px">Ricollega</a></div>
 <details class="chr" id="ttc"><summary><span class="ic">TT</span><div class="cht"><b>TikTok</b><div class="s"><span class="dot" id="ttdot"></span><span id="tts">carico…</span></div></div><span class="tg" id="tttag"></span></summary>
 <div class="set"><div class="row"><span>Invio</span><select id="ttmode" style="max-width:100%"><option value="bozza">bozza nella casella TikTok</option><option value="diretto">pubblica direttamente (serve l&#39;audit)</option></select></div>
 <label><input type="checkbox" id="ttauto"> invia da solo dopo Instagram</label>
@@ -2365,7 +2365,7 @@ const IG_KIT = {
 async function igPublic(request, env, p, url) {
   const redirect = url.origin + "/ig/callback";
   if (p === "/ig/connect") {
-    if (!safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "")) return htmlPage("Accesso negato", "<p>Chiave mancante o errata.</p>", 401);
+    if (!safeEq(url.searchParams.get("k") || "", env.WRITE_TOKEN || "") && !(await sessionOk(request, env))) return htmlPage("Accesso negato", "<p>Entra prima nel pannello, oppure usa la chiave.</p>", 401); // v86: basta essere entrati nel pannello
     if (!env.IG_APP_SECRET) return htmlPage("Manca IG_APP_SECRET", "<p>Aggiungi il secret IG_APP_SECRET al Worker e riprova.</p>", 500);
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "ig_state", { state, exp: Date.now() + 10 * 60000 });
