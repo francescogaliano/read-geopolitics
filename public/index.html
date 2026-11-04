@@ -6855,11 +6855,16 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="tlAr"){S.flt.
   window.addEventListener("click",e=>{const b=e.target.closest("[data-rl-pt],[data-rl-oth],[data-rl-all]");if(!b)return;const sel=b.closest(".rl-sw")?".rl-sw":b.matches("[data-rl-oth]")?"[data-rl-oth]":"[data-rl-all]";const r=b.closest(".rl-sw")||b;nvAnc={sel,y:r.getBoundingClientRect().top};setTimeout(()=>{nvAnc=null},400)},true);
   (function(){const br=document.getElementById("briefing");if(!br)return;new MutationObserver(()=>{nvFol();if(nvAnc){const n=br.querySelector(".rl "+nvAnc.sel);if(n){window.scrollBy(0,n.getBoundingClientRect().top-nvAnc.y)}nvAnc=null}}).observe(br,{childList:true})})();
   /* «Ascolta il briefing» chiuso in una riga: si apre toccandola (lettore e piattaforme); resta aperto mentre suona */
-  function nvPod(){const b=document.querySelector("#briefing .pod-bar");if(!b||b.dataset.nv)return;const t=b.querySelector(".pod-t");if(!t)return;b.dataset.nv="1";b.classList.add("pb-chiuso");
-    t.setAttribute("role","button");t.setAttribute("tabindex","0");t.setAttribute("aria-expanded","false");t.insertAdjacentHTML("beforeend",'<i class="pb-chev" aria-hidden="true">›</i>');
-    const tog=()=>{const c=b.classList.toggle("pb-chiuso");t.setAttribute("aria-expanded",String(!c));try{track(c?"podcast-chiuso":"podcast-aperto")}catch(_){}};
-    t.addEventListener("click",tog);t.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tog()}});
-    const a=b.querySelector("audio");if(a)a.addEventListener("play",()=>{b.classList.remove("pb-chiuso");t.setAttribute("aria-expanded","true")})}
+  /* «Ascolta il briefing»: una riga che si apre. Lo stato aperto/chiuso è uno solo per la pagina, così se il lettore viene ricreato non torna chiuso;
+     un solo gestore per tutta la pagina e un tocco vale una volta sola (niente apri-chiudi doppio sui telefoni) */
+  let POD_OPEN=false,podLast=0;
+  function nvPod(){document.querySelectorAll("#briefing .pod-bar").forEach(b=>{const t=b.querySelector(".pod-t");if(!t)return;
+    if(!b.dataset.nv){b.dataset.nv="1";t.setAttribute("role","button");t.setAttribute("tabindex","0");if(!t.querySelector(".pb-chev"))t.insertAdjacentHTML("beforeend",'<i class="pb-chev" aria-hidden="true">›</i>')}
+    if(b.classList.contains("pb-chiuso")===POD_OPEN)b.classList.toggle("pb-chiuso",!POD_OPEN);if(t.getAttribute("aria-expanded")!==String(POD_OPEN))t.setAttribute("aria-expanded",String(POD_OPEN))})}
+  const podTog=()=>{const n=Date.now();if(n-podLast<300)return;podLast=n;POD_OPEN=!POD_OPEN;nvPod();try{track(POD_OPEN?"podcast-aperto":"podcast-chiuso")}catch(_){}};
+  document.addEventListener("click",e=>{if(e.target.closest("#briefing .pod-bar .pod-t")){e.preventDefault();podTog()}});
+  document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.closest&&e.target.closest("#briefing .pod-bar .pod-t")){e.preventDefault();podTog()}});
+  document.addEventListener("play",e=>{if(e.target.closest&&e.target.closest("#briefing .pod-bar")&&!POD_OPEN){POD_OPEN=true;nvPod()}},true);
   /* barra delle voci: Oggi · Temi · Mappa · Esplora · Calendario */
   (function(){const nv=document.querySelector("nav.tabs");if(!nv)return;["tab-briefing","tab-timeline","tab-mappa","tab-esplora","tab-calendario"].map(id=>document.getElementById(id)).filter(Boolean).forEach(b=>nv.appendChild(b))})();
   let nvT=0;new MutationObserver(()=>{clearTimeout(nvT);nvT=setTimeout(()=>{nvTema();nvStella();nvFol();nvPod()},60)}).observe(document.body,{childList:true,subtree:true});
