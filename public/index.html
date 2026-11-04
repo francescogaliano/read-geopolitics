@@ -5284,6 +5284,20 @@ const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplo
   sn.addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(!b)return;const v=b.dataset.sv;X.ret=null;
     if(v==="x:perte")go(null);else if(v==="x:area")go({k:"lista",id:"area"});else if(v==="x:tema")go({k:"lista",id:"tema"});else show(v)});
 })();
+/* sito nuovo · tappa 1: quattro voci (Oggi, Temi, Mappa, Esplora); Calendario e Archivio dentro Esplora */
+(function(){
+  NAVG.esplora.items.push(["calendario","🗓️ Calendario"],["archivio","🔍 Archivio"]);
+  VGROUP.calendario="esplora";VGROUP.archivio="esplora";
+  function nvNav(){
+    const nv=document.querySelector("nav.tabs");if(!nv)return;
+    const o=["tab-briefing","tab-timeline","tab-mappa","tab-esplora"].map(id=>document.getElementById(id)).filter(Boolean);
+    o.forEach(b=>nv.appendChild(b));
+    const c=document.getElementById("tab-calendario");if(c)c.classList.add("navx");
+    try{updNav()}catch(e){}
+  }
+  nvNav();
+  const _ra=renderAll;renderAll=function(){const r=_ra.apply(this,arguments);nvNav();return r};
+})();
 /* «Scrivici»: un problema o un'idea, con la pagina da cui si scrive */
 const FBK={tipo:"problema",img:""};window.RG_SP_fbk=t=>{FBK.tipo=t||"idea";fbkOpen()};
 function fbkDove(){const V={briefing:"Oggi",esplora:"Esplora",timeline:"Temi",osservazione:"In osservazione",dossier:"Dossier",mappa:"Mappa",calendario:"Calendario",archivio:"Archivio",glossario:"Chi e cosa",protagonisti:"Protagonisti"};let d=V[S.view]||S.view||"";try{if(S.view==="briefing"&&S.briefings&&S.briefings[0])d+=" · "+fmtDM(S.briefings[0].data)}catch(_){}try{if(S.view==="esplora"&&X.page)d+=" · "+(X.page.k==="lista"?(X.page.id==="tema"?"Argomenti":"Aree"):X.page.id)}catch(_){}return d}
@@ -6767,6 +6781,95 @@ document.addEventListener("click",e=>{
   const d=e.target.closest("[data-tla-dos]");if(d){S.tlDosOnly=!S.tlDosOnly;renderTimeline();return}
   const c=e.target.closest("[data-tla-clear]");if(c){S.tlQ="";S.tlAmb="";S.tlDosOnly=false;S.tlCat="";S.flt.r=S.flt.t=S.flt.a="";["fRegion","fTheme","fAmb"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});const q=document.getElementById("tlAq");if(q)q.value="";renderTimeline()}});
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="tlAr"){S.flt.r=e.target.value;const fr=document.getElementById("fRegion");if(fr)fr.value=e.target.value;renderTimeline()}});
+
+/* ---------- Sito nuovo · tappa 1 (novembre 2026) ----------
+   1. Niente muro: chi arriva legge tutto, senza email.
+   2. L'invito alla mail arriva dopo aver letto: in fondo alle storie e in una barra sottile.
+   3. Quattro voci: Oggi, Temi, Mappa, Esplora. Calendario e Archivio stanno in Esplora.
+   4. Anteprima (indirizzi *.read-geopolitics.pages.dev): striscia in alto, nessuna statistica, iscrizioni segnate «anteprima». */
+(function(){
+  const PREVIEW=/\.read-geopolitics\.pages\.dev$/.test(location.hostname);
+  const reg=()=>{const u=gStore("rg-uid");return !!u};
+  const css=document.createElement("style");
+  css.textContent=`
+.nv-prev{position:sticky;top:0;z-index:60;background:#F2B84B;color:#0B1218;font:600 12px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-align:center;padding:6px 12px}
+.nv-prev a{color:#0B1218}
+.nv-bar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#121C24;border-bottom:1px solid #27353F;font-size:14px;color:#C9D3DB}
+.nv-bar button{all:unset;cursor:pointer;color:#F2B84B;font-weight:600;padding:6px 0}
+.nv-bar button:focus-visible{outline:2px solid #F2B84B;outline-offset:2px}
+.nv-iscr{margin:22px 0 8px;padding:18px 18px 16px;border:1px solid #5A4520;border-left:4px solid #F2B84B;border-radius:10px;background:rgba(242,184,75,.06)}
+.nv-iscr .k{font:700 11px ui-monospace,Menlo,monospace;letter-spacing:.1em;color:#F2B84B}
+.nv-iscr h3{margin:6px 0 4px;font:600 21px/1.25 Georgia,serif;color:#E8EDF1}
+.nv-iscr p{margin:0 0 12px;font-size:15px;line-height:1.5;color:#C9D3DB}
+.nv-iscr button{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:10px;background:#F2B84B;color:#0B1218;font:700 16px system-ui,sans-serif;cursor:pointer}
+.nv-iscr small{display:block;margin-top:8px;font-size:12.5px;color:#8FA0AE;text-align:center}
+#lock{z-index:400!important}
+.nv-more{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 4px}.nv-more button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:10px 12px;min-height:48px;border:1px solid var(--line,#27353F);border-radius:10px;font-weight:600;font-size:14.5px}.nv-more small{font-weight:400;font-size:12.5px;opacity:.7}.nv-more button:focus-visible{outline:2px solid #F2B84B}
+`;
+  document.head.appendChild(css);
+
+  if(PREVIEW){
+    const st=document.createElement("div");st.className="nv-prev";
+    st.innerHTML='ANTEPRIMA DEL SITO NUOVO · non è il sito ufficiale · le visite non vengono contate';
+    document.body.insertBefore(st,document.body.firstChild);
+    /* le iscrizioni fatte qui sono vere, ma segnate come «anteprima» */
+    const _ga=getAttrib;getAttrib=function(){return Object.assign({},_ga(),{source:"anteprima"})};
+  }
+
+  /* statistiche: in anteprima GoatCounter non parte */
+  const _sp=setupPublic;
+  setupPublic=function(P){return _sp(PREVIEW?Object.assign({},P,{goatcounter:""}):P)};
+
+  /* niente muro: chi non ha lasciato l'email legge tutto */
+  earlyAccess=function(P){
+    if(reg()){pingSeen();nlPrompt();nvBar();return}
+    try{sSet("rg-guest",null)}catch(e){}
+    setGuest(false);nvBar();
+  };
+  /* la barra in alto: per chi non è iscritto, l'invito; per chi lo è, niente */
+  earlyBar=function(){nvBar()};
+  function nvBar(){
+    const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");if(!bar||!tx)return;
+    if(reg()){bar.hidden=true;return}
+    bar.hidden=false;bar.classList.add("nv-bar");
+    tx.innerHTML='Ogni mattina nella tua mail, in 2 minuti · <button type="button" data-iscr="barra">Ricevilo gratis →</button>';
+  }
+
+  /* l'invito alla mail, dopo aver letto */
+  LOCK_TXT.mail=["Ricevilo ogni mattina","Alle 7 nella tua mail: cosa è cambiato nel mondo e in Italia, in 2 minuti. Gratis, ti cancelli quando vuoi."];
+  const card=w=>`<div class="nv-iscr"><div class="k">TI È SERVITO?</div><h3>Ricevilo ogni mattina</h3><p>Una mail alle 7 con cosa è cambiato nel mondo e in Italia, in 2 minuti. Gratis, ti cancelli quando vuoi.</p><button type="button" data-iscr="${w}">Ricevilo nella mail →</button><small>Puoi continuare a leggere tutto anche senza.</small></div>`;
+  function openIscr(w){
+    try{track("invito-mail-"+w)}catch(e){}
+    showLock({what:"mail"});
+    const d=document.getElementById("lock");if(!d)return;
+    const nl=d.querySelector("input[name=nl]");if(nl)nl.checked=true;
+    const b=d.querySelector("button.cta");if(b)b.textContent="Ricevilo →";
+    const s=d.querySelector(".lk-stay");if(s)s.textContent="Continua a leggere";
+    const k=d.querySelector(".lk-k");if(k)k.textContent="GRATIS · 2 MINUTI AL GIORNO";
+  }
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-iscr]");if(!b)return;e.preventDefault();openIscr(b.dataset.iscr)});
+  /* dopo l'iscrizione la barra sparisce e gli inviti pure */
+  const _lg=leaveGuest;leaveGuest=function(){const r=_lg.apply(this,arguments);nvBar();return r};
+
+  /* l'invito si aggiunge dove si finisce di leggere: dopo «Fine delle notizie» e in fondo a ogni storia aperta */
+  function nvCards(){
+    const old=document.querySelectorAll(".nv-iscr");
+    if(reg()){old.forEach(x=>x.remove());return}
+    const rl=document.querySelector("#briefing > .rl");
+    if(rl&&!rl.querySelector(".nv-iscr")){const end=rl.querySelector(".rl-end");const h=card("fine-notizie");if(end)end.insertAdjacentHTML("afterend",h);else rl.insertAdjacentHTML("beforeend",h)}
+    const w=document.getElementById("aggSheet"),l=w&&w.querySelector(".ags-l");
+    if(l&&w.dataset.kind==="story"&&l.querySelector(".ags-story")&&!l.querySelector(".nv-iscr"))l.insertAdjacentHTML("beforeend",card("fine-storia"));
+  }
+  /* Calendario e Archivio non sono più in basso: stanno in cima a Esplora */
+  function nvEsplora(){
+    const ex=document.getElementById("v-esplora");if(!ex||ex.querySelector(".nv-more"))return;
+    const ln=ex.querySelector(".exlens");if(!ln)return;
+    ln.insertAdjacentHTML("afterend",'<div class="nv-more"><button type="button" data-nv-go="calendario">🗓️ Calendario<small>voti, vertici, scadenze</small></button><button type="button" data-nv-go="archivio">🔍 Archivio<small>tutti i briefing, la ricerca</small></button></div>');
+  }
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-nv-go]");if(!b)return;e.preventDefault();show(b.dataset.nvGo);window.scrollTo({top:0})});
+  let nvT=0;new MutationObserver(()=>{clearTimeout(nvT);nvT=setTimeout(()=>{nvCards();nvEsplora()},60)}).observe(document.body,{childList:true,subtree:true});
+
+})();
 
 })();
 </script>
