@@ -955,8 +955,8 @@ async function draftManual(env, origin, b) { // v96: video o immagini caricati a
   const format = "amano-" + Date.now().toString(36).slice(-6);
   const body = { format, date: romeToday(), type, caption: b.caption, note: "Caricato a mano dal pannello" };
   if (type === "reel") { body.video_b64 = b.video_b64; if (Number.isFinite(+b.thumb_ms)) body.thumb_ms = +b.thumb_ms; }
-  const cover = type === "reel" && b.cover_b64 ? await igStoreImage(env, origin, b.cover_b64) : null; // v97: copertina da una foto (solo Instagram)
   else { body.images_b64 = Array.isArray(b.images_b64) ? b.images_b64 : []; if (type === "image" && body.images_b64.length !== 1) throw { status: 400, code: "una_immagine" }; if (type === "carousel" && (body.images_b64.length < 2 || body.images_b64.length > 10)) throw { status: 400, code: "da_2_a_10_immagini" }; }
+  const cover = type === "reel" && b.cover_b64 ? await igStoreImage(env, origin, b.cover_b64) : null; // v97: copertina da una foto (solo Instagram)
   const d = await draftCreate(env, origin, body);
   d.manuale = true; d.mode = "approva";
   if (cover) { d.cover_url = cover; delete d.thumb_ms; }
