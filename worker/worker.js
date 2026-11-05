@@ -842,6 +842,7 @@ async function igServeVideo(request, env, id) {
 // ---- Catalogo dei contenuti standard e piano della settimana ----
 // pronto: la routine sa produrlo. auto_ok: la routine delle 07:30 lo produce da sola nel giorno previsto.
 const IG_TEMPLATES = [
+  { id: "video-principale", formato: "reel", profilo: true, nome: "Video principale", desc: "Il video di presentazione del sito, rifatto con il sito e i dati di oggi: da fissare in cima al profilo", pronto: true, auto_ok: false, param: "Tema degli esempi (facoltativo: id o nome di un tema lungo)" },
   { id: "mondo-oggi", formato: "carosello", nome: "Il mondo oggi", desc: "Le 4 storie principali del briefing, 7-8 carte", pronto: true, auto_ok: true, param: "Tema (facoltativo, per esempio Brasile)" },
   { id: "numero", formato: "carosello", nome: "Il numero", desc: "Un indicatore che si è mosso: grafico, spiegazione e limiti", pronto: true, auto_ok: true, param: "Indicatore (facoltativo, per esempio spread-btp-bund)" },
   { id: "reel-storia", formato: "reel", nome: "La storia in 40 secondi", desc: "Fatto, confronto con i giorni scorsi, conto, le due letture, cosa decide", pronto: true, auto_ok: true, param: "Storia (facoltativo: id o titolo; altrimenti la più forte di oggi)" },
@@ -926,7 +927,7 @@ async function reqCreate(env, tpl, o) { // richiesta di un contenuto: dal pannel
     if (open.length >= 10) throw { status: 429, code: "troppe_richieste_in_coda" };
     const id = rid().slice(0, 10);
     const op = o.opzioni && typeof o.opzioni === "object" ? o.opzioni : null;
-    const opzioni = tpl.id === "iconografica" ? { voce: ["mia", "gemini", "musica"].includes(op && op.voce) ? op.voce : "mia", durata: (op && op.durata) === "corta" ? "corta" : "standard", modo: (op && op.modo) === "tappe" ? "tappe" : "auto" } : null;
+    const opzioni = tpl.id === "video-principale" ? { audio: (op && op.audio) === "mia" ? "mia" : "musica" } : tpl.id === "iconografica" ? { voce: ["mia", "gemini", "musica"].includes(op && op.voce) ? op.voce : "mia", durata: (op && op.durata) === "corta" ? "corta" : "standard", modo: (op && op.modo) === "tappe" ? "tappe" : "auto" } : null;
     const r = { id, template: tpl.id, formato: tpl.formato, nome: tpl.nome, param: clip(o.param, 200), note: clip(o.note, 50000), forza: !!o.forza, ...(opzioni ? { opzioni } : {}), ...(o.origine ? { origine: clip(o.origine, 80) } : {}), ...(o.copione ? { copione: o.copione, copione_fisso: true } : {}), ...(o.solo_copertina ? { solo_copertina: o.solo_copertina } : {}), stato: "in_coda", created_at: new Date().toISOString(), date: romeToday() };
     await reqFire(env, r);
     await kvSet(env, "req:" + id, r);
@@ -949,6 +950,22 @@ async function reqFire(env, r) { // avvio immediato della routine (API trigger);
     } catch (e) { r.fire = "errore di rete"; }
 }
 
+async function draftManual(env, origin, b) { // v96: video o immagini caricati a mano dal pannello: diventano una bozza come le altre
+  const type = ["reel", "carousel", "image"].includes(b.type) ? b.type : "reel";
+  const format = "amano-" + Date.now().toString(36).slice(-6);
+  const body = { format, date: romeToday(), type, caption: b.caption, note: "Caricato a mano dal pannello" };
+  if (type === "reel") { body.video_b64 = b.video_b64; if (Number.isFinite(+b.thumb_ms)) body.thumb_ms = +b.thumb_ms; }
+  else { body.images_b64 = Array.isArray(b.images_b64) ? b.images_b64 : []; if (type === "image" && body.images_b64.length !== 1) throw { status: 400, code: "una_immagine" }; if (type === "carousel" && (body.images_b64.length < 2 || body.images_b64.length > 10)) throw { status: 400, code: "da_2_a_10_immagini" }; }
+  const d = await draftCreate(env, origin, body);
+  d.manuale = true; d.mode = "approva";
+  const c = b.canali && typeof b.canali === "object" ? b.canali : {};
+  d.canali = { tt: !!c.tt, th: !!c.th, tg: !!c.tg };
+  if (b.tt_caption && String(b.tt_caption).trim()) d.tt_caption = String(b.tt_caption).trim().slice(0, 2200);
+  if (b.programma) { const t = Date.parse(b.programma); if (!Number.isFinite(t) || t < Date.now() + 60000) throw { status: 400, code: "orario", detail: "l'orario deve essere nel futuro" }; if (t > Date.now() + 14 * 86400000) throw { status: 400, code: "orario", detail: "al massimo tra 14 giorni" }; d.programma = new Date(t).toISOString(); }
+  await kvSet(env, "draft:" + d.id, d);
+  if (b.principale && type === "reel") await kvSet(env, "vp:last", { date: d.date, id: d.id, via: "manuale" });
+  return { ok: true, draft: d };
+}
 async function draftCreate(env, origin, b) {
   const format = String(b.format || "daily").replace(/[^a-z0-9_-]/gi, "").slice(0, 24) || "daily";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || "") ? b.date : romeToday();
@@ -973,6 +990,7 @@ async function draftCreate(env, origin, b) {
   const f = st.formats[format] || { mode: "approva", time: "08:30" };
   const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400), ...(typeof b.th_domanda === "string" && b.th_domanda.trim() ? { th_domanda: b.th_domanda.trim().slice(0, 500) } : {}) };
   await kvSet(env, "draft:" + id, d);
+  if (d.template === "video-principale") await kvSet(env, "vp:last", { date, id, via: "richiesta" }).catch(() => {});
   if (format === "daily" && b.sond_post && typeof b.sond_post === "object") await sondPostSet(env, date, b.sond_post).catch(() => {});
   return d;
 }
@@ -1117,6 +1135,7 @@ async function panelApi(env, origin, b, ctx) {
   if (act === "todo_set") return await todoSet(env, b);
   if (String(act || "").startsWith("sala_")) { const r = await salaPanelApi(env, b); if (r) return r; } // v73
   if (String(act || "").startsWith("sp_")) { const r = await spPanelApi(env, b); if (r) return r; } // v74
+  if (act === "draft_manual") return await draftManual(env, origin, b); // v96: contenuto caricato a mano
   if (act === "post_scelta") return await postScelta(env, b);
   if (act === "sond_pick") return await sondPick(env, b);
   if (act === "sond_mia") return await sondMia(env, b);
@@ -1148,7 +1167,7 @@ async function panelApi(env, origin, b, ctx) {
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
     const ieri = romeYesterday();
-    return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
+    return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, vp: (await kvGet(env, "vp:last")) || null, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
   }
 
   if (act === "users") {
@@ -1285,6 +1304,8 @@ textarea{width:100%}
 .chip{font:600 12px ui-monospace,monospace;padding:3px 9px;border-radius:99px;background:#27353F;text-transform:uppercase;letter-spacing:.05em}
 .chip.bozza{background:#F2B84B;color:#0E151B}.chip.pubblicata{background:#3C8D5A}.chip.errore{background:#B04040}
 .err{color:#FF9A9A;font-size:14px;white-space:pre-wrap}a{color:#86B4EA}
+.vpl{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#E8B050;text-transform:uppercase}.vpr{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #1F2C36}.vpr>span:first-child{flex:1;min-width:0}.vpr b{display:block;font-size:15.5px}.vpr .sub{font-size:13px}.vpc .vpseg{display:flex;border:1px solid #34475A;border-radius:10px;overflow:hidden}.vpc .vpseg button{flex:1;border-radius:0;background:transparent;color:#8FA0AE;border-left:1px solid #34475A;padding:9px 4px;font-size:14px}.vpc .vpseg button:first-child{border-left:0}.vpc .vpseg button.on{background:#86B4EA;color:#0E151B}.vpc .vpseg small{display:block;font-weight:400;font-size:11.5px;opacity:.85}.vpc .vpseg button.on small,.upl .seg button.on small{color:#0E151B;opacity:.8}.vpf{padding:0 0 10px}.vpo{display:flex;gap:10px;align-items:center;background:#1B2A36;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px;cursor:pointer}.vpo b{color:#F2B84B}.vpoa{color:#86B4EA;font-weight:600}
+.upl{padding:0}.upl>summary{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 14px;cursor:pointer;list-style:none;color:#C9D3DB;font-size:15px;border:1px dashed #4A5B6A;border-radius:14px}.upl>summary::-webkit-details-marker{display:none}.upl[open]>summary{border-style:solid;border-color:transparent;border-bottom:1px solid #27353F;border-radius:14px 14px 0 0}.upp{font-size:20px;color:#86B4EA;font-weight:600}.upl>summary span{flex:1}.upc{font-style:normal;color:#8FA0AE;transition:transform .15s}.upl[open] .upc{transform:rotate(90deg)}.upb{padding:12px 14px 14px}.ups{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#8FA0AE;text-transform:uppercase;margin:16px 0 6px}.upl .seg{display:flex;border:1px solid #34475A;border-radius:10px;overflow:hidden}.upl .seg button{flex:1;border-radius:0;background:transparent;color:#8FA0AE;border-left:1px solid #34475A;padding:9px 4px;font-size:14px}.upl .seg button:first-child{border-left:0}.upl .seg button.on{background:#86B4EA;color:#0E151B}.upl .seg small{display:block;font-weight:400;font-size:11.5px;opacity:.85}.upk{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #1F2C36}.upk:last-of-type{border-bottom:0}.upd{margin-top:6px}.upd summary{cursor:pointer;color:#86B4EA}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}.tab{flex:1 1 auto;padding:10px 10px;background:#27353F;color:#E4EAEF}.tab.on{background:#86B4EA;color:#0E151B}[hidden]{display:none!important}
 .chip.in_elaborazione,.chip.in_coda{background:#86B4EA;color:#0E151B}.chip.in_lavorazione{background:#F2B84B;color:#0E151B}.chip.pronta{background:#3C8D5A}.chip.annullata,.chip.scartata{background:#4A5560}.chip.bloccata{background:#B04040}
 .day{border-top:1px solid #27353F;padding:10px 0}.day:first-child{border-top:0}.day.oggi{background:#1B2A36;margin:0 -8px;padding:10px 8px;border-radius:10px}
@@ -1415,7 +1436,7 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 </div>
 <div class="card fbn" id="fbn" hidden></div><details class="card" id="svb" hidden><summary class="svh"><span class="lab">Svolte</span><span class="chsum" id="svsum"></span><span class="svn" id="svn" hidden></span><span class="chev">▾</span></summary><div class="svbd"><div id="svl"></div><div class="svg" id="svg" hidden></div></div></details>
 <details class="card" id="cnl" hidden><summary><span class="lab">Oggi sui canali</span><span class="chsum" id="cnlsum"></span><span class="chev">▾</span></summary><div id="cnlb"></div></details>
-<div class="tabs" id="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><a class="tab" href="/ig/spiegati">Spiegati</a><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="lk">Link</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab tbx" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden></div><button class="tab" data-t="st" hidden>Statistiche</button></div><div id="og"></div><div id="list" hidden></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden><nav class="sst" id="sst" aria-label="Statistiche"><button type="button" data-ss="pan" class="on">Panoramica</button><button type="button" data-ss="ig">Instagram</button><button type="button" data-ss="sito">Sito</button><button type="button" data-ss="isc">Iscritti</button></nav><div id="stp"></div><div id="sti" hidden></div><div id="sts" hidden></div><div id="stu" hidden></div></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
+<div class="tabs" id="tabs"><button class="tab on" data-t="og">Oggi</button><button class="tab" data-t="list">Bozze</button><button class="tab" data-t="rq">Richieste</button><button class="tab" data-t="wk">Settimana</button><a class="tab" href="/ig/spiegati">Spiegati</a><button class="tab" data-t="pd">Podcast</button><button class="tab" data-t="ut">Utenti</button><button class="tab" data-t="lk">Link</button><button class="tab" data-t="dc">Proposte<span class="bdg" id="dcb" hidden></span></button><button class="tab tbx" type="button" id="tbx">Altro ▾</button><div class="tbm" id="tbm" hidden></div><button class="tab" data-t="st" hidden>Statistiche</button></div><div id="og"></div><div id="list" hidden><details class="card upl" id="upl"><summary><b class="upp">+</b><span>Carica tu un video o delle immagini</span><i class="upc">›</i></summary><div class="upb"><div class="sub">Diventa una bozza come le altre: la controlli e la pubblichi da qui, sui canali che scegli.</div><div class="ups">1 · Che cos’è</div><div class="seg" id="upt"><button type="button" class="on" data-v="reel">Reel<small>un video mp4, fino a 10 MB</small></button><button type="button" data-v="carousel">Carosello<small>2-10 immagini</small></button><button type="button" data-v="image">Post<small>1 immagine</small></button></div><div class="ups">2 · Il file</div><input type="file" id="upf" accept="video/mp4"><div class="sub" id="upi"></div><div id="upcv"><div class="ups">Copertina</div><div class="row"><span class="sub">fotogramma a</span><input type="number" id="upth" min="0" max="90" step="0.5" value="0" style="width:80px"><span class="sub">secondi</span></div></div><div class="ups">3 · Didascalia</div><textarea id="upcap" rows="5" maxlength="2200" placeholder="La didascalia di Instagram (Threads e Telegram usano la stessa)"></textarea><div class="sub" id="upcn">0 / 2200</div><details class="upd"><summary class="sub">Didascalia TikTok diversa ›</summary><textarea id="uptt" rows="3" maxlength="2200" placeholder="Se la lasci vuota, TikTok usa quella di Instagram"></textarea></details><div class="ups">4 · Dove esce, oltre a Instagram</div><label class="upk"><input type="checkbox" id="upk-tt" checked> <b>TikTok</b> <span class="sub">in bozza nella tua app</span></label><label class="upk"><input type="checkbox" id="upk-th" checked> <b>Threads</b></label><label class="upk"><input type="checkbox" id="upk-tg" checked> <b>Telegram</b> <span class="sub">nel canale</span></label><div class="ups">5 · Quando</div><div class="seg" id="upw"><button type="button" class="on" data-v="ok">Approvo io<small>resta in Bozze</small></button><button type="button" data-v="at">A un’ora<small>esce da sola</small></button></div><input type="datetime-local" id="upat" hidden><label class="upk" id="upvp"><input type="checkbox" id="upk-vp"> <b>È il video principale</b> <span class="sub">azzera il promemoria mensile</span></label><div class="row" style="margin-top:12px"><button type="button" id="upgo">Crea la bozza</button><span class="sub" id="upmsg"></span></div><div class="sub" style="margin-top:6px">Fissarlo in cima al profilo lo fai tu dall’app: Instagram e TikTok non lo permettono da fuori.</div></div></details><div id="listc"></div></div><div id="wk" hidden></div><div id="rq" hidden></div><div id="st" hidden><nav class="sst" id="sst" aria-label="Statistiche"><button type="button" data-ss="pan" class="on">Panoramica</button><button type="button" data-ss="ig">Instagram</button><button type="button" data-ss="sito">Sito</button><button type="button" data-ss="isc">Iscritti</button></nav><div id="stp"></div><div id="sti" hidden></div><div id="sts" hidden></div><div id="stu" hidden></div></div><div id="lk" hidden></div><div id="dc" hidden></div><div id="pd" hidden>
 <div class="card"><div class="row"><b>🎧 Puntata</b><button class="g" id="pd-rf" style="margin-left:auto">Aggiorna</button></div><div id="pd-ep" style="margin-top:8px"></div></div>
 <div class="card"><b>Storia Instagram</b><div class="sub">Si crea qui, dalla puntata più recente: scegli la versione, poi «Salva o condividi». Se un tema non ti piace, «Modifica temi».</div>
 <div class="row" style="margin-top:8px"><span class="sub">Versione</span><select id="pd-mode"><option value="estesi">Temi per esteso</option><option value="brevi">Temi brevi</option><option value="sempre">Senza data (valida ogni giorno)</option></select></div>
@@ -1508,7 +1529,7 @@ function arcRow(x){const tt=(D.tt||{})[x.id],th=(D.th||{})[x.id],tg=(D.tg||{})[x
  const st=x.status==="pubblicata"?"":'<span class="pill p-'+x.status+'">'+esc(STL[x.status]||x.status.toUpperCase())+'</span>';
  return '<div class="orow" data-oid="'+x.id+'"><button type="button" class="ohd"><span class="oic">'+(x.type==="reel"?"▶":x.type==="story"?"◔":"▦")+'</span><span class="otx"><b>'+esc(dTitle(x))+'</b><span class="sub">'+dSub(x)+(ch.length?' · uscito su '+ch.join(", "):'')+'</span></span>'+st+'<span class="chev">▾</span></button><div class="obody" hidden></div></div>'}
 function dTitle(x){const l=(String(x.caption||"").split(NL).find(s=>s.trim())||x.format||"").trim();return l.length>70?l.slice(0,68)+"…":l}
-function dSub(x){const s=String(x.date||"");const d=new Date(s+"T12:00:00Z");const ds=isNaN(d)?esc(s):DNS[d.getUTCDay()]+" "+(+s.slice(8))+"/"+(+s.slice(5,7));const n=(x.type!=="reel"&&x.image_urls&&x.image_urls.length)?" · "+x.image_urls.length+(x.image_urls.length===1?" immagine":" carte"):"";return ds+" · "+(TYL[x.type]||esc(x.type||""))+n}
+function dSub(x){const s=String(x.date||"");const d=new Date(s+"T12:00:00Z");const ds=isNaN(d)?esc(s):DNS[d.getUTCDay()]+" "+(+s.slice(8))+"/"+(+s.slice(5,7));const n=(x.type!=="reel"&&x.image_urls&&x.image_urls.length)?" · "+x.image_urls.length+(x.image_urls.length===1?" immagine":" carte"):"";return ds+" · "+(TYL[x.type]||esc(x.type||""))+n+(x.manuale?" · caricato a mano":"")}
 function nTags(s){return String(s||"").split(NL).join(" ").split(" ").filter(w=>w.charAt(0)==="#"&&w.length>1).length}
 function ttOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.tiktok&&D.tiktok.collegato}
 function thOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.threads&&D.threads.collegato}
@@ -1743,7 +1764,7 @@ function ogGiorno(d){const x=new Date(d+"T12:00:00");return ["domenica","lunedì
 function ogMain(St){return St.filter(x=>x.g!=="rec")}
 function ogRender(){const el=document.getElementById("og");if(!el)return;const s=SND;if(!s){el.innerHTML='<div class="card sub">Carico…</div>';return}
  const St=ogSteps(),M=ogMain(St);const nd=M.filter(x=>x.done).length;const b=document.querySelector('.tab[data-t="og"]');if(b)b.innerHTML='Oggi <span class="ogn'+(nd===M.length?' ok':'')+'">'+nd+'/'+M.length+'</span>';
- const g0=ogGiorno(s.day);let h='<div class="ogh2"><b>'+g0.charAt(0).toUpperCase()+g0.slice(1)+' '+["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"][+s.day.slice(5,7)-1]+'</b><span class="sub">'+nd+' fatte su '+M.length+'</span></div><div class="ogbar2"><i style="width:'+Math.round(100*nd/Math.max(1,M.length))+'%"></i></div>';
+ const g0=ogGiorno(s.day);let h='<div class="ogh2"><b>'+g0.charAt(0).toUpperCase()+g0.slice(1)+' '+["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"][+s.day.slice(5,7)-1]+'</b><span class="sub">'+nd+' fatte su '+M.length+'</span></div><div class="ogbar2"><i style="width:'+Math.round(100*nd/Math.max(1,M.length))+'%"></i></div>'+vpOggi();
  const fst=M.find(y=>!y.done);let num=0;
  [["rec","Da recuperare"],["mat","Storie Instagram · al mattino"],["post","Post del giorno"],["day","Durante il giorno"]].forEach(([g,l])=>{const L=St.filter(x=>x.g===g);if(!L.length)return;const rc=g==="rec";
   h+='<div class="ogg'+(rc?' y':'')+'">'+l+(rc?' · '+L.length:'')+'</div>';
@@ -1827,8 +1848,8 @@ async function load(){
  document.getElementById("acc").textContent=d.account?("@"+d.account.username+" · token valido ancora "+d.account.days_left+" giorni"):"Instagram non collegato";
  document.getElementById("pause").checked=d.settings.paused;
  const f=d.settings.formats.daily;document.getElementById("mode").value=f.mode;document.getElementById("time").value=f.time;
- D=d;try{fbBanner(d.fb||[])}catch(e){console.warn("fbn",e)}chUpd(d);cnlRender(d.canali);sndRender(d.sond);svRender(d);tgPv(d);renderWeek();renderReq();
- const L=document.getElementById("list");
+ D=d;try{fbBanner(d.fb||[])}catch(e){console.warn("fbn",e)}chUpd(d);cnlRender(d.canali);sndRender(d.sond);svRender(d);tgPv(d);renderWeek();renderReq();upInit();
+ const L=document.getElementById("listc");
  if(!d.drafts.length){L.innerHTML='<div class="card sub">Nessuna bozza ancora. La prima arriva dopo la prossima esecuzione del task.</div>';return}
  const cardOf=x=>{
   const open=x.status==="bozza"||x.status==="errore";const m=menuHtml(x);
@@ -2142,7 +2163,7 @@ async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<di
  h+='<div class="card"><div class="li"><span>Seguono almeno un tema</span><span>'+stN(u.seguono)+'</span></div><div class="li"><span>Hanno smesso di ricevere la mail</span><span>'+stN(u.unsub)+'</span></div></div><p class="note">L&#39;elenco delle persone, l&#39;invio della mail e il registro restano in Pannello → Utenti.</p>';
  el.innerHTML=h}
 function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
-document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t)); document.addEventListener("click",e=>{if(!e.target.closest("#vpo"))return;VPS.open=true;setTab("rq");setTimeout(()=>{const f=document.getElementById("vpf");if(f){f.hidden=false;f.scrollIntoView({block:"center"})}},60)});
 document.getElementById("tbx").onclick=e=>{e.stopPropagation();const m=document.getElementById("tbm");m.hidden=!m.hidden};
 /* v82: pulsanti delle sezioni, tanti quanti ne stanno nella riga; gli altri in «Altro» (nell'ordine) */
 function fitTabs(){const bar=document.getElementById("tabs"),tm=document.getElementById("tbm"),tx=document.getElementById("tbx");if(!bar)return;const ORD=["og","list","rq","wk","spiegati","pd","ut","lk","dc"];
@@ -2242,7 +2263,7 @@ function renderWeek(){
     h+=propHtml(date,e);
     if(WED===i+1){
       h+='<div class="frm"><label>Rubrica<input type="text" class="f-r" maxlength="60" value="'+esc(e.rubrica)+'"></label>';
-      h+='<label>Contenuto standard<select class="f-t">'+D.templates.map(t=>'<option value="'+t.id+'"'+(t.id===e.template?" selected":"")+">"+esc(t.nome)+" ("+t.formato+")"+(t.pronto?"":" – da costruire")+"</option>").join("")+"</select></label>";
+      h+='<label>Contenuto standard<select class="f-t">'+D.templates.filter(t=>!t.profilo).map(t=>'<option value="'+t.id+'"'+(t.id===e.template?" selected":"")+">"+esc(t.nome)+" ("+t.formato+")"+(t.pronto?"":" – da costruire")+"</option>").join("")+"</select></label>";
       h+='<label>Formato<select class="f-f">'+["carosello","reel","post","story"].map(f=>'<option'+(f===e.formato?" selected":"")+">"+f+"</option>").join("")+"</select></label>";
       h+='<label>Ora di uscita<input type="time" class="f-o" value="'+esc(e.ora)+'"></label>';
       h+='<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="f-a"'+(e.auto?" checked":"")+'> La routine lo produce da sola (solo se il contenuto è pronto)</label>';
@@ -2277,15 +2298,49 @@ function copBind(root){root.querySelectorAll(".cop").forEach(box=>{let sel=null;
   kb.querySelectorAll("button").forEach(b=>b.onclick=()=>{if(!sel)return;sel.className="cw"+(b.dataset.k!=="no"?" k-"+b.dataset.k:"");sel.dataset.k=b.dataset.k;kb.style.display="none";info.textContent="Fatto. Tocca un'altra parola o approva."});
   box.querySelector(".cpok").onclick=async e=>{const marks=[];box.querySelectorAll(".cw").forEach(w=>{const m=(w.className.match(/k-([a-z]+)/)||[])[1];if(m||w.dataset.k==="no")marks.push({i:+w.dataset.i,j:+w.dataset.j,parola:w.textContent,tipo:w.dataset.k==="no"?"no":m})});
    e.target.disabled=true;const r=await api({action:"req_copione_ok",id:box.dataset.r,regia:marks,nota:box.querySelector(".cpn").value});if(!r.ok){say("Errore: "+JSON.stringify(r));e.target.disabled=false;return}load()}})}
+function upInit(){const box=document.getElementById("upl");if(!box||box.dataset.ok)return;box.dataset.ok="1";let T="reel",W="ok";const f=document.getElementById("upf"),info=document.getElementById("upi"),cap=document.getElementById("upcap");
+  const seg=(id,cb)=>document.getElementById(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{document.getElementById(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)});
+  seg("upt",v=>{T=v;f.value="";info.textContent="";f.accept=v==="reel"?"video/mp4":"image/jpeg,image/png";f.multiple=v==="carousel";document.getElementById("upcv").hidden=v!=="reel";document.getElementById("upvp").hidden=v!=="reel"});
+  seg("upw",v=>{W=v;document.getElementById("upat").hidden=v!=="at"});
+  cap.oninput=()=>{document.getElementById("upcn").textContent=cap.value.length+" / 2200"};
+  f.onchange=()=>{const F=[...f.files];if(!F.length){info.textContent="";return}const mb=F.reduce((a,x)=>a+x.size,0)/1048576;
+   if(T==="reel"){const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>{const dur=v.duration;const ok=mb<=10&&dur>=3&&dur<=90;info.innerHTML=esc(F[0].name)+" · "+mb.toFixed(1).replace(".",",")+" MB · "+Math.round(dur)+" s · "+v.videoWidth+"×"+v.videoHeight+(ok?' <span class="ok">✓ va bene per Instagram e TikTok</span>':' <span class="warn">serve un mp4 fino a 10 MB, tra 3 e 90 secondi</span>');URL.revokeObjectURL(v.src)};v.src=URL.createObjectURL(F[0])}
+   else info.textContent=F.length+(F.length===1?" immagine":" immagini")+" · "+mb.toFixed(1).replace(".",",")+" MB"};
+  const b64=file=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]||"");r.onerror=rej;r.readAsDataURL(file)});
+  document.getElementById("upgo").onclick=async e=>{const F=[...f.files],msg=document.getElementById("upmsg");if(!F.length){msg.textContent="Scegli prima il file";return}if(!cap.value.trim()&&!await ask("Nessuna didascalia: creo lo stesso la bozza?"))return;
+   const body={action:"draft_manual",type:T,caption:cap.value,tt_caption:document.getElementById("uptt").value,canali:{tt:document.getElementById("upk-tt").checked,th:document.getElementById("upk-th").checked,tg:document.getElementById("upk-tg").checked}};
+   if(W==="at"){const v=document.getElementById("upat").value;if(!v){msg.textContent="Scegli giorno e ora";return}body.programma=new Date(v).toISOString()}
+   e.target.disabled=true;msg.textContent="Carico…";
+   try{if(T==="reel"){body.video_b64=await b64(F[0]);body.thumb_ms=Math.round(1000*(+document.getElementById("upth").value||0));body.principale=document.getElementById("upk-vp").checked}else body.images_b64=await Promise.all(F.slice(0,10).map(b64));
+    const r=await api(body);if(!r.ok){msg.textContent="Errore: "+(r.detail||r.error||"");e.target.disabled=false;return}
+    msg.textContent="";e.target.disabled=false;f.value="";info.textContent="";cap.value="";document.getElementById("uptt").value="";box.open=false;say("Bozza creata: la trovi qui sotto.");load()}
+   catch(err){msg.textContent="Errore: "+err;e.target.disabled=false}}}
+let VPS={open:false,tema:"auto",audio:"musica",p:""};
+function vpGiorni(){const v=D&&D.vp;if(!v||!v.date)return null;return Math.floor((Date.parse(D.today+"T12:00:00Z")-Date.parse(v.date+"T12:00:00Z"))/86400000)}
+function vpInCorso(){return ((D&&D.requests)||[]).some(r=>r.template==="video-principale"&&["in_coda","in_lavorazione","in_elaborazione"].includes(r.stato))}
+function vpDovuto(){if(!D||vpInCorso())return false;const g=vpGiorni();if(g===null)return true;return g>=30||(+String(D.today).slice(8)===1&&String(D.vp.date).slice(0,7)!==String(D.today).slice(0,7))}
+function vpCard(){const v=D.vp,g=vpGiorni();const fatto=v?("fatto il "+(+v.date.slice(8))+" "+["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"][+v.date.slice(5,7)-1]+(g?" · "+g+(g===1?" giorno fa":" giorni fa"):" · oggi")):"mai fatto";
+  return '<div class="card vpc"><div class="vpl">Video del profilo</div><div class="sub" style="margin:2px 0 6px">Non sono notizie: presentano il sito. Si fissano in cima al profilo e si rifanno ogni tanto con i dati del giorno.</div>'
+  +'<div class="vpr"><span><b>Video principale</b><span class="sub">'+esc(fatto)+(vpInCorso()?" · in preparazione":"")+'</span></span><button class="sm g" type="button" id="vpgo"'+(vpInCorso()?" disabled":"")+'>Rifai ›</button></div>'
+  +'<div class="vpf" id="vpf"'+(VPS.open?'':' hidden')+'><div class="ups">Tema degli esempi</div><div class="vpseg vps" data-g="tema"><button type="button" class="'+(VPS.tema==="auto"?"on":"")+'" data-v="auto">Sceglie la routine<small>un tema lungo con Spiegato e dossier</small></button><button type="button" class="'+(VPS.tema==="mio"?"on":"")+'" data-v="mio">Lo scelgo io<small>scrivi il tema</small></button></div><input type="text" id="vpt" class="rq-in" maxlength="200" placeholder="Es.: Guerra in Ucraina" value="'+esc(VPS.p)+'"'+(VPS.tema==="mio"?'':' hidden')+'>'
+  +'<div class="ups">Audio</div><div class="vpseg vps" data-g="audio"><button type="button" class="'+(VPS.audio==="musica"?"on":"")+'" data-v="musica">Solo musica<small>originale</small></button><button type="button" class="'+(VPS.audio==="mia"?"on":"")+'" data-v="mia">La mia voce<small>ElevenLabs</small></button></div>'
+  +'<div class="row" style="margin-top:10px"><button type="button" id="vpok">Prepara la bozza</button></div><div class="sub" style="margin-top:6px">Stessa ricetta approvata il 5 novembre: cambia solo quello che si vede dentro il sito.</div></div>'
+  +'<div class="vpr"><span><b>Come si legge una notizia</b><span class="sub">serie di episodi: Spiegato, Giorno per giorno, Dossier, Mappa, Esplora</span></span><span class="sub">presto</span></div></div>'}
+function vpBind(){const go=document.getElementById("vpgo");if(!go)return;const f=document.getElementById("vpf");const O=VPS;
+  go.onclick=()=>{VPS.open=!VPS.open;f.hidden=!VPS.open};
+  const t=document.getElementById("vpt");t.oninput=()=>{VPS.p=t.value};
+  f.querySelectorAll(".vps").forEach(sg=>sg.querySelectorAll("button").forEach(b=>b.onclick=()=>{sg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));O[sg.dataset.g]=b.dataset.v;if(sg.dataset.g==="tema")t.hidden=b.dataset.v!=="mio"}));
+  document.getElementById("vpok").onclick=async e=>{const p=O.tema==="mio"?String(O.p||"").trim():"";if(O.tema==="mio"&&!p){say("Scrivi il tema");return}e.target.disabled=true;const r=await api({action:"req_create",template:"video-principale",param:p,opzioni:{audio:O.audio}});if(!r.ok){say("Errore: "+(r.detail||r.error));e.target.disabled=false;return}VPS={open:false,tema:"auto",audio:"musica",p:""};say("Richiesta inviata: la bozza arriva tra le Bozze.");load()}}
+function vpOggi(){if(!vpDovuto())return "";const g=vpGiorni();return '<div class="vpo" id="vpo"><span>🎬</span><span style="flex:1">'+(g===null?"Il video principale non è ancora stato registrato qui":"Il video principale ha <b>"+g+" giorni</b>")+': rifallo con i dati di oggi.</span><span class="vpoa">Rifai ›</span></div>'}
 function renderReq(){
   if(!D)return;const el=document.getElementById("rq");
-  const pr=D.templates.filter(t=>t.pronto);
+  const pr=D.templates.filter(t=>t.pronto&&!t.profilo);
   const TOP=["iconografica","spiegato","reel-storia","oggi-reel","settimana-reel","due-letture","parola","mondo-oggi"];
   if(!RQ.t||!pr.some(t=>t.id===RQ.t))RQ.t="spiegato";
   const fr=t=>'<div class="rq-f'+(RQ.t===t.id?" on":"")+'" data-id="'+esc(t.id)+'"><span class="rq-o"></span><span><b>'+esc(t.nome)+'</b>'+(t.id==="iconografica"?'<span class="rq-new">NUOVO</span>':"")+'<span class="rq-d">'+esc(t.desc)+"</span></span></div>";
   const grp=(f,lab,cl)=>{const ix=t=>{const i=TOP.indexOf(t.id);return i<0?99:i};const a=pr.filter(t=>t.formato===f&&(RQ.all||TOP.includes(t.id)||RQ.t===t.id)).sort((x,y)=>ix(x)-ix(y));return a.length?'<div class="rq-g '+cl+'">'+lab+"</div>"+a.map(fr).join(""):""};
   const extra=pr.filter(t=>!TOP.includes(t.id)&&t.id!==RQ.t).length;
-  let h='<div class="card rq"><b>Chiedi un contenuto</b><div class="sub">La routine lo prepara subito e lo trovi tra le Bozze, dove lo controlli prima che esca.</div>';
+  let h=vpCard()+'<div class="card rq"><b>Chiedi un contenuto</b><div class="sub">La routine lo prepara subito e lo trovi tra le Bozze, dove lo controlli prima che esca.</div>';
   h+='<div class="rq-s">1 · Formato</div>'+grp("reel","Reel","rq-reel")+grp("carosello","Carosello","rq-car")+grp("post","Post","rq-car")+grp("story","Storia","rq-car");
   if(!RQ.all&&extra)h+='<div class="rq-more" id="rq-all">Altri '+extra+' formati ›</div>';
   const t=tplOf(RQ.t);
@@ -2308,7 +2363,7 @@ function renderReq(){
     +(r.stato==="pronta"?'<div class="s ok">Pronta: guarda tra le Bozze'+(r.draft_id?" ("+esc(r.draft_id)+")":"")+"</div>":"")
     +(r.stato==="bloccata"?'<div class="s warn">Ferma da oltre 3 ore: riprova con una nuova richiesta</div>':"")
     +(r.stato==="fallita"?'<div class="s warn">Non riuscita'+(r.esito?": "+esc(r.esito):"")+"</div>":"")+"</div>").join("");
-  el.innerHTML=h+"</div>";
+  el.innerHTML=h+"</div>";vpBind();
   const dzOf=f=>{const T=RQ.temi;return T&&f?(T.dossier.find(d=>d.filoni.includes(f))||null):null};
   const sum=()=>{const x=document.getElementById("rq-sum");if(!x)return;const tt=tplOf(RQ.t);const pv=(document.getElementById("r-p")||{}).value||"";
    let s2="<b>"+esc(tt?tt.nome:"")+"</b>"+(pv?" su <b>"+esc(pv)+"</b>":"");
