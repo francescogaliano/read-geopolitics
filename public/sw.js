@@ -1,5 +1,5 @@
 // Read Geopolitics: service worker minimo. Rete prima di tutto; la copia salvata serve solo senza rete.
-const V = "rg-v1";
+const V = "rg-v2"; // v2: nuovo logo (icone)
 const API = "rg-api.briefinghub.workers.dev";
 self.addEventListener("install", (e) => {
   self.skipWaiting();
