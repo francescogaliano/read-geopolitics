@@ -906,7 +906,7 @@ document.getElementById("b").onclick=async()=>{
 // ---------- Bozze, pannello e auto-pubblicazione ----------
 async function kvList(env, prefix, limit = 40) {
   await kvInit(env);
-  const r = await env.DB.prepare("SELECT k, v, updated_at FROM kv WHERE k LIKE ?1 ORDER BY updated_at DESC LIMIT ?2").bind(prefix + "%", limit).all();
+  const r = await env.DB.prepare("SELECT k, v, updated_at FROM kv WHERE k >= ?1 AND k < ?1 || char(65535) ORDER BY updated_at DESC LIMIT ?2").bind(prefix, limit) /* v102: intervallo sulla chiave (usa l'indice) invece di LIKE, che leggeva tutta la tabella */.all();
   return (r.results || []).map((x) => ({ ...JSON.parse(x.v), _k: x.k, _u: x.updated_at }));
 }
 const DEFAULT_SETTINGS = { paused: false, formats: { daily: { mode: "approva", time: "08:30" } } };
@@ -2806,11 +2806,11 @@ async function igStatsPanel(env, fresche) {
   if (!s) return { ok: false, error: avviso || "Nessuna fotografia ancora: tocca «Aggiorna da Instagram»." };
   const fmt = {};
   try {
-    const r = await env.DB.prepare("SELECT k, json_extract(v,'$.template') AS t, json_extract(v,'$.media_id') AS m FROM kv WHERE k LIKE 'draft:%' AND json_extract(v,'$.media_id') IS NOT NULL").all();
+    const r = await env.DB.prepare("SELECT k, json_extract(v,'$.template') AS t, json_extract(v,'$.media_id') AS m FROM kv WHERE (k >= 'draft:' AND k < 'draft:' || char(65535)) AND json_extract(v,'$.media_id') IS NOT NULL").all();
     for (const x of r.results || []) fmt[String(x.m)] = x.t ? (IG_FMT[x.t] || "A") : /-icon-|-punti$/.test(x.k) ? "I" : "A";
   } catch (e) {}
   let storia = [];
-  try { const r = await env.DB.prepare("SELECT substr(k,10) AS d, json_extract(v,'$.account.follower') AS f FROM kv WHERE k LIKE 'ig_stats:20%' ORDER BY k DESC LIMIT 30").all(); storia = (r.results || []).map((x) => ({ d: x.d, f: +x.f || 0 })).reverse(); } catch (e) {}
+  try { const r = await env.DB.prepare("SELECT substr(k,10) AS d, json_extract(v,'$.account.follower') AS f FROM kv WHERE (k >= 'ig_stats:20' AND k < 'ig_stats:20' || char(65535)) ORDER BY k DESC LIMIT 30").all(); storia = (r.results || []).map((x) => ({ d: x.d, f: +x.f || 0 })).reverse(); } catch (e) {}
   return { ok: true, at: s.at, account: s.account, post: (s.post || []).map((p) => ({ ...p, formato: fmt[String(p.id)] || "A" })), storia, avviso };
 }
 // v87: Statistiche → Iscritti (solo numeri: l'elenco resta in Utenti)
@@ -5431,7 +5431,7 @@ async function salaLive(env, oggi) { // v77: conferme in tempo reale dai risulta
   const L = {};
   try { const b = await env.DB.prepare("SELECT updated_at FROM docs WHERE type='briefings' AND key=?1").bind(oggi).first(); if (b && b.updated_at) L.sito = b.updated_at; } catch (e) {}
   try { const p = await env.DB.prepare("SELECT created_at FROM podcast WHERE date=?1").bind(oggi).first(); if (p && p.created_at) L.podcast = p.created_at; } catch (e) {}
-  try { const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
+  try { const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k >= ?1 AND k < ?1 || char(65535)").bind("draft:" + oggi + "-").all();
     const ds = (rs.results || []).map((r) => { try { return JSON.parse(r.v); } catch (e) { return null; } }).filter((d) => d && d.created_at && !/^(req-|icon-|alt)/.test(String(d.format || "")));
     if (ds.length) L.igbozza = ds.map((d) => d.created_at).sort()[0]; } catch (e) {}
   const dn = [L.podcast, L.igbozza, L.sito].filter(Boolean).sort()[0]; if (dn) L.briefing = dn; // il briefing c'è se l'hanno già usato podcast, Instagram o sito
@@ -5498,10 +5498,10 @@ async function salaStato(env) {
   }
   // cose da fare per Francesco (Read Geopolitics): bozze di oggi in attesa, copioni da approvare
   try {
-    const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k LIKE ?1").bind("draft:" + oggi + "-%").all();
+    const rs = await env.DB.prepare("SELECT k, v FROM kv WHERE k >= ?1 AND k < ?1 || char(65535)").bind("draft:" + oggi + "-").all();
     for (const row of rs.results || []) { const d = JSON.parse(row.v); const f = row.k.slice(("draft:" + oggi + "-").length);
       if (d.status === "bozza" && !/^alt/.test(f) && !d.programma) P("rg").dafare.push({ key: "draft:" + row.k, testo: "Pubblica " + (d.type === "reel" ? "il reel" : "il carosello") + ": " + String(d.caption || "").split("\n")[0].slice(0, 90), perche: "È nelle Bozze del pannello da " + salaHM(d.created_at || d.updated_at || new Date().toISOString()) + ".", link: "/ig/panel" }); }
-    const rq = await env.DB.prepare("SELECT v FROM kv WHERE k LIKE 'req:%' AND updated_at > ?1").bind(new Date(now - 3 * 86400000).toISOString()).all();
+    const rq = await env.DB.prepare("SELECT v FROM kv WHERE (k >= 'req:' AND k < 'req:' || char(65535)) AND updated_at > ?1").bind(new Date(now - 3 * 86400000).toISOString()).all();
     for (const row of rq.results || []) { const r = JSON.parse(row.v); if (r.stato === "copione") P("rg").dafare.push({ key: "req:" + r.id, testo: "Approva il copione della richiesta «" + String(r.titolo || r.template || r.id).slice(0, 60) + "»", perche: "La routine aspetta il tuo via per continuare.", link: "/ig/panel" }); }
   } catch (e) {}
   for (const p of progetti) {
@@ -5593,7 +5593,7 @@ const SP_ID = /^[a-z0-9][a-z0-9-]{1,60}$/;
 const SITE = "https://www.readgeopolitics.com";
 async function spAll(env) {
   await kvInit(env);
-  const r = await env.DB.prepare("SELECT v FROM kv WHERE k LIKE 'sp:%' ORDER BY k").all();
+  const r = await env.DB.prepare("SELECT v FROM kv WHERE (k >= 'sp:' AND k < 'sp:' || char(65535)) ORDER BY k").all();
   return (r.results || []).map((x) => { try { return JSON.parse(x.v); } catch (e) { return null; } }).filter((x) => x && !Array.isArray(x) && x.id && x.spec); // le altre righe sp: (richieste, routine) non sono Spiegati
 }
 async function spKey(env, id) { return (await sha256("spiegato|" + id + "|" + (env.WRITE_TOKEN || ""))).slice(0, 20); }
@@ -6006,7 +6006,7 @@ export default {
     try { await igStatsTick(env); } catch (e) {} // v86: statistiche Instagram, una volta al giorno
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await numAperti(env, false); } catch (e) {} // v63: numeri da fonti aperte, una volta al giorno dopo le 7
-    try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'perf:%' AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
+    try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE (k >= 'perf:' AND k < 'perf:' || char(65535)) AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
     // v19: i video dei reel su R2 si cancellano dopo 14 giorni, come le bozze nel database (Instagram ne tiene già la sua copia)
     try {
       if (env.PODCAST) {
@@ -6020,7 +6020,7 @@ export default {
       }
     } catch (e) {}
     try { await mailTick(env); } catch (e) { try { await kvSet(env, "mail_last", { ts: new Date().toISOString(), ok: false, msg: String((e && e.message) || e) }); } catch (_) {} }
-    try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE (k LIKE 'img:%' OR k LIKE 'vid:%' OR k LIKE 'vidc:%') AND updated_at < ?1").bind(new Date(Date.now() - 14 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'req:%' AND updated_at < ?1").bind(new Date(Date.now() - 60 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'draft:%' AND updated_at < ?1").bind(new Date(Date.now() - 90 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE (k LIKE 'sess:%' AND updated_at < ?1) OR (k LIKE 'rl:%' AND updated_at < ?2)").bind(new Date(Date.now() - 31 * 86400000).toISOString(), new Date(Date.now() - 86400000).toISOString()).run(); } catch (e) {}
+    try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE ((k >= 'img:' AND k < 'img:' || char(65535)) OR (k >= 'vid:' AND k < 'vid:' || char(65535)) OR (k >= 'vidc:' AND k < 'vidc:' || char(65535))) AND updated_at < ?1").bind(new Date(Date.now() - 14 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE (k >= 'req:' AND k < 'req:' || char(65535)) AND updated_at < ?1").bind(new Date(Date.now() - 60 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE (k >= 'draft:' AND k < 'draft:' || char(65535)) AND updated_at < ?1").bind(new Date(Date.now() - 90 * 86400000).toISOString()).run(); await env.DB.prepare("DELETE FROM kv WHERE ((k >= 'sess:' AND k < 'sess:' || char(65535)) AND updated_at < ?1) OR ((k >= 'rl:' AND k < 'rl:' || char(65535)) AND updated_at < ?2)").bind(new Date(Date.now() - 31 * 86400000).toISOString(), new Date(Date.now() - 86400000).toISOString()).run(); } catch (e) {}
   },
   async fetch(request, env, ctx) {
     try {
