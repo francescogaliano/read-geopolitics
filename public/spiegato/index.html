@@ -139,7 +139,7 @@ document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");v
  if(a){ev.preventDefault();var d=SP.ent[a.dataset.e];if(!d)return;document.getElementById("shk").textContent=d.tipo||"";document.getElementById("sht").textContent=d.nome||"";document.getElementById("shp").textContent=d.testo||"";var g=document.getElementById("shg");g.firstChild.textContent=(d.go||"Apri")+" ";g.href=a.getAttribute("href");sh.classList.add("on");return}
  if(ev.target.closest("#shx")||(!ev.target.closest("#sheet")&&sh.classList.contains("on")))sh.classList.remove("on")});
 
-/* GRAFICI (3/11/2026): un passo con "vis" mostra un grafico al posto della mappa. Tipi: serie, soglia, barre, punti, prima_dopo.
+/* GRAFICI (3/11/2026): un passo con "vis" mostra un grafico al posto della mappa. Tipi: serie, soglia, barre, punti, prima_dopo, tappe (6/11: voci [{d:"10 novembre",t:"cosa succede"}], date in ordine, l'ultima in oro).
    Ogni numero del grafico deve essere già scritto nel testo del passo. */
 function nfmt(x){if(typeof x!=="number")return e(x);var p=String(Math.round(x*100)/100).split(".");return p[0].replace(/\B(?=(\d{3})+(?!\d))/g,".")+(p[1]?","+p[1]:"")}
 function vcol(c,i){return COL[c]||c||[COL.gold,COL.blue,COL.grey,COL.green,COL.red][i%5]}
@@ -167,6 +167,12 @@ function visHTML(v){var W0=340,H0=210,s="",t=v.tipo,u=v.unita?" "+e(v.unita):"";
   V.forEach(function(x,i){var y=4+i*rowH,a=(+x.prima)/mx*bw,b=(+x.dopo)/mx*bw;s+=T(0,y+12,e(x.t),"","vb")+'<rect x="0" y="'+(y+18)+'" width="'+a.toFixed(1)+'" height="12" rx="2" fill="'+COL.muted+'"/>'+T(a+6,y+28,nfmt(+x.prima)+u,"","vl")
    +'<rect class="gr" x="0" y="'+(y+34)+'" width="'+b.toFixed(1)+'" height="12" rx="2" fill="'+COL.gold+'"/>'+T(b+6,y+44,nfmt(+x.dopo)+u,"","vv",COL.gold)});
   H0=4+V.length*rowH;
+ }else if(t==="tappe"){var V=v.voci||[],y=6,pos=[];
+  function wrap(str,n){var w=String(str||"").split(/\s+/),L=[],c="";w.forEach(function(x){if(c&&(c+" "+x).length>n){L.push(c);c=x}else c=c?c+" "+x:x});if(c)L.push(c);return L}
+  V.forEach(function(x,i){var L=wrap(x.t,44),c=vcol(x.col,i===V.length-1?0:1);pos.push(y);s+='<circle class="gr" cx="8" cy="'+(y+7)+'" r="6" fill="'+c+'"/>'+T(26,y+12,e(x.d||"").toUpperCase(),"","vl",c);
+   L.forEach(function(r,j){s+=T(26,y+31+j*17,e(r),"","vb")});y+=36+L.length*17});
+  for(var j=1;j<pos.length;j++)s='<line x1="8" y1="'+(pos[j-1]+15)+'" x2="8" y2="'+(pos[j]-1)+'" stroke="var(--line)" stroke-width="2"/>'+s;
+  H0=Math.max(60,y);
  }else return "";
  return '<span class="vk mono">'+e(v.k||"")+'</span>'+(v.titolo?'<span class="vt">'+e(v.titolo).replace(/\*([^*]+)\*/g,"<b>$1</b>")+'</span>':'')+'<svg viewBox="-4 0 '+(W0+8)+' '+H0+'" preserveAspectRatio="xMidYMin meet" role="img" aria-label="'+e(v.alt||v.titolo||"Grafico")+'">'+s+'</svg>'+(v.nota?'<span class="vs mono">'+rich(v.nota)+'</span>':'');
 }
