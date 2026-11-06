@@ -40,7 +40,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .vis .vt b{color:var(--gold);font-weight:600}
 .vis svg{flex:0 1 auto;min-height:0;width:100%;height:auto;max-height:24vh}
 .vis .vs{width:100%;max-width:62ch}
-@media (min-width:980px){.stage .vis{left:8%;right:8%;top:60px;bottom:40px;justify-content:center;gap:12px}.vis svg{max-height:48vh}.vis .vt{font-size:26px}.vis .vs{font-size:12px}}
+@media (min-width:760px){.stage .vis{left:8%;right:8%;top:60px;bottom:40px;justify-content:center;gap:12px}.vis svg{max-height:48vh}.vis .vt{font-size:26px}.vis .vs{font-size:12px}}
 .vis svg text{font-family:"IBM Plex Mono",monospace;font-size:11.5px;fill:var(--mut)}
 .vis svg .vv{font-size:14px;font-weight:500}
 .vis svg .vb{fill:var(--fg);font-family:"IBM Plex Sans",sans-serif;font-size:13px}
@@ -57,7 +57,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .step .t .src{display:block;margin-top:8px;font-size:13px;color:var(--mut)}
 .step .t .ch{display:block;font:600 20px/1.2 "IBM Plex Serif",serif;color:var(--fg);padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
 .step .t .why{display:block;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:14.5px;color:#C8D3DE}
-@media (min-width:980px){
+@media (min-width:760px){
  .scrolly{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:0 40px;max-width:1180px;margin:8px auto 0;padding:0 24px}
  .steps{order:1;padding-top:0}.stage{order:2;height:calc(100vh - 42px);border:0;z-index:1}
  .step{min-height:90vh;align-items:center;padding-top:0}
@@ -69,7 +69,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .sheet p{margin:0 0 12px;font-size:15.5px;color:#C8D3DE}
 .sheet .go{display:flex;justify-content:space-between;align-items:center;min-height:48px;border-top:1px solid var(--line);color:var(--blue);text-decoration:none;font-weight:600}
 .sheet .x{position:absolute;right:10px;top:8px;background:none;border:0;color:var(--mut);font-size:26px;min-width:44px;min-height:44px;cursor:pointer}
-@media (min-width:980px){.sheet{left:auto;right:24px;bottom:24px;width:380px;border:1px solid #2C4670;border-radius:10px}}
+@media (min-width:760px){.sheet{left:auto;right:24px;bottom:24px;width:380px;border:1px solid #2C4670;border-radius:10px}}
 h2{font:600 24px/1.25 "IBM Plex Serif",Georgia,serif;margin:0;padding:0 0 12px}
 .blk{padding:28px 0 6px;border-bottom:1px solid var(--line)}
 .aft{margin:0 0 10px;font-size:15.5px;color:#C8D3DE}
@@ -97,7 +97,7 @@ details.more summary span{transition:transform .2s}details.more[open] summary sp
 .src-l{font-size:14px;color:var(--mut);padding:0 0 0 20px}.src-l li{margin:4px 0}
 .end{padding:6px 0 60px;color:var(--mut);font-size:13px}
 details.src{border-top:0;margin-top:8px}
-@media (min-width:980px){.wrap.end-wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}.wrap.end-wrap>details.src{grid-column:1/-1}.trio b{font-size:clamp(28px,2.6vw,38px)}}
+@media (min-width:760px){.wrap.end-wrap{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}.wrap.end-wrap>details.src{grid-column:1/-1}.trio b{font-size:clamp(28px,2.6vw,38px)}}
 .shr{all:unset;cursor:pointer;color:var(--gold);font:500 12px/1.4 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
 .next button.shr-row{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);color:var(--gold);font-weight:600}
 .next button.shr-row span{color:var(--mut);font-weight:400;font-size:14px}
@@ -280,7 +280,7 @@ function mapStart(){svg=document.getElementById("map");M=SP.map||{};
  build();size();cur=first?first.map.v:[[-20,30],[60,60]];fit(cur);setStep(0);requestAnimationFrame(loop);
  window.addEventListener("resize",size);
  /* il passo cambia quando arriva la sua scheda di testo (non lo spazio vuoto sopra): mappa e testo restano allineati */
- var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting)setStep(+x.target.parentNode.dataset.s)})},{rootMargin:matchMedia("(min-width:980px)").matches?"-45% 0px -45% 0px":"-52% 0px -30% 0px"});
+ var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting)setStep(+x.target.parentNode.dataset.s)})},{rootMargin:matchMedia("(min-width:760px)").matches?"-45% 0px -45% 0px":"-52% 0px -30% 0px"});
  document.querySelectorAll(".step>.t").forEach(function(x){io.observe(x)});
  /* paesi: prima la mappa leggera del sito, poi quella più dettagliata */
  fetch("/geo.json").then(function(r){return r.json()}).then(function(t){if(feats.length)return;feats=topojson.feature(t,t.objects.countries).features;rebuild()}).catch(function(){});
