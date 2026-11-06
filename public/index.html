@@ -3815,7 +3815,7 @@ function showGate(P){
 <div class="lp-w lp-hero"><div class="l"><div class="lp-kick mono">IL MONDO IN 15 MINUTI · OGNI MATTINA · MONDO E ITALIA</div>
 <h1 class="ser">Ogni giorno, mille notizie.<br><span>Quali contano davvero?</span></h1>
 <p class="lp-lead">Read Geopolitics ti spiega cosa succede nel mondo e in Italia, ma soprattutto <b>perché</b>: da dove nasce, chi ci guadagna, dove sta andando. Con le due tesi più forti a confronto, così decidi tu.</p>${gateForm()}</div>
-<div class="r"><button type="button" class="lp-vid" id="lpPlay" aria-label="Guarda il video di 45 secondi"><img src="img/globo.jpg" alt="Un globo con le linee di conflitti, sanzioni e accordi tra i paesi"><span class="lp-play"><svg width="30" height="30" viewBox="0 0 24 24" fill="#E8EDF1" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="cap"><b class="ser">Tutto è collegato.</b><span class="mono">GUARDA IN 45 SECONDI</span></span></button></div></div>
+<div class="r"><button type="button" class="lp-vid" id="lpPlay" aria-label="Guarda il video di 70 secondi"><img src="img/globo.jpg" alt="Un globo con le linee di conflitti, sanzioni e accordi tra i paesi"><span class="lp-play"><svg width="30" height="30" viewBox="0 0 24 24" fill="#E8EDF1" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span><span class="cap"><b class="ser">Tutto è collegato.</b><span class="mono">GUARDA IN 70 SECONDI</span></span></button></div></div>
 <div class="lp-tool"><div class="lp-w"><div class="lp-kick mono">COME FUNZIONA</div><h2 class="ser">Non una lista di notizie. Un intero strumento per capire come si tengono insieme.</h2>
 ${row("first","01 · CAPISCI","Due tesi a confronto. Decidi tu.","Ogni storia ha sempre la stessa forma, così capisci in un colpo d'occhio cosa è certo e cosa è opinione. Questa è una storia vera di oggi.",[B("Fatti")+" separati da interpretazioni.",B("La tesi più forte")+" di chi sostiene e di chi si oppone, con gli attori.",B("Una sintesi")+" che dice dove reggono, dove cedono e cosa deciderebbe la questione.","Ogni fatto ha il suo numerino: apre la fonte."],card)}
 ${row("rev","02 · VEDI","Il mondo, a colpo d'occhio.","Ogni paese è colorato da 1 (stabile) a 5 (guerra aperta). Le linee mostrano i legami in corso tra i paesi.",[B("Sei tipi di dinamica:")+" conflitti, sanzioni, accordi, energia, migrazioni, commercio. Li accendi e li spegni.",B("Tocca un paese:")+" situazione, cosa succede ai vicini, ultime notizie, andamento dell'ultimo mese.",B("Macchina del tempo:")+" sposta il cursore e rivedi i colori com'erano un giorno passato."],shot("mappa.jpg","La mappa del mondo con i livelli di tensione e le dinamiche tra i paesi"))}
@@ -3838,7 +3838,7 @@ ${row("sm rev","PROTAGONISTI","Chi muove le notizie","Persone e organizzazioni, 
   o.querySelector("#lpPlay").addEventListener("click",()=>{
     track("gate-video");
     const v=document.createElement("div");v.id="lpVid";
-    v.innerHTML=`<video src="img/film.mp4" poster="img/globo.jpg" controls autoplay playsinline preload="auto"></video><button type="button" aria-label="Chiudi">✕</button>`;
+    v.innerHTML=`<video src="img/film-v6.mp4" poster="img/film-v6.jpg" controls autoplay playsinline preload="auto"></video><button type="button" aria-label="Chiudi">✕</button>`;
     const close=()=>{v.remove();document.removeEventListener("keydown",esc)},esc=e=>{if(e.key==="Escape")close()};
     v.addEventListener("click",e=>{if(e.target===v||e.target.tagName==="BUTTON")close()});document.addEventListener("keydown",esc);
     document.body.appendChild(v);
