@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Dossier · Da leggere">
+  <path d="M12 19.5Q7 16.7 3 18.6V4.2Q8.2 3.2 12 6.4Q15.8 3.2 21 4.2V18.6Q17 16.7 12 19.5Z" fill="#F6F1E8" stroke="#6CAAE2" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M12 6.3V19.5" fill="none" stroke="#244D7A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="5.5" y1="9" x2="9.6" y2="9.3" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+  <line x1="14.2" y1="9.3" x2="18.3" y2="9" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+  <line x1="5.5" y1="12" x2="9.6" y2="12.3" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+  <line x1="14.2" y1="12.3" x2="18.3" y2="12" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+  <line x1="5.5" y1="15" x2="9.6" y2="15.3" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+  <line x1="14.2" y1="15.3" x2="18.3" y2="15" stroke="#4A8FCD" stroke-width="0.85" stroke-linecap="round" />
+</svg>

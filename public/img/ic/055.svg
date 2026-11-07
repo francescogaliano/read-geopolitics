@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Diplomazia e alleanze">
+  <path d="M3 9L7.2 6L11.3 10L12.8 8.4L16.7 6L21 9L15.5 16L12 18L8.5 16Z" fill="#6CAAE2" />
+  <path d="M7.8 11L11.5 14.3L14 12L17 14.2" fill="none" stroke="#F6F1E8" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="2.7" y="8" width="3.2" height="7" rx="1" fill="#F5B94D" />
+  <rect x="18.3" y="8" width="3.2" height="7" rx="1" fill="#F5B94D" />
+</svg>

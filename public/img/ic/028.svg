@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Vota">
+  <rect x="4" y="11" width="16" height="10" rx="2" fill="#6CAAE2" />
+  <path d="M6 11L16 11L14 4H8Z" fill="#F6F1E8" />
+  <line x1="10" y1="8" x2="13" y2="8" stroke="#244D7A" stroke-width="1" stroke-linecap="round" />
+  <line x1="7.6" y1="14.6" x2="16.4" y2="14.6" stroke="#DFEFFF" stroke-width="1" stroke-linecap="round" />
+</svg>

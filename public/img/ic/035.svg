@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Le posizioni">
+  <circle cx="12" cy="12" r="9.2" fill="#1B3B62" stroke="#A6D4FA" stroke-width="1.6" />
+  <circle cx="12" cy="12" r="6.8" fill="#244D7A" stroke="#6CAAE2" stroke-width="0.65" />
+  <line x1="12" y1="3.2" x2="12" y2="5.0" stroke="#DFEFFF" stroke-width="0.95" stroke-linecap="round" />
+  <line x1="12" y1="19" x2="12" y2="20.9" stroke="#DFEFFF" stroke-width="0.95" stroke-linecap="round" />
+  <line x1="3.2" y1="12" x2="5" y2="12" stroke="#DFEFFF" stroke-width="0.95" stroke-linecap="round" />
+  <line x1="19" y1="12" x2="20.8" y2="12" stroke="#DFEFFF" stroke-width="0.95" stroke-linecap="round" />
+  <polygon points="18.5,5.5 13.4,14.2 9.4,12.5" fill="#F5B94D" stroke-linejoin="round" />
+  <polygon points="5.5,18.5 13.4,14.2 9.4,12.5" fill="#F6F1E8" stroke-linejoin="round" />
+  <circle cx="11.7" cy="12.9" r="1" fill="#274669" />
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Accadde oggi">
+  <path d="M5 3H17V19H8Q5 19 5 16Z" fill="#F6F1E8" stroke="#6CAAE2" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M17 3L20 5V19L17 21H8Q5 20 5 17" fill="none" stroke="#244D7A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="8" y1="8" x2="16" y2="8" stroke="#4A8FCD" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="8" y1="11" x2="16" y2="11" stroke="#4A8FCD" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="8" y1="14" x2="16" y2="14" stroke="#4A8FCD" stroke-width="0.9" stroke-linecap="round" />
+  <circle cx="18.5" cy="16.6" r="2" fill="#F5B94D" />
+</svg>

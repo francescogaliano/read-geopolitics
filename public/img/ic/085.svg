@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Dinamiche attive">
+  <path d="M3 7H9Q12 7 12 10V14Q12 17 15 17H20" fill="none" stroke="#6CAAE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M3 17H9Q12 17 12 14V10Q12 7 15 7H20" fill="none" stroke="#F5B94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <polygon points="18,4.5 22,7 18,9.5" fill="#F5B94D" stroke-linejoin="round" />
+  <polygon points="18,14.5 22,17 18,19.5" fill="#6CAAE2" stroke-linejoin="round" />
+</svg>

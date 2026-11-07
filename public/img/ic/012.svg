@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Tema chiaro">
+  <line x1="20.1" y1="12.0" x2="22.5" y2="12.0" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="17.73" y1="17.73" x2="19.42" y2="19.42" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="12.0" y1="20.1" x2="12.0" y2="22.5" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="6.27" y1="17.73" x2="4.58" y2="19.42" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="3.9" y1="12.0" x2="1.5" y2="12.0" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="6.27" y1="6.27" x2="4.58" y2="4.58" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="12.0" y1="3.9" x2="12.0" y2="1.5" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <line x1="17.73" y1="6.27" x2="19.42" y2="4.58" stroke="#F5B94D" stroke-width="2.0" stroke-linecap="round" />
+  <circle cx="12" cy="12" r="5.45" fill="#F5B94D" stroke="#FFD77E" stroke-width="0.8" />
+</svg>

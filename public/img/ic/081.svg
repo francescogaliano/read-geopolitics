@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Temi (filoni)">
+  <path d="M3 8.3L12 3.1L21 7.4V17.9L12 21L3 18Z" fill="#244D7A" />
+  <path d="M3 8.3L12 3.1L21 7.4L12 12.6Z" fill="#1B3B62" />
+  <path d="M3 18L12 21L21 17.9V7.4L12 12.6L3 8.3Z" fill="#4A8FCD" />
+  <path d="M4.4 17.4L10 14.2L15.2 11.2L19.1 6.9" fill="none" stroke="#DFEFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="4.6" cy="17.2" r="2.0" fill="#6CAAE2" stroke="#DFEFFF" stroke-width="0.7" />
+  <circle cx="10.1" cy="14.2" r="2.0" fill="#6CAAE2" stroke="#DFEFFF" stroke-width="0.7" />
+  <circle cx="19" cy="7.1" r="2.5" fill="#F5B94D" stroke="#FFD67B" stroke-width="0.7" />
+</svg>
