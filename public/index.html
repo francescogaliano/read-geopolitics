@@ -237,6 +237,14 @@ svg.rgi,img.rgi{width:1.2em;height:1.2em;vertical-align:-.22em;display:inline-bl
 .spl,.pod-sp .spi,.pod-sp .amz{color:#fff}.spl svg{width:16px;height:16px}
 :root[data-theme="light"] .spl,:root[data-theme="light"] .pod-sp .spi,:root[data-theme="light"] .pod-sp .amz{color:#000}
 .pod-sp svg{width:15px;height:15px}
+.wxc{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 9px 3px 6px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:500 12.5px var(--mono);cursor:pointer;white-space:nowrap;min-height:32px}.wxc .wxi{width:22px;height:22px}.wxc b{font-weight:600}.wxc .cy{margin-left:1px}
+.wxbox .wxi{width:30px;height:30px;flex:none}.wxnow{display:flex;align-items:center;gap:14px;padding:6px 0 10px}.wxnow .wxi{width:56px;height:56px}.wxnow .t{font:600 40px var(--sans,system-ui)}.wxnow .d{color:var(--muted);font-size:14px}
+.wxl{font:600 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:16px 0 6px}
+.wxr{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}.wxr .g{width:62px}.wxr .mm{margin-left:auto;font-variant-numeric:tabular-nums}.wxr .mm i{font-style:normal;color:var(--muted)}.wxr .pr{width:96px;text-align:right;white-space:nowrap;color:#7FB2E8;font-size:13px;font-variant-numeric:tabular-nums}.wxr.al{border-left:3px solid #E8B04B;padding-left:9px}.wxr.al .pr{color:#E8B04B;font-weight:600}
+.wxmap{margin:4px 0 6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}.wxmap svg{display:block;width:100%;height:auto}.wxc-c{fill:var(--card,#1b2630);stroke:var(--bg);stroke-width:.6}.wxc-c.on{fill:#2a3a48}.wxdot{fill:#E8B04B}.wxlbl{font:600 12px var(--sans,system-ui);fill:var(--ink,#e8edf1);paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+.wxs{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}.wxs .n{flex:1;min-width:0}.wxs .n b{display:block}.wxs .n span{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wxs .t{font-weight:600;font-variant-numeric:tabular-nums}
+.wxf{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}.wxcc{margin-top:14px}.wxcc label{display:block;font:600 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.wxcc input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:inherit;font:15px var(--sans,system-ui)}#wxRes button,.wxauto{display:block;width:100%;text-align:left;padding:10px 2px;border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;cursor:pointer}#wxRes small{color:var(--muted)}.wxauto{color:var(--accent,#8FB8E8);margin-top:6px}
+@media (max-width:599px){.wxc .cy{display:none}.wxc{margin-left:0;padding:3px 7px 3px 5px}}
 .stamp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
@@ -2644,7 +2652,7 @@ const SUBICO={mondo:"🌍",italia:"🇮🇹",brevi:"📌",scoperte:"🔬",slow:"
 function renderBriefing(){
   const el=$("#briefing");const b=currentBrief();
   if(!b){el.innerHTML=`<div class="state">${S.loaded?"Nessun briefing ancora salvato.":"Caricamento del briefing…"}</div>`;return}
-  $("#stamp").textContent=`${fmtDate(b.data)} · ${b.ora||""}`;
+  $("#stamp").textContent=(b.data?DAYS[new Date(b.data+"T12:00:00").getDay()].slice(0,3).replace(/^./,c=>c.toUpperCase())+" ":"")+fmtDate(b.data);
   const mondoAll=(b.storie_mondo||[]).map(id=>S.stories[id]).filter(Boolean);
   const itaAll=(b.storie_italia||[]).map(id=>S.stories[id]).filter(Boolean);
   const mondo=mondoAll.filter(s=>!ambOff(s)),ita=itaAll.filter(s=>!ambOff(s));
@@ -6368,6 +6376,65 @@ function mfInvolved(){
       cand.sort((a,b)=>b[0].length-a[0].length);let t=txt;
       cand.forEach(([n,r])=>{const re=new RegExp("(^|[^\\p{L}])"+mfEsc(n)+"(?![\\p{L}])","u");if(re.test(t)){t=t.replace(re,"$1·");const k=r[0]+"|"+r[2];(out[k]=out[k]||{n:r[0],c:r[2],x:r[3],y:r[4],cap:r[5],s:[]}).s.includes(s.titolo)||out[k].s.push(s.titolo)}})})});
   return Object.values(out)}
+/* ---------- meteo (MET Norway, CC BY 4.0 · icone Yr, MIT) ---------- */
+const WX_API="https://rg-api.briefinghub.workers.dev/api/meteo",WX_LS="rg_meteo_citta";let WX=null,WXT=0,WX_MAPJ=null;
+const wxSaved=()=>{try{return JSON.parse(localStorage.getItem(WX_LS)||"null")}catch(_){return null}};
+const wxImg=(s,c)=>`<img class="${c||"wxi"}" src="/img/meteo/${esc(String(s||"cloudy").replace(/[^a-z_]/g,""))}.svg" alt="" decoding="async">`;
+function wxLab(s){const b=String(s||"").replace(/_(day|night|polartwilight)$/,"");const L=[["thunder","Temporale"],["heavysnow","Neve forte"],["lightsnow","Neve debole"],["snow","Neve"],["sleet","Nevischio"],["heavyrain","Pioggia forte"],["lightrain","Pioggia debole"],["rainshowers","Rovesci"],["rain","Pioggia"],["fog","Nebbia"],["partlycloudy","Parzialmente nuvoloso"],["fair","Poco nuvoloso"],["clearsky","Sereno"],["cloudy","Nuvoloso"]];const f=L.find(x=>b.includes(x[0]));return f?f[1]:""}
+const wxNum=n=>String(n).replace(".",",");
+function wxItName(n){if(!n||!MF_CITIES)return n||"";const l=n.toLowerCase();const r=MF_CITIES.find(r=>r[0].toLowerCase()===l||(r[1]||[]).some(a=>a.toLowerCase()===l));return r?r[0]:n}
+async function wxLoad(){const c=wxSaved();try{await mfLoadCities()}catch(_){}
+  try{const j=await (await fetch(WX_API+"?"+(c?"q="+c.lat+","+c.lon:"me=1"))).json();const w=c?j.pts&&j.pts[0]:j.me&&j.me.w;if(!w||!w.now)return;
+    WX={n:c?c.n:wxItName(j.me.n),w,auto:!c};WXT=Date.now();wxChip()}catch(_){}}
+function wxChip(){const st=document.getElementById("stamp");if(!st||!WX)return;let b=document.getElementById("wxChip");
+  if(!b){b=document.createElement("button");b.type="button";b.id="wxChip";b.className="wxc";b.addEventListener("click",()=>{wxOpen();try{track("meteo-apri")}catch(_){}});st.after(b)}
+  b.setAttribute("aria-label",`Meteo ${WX.n}: ${WX.w.now.t} gradi, ${wxLab(WX.w.now.s).toLowerCase()}`);
+  b.innerHTML=`${wxImg(WX.w.now.s)}${WX.n?`<span class="cy">${esc(WX.n)}</span>`:""}<b>${WX.w.now.t}°</b>`}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-WXT>30*60e3)wxLoad()});
+setInterval(()=>{if(!document.hidden&&Date.now()-WXT>30*60e3)wxLoad()},5*60e3);
+setTimeout(wxLoad,600);
+function wxPlaces(){const b=currentBrief();if(!b||!MF_CITIES)return[];const byC={};MF_CITIES.forEach(r=>{(byC[r[2]]=byC[r[2]]||[]).push(r)});
+  const out=[],seen=new Set();[...(b.storie_mondo||[]),...(b.storie_italia||[])].forEach(id=>{const s=S.stories[id];if(!s||out.length>=6)return;
+    const txt=[s.titolo,s.fatti].filter(Boolean).join(" ");let hit=null;
+    const P0=(s.paesi||[]).filter(x=>/^[A-Z]{3}$/.test(x));const cityIn=iso=>{const cand=[];(byC[iso]||[]).forEach(r=>[r[0],...(r[1]||[])].forEach(n=>{if(n&&n.length>=4)cand.push([n,r])}));cand.sort((a,b)=>b[0].length-a[0].length);
+      const f=cand.find(([n])=>new RegExp("(^|[^\\p{L}])"+mfEsc(n)+"(?![\\p{L}])","u").test(txt));return f&&f[1]},capOf=iso=>(byC[iso]||[]).find(r=>r[5]===1);
+    hit=P0.length?cityIn(P0[0])||capOf(P0[0]):null;if(!hit)P0.slice(1).some(iso=>(hit=cityIn(iso)||capOf(iso)));
+    if(!hit||seen.has(hit[0]))return;seen.add(hit[0]);out.push({n:hit[0],c:hit[2],lon:hit[3],lat:hit[4],s})});return out}
+function wxHHMM(iso){try{return new Date(iso).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Rome"})}catch(_){return""}}
+function wxBody(){const w=WX.w,today=new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Rome"});
+  const days=(w.days||[]).filter(d=>d.d>today).slice(0,6);
+  return `<div class="wxnow">${wxImg(w.now.s)}<span class="t">${w.now.t}°</span><span class="d">${esc(wxLab(w.now.s))}<br>vento ${w.now.w} m/s</span></div>
+  <div class="wxl">Prossimi giorni</div>${days.map(d=>{const dt=new Date(d.d+"T12:00:00"),al=d.mm>=30;return `<div class="wxr${al?" al":""}"><span class="g">${DAYS[dt.getDay()].slice(0,3).replace(/^./,c=>c.toUpperCase())} ${dt.getDate()}</span>${wxImg(d.s)}<span class="mm">${d.min}° <i>/</i> ${d.max}°</span><span class="pr">${d.mm>=0.5?(al?"⚠ ":"")+wxNum(d.mm)+" mm":""}</span></div>`}).join("")}
+  <div class="wxl">Dove succedono le notizie di oggi · adesso</div><div class="wxmap" id="wxMap"></div><div id="wxHot"><p class="hint" style="padding:8px 0">Carico…</p></div>
+  <div class="wxf">Dati meteo: <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener">MET Norway</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · icone Yr (MIT). ${WX.auto?"La città è stimata dalla tua connessione e non viene salvata.":"Città scelta da te, ricordata solo su questo dispositivo."}
+  <div class="wxcc"><label for="wxQ">Cambia città</label><input id="wxQ" type="search" placeholder="Scrivi una città" autocomplete="off"><div id="wxRes"></div>${WX.auto?"":`<button type="button" class="wxauto" data-wxauto>Usa la posizione automatica</button>`}</div></div>`}
+function wxOpen(){if(!WX)return;rlOpenBox("Meteo · "+(WX.n||"la tua zona"),"aggiornato alle "+wxHHMM(WX.w.upd),"");
+  const box=agsEl().querySelector(".rl-box");if(!box)return;box.classList.add("wxbox");box.innerHTML=wxBody();wxHot(box);wxCityUI(box)}
+async function wxHot(box){const P=wxPlaces(),el=box.querySelector("#wxHot");if(!P.length){el.innerHTML="";box.querySelector("#wxMap").remove();return}
+  let r=null;try{r=await (await fetch(WX_API+"?q="+P.map(p=>p.lat+","+p.lon).join(";"))).json()}catch(_){}
+  P.forEach((p,i)=>p.w=r&&r.pts&&r.pts[i]);const Q=P.filter(p=>p.w&&p.w.now);if(!Q.length){el.innerHTML='<p class="hint">Meteo dei luoghi non disponibile ora.</p>';return}
+  el.innerHTML=Q.map(p=>`<button type="button" class="wxs" data-story="${esc(p.s.id)}">${wxImg(p.w.now.s)}<span class="n"><b>${flag(p.c)} ${esc(p.n)} · ${esc(cName(p.c))}</b><span>${esc(p.s.titolo)}</span></span><span class="t">${p.w.now.t}°</span></button>`).join("");
+  wxMap(box.querySelector("#wxMap"),Q)}
+async function wxMap(el,Q){if(!el||!window.d3||!window.topojson)return;try{WX_MAPJ=WX_MAPJ||await (await fetch("geo.json")).json()}catch(_){return}
+  const t=WX_MAPJ,f=topojson.feature(t,t.objects[Object.keys(t.objects)[0]]),w=el.clientWidth||360,h=Math.round(w*0.62);
+  const pts=Q.map(p=>[p.lon,p.lat]);if(WX&&WX.auto===false){}const lon=pts.map(p=>p[0]),lat=pts.map(p=>p[1]);
+  const pad=8,ext={type:"MultiPoint",coordinates:[[Math.min(...lon)-pad,Math.min(...lat)-pad],[Math.max(...lon)+pad,Math.max(...lat)+pad]]};
+  const pr=d3.geoMercator().fitExtent([[90,22],[w-100,h-18]],ext),pa=d3.geoPath(pr),hot=new Set(Q.map(p=>p.c));
+  const sv=d3.select(el).append("svg").attr("width",w).attr("height",h).attr("viewBox",`0 0 ${w} ${h}`);
+  sv.append("g").selectAll("path").data(f.features).join("path").attr("d",pa).attr("class",d=>"wxc-c"+(hot.has(d.id)?" on":""));
+  const g=sv.append("g").selectAll("g").data(Q).join("g").attr("transform",d=>`translate(${pr([d.lon,d.lat])})`);
+  g.append("circle").attr("r",4).attr("class","wxdot");
+  g.append("text").attr("x",7).attr("y",4).attr("class","wxlbl").text(d=>`${d.n} ${d.w.now.t}°`);
+  const B=Q.map(d=>{const q=pr([d.lon,d.lat]);return[q[0]-5,q[1]-5,q[0]+5,q[1]+5]});g.each(function(){const n=this,tx=n.querySelector("text"),m=/translate\(([-\d.]+),([-\d.]+)\)/.exec(n.getAttribute("transform"));if(!m)return;const x=+m[1],y=+m[2],bw=tx.getBBox().width;
+    const tries=[[7,4],[-bw-7,4],[7,18],[7,-10],[-bw-7,18],[-bw-7,-10],[7,32],[7,-24],[-bw-7,32],[-bw-7,-24]];const ov=r=>B.some(b=>r[0]<b[2]&&r[2]>b[0]&&r[1]<b[3]&&r[3]>b[1]);
+    let pick=tries[0];for(const t of tries){const r=[x+t[0],y+t[1]-11,x+t[0]+bw,y+t[1]+3];if(!ov(r)){pick=t;break}}tx.setAttribute("x",pick[0]);tx.setAttribute("y",pick[1]);B.push([x+pick[0],y+pick[1]-11,x+pick[0]+bw,y+pick[1]+3])})}
+function wxCityUI(box){const q=box.querySelector("#wxQ"),res=box.querySelector("#wxRes");if(!q)return;
+  q.addEventListener("input",()=>{const v=exNorm?exNorm(q.value):q.value.toLowerCase();if(v.length<2||!MF_CITIES){res.innerHTML="";return}
+    const L=MF_CITIES.filter(r=>[r[0],...(r[1]||[])].some(n=>(exNorm?exNorm(n):n.toLowerCase()).startsWith(v))).sort((a,b)=>(b[2]==="ITA")-(a[2]==="ITA")||b[5]-a[5]).slice(0,6);
+    res.innerHTML=L.length?L.map(r=>`<button type="button" data-wxcity="${esc(r[0])}|${r[4]}|${r[3]}">${flag(r[2])} ${esc(r[0])} <small>${esc(cName(r[2]))}</small></button>`).join(""):'<p class="hint">Nessuna città trovata.</p>'});
+  box.addEventListener("click",e=>{const c=e.target.closest("[data-wxcity]"),a=e.target.closest("[data-wxauto]");if(!c&&!a)return;
+    try{if(c){const[n,la,lo]=c.dataset.wxcity.split("|");localStorage.setItem(WX_LS,JSON.stringify({n,lat:+la,lon:+lo}))}else localStorage.removeItem(WX_LS)}catch(_){}
+    try{track(c?"meteo-citta":"meteo-auto")}catch(_){}wxLoad().then(()=>wxOpen())})}
 function mfScale(){const g=document.querySelector("#mapBox svg > g");if(!g)return 1;const m=/scale\(([\d.]+)/.exec(g.getAttribute("transform")||"");return m?+m[1]:1}
 function mfCities(){
   const svg=document.querySelector("#mapBox svg");if(!svg||!MF_CITIES||!S._mfProj)return;

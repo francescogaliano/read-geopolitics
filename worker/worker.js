@@ -725,6 +725,57 @@ async function kvSet(env, k, v) {
   await env.DB.prepare("INSERT OR REPLACE INTO kv (k,v,updated_at) VALUES (?1,?2,?3)").bind(k, JSON.stringify(v), new Date().toISOString()).run();
 }
 async function kvDel(env, k) { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE k=?1").bind(k).run(); }
+/* ---------- meteo (MET Norway, CC BY 4.0) ----------
+   GET /api/meteo?q=lat,lon;lat,lon  (max 8 punti) &me=1 aggiunge la posizione stimata dalla connessione (non salvata).
+   Ogni punto (arrotondato a 0,1°) resta in cache nel kv per 45 minuti. */
+const WX_UA = "ReadGeopolitics/1.0 https://www.readgeopolitics.com";
+function wxDayRome(iso) { return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Rome" }); }
+function wxSum(j) {
+  const ts = (j && j.properties && j.properties.timeseries) || [];
+  if (!ts.length) return null;
+  const now = Date.now();
+  const cur = ts.find((x) => new Date(x.time).getTime() >= now - 3600e3) || ts[0];
+  const sym = (x, k) => (x.data[k] && x.data[k].summary && x.data[k].summary.symbol_code) || "";
+  const det = cur.data.instant.details || {};
+  const days = {};
+  ts.forEach((x) => {
+    const d = wxDayRome(x.time), t = x.data.instant.details.air_temperature;
+    const o = (days[d] = days[d] || { d, min: t, max: t, mm: 0, s: "", sh: 99 });
+    if (t < o.min) o.min = t; if (t > o.max) o.max = t;
+    const h = new Date(x.time).getUTCHours();
+    if (h % 6 === 0 && x.data.next_6_hours) { o.mm += (x.data.next_6_hours.details || {}).precipitation_amount || 0; const dist = Math.abs(h - 12); if (dist < o.sh) { o.sh = dist; o.s = sym(x, "next_6_hours"); } }
+  });
+  const out = Object.values(days).filter((o) => o.s).slice(0, 7).map((o) => ({ d: o.d, min: Math.round(o.min), max: Math.round(o.max), mm: Math.round(o.mm * 10) / 10, s: o.s }));
+  return { upd: j.properties.meta && j.properties.meta.updated_at, now: { t: Math.round(det.air_temperature), w: Math.round(det.wind_speed || 0), s: sym(cur, "next_1_hours") || sym(cur, "next_6_hours") }, days: out };
+}
+async function wxPoint(env, lat, lon) {
+  const la = Math.round(lat * 10) / 10, lo = Math.round(lon * 10) / 10, k = "wx:" + la + "," + lo;
+  const c = await kvGet(env, k).catch(() => null);
+  if (c && c.exp > Date.now()) return c.v;
+  try {
+    const r = await fetch("https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=" + la + "&lon=" + lo, { headers: { "user-agent": WX_UA, accept: "application/json" } });
+    if (!r.ok) return c ? c.v : null;
+    const v = wxSum(await r.json());
+    if (v) await kvSet(env, k, { exp: Date.now() + 45 * 60e3, v }).catch(() => {});
+    if (Math.random() < 0.02) await env.DB.prepare("DELETE FROM kv WHERE k LIKE 'wx:%' AND updated_at < ?1").bind(new Date(Date.now() - 864e5).toISOString()).run().catch(() => {});
+    return v;
+  } catch (e) { return c ? c.v : null; }
+}
+async function meteoApi(request, url, env) {
+  const pts = [];
+  String(url.searchParams.get("q") || "").split(";").slice(0, 8).forEach((x) => {
+    const m = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(x.trim());
+    if (m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180) pts.push({ lat: +m[1], lon: +m[2] });
+  });
+  let me = null;
+  if (url.searchParams.get("me") === "1") {
+    const cf = request.cf || {};
+    if (cf.latitude && cf.longitude) me = { n: cf.city || "", lat: +cf.latitude, lon: +cf.longitude };
+  }
+  const all = (me ? [me] : []).concat(pts);
+  const res = await Promise.all(all.map((p) => wxPoint(env, p.lat, p.lon)));
+  return json({ ok: true, me: me ? { n: me.n, w: res[0] } : null, pts: res.slice(me ? 1 : 0), src: "MET Norway" }, 200, { "cache-control": "private, max-age=600" });
+}
 const htmlPage = (title, body, status = 200) =>
   new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font:18px/1.5 system-ui;max-width:640px;margin:40px auto;padding:0 20px"><h2>${title}</h2>${body}`, { status, headers: { "content-type": "text/html; charset=utf-8" } });
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -4624,6 +4675,7 @@ async function route(request, env, ctx) {
   if (method === "GET" && p === "/api/numeri_storico") { let r = await kvGet(env, "num_storico"); if (url.searchParams.get("run") === "1" && (!r || Date.now() - Date.parse(r.at) > 600000)) r = await numStorico(env, true); const id = url.searchParams.get("id"); if (!r) return json({ ok: false, error: "non ancora raccolto: ?run=1" }, 200, { ...CORS, "cache-control": "no-store" }); return json(id ? { ok: true, at: r.at, id, serie: (r.serie || {})[id] || null } : { ok: true, at: r.at, errori: r.errori, serie: Object.fromEntries(Object.entries(r.serie || {}).map(([k, v]) => [k, { nome: v.nome, unita: v.unita, freq: v.freq, fonte: v.fonte, punti: v.punti.length, dal: v.punti[0][0], al: v.punti[v.punti.length - 1][0], ultimo: v.punti[v.punti.length - 1][1] }])) }, 200, { ...CORS, "cache-control": "no-store" }); } // v64: storico dei numeri aperti (?id=… per i punti, ?run=1 per rileggere)
   if (method === "GET" && p === "/api/numeri_aperti") { if (url.searchParams.get("run") === "1") { const c = await kvGet(env, "num_aperti"); if (!c || Date.now() - Date.parse(c.at) > 600000) await numAperti(env, true); } return json(await numConfronto(env), 200, { ...CORS, "cache-control": "no-store" }); } // v63: confronto cruscotto / fonti aperte (?run=1 rilegge, al massimo ogni 10 minuti)
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {}, mie: (await kvGet(env, "sond_mia")) || {}, post: (await kvGet(env, "sond_post")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
+  if (method === "GET" && p === "/api/meteo") return await meteoApi(request, url, env);
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
   if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d + ":" + q.n } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
