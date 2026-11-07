@@ -745,12 +745,12 @@ function wxSum(j) {
     const h = new Date(x.time).getUTCHours();
     if (h % 6 === 0 && x.data.next_6_hours) { o.mm += (x.data.next_6_hours.details || {}).precipitation_amount || 0; const dist = Math.abs(h - 12); if (dist < o.sh) { o.sh = dist; o.s = sym(x, "next_6_hours"); } }
   });
-  const hrs = ts.filter((x) => new Date(x.time).getTime() >= now - 3600e3 && x.data.next_1_hours).slice(0, 26).map((x) => ({ h: x.time, t: Math.round(x.data.instant.details.air_temperature * 10) / 10, s: sym(x, "next_1_hours"), mm: (x.data.next_1_hours.details || {}).precipitation_amount || 0 }));
+  const hrs = ts.filter((x) => new Date(x.time).getTime() >= now - 3600e3 && x.data.next_1_hours).slice(0, 62).map((x) => ({ h: x.time, t: Math.round(x.data.instant.details.air_temperature * 10) / 10, s: sym(x, "next_1_hours"), mm: (x.data.next_1_hours.details || {}).precipitation_amount || 0 }));
   const out = Object.values(days).filter((o) => o.s).slice(0, 7).map((o) => ({ d: o.d, min: Math.round(o.min), max: Math.round(o.max), mm: Math.round(o.mm * 10) / 10, s: o.s }));
   return { upd: j.properties.meta && j.properties.meta.updated_at, now: { t: Math.round(det.air_temperature), w: Math.round(det.wind_speed || 0), s: sym(cur, "next_1_hours") || sym(cur, "next_6_hours") }, days: out, hrs };
 }
 async function wxPoint(env, lat, lon) {
-  const la = Math.round(lat * 10) / 10, lo = Math.round(lon * 10) / 10, k = "wx:2:" + la + "," + lo;
+  const la = Math.round(lat * 10) / 10, lo = Math.round(lon * 10) / 10, k = "wx:3:" + la + "," + lo;
   const c = await kvGet(env, k).catch(() => null);
   if (c && c.exp > Date.now()) return c.v;
   try {
