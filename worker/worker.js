@@ -1182,10 +1182,29 @@ async function panelApi(env, origin, b, ctx) {
 
   if (act === "users") {
     const { results } = await env.DB.prepare(
-      "SELECT email, created_at, last_seen, visits, source, campaign, newsletter_at, unsub_at FROM users ORDER BY created_at DESC LIMIT 5000"
+      "SELECT id, email, created_at, last_seen, visits, source, campaign, newsletter_at, unsub_at FROM users ORDER BY created_at DESC LIMIT 5000"
     ).all();
+    let sent = []; try { sent = (await env.DB.prepare("SELECT user_id, COUNT(*) AS n FROM mail_log WHERE ok=1 GROUP BY user_id").all()).results || []; } catch (e) {}
+    const sm = {}; sent.forEach((r) => { sm[r.user_id] = r.n; }); results.forEach((u) => { u.sent = sm[u.id] || 0; });
     const tot = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN newsletter_at IS NOT NULL AND unsub_at IS NULL THEN 1 ELSE 0 END) AS nl, SUM(CASE WHEN unsub_at IS NOT NULL THEN 1 ELSE 0 END) AS un FROM users").first();
     return { ok: true, total: (tot && tot.n) || 0, newsletter: (tot && tot.nl) || 0, unsub: (tot && tot.un) || 0, users: results };
+  }
+  if (act === "user_nl" || act === "user_del") {
+    const id = typeof b.id === "string" && b.id.length <= 64 ? b.id : null;
+    if (!id) return { ok: false, error: "bad_id" };
+    await mailSchema(env);
+    const u = await env.DB.prepare("SELECT email FROM users WHERE id=?1").bind(id).first();
+    if (!u) return { ok: false, error: "not_found" };
+    if (act === "user_del") {
+      await env.DB.prepare("DELETE FROM users WHERE id=?1").bind(id).run();
+      await env.DB.prepare("DELETE FROM mail_log WHERE user_id=?1").bind(id).run();
+      if (env.RESEND_API_KEY && u.email) { try { await rsApi(env, "DELETE", "/contacts/" + encodeURIComponent(String(u.email).toLowerCase())); } catch (e) {} }
+      return { ok: true };
+    }
+    if (b.on === true) { await nlConsent(env, id, new Date().toISOString(), "attivata dal pannello su richiesta della persona"); return { ok: true, newsletter: true }; }
+    await env.DB.prepare("UPDATE users SET unsub_at=?2 WHERE id=?1 AND unsub_at IS NULL").bind(id, new Date().toISOString()).run();
+    await rsPush(env, u.email, false);
+    return { ok: true, newsletter: false };
   }
   if (typeof act === "string" && act.startsWith("mail_")) return await mailPanel(env, b);
   if (act === "dec_get" || act === "dec_set") return await decPanel(env, b);
@@ -1353,6 +1372,13 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .tg{font:600 11px ui-monospace,monospace;border:1px solid #3A4C5C;color:#86B4EA;border-radius:999px;padding:2px 8px;white-space:nowrap}.tg.off{color:#8FA0AE;border-color:#27353F}.tg:empty{display:none}.gear{color:#8FA0AE;font-size:16px}
 .set{background:#0E151B;border:1px solid #27353F;border-radius:10px;padding:10px 12px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px;font-size:14px}.set .row{margin:0}
 .tabs{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:2px;margin:14px 0 6px;border-bottom:1px solid #27353F;position:relative}.tab{flex:none;background:transparent;color:#9FB0BC;border:0;border-bottom:2px solid transparent;border-radius:0;margin:0 0 -1px;padding:10px 10px 9px;font-weight:400;white-space:nowrap}.tab.on{background:transparent;color:#E4EAEF;border-bottom-color:#86B4EA;font-weight:600}.tabsp{flex:1}.tbm{position:absolute;right:0;top:100%;margin-top:4px;background:#16212A;border:1px solid #27353F;border-radius:10px;padding:6px 0;min-width:170px;z-index:5;display:flex;flex-direction:column}.tbm .tab{border:0;margin:0;padding:9px 16px;text-align:left;color:#E4EAEF}.tbm .tab.on{color:#86B4EA}.tab .ogn{background:none;color:#86B4EA;padding:0;margin-left:4px}.tab .ogn.ok{background:none;color:#7FD1A0}.tabs>.tab{position:relative}.tabs>.tab[data-t]+.tab[data-t]::before{content:"";position:absolute;left:-1px;top:50%;height:14px;margin-top:-6px;width:1px;background:#33434F}.tabs .tab .bdg{background:none;color:#E5B45A;padding:0;font:600 11px ui-monospace,monospace}@media(max-width:520px){.tabs{gap:0}.tab{padding:10px 6px 9px;font-size:14px}}@media(max-width:400px){.tabs .tab{padding:10px 3px 9px;font-size:13px}.tabs .tab .ogn,.tabs .tab .bdg{margin-left:2px}.tabs .tbm .tab{padding:9px 16px;font-size:15px}}
+.ukp{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px;margin-top:10px}.ukp div{border-top:1px solid #27353F;padding-top:8px}.ukp b{display:block;font:700 26px/1.1 Georgia,serif;color:#F2EDE4}.ukp span{font-size:13px;color:#9FB0BD}
+.usx{border-top:1px solid #27353F;margin-top:10px}.usx>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:12px 2px;font:600 18px Georgia,serif}.usx>summary::-webkit-details-marker{display:none}.usx>summary i{font:600 14px system-ui;font-style:normal;color:#86B4EA}.usx[open]>summary i.c,.usx:not([open])>summary i.o{display:none}
+.ur{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 4px;border-top:1px solid #1E2A33;cursor:pointer}.ur.op{background:#1B2833;border-radius:10px;border-top-color:transparent;padding:10px 10px}
+.ue{font:600 15px system-ui;word-break:break-all}.ud{font-size:13.5px;color:#9FB0BD;margin-top:2px}.uw{color:#E5B45A;font-weight:600;font-size:13.5px;margin-top:2px}
+.ubd{display:inline-block;vertical-align:1px;font:700 10.5px system-ui;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px;margin-left:4px;white-space:nowrap}.ubd.on{background:#1F4D33;color:#7BD69E}.ubd.off{background:#4D2420;color:#F09B8C}.ubd.no{background:#27353F;color:#B7C3CE}
+.uv{text-align:right;align-self:center}.uv b{display:block;font:700 24px/1 Georgia,serif;color:#F2EDE4}.uv span{font-size:12px;color:#9FB0BD}
+.ua{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.ua button{font:600 14px system-ui;padding:8px 12px;border-radius:9px}.ua button.x{background:#27353F;color:#F09B8C}
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.gearb{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;border:1px solid #27353F;background:#16212A;border-radius:10px;padding:8px 12px;font-size:13.5px;color:#E4EAEF;white-space:nowrap;margin-top:4px;min-height:40px}.gearb .gic{font-size:17px;line-height:1}.gdot{width:8px;height:8px;border-radius:50%;background:#7FD1A0;flex:none}.gdot.w{background:#E5B45A}.gearb.on{border-color:#86B4EA}@media(max-width:520px){.gearb .gtx{display:none}.sw>*{font-size:13px;white-space:nowrap;padding:9px 2px}}
 .sw{display:flex;gap:4px;margin:14px 0 0;background:#16212A;border:1px solid #27353F;border-radius:12px;padding:4px}.sw>*{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:9px 4px;border-radius:9px;color:#B9C4CF;font-weight:600;font-size:14px;cursor:pointer}.sw>.on{background:#E4EAEF;color:#0E151B}
 #chan{padding:0}.chh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px}.chh b{font-size:16px}.chx{all:unset;cursor:pointer;color:#8FA0AE;font-size:16px;padding:4px 6px}
@@ -1465,9 +1491,10 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="row" style="margin-top:8px"><span style="flex:1;min-width:0;word-break:break-all;font-size:14px">Telegram · https://t.me/readgeopolitics</span><button class="g" data-copy="https://t.me/readgeopolitics">Copia</button></div></details></div>
 <div class="card"><b>Ogni mattina, tra le 8 e le 9</b><ol class="sub" style="margin:8px 0 0;padding-left:20px">
 <li>Salva la storia da qui.</li><li>Instagram → nuova storia → scegli l&#39;immagine.</li><li>Sticker <b>Link</b>: incolla il link consigliato, poi «Personalizza testo» → «Ascolta il podcast».</li><li>Mettilo sotto «Ascolta qui sotto ↓» e pubblica.</li><li>Aggiungi la storia in evidenza a «Podcast». Le altre storie solo la sera.</li></ol></div>
-</div><div id="ut" hidden><div class="card" id="uscard"><div class="row"><b>Iscritti Early Access</b><span class="sub" id="ust">carico…</span></div>
-<div class="row" style="margin-top:10px"><button class="g" id="usb">Mostra elenco</button><button class="g" id="usc">Scarica CSV</button></div>
-<div id="us" style="display:none;margin-top:10px"></div></div>
+</div><div id="ut" hidden><div class="card" id="uscard"><div class="row" style="justify-content:space-between"><b style="font:600 21px Georgia,serif">Utenti</b><button class="g" id="usc">Scarica CSV</button></div>
+<div class="ukp" id="ukp"><span class="sub" id="ust">carico…</span></div>
+<input type="text" id="usq" placeholder="Cerca un indirizzo" style="width:100%;box-sizing:border-box;margin-top:12px"><div class="row" style="margin-top:8px"><span class="sub">Ordina per</span><select id="uss" aria-label="Ordina per" style="flex:1;min-width:0"><option value="visits">Più visite</option><option value="last">Ultima visita</option><option value="created">Iscritti da poco</option><option value="sent">Più newsletter ricevute</option><option value="email">Email A-Z</option></select></div>
+<div id="us" style="margin-top:6px"></div></div>
 <div class="card" id="mlogcard"><details id="ml-log"><summary style="cursor:pointer"><b>Email inviate</b> <span id="mls" class="sub">carico…</span></summary><div id="mld" style="margin-top:10px"></div></details></div>
 <div class="card" id="mlcard"><div class="row"><b>Email del mattino</b><span class="sub" id="mlst">carico…</span></div>
 <div class="row" style="margin-top:10px"><label><input type="checkbox" id="ml-en"> invio acceso</label><select id="ml-mode"><option value="test">solo prova (a un indirizzo)</option><option value="live">reale (iscritti con consenso)</option></select></div>
@@ -1974,17 +2001,61 @@ let UT_GEN=false;
 let USERS=[];
 async function loadUsers(){
  const d=await api({action:"users"});
- if(!d.ok){document.getElementById("ust").textContent="Errore nel caricamento";return}
- USERS=d.users;
- document.getElementById("ust").textContent=d.total+" iscritti · "+d.newsletter+" ricevono l'email"+(d.unsub?" · "+d.unsub+" disiscritti":"");
- document.getElementById("us").innerHTML=USERS.length?USERS.map(u=>'<div style="padding:7px 0;border-top:1px solid #27353F"><div style="word-break:break-all"><b>'+esc(u.email)+'</b>'+(u.unsub_at?' <span class="chip" style="background:#8A3B36">disiscritto '+when(u.unsub_at)+'</span>':(u.newsletter_at?' <span class="chip" style="background:#3C8D5A">newsletter</span>':''))+'</div><div class="sub">iscritto '+when(u.created_at)+' · ultimo accesso '+when(u.last_seen)+' · '+esc(u.visits)+' accessi · fonte: '+esc(u.source||"—")+(u.campaign?' / '+esc(u.campaign):'')+'</div></div>').join(""):'<div class="sub">Nessun iscritto ancora.</div>';
+ if(!d.ok){document.getElementById("ukp").innerHTML='<span class="sub">Errore nel caricamento</span>';return}
+ USERS=d.users;usRender();
 }
-document.getElementById("usb").onclick=e=>{const el=document.getElementById("us");const on=el.style.display==="none";el.style.display=on?"block":"none";e.target.textContent=on?"Nascondi elenco":"Mostra elenco"};
+let US_OPEN=null;
+const US_TMP=["yopmail.","mailinator.","guerrillamail.","sharklasers.","10minutemail.","temp-mail.","tempmail.","trashmail.","getnada.","maildrop.","dispostable.","throwawaymail.","fakeinbox.","mintemail.","emailondeck.","meinvr.","mohmal.","tempail.","spamgourmet.","burnermail.","grr.la","mailpoof.","emailfake.","tmpmail."];
+const usSt=u=>u.unsub_at?"off":(u.newsletter_at?"on":"no");
+const usDay=x=>{try{return new Date(x).toLocaleDateString("it-IT",{day:"numeric",month:"short"})}catch(e){return ""}};
+function usFlag(u){const e=String(u.email||"").toLowerCase(),at=e.lastIndexOf("@"),loc=e.slice(0,at),dom=e.slice(at+1);
+ if(at<1||!/^[^ @]+@[^ @.]+([.][a-z]{2,})+$/.test(e))return "Indirizzo non valido";
+ if(US_TMP.some(t=>dom.indexOf(t)===0))return "Email usa e getta";
+ if(/^(test|prova|example)[.]/.test(dom)||dom==="rg.access"||/^(test|prova)$/.test(loc))return "Indirizzo di prova";
+ const base=loc.replace(/[0-9]+$/,"");
+ if(base.length>=5){const tw=USERS.find(x=>{const y=String(x.email||"").toLowerCase(),k=y.lastIndexOf("@");return y!==e&&y.slice(k+1)===dom&&y.slice(0,k).replace(/[0-9]+$/,"")===base});if(tw)return "Forse lo stesso lettore di "+tw.email}
+ return ""}
+function usRow(u){const st=usSt(u),fl=usFlag(u),op=US_OPEN===u.id,v=+u.visits||0;
+ const bd={on:'<span class="ubd on">Iscritto</span>',off:'<span class="ubd off">Disiscritto</span>',no:'<span class="ubd no">Senza newsletter</span>'}[st];
+ let h='<div class="ur'+(op?' op':'')+'" data-id="'+esc(u.id)+'"><div><div class="ue">'+esc(u.email)+' '+bd+'</div><div class="ud">Prima '+usDay(u.created_at)+' · Ultima '+usDay(u.last_seen)+(u.source?' · da '+esc(String(u.source).replace(/^www[.]/,'')):'')+(u.sent?' · '+u.sent+' newsletter':'')+'</div>'+(fl?'<div class="uw">'+esc(fl)+'</div>':'')+'</div><div class="uv"><b>'+v+'</b><span>'+(v===1?'visita':'visite')+'</span></div>';
+ if(op)h+='<div class="ua"><button data-a="nl" data-on="'+(st==="on"?"0":"1")+'">'+(st==="on"?"Disattiva newsletter":(st==="off"?"Riattiva newsletter":"Attiva newsletter"))+'</button><button class="x" data-a="del">Elimina</button></div>';
+ return h+'</div>'}
+function usSec(id,t,list,open){if(!list.length)return "";return '<details class="usx" data-k="'+id+'"'+(open?' open':'')+'><summary>'+t+' · '+list.length+' <i class="o">Chiudi ▴</i><i class="c">Apri ▾</i></summary>'+list.map(usRow).join("")+'</details>'}
+const US_SECOPEN={chk:true};
+function usRender(){const U=USERS,now=Date.now(),d7=now-7*864e5;
+ const n=U.length,on=U.filter(u=>usSt(u)==="on").length,off=U.filter(u=>usSt(u)==="off").length;
+ const nu=U.filter(u=>Date.parse(u.created_at)>=d7).length,at=U.filter(u=>Date.parse(u.last_seen)>=d7).length,tor=U.filter(u=>(+u.visits||0)>=2).length;
+ const pc=x=>n?Math.round(x*100/n)+"%":"0%";
+ document.getElementById("ukp").innerHTML=[[n,"utenti"],[on,"newsletter · "+pc(on)],[off,"disiscritti"],[nu,"nuovi in 7 giorni"],[at,"attivi in 7 giorni"],[tor,"tornati · "+pc(tor)]].map(k=>'<div><b>'+k[0]+'</b><span>'+k[1]+'</span></div>').join("");
+ const q=document.getElementById("usq").value.trim().toLowerCase(),so=document.getElementById("uss").value;
+ const key={visits:u=>-(+u.visits||0),last:u=>-Date.parse(u.last_seen||0),created:u=>-Date.parse(u.created_at||0),sent:u=>-(+u.sent||0),email:u=>String(u.email).toLowerCase()}[so];
+ const L=U.filter(u=>!q||String(u.email).toLowerCase().indexOf(q)>=0).slice().sort((a,b)=>{const x=key(a),y=key(b);return x<y?-1:x>y?1:0});
+ const el=document.getElementById("us");
+ if(q){el.innerHTML=L.length?usSec("q","Risultati",L,true):'<div class="sub" style="padding:10px 2px">Nessun indirizzo contiene «'+esc(q)+'».</div>';return}
+ const chk=L.filter(u=>usFlag(u));
+ el.innerHTML=usSec("chk","Da controllare",chk,US_SECOPEN.chk)+usSec("on","Iscritti",L.filter(u=>usSt(u)==="on"),US_SECOPEN.on)+usSec("no","Senza newsletter",L.filter(u=>usSt(u)==="no"),US_SECOPEN.no)+usSec("off","Disiscritti",L.filter(u=>usSt(u)==="off"),US_SECOPEN.off);
+ el.querySelectorAll("details.usx").forEach(d=>d.addEventListener("toggle",()=>{US_SECOPEN[d.dataset.k]=d.open}));
+}
+document.getElementById("usq").oninput=usRender;
+document.getElementById("uss").onchange=usRender;
+document.getElementById("us").onclick=async e=>{
+ const b=e.target.closest("button[data-a]"),r=e.target.closest(".ur");if(!r)return;
+ const u=USERS.find(x=>x.id===r.dataset.id);if(!u)return;
+ if(!b){US_OPEN=US_OPEN===u.id?null:u.id;usRender();return}
+ if(b.dataset.a==="del"){if(!await ask("Eliminare "+u.email+"? Sparisce da qui e dalla lista delle email, insieme allo storico degli invii. Non si torna indietro."))return}
+ else if(b.dataset.on==="1"){if(!await ask("Attivare la newsletter a "+u.email+"? Fallo solo se te l'ha chiesto questa persona: serve il suo consenso."))return}
+ b.disabled=true;
+ const res=await api(b.dataset.a==="del"?{action:"user_del",id:u.id}:{action:"user_nl",id:u.id,on:b.dataset.on==="1"});
+ if(!res.ok){b.disabled=false;await ask("Non riuscito: "+(res.detail||res.error||"errore"),undefined,true);return}
+ if(b.dataset.a==="del")USERS=USERS.filter(x=>x.id!==u.id);
+ else{const t=new Date().toISOString();if(b.dataset.on==="1"){u.newsletter_at=u.newsletter_at&&!u.unsub_at?u.newsletter_at:t;u.unsub_at=null}else u.unsub_at=t}
+ US_OPEN=null;usRender();
+};
 document.getElementById("usc").onclick=()=>{
- const cols=["email","created_at","last_seen","visits","source","campaign","newsletter_at","unsub_at"];
+ const cols=["email","created_at","last_seen","visits","source","campaign","newsletter_at","unsub_at","sent"];
  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
  const csv=[cols.join(",")].concat(USERS.map(u=>cols.map(c=>q(u[c])).join(","))).join(String.fromCharCode(10));
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="iscritti-read-geopolitics.csv";a.click();
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="utenti-read-geopolitics.csv";a.click();
 };
 document.getElementById("sv").onclick=async()=>{await api({action:"settings",paused:document.getElementById("pause").checked,format:"daily",mode:document.getElementById("mode").value,time:document.getElementById("time").value});load()};
 document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="diretto"&&!await ask("Pubblicazione diretta: finché TikTok non approva l'app (audit) funziona solo su un account privato. Continuare?")){e.target.value="bozza";return}await api({action:"tt_settings",mode:e.target.value});load()};
