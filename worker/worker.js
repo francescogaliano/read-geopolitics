@@ -681,10 +681,10 @@ async function joinUser(request, env) {
 }
 
 let SEEN_OK = false;
-async function seenLog(env, id) { // v36: un passaggio al giorno per iscritto
+async function seenLog(env, id, src) { // v36: un passaggio al giorno per iscritto; da nov 2026 anche da dove è arrivato (prima visita del giorno)
   try {
-    if (!SEEN_OK) { await env.DB.prepare("CREATE TABLE IF NOT EXISTS seen_log (user_id TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY (user_id, day))").run(); SEEN_OK = true; }
-    await env.DB.prepare("INSERT OR IGNORE INTO seen_log (user_id, day) VALUES (?1, ?2)").bind(id, romeToday()).run();
+    if (!SEEN_OK) { await env.DB.prepare("CREATE TABLE IF NOT EXISTS seen_log (user_id TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY (user_id, day))").run(); try { await env.DB.prepare("ALTER TABLE seen_log ADD COLUMN src TEXT").run(); } catch (e) {} SEEN_OK = true; }
+    await env.DB.prepare("INSERT OR IGNORE INTO seen_log (user_id, day, src) VALUES (?1, ?2, ?3)").bind(id, romeToday(), src || null).run();
   } catch (e) {}
 }
 async function seenUser(request, env) {
@@ -694,7 +694,8 @@ async function seenUser(request, env) {
     const now = new Date().toISOString();
     await env.DB.prepare("UPDATE users SET last_seen=?2, visits=visits+1 WHERE id=?1 AND last_seen<?3")
       .bind(id, now, new Date(Date.now() - 6 * 3600000).toISOString()).run();
-    await seenLog(env, id);
+    const src = b && typeof b.src === "string" ? b.src.replace(/[^\w.:+-]/g, "").slice(0, 48) : null;
+    await seenLog(env, id, src);
   }
   return json({ ok: true });
 }

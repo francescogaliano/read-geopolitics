@@ -1804,6 +1804,8 @@ nav.tabs button .ic{margin-right:.3em}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
 (function(){
+/* provenienza di questa visita (newsletter, Instagram, Telegram…), letta prima che l'indirizzo venga ripulito */
+const VISIT_SRC=(()=>{try{const q=new URLSearchParams(location.search);let v=q.get("utm_source")||"";if(v){const m=q.get("utm_medium");if(m)v+=":"+m}else{try{if(document.referrer){const h=new URL(document.referrer).hostname;if(h&&h!==location.hostname)v=h}}catch(_){}}if(q.get("storia"))v=(v||"diretto")+"+storia";return (v||"diretto").replace(/[^\w.:+-]/g,"").slice(0,48)}catch(_){return"diretto"}})();
 /* Spiegati (spiegati.js): accesso in sola lettura ai dati e a due funzioni del sito */
 window.RG_SP={dati:()=>S,scrivici:t=>{if(window.RG_SP_fbk)window.RG_SP_fbk(t)},traccia:n=>{try{track(n)}catch(_){}}};
 const S={agg:[],dossier:{},dosOpen:null,segnali:{},attori:{},since:null,owner:false,editor:false,brevi:[],sub:"mondo",idee:{},openIdea:null,iflt:{q:"",o:"",s:"",c:"",t:""},prefs:null,settimanali:[],mercati:{},approf:{},agenda:[],glossario:{},richieste:{},db:null,briefings:[],stories:{},threads:{},events:[],countries:{},sources:{},geo:null,view:"briefing",briefId:null,selCountry:null,flt:{r:"",t:"",f:"",a:""}};
@@ -3792,7 +3794,7 @@ async function isAdminKey(v){
 }
 function pingSeen(){
   const id=gStore("rg-uid");if(!id||id==="admin")return;const d=isoDay(new Date());if(gStore("rg-seen")===d)return;gStore("rg-seen",d);
-  try{fetch(RG_API+"/api/seen",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id}),keepalive:true}).catch(()=>{})}catch(e){}
+  try{fetch(RG_API+"/api/seen",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,src:VISIT_SRC}),keepalive:true}).catch(()=>{})}catch(e){}
 }
 function earlyBar(){
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
