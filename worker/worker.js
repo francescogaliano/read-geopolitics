@@ -745,11 +745,12 @@ function wxSum(j) {
     const h = new Date(x.time).getUTCHours();
     if (h % 6 === 0 && x.data.next_6_hours) { o.mm += (x.data.next_6_hours.details || {}).precipitation_amount || 0; const dist = Math.abs(h - 12); if (dist < o.sh) { o.sh = dist; o.s = sym(x, "next_6_hours"); } }
   });
+  const hrs = ts.filter((x) => new Date(x.time).getTime() >= now - 3600e3 && x.data.next_1_hours).slice(0, 26).map((x) => ({ h: x.time, t: Math.round(x.data.instant.details.air_temperature * 10) / 10, s: sym(x, "next_1_hours"), mm: (x.data.next_1_hours.details || {}).precipitation_amount || 0 }));
   const out = Object.values(days).filter((o) => o.s).slice(0, 7).map((o) => ({ d: o.d, min: Math.round(o.min), max: Math.round(o.max), mm: Math.round(o.mm * 10) / 10, s: o.s }));
-  return { upd: j.properties.meta && j.properties.meta.updated_at, now: { t: Math.round(det.air_temperature), w: Math.round(det.wind_speed || 0), s: sym(cur, "next_1_hours") || sym(cur, "next_6_hours") }, days: out };
+  return { upd: j.properties.meta && j.properties.meta.updated_at, now: { t: Math.round(det.air_temperature), w: Math.round(det.wind_speed || 0), s: sym(cur, "next_1_hours") || sym(cur, "next_6_hours") }, days: out, hrs };
 }
 async function wxPoint(env, lat, lon) {
-  const la = Math.round(lat * 10) / 10, lo = Math.round(lon * 10) / 10, k = "wx:" + la + "," + lo;
+  const la = Math.round(lat * 10) / 10, lo = Math.round(lon * 10) / 10, k = "wx:2:" + la + "," + lo;
   const c = await kvGet(env, k).catch(() => null);
   if (c && c.exp > Date.now()) return c.v;
   try {
@@ -770,11 +771,11 @@ async function meteoApi(request, url, env) {
   let me = null;
   if (url.searchParams.get("me") === "1") {
     const cf = request.cf || {};
-    if (cf.latitude && cf.longitude) me = { n: cf.city || "", lat: +cf.latitude, lon: +cf.longitude };
+    if (cf.latitude && cf.longitude) me = { n: cf.city || "", lat: +cf.latitude, lon: +cf.longitude, tz: cf.timezone || "" };
   }
   const all = (me ? [me] : []).concat(pts);
   const res = await Promise.all(all.map((p) => wxPoint(env, p.lat, p.lon)));
-  return json({ ok: true, me: me ? { n: me.n, w: res[0] } : null, pts: res.slice(me ? 1 : 0), src: "MET Norway" }, 200, { "cache-control": "private, max-age=600" });
+  return json({ ok: true, me: me ? { n: me.n, tz: me.tz, w: res[0] } : null, pts: res.slice(me ? 1 : 0), src: "MET Norway" }, 200, { "cache-control": "private, max-age=600" });
 }
 const htmlPage = (title, body, status = 200) =>
   new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font:18px/1.5 system-ui;max-width:640px;margin:40px auto;padding:0 20px"><h2>${title}</h2>${body}`, { status, headers: { "content-type": "text/html; charset=utf-8" } });
