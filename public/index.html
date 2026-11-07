@@ -5280,6 +5280,22 @@ const NAVG={
   archivio:{tab:"srchBtn",items:[]}
 };
 const VGROUP={briefing:"oggi",radar:"oggi",esplora:"esplora",protagonisti:"esplora",mappa:"mappa",timeline:"temi",osservazione:"temi",dossier:"temi",calendario:"calendario",archivio:"archivio"};
+/* swipe tra le pagine principali (Oggi ↔ Temi ↔ Esplora ↔ Calendario; la Mappa no). Non parte da file che scorrono di lato, pannelli aperti, campi di testo, barra delle storie, né entro 30 px dal bordo (gesto «indietro» del telefono) */
+(function(){const ORD=["oggi","temi","esplora","calendario"];let x0=null,y0=0,hz=null,dx=0,vw=null,t0=0;
+ const open=()=>[...document.querySelectorAll('[role="dialog"],dialog')].some(d=>!d.hidden&&d.getClientRects().length&&getComputedStyle(d).visibility!=="hidden")||document.body.classList.contains("deep-on");
+ function skip(t){if(!t||!t.closest)return true;if(t.closest('input,textarea,select,[contenteditable="true"],nav.tabs,.rl-bar,#v-mappa,.vq-card,video,audio'))return true;
+  for(let e=t;e&&e!==document.body;e=e.parentElement){if(e.scrollWidth>e.clientWidth+4){const o=getComputedStyle(e).overflowX;if(o==="auto"||o==="scroll")return true}}return false}
+ document.addEventListener("touchstart",e=>{x0=null;if(e.touches.length!==1||!ORD.includes(VGROUP[S.view]))return;const t=e.touches[0];
+  if(t.clientX<30||t.clientX>innerWidth-30||open()||skip(e.target))return;x0=t.clientX;y0=t.clientY;hz=null;dx=0;t0=Date.now();vw=document.getElementById("v-"+S.view)},{passive:true});
+ document.addEventListener("touchmove",e=>{if(x0==null)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;
+  if(hz==null&&(Math.abs(mx)>12||Math.abs(my)>12))hz=Math.abs(mx)>Math.abs(my)*1.8;if(!hz){if(hz===false)x0=null;return}
+  const i=ORD.indexOf(VGROUP[S.view]);dx=mx;if((i===0&&dx>0)||(i===ORD.length-1&&dx<0))dx=dx*0.15;if(vw){vw.style.transition="none";vw.style.transform="translateX("+Math.round(dx*0.35)+"px)";vw.style.opacity=String(1-Math.min(.35,Math.abs(dx)/900))}},{passive:true});
+ document.addEventListener("touchend",()=>{if(x0==null)return;x0=null;const el=vw;vw=null;const back=()=>{if(el){el.style.transition="transform .2s ease,opacity .2s";el.style.transform="";el.style.opacity="";setTimeout(()=>{el.style.transition=""},220)}};
+  if(!hz){back();return}const i=ORD.indexOf(VGROUP[S.view]),d=dx<-80?1:dx>80?-1:0,j=i+d;
+  if(!d||j<0||j>=ORD.length){back();return}
+  back();const b=document.getElementById(NAVG[ORD[j]].tab);if(b){b.click();try{track("swipe-pagina")}catch(_){}try{window.scrollTo({top:0})}catch(_){}}},{passive:true});
+ document.addEventListener("touchcancel",()=>{x0=null;if(vw){vw.style.transform="";vw.style.opacity="";vw=null}},{passive:true});
+})();
 window.RG_NAVG_TEMI=()=>NAVG.temi.items.filter(([v])=>v!=="dossier"||!(document.getElementById("tab-dossier")||{}).hidden); /* testate uniformi: le schede di Temi */
 (function setupNav(){
   const nav=document.querySelector("nav.tabs");if(!nav||document.getElementById("subnav"))return;
