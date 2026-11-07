@@ -683,7 +683,8 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .tr .tb .corr{margin:0 0 6px}
 .pp{position:relative;margin:0 0 4px}.pp-s{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;scroll-snap-type:x proximity}.pp-s::-webkit-scrollbar{display:none}
 .pp-i{flex:0 0 88px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;padding:4px 2px;color:var(--ink);font:inherit;cursor:pointer;text-align:center}
-.pp-av{width:50px;height:50px;border-radius:50%;background:var(--c);color:var(--bg);display:flex;align-items:center;justify-content:center;font:600 16px var(--serif,Georgia),serif;margin-bottom:4px}
+.pp-k{position:absolute;right:-5px;top:-4px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font:600 11px/18px var(--sans);font-style:normal;text-align:center}
+.pp-av{position:relative;width:50px;height:50px;border-radius:50%;background:var(--c);color:var(--bg);display:flex;align-items:center;justify-content:center;font:600 16px var(--serif,Georgia),serif;margin-bottom:4px}
 .pp-i b{font-size:12.5px;line-height:1.25;font-weight:600}.pp-i>span:last-child:not(.pp-av){font-size:11px;line-height:1.25;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pp-a{position:absolute;top:12px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}.pp-l{left:-2px}.pp-r{right:-2px}
 .pp.pp-more::after{content:"";position:absolute;right:0;top:0;bottom:14px;width:56px;background:linear-gradient(90deg,transparent,var(--pp-bg,var(--surface)) 70%);pointer-events:none;z-index:1}
@@ -1279,7 +1280,7 @@ body.static:not(.can-ask) #selBtn,body.static:not(.can-ask) [data-ask-story],bod
 .apos .d{font-family:var(--mono);font-size:11.5px;color:var(--accent);display:block}
 .apos .am{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
 .apos .am a{color:var(--muted)}
-.ab-st{margin:0;padding-left:18px;font-size:14px;display:grid;gap:4px}
+.ab-st{margin:0;display:block}.ab-sr{display:grid;grid-template-columns:minmax(0,1fr) 14px;gap:2px 8px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:10px 2px;color:var(--ink);font:14.5px/1.4 var(--sans);cursor:pointer}.ab-sr:first-child{border-top:0}.ab-sd{grid-column:1;font:12px var(--mono);color:var(--muted)}.ab-stt{grid-column:1}.ab-sa{grid-column:2;grid-row:1/3;align-self:center;color:var(--muted)}.ab-co{font-size:12.5px;margin:-4px 0 6px}
 .ab-up{font-size:12px;font-family:var(--mono);margin:14px 0 0}
 @media (max-width:560px){.aff-r{grid-template-columns:86px 1fr 86px}}
 /* protagonisti */
@@ -2331,12 +2332,12 @@ function actorsOfStory(s){if(!s)return[];if(ACT_ST.has(s.id)&&ACT_ST.get(s.id).n
   const txt=[s.titolo,s.fatti,s.perche_conta,s.sintesi,s.pro&&JSON.stringify(s.pro),s.contro&&JSON.stringify(s.contro)].filter(Boolean).join(" \n ");
   if(txt)Object.values(S.attori).forEach(a=>{if(ids.has(a.id))return;const r=actRx(a);if(r&&r.test(txt))ids.add(a.id)});
   const v=[...ids];ACT_ST.set(s.id,{n:Object.keys(S.attori).length,v});return v}
-function actorChipsHTML(s){const ids=actorsOfStory(s);if(!ids.length)return"";return `<div class="block"><span class="label"><span class="ic" aria-hidden="true">👤</span>Persone e organizzazioni · posizioni nel tempo</span><div class="chips" style="margin-left:0">${ids.map(id=>`<button class="chip actor" data-actor="${esc(id)}">${esc(S.attori[id].nome)}</button>`).join("")}</div></div>`}
+function actorChipsHTML(s){const ids=actorsOfStory(s);if(!ids.length)return"";return `<div class="block"><span class="label"><span class="ic" aria-hidden="true">👤</span>Persone e organizzazioni · posizioni nel tempo</span>${ppHTML(ids.map(id=>S.attori[id]).filter(Boolean))}</div>`}
 /* v55: persone, un solo componente per tema, storie e schede: ritratto con iniziali, nome, ruolo. Colore fisso per paese (USA azzurro, Iran ambra, …), grigio dove non c'è. Freccia su sfumatura e barretta di avanzamento quando non ci stanno tutte (anche su telefono) */
 const PP_COL={USA:"#86B4EA",IRN:"#E0A94A",RUS:"#E2776E",UKR:"#F2D58A",ISR:"#9FB7E8",PSE:"#7BD39A",CHN:"#F08F7E",SAU:"#6FCF97",YEM:"#C9A26B",ITA:"#7BD39A",FRA:"#A9B8F5",DEU:"#D9C27A",GBR:"#B3A4E8",TUR:"#F4A3A3",EGY:"#E8C07D",PAK:"#8FD3A8",QAT:"#C98FA8",ETH:"#A8D08D",ERI:"#8EC3D9",BRA:"#9ED68B",SRB:"#D8A0A0"};
 function ppHTML(list,title){if(!list.length)return"";
   const ini=n=>String(n||"").replace(/[^\p{L}\s.-]/gu,"").split(/\s+/).filter(Boolean).map(w=>w[0]).filter(c=>/\p{Lu}/u.test(c)).slice(0,2).join("")||"·";
-  return `${title?`<div class="tm-sec">${title} · ${list.length}</div>`:""}<div class="pp"><button type="button" class="pp-a pp-l" aria-label="Persone precedenti" hidden>‹</button><div class="pp-s">${list.map(a=>`<button type="button" class="pp-i" data-actor="${esc(a.id)}"><span class="pp-av" style="--c:${PP_COL[a.paese]||"var(--faint)"}">${esc(ini(a.nome))}</span><b>${esc(a.nome)}</b>${a.ruolo?`<span>${esc(a.ruolo)}</span>`:""}</button>`).join("")}</div><button type="button" class="pp-a pp-r" aria-label="Altre persone" hidden>›</button><div class="pp-bar" hidden><i></i></div></div>`}
+  return `${title?`<div class="tm-sec">${title} · ${list.length}</div>`:""}<div class="pp"><button type="button" class="pp-a pp-l" aria-label="Persone precedenti" hidden>‹</button><div class="pp-s">${list.map(a=>`<button type="button" class="pp-i" data-actor="${esc(a.id)}"><span class="pp-av" style="--c:${PP_COL[a.paese]||"var(--faint)"}">${esc(ini(a.nome))}${a._n?`<i class="pp-k" title="${a._n} storie insieme">${a._n}</i>`:""}</span><b>${esc(a.nome)}</b>${a.ruolo?`<span>${esc(a.ruolo)}</span>`:""}</button>`).join("")}</div><button type="button" class="pp-a pp-r" aria-label="Altre persone" hidden>›</button><div class="pp-bar" hidden><i></i></div></div>`}
 /* linguette «Fatti / Storie del briefing» dentro ogni mese del tema (ripristinato: era sparito nella v55) */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmt]");if(!b)return;const [k]=b.dataset.tmt.split(/:(?=[fs]$)/);const box=b.closest(".tm")||document;box.querySelectorAll(`[data-tmt^="${CSS.escape(k)}:"]`).forEach(x=>x.setAttribute("aria-selected",String(x===b)));box.querySelectorAll(`[data-tmp^="${CSS.escape(k)}:"]`).forEach(x=>x.hidden=x.dataset.tmp!==b.dataset.tmt)});
 function threadActorsHTML(t){const cnt={};(t.storie||[]).forEach(x=>{const st=S.stories[x.id];const ids=st?actorsOfStory(st):Object.values(S.attori).filter(a=>(a.storie||[]).includes(x.id)).map(a=>a.id);ids.forEach(id=>cnt[id]=(cnt[id]||0)+1)});const L=Object.keys(cnt).filter(id=>S.attori[id]).sort((a,b)=>cnt[b]-cnt[a]).slice(0,12).map(id=>S.attori[id]);return ppHTML(L,"Chi conta")}
@@ -2368,12 +2369,12 @@ function openActor(id){
   ${(()=>{const L=dosForActor(id);return L.length?`<h4>Nei dossier</h4>${L.map(({d,x})=>`<div class="dos-act"><button class="linkbtn" data-open-dos="${esc(d.id)}" data-dos-sec="attori">🧭 ${dosFlags(d)} ${esc(d.titolo)} ›</button>${x.vuole?`<p><span class="k">Cosa vuole</span>${dosRef(x.vuole,d)}</p>`:""}${x.leve?`<p><span class="k">Leve</span>${dosRef(x.leve,d)}</p>`:""}${x.alleati?`<p><span class="k">Alleati</span>${dosRef(x.alleati,d)}</p>`:""}</div>`).join("")}`:""})()}
   <h4>Posizioni nel tempo</h4>
   ${pos.length?`<ol class="apos">${pos.map((p,i)=>{const st=S.stories[p.storia_id];const mk=String(p.data||"").slice(0,7),pk=i?String(pos[i-1].data||"").slice(0,7):"";const mh=pos.length>6&&mk!==pk&&mk?`<li class="apos-m">${esc(MONTHS[+mk.slice(5,7)-1]||"")} ${esc(mk.slice(0,4))}</li>`:"";return `${mh}<li><span class="d">${esc(fmtDate(p.data))}</span><div>${esc(p.testo)}<span class="am">${p.fonte&&p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.fonte.nome||"fonte")}</a>`:""}${st?`${p.fonte&&p.fonte.url?" · ":""}<button class="linkbtn" data-story="${esc(st.id)}">storia</button>`:""}</span></div></li>`}).join("")}</ol>`:`<p class="muted" style="font-size:13.5px;margin:0">Nessuna posizione registrata per ora: si aggiunge quando compare nelle storie.</p>`}
-  ${co.length?`<h4>Compare spesso con</h4><div class="chips" style="margin-left:0">${co.map(x=>`<button class="chip actor" data-actor="${esc(x.o.id)}">${esc(x.o.nome)} <span class="muted">${x.n}</span></button>`).join("")}</div>`:""}
-  ${sts.length?`<h4>Storie · ${sts.length}</h4><ul class="ab-st">${sts.map(s=>`<li><button class="linkbtn" data-story="${esc(s.id)}">${esc(s.titolo)}</button> <span class="muted">${esc(fmtDate(s.data))}</span></li>`).join("")}</ul>`:""}
+  ${co.length?`<h4>Compare spesso con</h4><p class="muted ab-co">Il numero è quante storie hanno in comune.</p>${ppHTML(co.map(x=>Object.assign({},x.o,{_n:x.n})))}`:""}
+  ${sts.length?`<h4>Storie · ${sts.length}</h4><div class="ab-st">${sts.map(s=>`<button type="button" class="ab-sr" data-story="${esc(s.id)}"><span class="ab-sd">${esc(fmtDate(s.data))}</span><span class="ab-stt">${esc(s.titolo)}</span><span class="ab-sa" aria-hidden="true">›</span></button>`).join("")}</div>`:""}
   ${(a.fonti||[]).length?`<h4>Fonti della scheda</h4>${srcList(a.fonti)}`:""}
   ${a.aggiornato?`<p class="muted ab-up">Scheda aggiornata il ${esc(fmtDate(a.aggiornato))}</p>`:""}`;
   const d=$("#actorDlg");d.hidden=false;document.body.classList.add("deep-on");d.scrollTop=0;
-  glossify($("#actorBody"));
+  glossify($("#actorBody"));requestAnimationFrame(()=>{try{ppFit()}catch(e){}});
 }
 
 /* ---------- protagonisti ---------- */
@@ -2881,12 +2882,12 @@ function renderPanel(){
   ${(c.riflessi||[]).length?`<h4>Effetti di riflesso</h4><ul>${(c.riflessi||[]).map(r=>`<li><button class="linkbtn" data-country="${esc(r.paese)}">${esc(cname(r.paese))}</button>: ${esc(r.testo)}</li>`).join("")}</ul>`:""}
   ${(()=>{const lim=new Date();lim.setDate(lim.getDate()-30);const L=isoDay(lim);const br=S.brevi.filter(x=>(x.paesi||[]).includes(iso)&&x.data>=L).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,8);return br.length?`<h4>Ultime dal paese</h4><ul class="brevi">${br.map(x=>breveHTML(x,{date:true,noflag:true,skip:iso})).join("")}</ul>`:""})()}
   ${stories.length?`<h4>Storie collegate</h4><ul>${stories.map(s=>`<li><button class="linkbtn" data-story="${esc(s.id)}">${esc(s.titolo)}</button> <span class="muted" style="font-size:12px">${fmtDate(s.data)}</span></li>`).join("")}</ul>`:""}
-  ${(()=>{const as=Object.values(S.attori).filter(a=>a.paese===iso).sort((x,y)=>(y.storie||[]).length-(x.storie||[]).length).slice(0,8);return as.length?`<h4>Persone e organizzazioni</h4><div class="chips" style="margin-left:0">${as.map(a=>`<button class="chip actor" data-actor="${esc(a.id)}">${esc(a.nome)}</button>`).join("")}</div>`:""})()}
+  ${(()=>{const as=Object.values(S.attori).filter(a=>a.paese===iso).sort((x,y)=>(y.storie||[]).length-(x.storie||[]).length).slice(0,8);return as.length?`<h4>Persone e organizzazioni</h4>${ppHTML(as)}`:""})()}
   <h4>Trend 30 giorni</h4>${spark(c.storico)}
   ${(c.fonti||[]).length?`<h4>Fonti della scheda</h4>${srcList(c.fonti)}`:""}
   ${c.aggiornato?`<p class="muted" style="font-size:12px;margin:12px 0 0;font-family:var(--mono)">Scheda aggiornata il ${esc(fmtDate(c.aggiornato))}${c.nucleo?" · paese del nucleo, ricontrollato ogni settimana":""}</p>`:""}`;
   p.insertAdjacentHTML("beforeend",`<div style="margin-top:14px"><button class="askbtn ghost" data-ask-country="${esc(iso)}">Fai una domanda su ${esc(c.nome||cname(iso))}</button></div>`);
-  glossify(p);
+  glossify(p);requestAnimationFrame(()=>{try{ppFit()}catch(e){}});
 }
 function requestBlock(iso){
   if(S.static)return `<p class="panel-empty">Per questo paese non c'è ancora una scheda.</p>`;
