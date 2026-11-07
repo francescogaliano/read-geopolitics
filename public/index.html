@@ -6437,8 +6437,8 @@ function wxViewUI(box){box.addEventListener("click",e=>{const t=e.target.closest
     if(t){P.tab=t.dataset.wxtab;box.querySelectorAll("[data-wxtab]").forEach(b=>b.setAttribute("aria-selected",String(b===t)));box.querySelector(".wxore").hidden=P.tab!=="ore";box.querySelector(".wxsett").hidden=P.tab==="ore";const sp=box.querySelector(".wxstep");if(sp)sp.hidden=P.tab!=="ore"}
     if(st){P.step=+st.dataset.wxstep;box.querySelectorAll("[data-wxstep]").forEach(b=>b.setAttribute("aria-pressed",String(b===st)))}
     try{localStorage.setItem(WX_PREF,JSON.stringify(P))}catch(_){}try{track("meteo-"+(t?"vista-"+P.tab:"passo-"+P.step))}catch(_){}wxChart(box)})}
-function wxOpen(){if(!WX)return;rlOpenBox("Meteo · "+(WX.n||"la tua zona"),"ora locale "+wxClock(WX.tz),"");
-  const box=agsEl().querySelector(".rl-box");if(!box)return;box.classList.add("wxbox");box.innerHTML=wxBody();wxViewUI(box);requestAnimationFrame(()=>wxChart(box));wxHot(box);wxCityUI(box)}
+function wxOpen(){if(!WX)return;const wxT="Meteo · "+(WX.n||"la tua zona");rlOpenBox(wxT,"ora locale "+wxClock(WX.tz),"");
+  const box=agsEl().querySelector(".rl-box");if(!box)return;box.classList.add("wxbox");box.innerHTML=wxBody();wxViewUI(box);requestAnimationFrame(()=>wxChart(box));wxHot(box);wxCityUI(box);try{RL.cur={self:wxOpen,a:[wxT],k:wxT,sel:S.selCountry}}catch(_){}}
 async function wxHot(box){const P=wxPlaces(),el=box.querySelector("#wxHot");if(!P.length){el.innerHTML="";box.querySelector("#wxMap").remove();return}
   let r=null;try{r=await (await fetch(WX_API+"?q="+P.map(p=>p.lat+","+p.lon).join(";"))).json()}catch(_){}
   P.forEach((p,i)=>p.w=r&&r.pts&&r.pts[i]);await Promise.all(P.map(async p=>{p.tz=await wxTzOf(p.c,p.lat,p.lon)}));const Q=P.filter(p=>p.w&&p.w.now);if(!Q.length){el.innerHTML='<p class="hint">Meteo dei luoghi non disponibile ora.</p>';return}
