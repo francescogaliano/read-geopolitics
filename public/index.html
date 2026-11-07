@@ -6015,7 +6015,7 @@ renderEx=function(){const el=document.getElementById("esplora");if(!el)return;el
   el.innerHTML=`<div class="exw"><div class="radar-h"><h2><span class="ic" aria-hidden="true">🧭</span>Esplora</h2><span class="label">la settimana in quattro modi</span><button type="button" class="exqb" data-exqt aria-label="Cerca" title="Cerca" aria-pressed="${!!EX.qo}">🔍</button></div>
   <div class="cal-chips exlens" role="tablist" aria-label="Come guardare la settimana">${EX_LENS.map(l=>`<button type="button" role="tab" aria-selected="${EX.lens===l[0]}" aria-pressed="${EX.lens===l[0]}" data-exlens="${l[0]}"><span class="pn-i">${l[1]}</span><span>${l[2]}</span></button>`).join("")}</div>
   <label class="exq"${EX.qo||EX.q?"":" hidden"}><input type="search" id="exQ" placeholder="Cerca un paese, un tema, una persona, una parola" value="${esc(EX.q)}" autocomplete="off"></label><div id="exRes">${EX.q?exSearch(EX.q):""}</div>
-  ${exFolStrip()}<div id="exBody"></div></div>`;
+  <div id="exBody"></div></div>`;
   exBody();const q=document.getElementById("exQ");q.addEventListener("input",()=>{EX.q=q.value;document.getElementById("exRes").innerHTML=EX.q?exSearch(EX.q):""});
   try{if(typeof updNav==="function")updNav()}catch(_){}
   if(X.page){const p=X.page;X.page=null;setTimeout(()=>{if(p.k==="area")exList({area:p.id});else if(p.k==="tema")exList({amb:p.id});else if(p.k==="paese")exList({paese:p.id})},0)}};
