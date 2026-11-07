@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Chi e cosa">
+  <rect x="2.6" y="4" width="11.4" height="10" rx="2" fill="#4A8FCD" />
+  <rect x="7.3" y="2.7" width="11.5" height="10.5" rx="2" fill="#A6D4FA" />
+  <rect x="8.4" y="8.1" width="13.1" height="12.7" rx="2" fill="#F6F1E8" />
+  <circle cx="12.9" cy="12.2" r="2.2" fill="#6CAAE2" />
+  <path d="M9.8 17.1Q9.8 14.7 12.9 14.7Q16 14.7 16 17.1" fill="#6CAAE2" />
+  <circle cx="19.1" cy="15.6" r="2.5" fill="#F5B94D" />
+</svg>

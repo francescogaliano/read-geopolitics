@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Filtra">
+  <circle cx="10.2" cy="10.1" r="6.25" fill="#1B3B62" stroke="#A6D4FA" stroke-width="2" />
+  <path d="M14.8 14.8L20.7 20.6" fill="none" stroke="#F5B94D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M6.7 8.5C7.4 6.8 8.3 6.4 10.2 6.2" fill="none" stroke="#DFEFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

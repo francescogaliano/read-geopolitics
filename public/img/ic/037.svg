@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Le fonti non coincidono">
+  <polygon points="12,2.7 22,20 2,20" fill="#F5B94D" stroke-linejoin="round" />
+  <line x1="12" y1="9.5" x2="12" y2="14.5" stroke="#274669" stroke-width="2" stroke-linecap="round" />
+  <circle cx="12" cy="17.6" r="1.2" fill="#274669" />
+</svg>

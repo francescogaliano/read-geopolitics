@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Brevi">
+  <rect x="5.2" y="4.5" width="13.6" height="15.4" rx="2.1" fill="#F3EAD8"/>
+  <path d="M15.9 4.5H18.8V7.4" fill="#8FB8E8"/>
+  <path d="M15.9 4.5L18.8 7.4H16.9C16.3 7.4 15.9 7 15.9 6.4Z" fill="#8FB8E8"/>
+  <circle cx="8.1" cy="9" r="1.05" fill="#E8B04B"/>
+  <circle cx="8.1" cy="12.2" r="1.05" fill="#E8B04B"/>
+  <circle cx="8.1" cy="15.4" r="1.05" fill="#E8B04B"/>
+  <rect x="10.1" y="8.25" width="5.9" height="1.55" rx="0.77" fill="#2F6DB5"/>
+  <rect x="10.1" y="11.45" width="7.2" height="1.55" rx="0.77" fill="#2F6DB5"/>
+  <rect x="10.1" y="14.65" width="4.6" height="1.55" rx="0.77" fill="#2F6DB5"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Dossier · Narrazioni a confronto">
+  <path d="M4.5 5H18Q20 5 20 7V14.3Q20 16.4 17.8 16.4H10L6 19.2V16.1H4.5Q2.8 16.1 2.8 14.3V7Q2.8 5 4.5 5Z" fill="#F6F1E8" />
+  <circle cx="7.4" cy="11" r="1.18" fill="#274669" />
+  <circle cx="11.5" cy="11" r="1.18" fill="#274669" />
+  <circle cx="15.6" cy="11" r="1.18" fill="#274669" />
+  <path d="M10 4.1Q10 2.5 12 2.5H19Q21.6 2.5 21.6 5.2V11.2L19.5 14V7Q19.5 5 17.5 5H10Z" fill="#6CAAE2" />
+</svg>

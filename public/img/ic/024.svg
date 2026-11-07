@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="I lettori (voti di ieri)">
+  <circle cx="9" cy="8.1" r="3.1" fill="#A6D4FA" />
+  <circle cx="17" cy="9.4" r="2.6" fill="#F5B94D" />
+  <path d="M2.9 20V17.9Q2.9 12.5 9 12.5Q15 12.5 15 17.9V20Z" fill="#6CAAE2" />
+  <path d="M15.2 13.4Q21 13 21.1 17.6V20H16Z" fill="#F5B94D" />
+</svg>

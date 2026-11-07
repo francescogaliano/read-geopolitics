@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="Da osservare nei prossimi giorni">
+  <path d="M7.2 8.1H10.2C11 8.1 11.6 8.7 11.6 9.5V15.2C11.6 16 11 16.6 10.2 16.6H7.2C5.4 16.6 4 15.2 4 13.4V11.3C4 9.5 5.4 8.1 7.2 8.1Z" fill="#2F6DB5"/>
+  <path d="M13.8 8.1H16.8C18.6 8.1 20 9.5 20 11.3V13.4C20 15.2 18.6 16.6 16.8 16.6H13.8C13 16.6 12.4 16 12.4 15.2V9.5C12.4 8.7 13 8.1 13.8 8.1Z" fill="#2F6DB5"/>
+  <rect x="5.1" y="9.2" width="5.2" height="6.3" rx="1.6" fill="#8FB8E8"/>
+  <rect x="13.7" y="9.2" width="5.2" height="6.3" rx="1.6" fill="#8FB8E8"/>
+  <circle cx="7.7" cy="12.35" r="1.8" fill="#1D2B3A"/>
+  <circle cx="16.3" cy="12.35" r="1.8" fill="#1D2B3A"/>
+  <circle cx="8.25" cy="11.8" r="0.7" fill="#E8B04B"/>
+  <circle cx="16.85" cy="11.8" r="0.7" fill="#E8B04B"/>
+  <rect x="10.2" y="10.9" width="3.6" height="2.9" rx="1.2" fill="#F3EAD8"/>
+  <path d="M6.2 16.6V18.2" stroke="#1D2B3A" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M17.8 16.6V18.2" stroke="#1D2B3A" stroke-width="1.1" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="In tasca (prezzi, bollette, soldi)">
+  <circle cx="12" cy="12" r="9" fill="#F5B94D" stroke="#C88525" stroke-width="0.65" />
+  <circle cx="12" cy="12" r="6.5" fill="#FFD177" />
+  <path d="M15.5 8Q10 6.5 8.8 11.5Q8 16 15.3 16M7.9 11H15M8 14H14" fill="none" stroke="#274669" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
