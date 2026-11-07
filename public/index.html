@@ -6417,7 +6417,7 @@ function wxBody(){const w=WX.w,today=new Date().toLocaleDateString("en-CA",{time
   <div class="wxore"${tab==="ore"?"":" hidden"}><div class="wxch" id="wxCh"></div><p class="wxsum" id="wxSum"></p></div>
   <div class="wxsett"${tab==="sett"?"":" hidden"}>${days.map(d=>{const dt=new Date(d.d+"T12:00:00"),al=d.mm>=30;return `<div class="wxr${al?" al":""}"><span class="g">${DAYS[dt.getDay()].slice(0,3).replace(/^./,c=>c.toUpperCase())} ${dt.getDate()}</span>${wxImg(d.s)}<span class="mm">${d.min}° <i>/</i> ${d.max}°</span><span class="pr">${d.mm>=0.5?(al?"⚠ ":"")+wxNum(d.mm)+" mm":""}</span></div>`}).join("")}</div>
   <div class="wxl">Dove succedono le notizie di oggi · adesso</div><div class="wxmap" id="wxMap"></div><div id="wxHot"><p class="hint" style="padding:8px 0">Carico…</p></div>
-  <div class="wxf">Dati meteo: <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener">MET Norway</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · icone Yr (MIT). ${WX.auto?"La città è stimata dalla tua connessione e non viene salvata.":"Città scelta da te, ricordata solo su questo dispositivo."}
+  <div class="wxf">Previsione delle ${wxClock(WX.tz,new Date(WX.w.upd))} di <a href="https://www.met.no/en/free-meteorological-data" target="_blank" rel="noopener">MET Norway</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · icone Yr (MIT). ${WX.auto?"La città è stimata dalla tua connessione e non viene salvata.":"Città scelta da te, ricordata solo su questo dispositivo."}
   <div class="wxcc"><label for="wxQ">Cambia città</label><input id="wxQ" type="search" placeholder="Scrivi una città" autocomplete="off"><div id="wxRes"></div>${WX.auto?"":`<button type="button" class="wxauto" data-wxauto>Usa la posizione automatica</button>`}</div></div>`}
 function wxChart(box){const el=box.querySelector("#wxCh"),sm=box.querySelector("#wxSum");if(!el||el.closest("[hidden]"))return;const step=wxPref().step===1?1:3,tz=WX.tz;
   const H=(WX.w.hrs||[]).slice(0,step===1?13:25);if(H.length<3){el.innerHTML="";return}
@@ -6437,7 +6437,7 @@ function wxViewUI(box){box.addEventListener("click",e=>{const t=e.target.closest
     if(t){P.tab=t.dataset.wxtab;box.querySelectorAll("[data-wxtab]").forEach(b=>b.setAttribute("aria-selected",String(b===t)));box.querySelector(".wxore").hidden=P.tab!=="ore";box.querySelector(".wxsett").hidden=P.tab==="ore";const sp=box.querySelector(".wxstep");if(sp)sp.hidden=P.tab!=="ore"}
     if(st){P.step=+st.dataset.wxstep;box.querySelectorAll("[data-wxstep]").forEach(b=>b.setAttribute("aria-pressed",String(b===st)))}
     try{localStorage.setItem(WX_PREF,JSON.stringify(P))}catch(_){}try{track("meteo-"+(t?"vista-"+P.tab:"passo-"+P.step))}catch(_){}wxChart(box)})}
-function wxOpen(){if(!WX)return;rlOpenBox("Meteo · "+(WX.n||"la tua zona"),"ora locale "+wxClock(WX.tz)+" · previsione delle "+wxClock(WX.tz,new Date(WX.w.upd)),"");
+function wxOpen(){if(!WX)return;rlOpenBox("Meteo · "+(WX.n||"la tua zona"),"ora locale "+wxClock(WX.tz),"");
   const box=agsEl().querySelector(".rl-box");if(!box)return;box.classList.add("wxbox");box.innerHTML=wxBody();wxViewUI(box);requestAnimationFrame(()=>wxChart(box));wxHot(box);wxCityUI(box)}
 async function wxHot(box){const P=wxPlaces(),el=box.querySelector("#wxHot");if(!P.length){el.innerHTML="";box.querySelector("#wxMap").remove();return}
   let r=null;try{r=await (await fetch(WX_API+"?q="+P.map(p=>p.lat+","+p.lon).join(";"))).json()}catch(_){}
