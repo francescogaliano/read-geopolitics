@@ -50,10 +50,13 @@ h3{color:var(--amb);margin:24px 0 4px}
 footer{margin-top:26px;font-size:13px;color:var(--faint);text-align:center}
 footer a{color:var(--faint)}
 .emb,.emb body{background:#16212A;color-scheme:dark}.emb header,.emb .k,.emb h1,.emb .cta,.emb footer{display:none}.emb .sub{margin-top:14px}
+.back{display:block;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));color:var(--amb);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60;background:var(--bg);text-decoration:none}
+.emb .back{display:none}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
 </head>
 <body>
+<a class="back mono" id="sgBack" href="/?utm_source=seguire">‹ Torna a Read Geopolitics</a>
 <div class="wrap">
 <header><a href="/?utm_source=seguire"><svg viewBox="65 73 380 380" aria-hidden="true"><defs><clipPath id="cS"><path d="M127 160 L383 124 V440 H127 Z"/></clipPath></defs><g clip-path="url(#cS)"><path d="M140 304 Q 250 208 384 198 L384 250 Q 262 252 140 304 Z" fill="#E8B050"/><path d="M126 352 Q 250 268 384 266 L384 322 Q 246 322 126 352 Z" fill="#4D7DB0"/><path d="M150 440 Q 262 346 384 338 L384 440 Z" fill="#2D4C70"/></g><path d="M110 440 V146 L400 106 V440" fill="none" stroke="#8CB9EE" stroke-width="34"/></svg><span class="rule"></span><span class="nm ser">Read<br>Geopolitics</span></a><span class="d mono" id="oggi"></span></header>
 <div class="k mono">Da seguire</div>
@@ -65,6 +68,7 @@ footer a{color:var(--faint)}
 <footer><a href="/?utm_source=seguire">Torna a Read Geopolitics</a> · <a href="/metodo.html">Fonti e metodo</a></footer>
 </div>
 <script>
+document.getElementById("sgBack").addEventListener("click",function(ev){try{var r=document.referrer&&new URL(document.referrer);if(r&&r.origin===location.origin&&history.length>1){ev.preventDefault();history.back()}}catch(_){}});
 const RG_API="https://rg-api.briefinghub.workers.dev";
 const MESI=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"],GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
