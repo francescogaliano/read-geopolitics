@@ -1494,6 +1494,7 @@ nav.tabs button .ic{margin-right:.3em}
 <header class="top">
   <div id="sampleBar" class="sample-bar" hidden><div class="wrap"><strong>DATI DI ESEMPIO</strong> · Tutto ciò che vedi è dimostrativo e serve solo a valutare la struttura. Nessuna di queste storie è una notizia reale.</div></div>
   <div class="pro-bar" id="pubBar" hidden><div class="wrap" id="pubBarTxt"></div></div>
+  <button type="button" class="sc-bar" id="scBar" data-rl-sciop hidden></button>
   <div class="wrap">
     <div class="top-row">
       <span class="brand"><svg class="brand-mk" viewBox="65 73 380 380" aria-hidden="true"><defs><clipPath id="bmk"><path d="M127 160 L383 124 V440 H127 Z"/></clipPath></defs><g clip-path="url(#bmk)"><path class="mk-g" d="M140 304 Q 250 208 384 198 L384 250 Q 262 252 140 304 Z"/><path class="mk-b1" d="M126 352 Q 250 268 384 266 L384 322 Q 246 322 126 352 Z"/><path class="mk-b2" d="M150 440 Q 262 346 384 338 L384 440 Z"/></g><path class="mk-f" d="M110 440 V146 L400 106 V440" fill="none" stroke-width="34" stroke-linejoin="miter" stroke-miterlimit="10"/></svg><span class="brand-t">Read Geopolitics<small>Il mondo in 15 minuti</small></span></span>
@@ -2054,24 +2055,53 @@ function sciopIta(a){return !(a.paesi||[]).length||(a.paesi||[]).includes("ITA")
 function sciopDet(a){return [a.settore&&a.settore!=="altro"&&a.settore!=="generale"?a.settore:"",a.orari||""].filter(Boolean).join(" · ")}
 function sciopPos(a){return a.stato==="possibile"?'<span class="sc-pos">possibile</span>':""}
 /* v-scioperi 7 giorni (8/11): tutti gli scioperi in Italia dei prossimi 7 giorni, in ordine di data; a 1-2 giorni il titolo diventa «Oggi/Domani…» e la riga si accende; «possibile» se non ancora proclamato */
-/* v-scioperi riga (8/11): una sola riga stringata sotto il lettore: cosa (breve) e data in evidenza; il resto nel pannello.
-   Prima la novità (annunciato/confermato/revocato oggi o ieri), altrimenti il prossimo sciopero in Italia entro 3 settimane. Ambra se oggi/domani o se è una novità */
+/* v-scioperi striscia (8/11): lo sciopero sta in una striscia in cima (al posto di «Early access»; per gli ospiti sotto l'invito all'email).
+   Prima la novità (annunciato/confermato/revocato oggi o ieri), altrimenti il prossimo in Italia entro 3 settimane. Ambra se oggi/domani o novità.
+   Il pannello: linea del tempo di 6 settimane con le bandiere, gruppi Italia / Europa / Mondo, ogni sciopero si apre (chi, perché, durata, fonte, tema) */
 const SC_SETT={generale:"sciopero generale",treni:"sciopero dei treni",aerei:"sciopero aerei","trasporto locale":"sciopero trasporti",taxi:"sciopero dei taxi",scuola:"sciopero della scuola","sanità":"sciopero della sanità"};
-function sciopShort(a){const k=SC_SETT[a.settore]||(/generale/i.test(a.titolo||"")?"sciopero generale":"");return k||String(a.titolo||"sciopero").replace(/^./,c=>c.toLowerCase())}
-function rlStrike(b){if(!(S.briefings[0]&&b===S.briefings[0]))return "";const L=sciopList(b.data,21).filter(sciopIta),N=sciopNews(b.data);if(!L.length&&!N.length)return "";
-  const dn=a=>Math.round((new Date(a.data+"T12:00:00")-new Date(b.data+"T12:00:00"))/864e5);
+function sciopShort(a){const k=SC_SETT[a.settore]||(/generale/i.test(a.titolo||"")?"sciopero generale":/taxi/i.test(a.titolo||"")?"sciopero dei taxi":/\btren|ferrov|italo\b|trenitalia/i.test(a.titolo||"")?"sciopero dei treni":/aere|voli\b/i.test(a.titolo||"")?"sciopero aerei":"");return k||String(a.titolo||"sciopero").replace(/^./,c=>c.toLowerCase())}
+function sciopIco(a){const t=a.settore||"",x=a.titolo||"";return t==="generale"||/generale/i.test(x)?"✊":t==="treni"||/\btren|ferrov|italo\b/i.test(x)?"🚆":t==="aerei"||/aere|voli\b/i.test(x)?"✈️":t==="trasporto locale"||/autobus|metro|tpl|trasporto locale/i.test(x)?"🚌":t==="taxi"||/taxi/i.test(x)?"🚕":t==="scuola"||/scuol/i.test(x)?"🏫":t==="sanità"||/sanit|medic|ospedal/i.test(x)?"🏥":/port[io]\b/i.test(x)?"⚓":/casa|affitt/i.test(x)?"🏠":"📢"}
+const SC_EUR=new Set("ALB AND AUT BEL BGR BIH BLR CHE CYP CZE DEU DNK ESP EST FIN FRA GBR GRC HRV HUN IRL ISL LIE LTU LUX LVA MCO MDA MKD MLT MNE NLD NOR POL PRT ROU SMR SRB SVK SVN SWE UKR VAT XKX".split(" "));
+function sciopN(d,oggi){return Math.round((new Date(d+"T12:00:00")-new Date(oggi+"T12:00:00"))/864e5)}
+function sciopTop(oggi){const L=sciopList(oggi,21).filter(sciopIta),N=sciopNews(oggi);if(!L.length&&!N.length)return null;
   const n0=N[0],a=n0?n0.a:L[0];const altri=new Set(L.concat(N.map(x=>x.a)).filter(x=>x.stato!=="revocato"));altri.delete(a);
-  const n=dn(a),x=new Date(a.data+"T12:00:00"),g=DAYS[x.getDay()].slice(0,3);
-  const chip=n<=0?"oggi":n===1?"domani":n<=6?g+" "+x.getDate():(n0?"":g+" ")+x.getDate()+" "+MONTHS[x.getMonth()].slice(0,3);
-  const hot=!!n0||(n<=1&&a.stato!=="possibile");
-  const pre=n0?{annunciato:"Annunciato ",confermato:"Confermato ",revocato:"Revocato "}[n0.k]:a.stato==="possibile"?"Possibile ":"";
-  const t=pre?pre+sciopShort(a):sciopShort(a).replace(/^./,c=>c.toUpperCase());
-  return `<button type="button" class="sciop${hot?" on":""}${n0&&n0.k==="revocato"?" rv":""}${!n0&&a.stato==="possibile"?" pos":""}" data-rl-sciop aria-label="${esc(t+", "+chip+(altri.size?", e altri "+altri.size:"")+". Apri tutti gli scioperi")}"><span class="sciop-i" aria-hidden="true">🚆</span><span class="sciop-t">${esc(t)}</span><span class="sciop-d">${esc(chip)}${altri.size?`<small>+${altri.size}</small>`:""}</span><span class="sciop-a" aria-hidden="true">›</span></button>`}
-function sciopPanel(oggi){const L=sciopList(oggi,366).concat(sciopNews(oggi).filter(n=>n.k==="revocato").map(n=>n.a)).sort((x,y)=>x.data.localeCompare(y.data));const it=L.filter(sciopIta),ex=L.filter(a=>!sciopIta(a));
-  const r=(a,est)=>`<div class="sc-r${est?" est":""}"><span class="sc-d">${est?"Estero · ":""}${esc(sciopDay(a.data,oggi))}</span><b${a.stato==="revocato"?' style="text-decoration:line-through;font-weight:400"':""}>${esc(a.titolo)}${a.stato==="revocato"?'<span class="sc-new rev">revocato</span>':sciopPos(a)}</b>${sciopDet(a)?`<span>${esc(sciopDet(a))}</span>`:""}${a.fonte&&a.fonte.url?`<a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">Fonte: ${esc(a.fonte.nome||"fonte")} ›</a>`:""}</div>`;
-  return (it.length||ex.length?it.map(a=>r(a,false)).join("")+ex.map(a=>r(a,true)).join(""):'<p class="sc-n">Nessuno sciopero annunciato.</p>')+'<p class="sc-f">L’elenco ufficiale di tutti gli scioperi è sul sito del Ministero dei Trasporti: <a href="https://scioperi.mit.gov.it/" target="_blank" rel="noopener">scioperi.mit.gov.it ›</a></p>'}
+  const n=sciopN(a.data,oggi),x=new Date(a.data+"T12:00:00"),g=DAYS[x.getDay()].slice(0,3);
+  const chip=n<=0?"oggi":n===1?"domani":g+" "+x.getDate()+(n>6?" "+MONTHS[x.getMonth()].slice(0,3):"");
+  const k=n0?{annunciato:"Sciopero annunciato",confermato:"Sciopero confermato",revocato:"Sciopero revocato"}[n0.k]:a.stato==="possibile"?"Possibile sciopero":"Sciopero";
+  const t=sciopShort(a).replace(/^sciopero\s+(dei\s+|della\s+|delle\s+|degli\s+|del\s+)?/i,"").replace(/^./,c=>c.toUpperCase());
+  return {a,k,t,chip,altri:altri.size,hot:!!n0||(n<=1&&a.stato!=="possibile"),rv:!!(n0&&n0.k==="revocato"),pos:!n0&&a.stato==="possibile"}}
+function scBarUpd(){const el=document.getElementById("scBar");if(!el)return;let x=null;try{x=sciopTop(isoDay(new Date()))}catch(_){}
+  document.body.classList.toggle("has-sc",!!x);if(!x){el.hidden=true;el.innerHTML="";return}
+  const h=`<span class="wrap"><span class="sb-i" aria-hidden="true">${sciopIco(x.a)}</span><span class="sb-k">${esc(x.k)}</span><span class="sb-t">${esc(x.t)}</span><span class="sb-d">${esc(x.chip)}${x.altri?` <small>+${x.altri}</small>`:""} ›</span></span>`;
+  el.className="sc-bar"+(x.hot?" on":"")+(x.rv?" rv":"")+(x.pos?" pos":"");if(el.dataset.h!==h){el.innerHTML=h;el.dataset.h=h}
+  el.setAttribute("aria-label",`${x.k}: ${x.t}, ${x.chip}${x.altri?", e altri "+x.altri:""}. Apri tutti gli scioperi`);el.hidden=false}
+window.RG_scBar=scBarUpd;
+function sciopLast(fid){if(!fid)return null;let b=null;Object.values(S.stories||{}).forEach(s=>{if(s&&s.filone_id===fid&&s.data&&(!b||s.data>b.data))b=s});return b}
+function sciopPanel(oggi){const L=sciopList(oggi,366).concat(sciopNews(oggi).filter(n=>n.k==="revocato").map(n=>n.a)).sort((x,y)=>x.data.localeCompare(y.data));
+  if(!L.length)return '<p class="sc-n">Nessuno sciopero annunciato.</p>'+SC_FOOT;
+  const isEu=a=>!sciopIta(a)&&(a.paesi||[]).some(p=>SC_EUR.has(p)),G=[["In Italia","🇮🇹",L.filter(sciopIta)],["In Europa","🇪🇺",L.filter(isEu)],["Nel mondo","🌍",L.filter(a=>!sciopIta(a)&&!isEu(a))]];
+  const W=42,T=L.filter(a=>sciopN(a.data,oggi)<=W);const end=new Date(oggi+"T12:00:00");end.setDate(end.getDate()+W);
+  const tl=T.length?`<div class="sk-tl" aria-hidden="true"><span class="t0">oggi</span><span class="t1">${end.getDate()} ${MONTHS[end.getMonth()].slice(0,3)}</span><div class="in"><i class="ax"></i>${T.map(a=>{const n=Math.max(0,sciopN(a.data,oggi)),x=new Date(a.data+"T12:00:00");return `<span class="m${n<=14&&a.stato!=="revocato"?" on":""}" style="left:${(n/W*100).toFixed(1)}%"><b>${sciopIta(a)?"🇮🇹":(agFlag(a)||"🌍")}</b><i></i><small>${x.getDate()}${x.getMonth()!==new Date(oggi+"T12:00:00").getMonth()?"/"+(x.getMonth()+1):""}</small></span>`}).join("")}</div></div>`:"";
+  const row=a=>{const n=sciopN(a.data,oggi),x=new Date(a.data+"T12:00:00"),rv=a.stato==="revocato";const it=sciopIta(a);
+    const tt=it?sciopShort(a).replace(/^./,c=>c.toUpperCase()):a.titolo;const th=a.filone_id&&S.threads&&S.threads[a.filone_id];
+    const sub=[a.chi,sciopDet(a)].filter(Boolean).join(" · ")||(th?"tema: "+th.titolo:"");
+    const cd=rv?"revocato":n<=0?"oggi":n===1?"domani":"tra "+n+" gg";
+    const fol=th&&window.RG_follow?window.RG_follow.on("filoni",a.filone_id):false;const st=sciopLast(a.filone_id);
+    const det=`<dl class="sk-kv">${it&&a.titolo&&a.titolo.toLowerCase()!==tt.toLowerCase()?`<dt>COSA</dt><dd>${esc(a.titolo)}</dd>`:""}${a.chi?`<dt>CHI</dt><dd>${esc(a.chi)}</dd>`:""}${a.perche?`<dt>PERCHÉ</dt><dd>${esc(a.perche)}</dd>`:""}
+      <dt>DURATA</dt><dd${a.durata||a.orari?"":' class="na"'}>${esc(a.durata||a.orari||(rv?"Revocato.":"Orari e settori non ancora indicati: arrivano con la proclamazione ufficiale."))}</dd>
+      ${a.stato==="possibile"?'<dt>STATO</dt><dd>Annunciato, non ancora proclamato in via ufficiale.</dd>':""}${a.fonte&&a.fonte.url?`<dt>FONTE</dt><dd><a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">${esc(a.fonte.nome||"fonte")} ›</a></dd>`:""}</dl>
+      ${th?`<div class="sk-th"><small>IL TEMA · ${esc(th.titolo)}</small>${st?`<button type="button" class="sk-st" data-sc-story="${esc(st.id)}">${st.data===oggi?"Oggi":esc(fmtDate(st.data))}: ${esc(st.titolo)} ›</button>${st.perche_conta?`<p>${esc(st.perche_conta)}</p>`:""}`:""}
+      <div class="sk-act">${window.RG_follow?`<button type="button" data-sc-follow="${esc(a.filone_id)}" aria-pressed="${fol}">${fol?"★ Segui il tema":"☆ Segui il tema"}</button>`:""}<button type="button" data-sc-th="${esc(a.filone_id)}">Tutta la storia del tema ›</button></div></div>`:""}`;
+    return `<details class="sk${n<=1&&!rv?" hot":""}${rv?" rv":""}"><summary><span class="sk-db"><small>${DAYS[x.getDay()].slice(0,3)}</small><b>${x.getDate()}</b><small>${MONTHS[x.getMonth()].slice(0,3)}</small></span><span class="sk-tx"><span class="sk-t"><span aria-hidden="true">${it?sciopIco(a):(agFlag(a)||"🌍")}</span> ${esc(tt)}${!rv?sciopPos(a):""}</span>${sub?`<span class="sk-s">${esc(sub)}</span>`:""}</span><span class="sk-cd">${cd}</span></summary>${det}</details>`};
+  return tl+G.filter(g=>g[2].length).map(([n,f,A])=>`<div class="sk-g"><span aria-hidden="true">${f}</span> ${n.toUpperCase()}</div>`+A.map(row).join("")).join("")+SC_FOOT}
+const SC_FOOT='<p class="sc-f">Elenco ufficiale completo sul sito del Ministero dei Trasporti: <a href="https://scioperi.mit.gov.it/" target="_blank" rel="noopener">scioperi.mit.gov.it ›</a></p>';
 document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.closest&&e.target.closest("[data-rl-sciop]")){e.preventDefault();e.target.closest("[data-rl-sciop]").click()}});
-document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-sciop]"))return;e.preventDefault();const b=currentBrief();if(!b)return;(window.RG_openBox||function(){})("Scioperi in arrivo","in Italia e all'estero, tutti quelli annunciati",sciopPanel(b.data));try{track("scioperi-apri")}catch(_){}});
+document.addEventListener("click",e=>{
+  const so=e.target.closest("[data-sc-story]");if(so){e.preventDefault();agsClose();openStory(so.dataset.scStory);return}
+  const st=e.target.closest("[data-sc-th]");if(st){e.preventDefault();agsClose();show("timeline");openTheme(st.dataset.scTh);return}
+  const sf=e.target.closest("[data-sc-follow]");if(sf){e.preventDefault();if(!window.RG_follow)return;window.RG_follow.toggle("filoni",sf.dataset.scFollow);const on=window.RG_follow.on("filoni",sf.dataset.scFollow);sf.setAttribute("aria-pressed",on);sf.textContent=on?"★ Segui il tema":"☆ Segui il tema";return}
+  const d=e.target.closest(".sk>summary");if(d){try{track("sciopero-dettaglio")}catch(_){}}
+  if(!e.target.closest("[data-rl-sciop]"))return;e.preventDefault();(window.RG_openBox||function(){})("Scioperi","prossime settimane · tocca uno sciopero per i dettagli",sciopPanel(isoDay(new Date())));try{track("scioperi-apri")}catch(_){}});
 function sinceHTML(b){
   const pb=prevBrief(b);
   const ch=(b.cambiato||[]).filter(x=>x&&x.testo),lm=pb?levelMoves(b):[];
@@ -3843,7 +3873,7 @@ function pingSeen(){
 }
 function earlyBar(){
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
-  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · stai vedendo le prime 3 storie · <a href="#" data-lock="storie">Sblocca tutto con l\'email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";bar.hidden=false}
+  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · stai vedendo le prime 3 storie · <a href="#" data-lock="storie">Sblocca tutto con l\'email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";if(S.guest)delete bar.dataset.plain;else bar.dataset.plain="1";bar.hidden=false}
 }
 function gateLock(on){document.body.classList.toggle("gated",on);document.querySelectorAll("header.top,main,.foot").forEach(e=>{e.inert=on})}
 function earlyAccess(P){
@@ -4120,7 +4150,7 @@ setTimeout(perfSend,20000);
   db.collection("events").onSnapshot(s=>{const a=[];s.docs.forEach(d=>{const x=d.data();(x.items||[]).forEach(e=>a.push(e))});S.events=a;done("events")},onErr("events"));
   db.collection("countries").onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]={iso:d.id,...d.data()});S.countries=o;done("countries")},onErr("countries"));
   db.collection("approfondimenti").onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]={id:d.id,...d.data()});S.approf=o;schedule();refreshDeep()},e=>console.warn("approfondimenti",e));
-  db.collection("agenda").onSnapshot(s=>{S.agenda=s.docs.map(d=>({id:d.id,...d.data()}));schedule()},e=>console.warn("agenda",e));
+  db.collection("agenda").onSnapshot(s=>{S.agenda=s.docs.map(d=>({id:d.id,...d.data()}));try{scBarUpd()}catch(_){}schedule()},e=>console.warn("agenda",e));
   db.collection("glossario").onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]={id:d.id,...d.data()});S.glossario=o;schedule()},e=>console.warn("glossario",e));
   db.collection("config").onSnapshot(s=>{const d=s.docs.find(x=>x.id==="preferenze");S.prefs=d?d.data():null;schedule()},e=>console.warn("config",e));
   db.collection("settimanali").onSnapshot(s=>{S.settimanali=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.data).localeCompare(String(a.data)));schedule()},e=>console.warn("settimanali",e));
@@ -4213,6 +4243,7 @@ function mailNudge(){return anon()?`<p class="xp-nudge">Le tue scelte restano so
 document.addEventListener("click",e=>{if(e.target.closest("[data-xp-mail]")){e.preventDefault();const ip=document.getElementById("intPanel");if(ip&&!ip.hidden)closePanel();if(typeof showLock==="function")showLock({what:"interessi"})}});
 function follows(k,id){return F[k].includes(id)}
 function toggleF(k,id){if(!F[k])F[k]=[];const i=F[k].indexOf(id);if(i>=0)F[k].splice(i,1);else F[k].push(id);saveF()}
+window.RG_follow={on:(k,id)=>(F[k]||[]).includes(id),toggle:(k,id)=>{toggleF(k,id);try{perTe()}catch(_){}}}; /* v-scioperi: «Segui il tema» dal pannello degli scioperi */
 function anyF(){return F.aree.length+(F.paesi||[]).length+F.temi.length+F.incroci.length+(F.filoni||[]).filter(id=>S.threads&&S.threads[id]).length>0} /* v-pt: contano anche i temi seguiti */
 const isISO=g=>/^[A-Z]{3}$/.test(g);
 function topN(t){return AMBN[t]||SUBN[t]||null}
@@ -5903,7 +5934,7 @@ document.addEventListener("click",e=>{const b=e.target.closest(".logbadge[data-s
 RL.lnk=null;
 function rlLnk(v){RL.lnk=v||null;const b=AGS.el&&AGS.el.querySelector("[data-rl-new]");if(b)b.hidden=!RL.lnk&&!RL.sel}
 {const f=rlOpenBox;rlOpenBox=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
-window.RG_openBox=(...a)=>rlOpenBox(...a);window.RG_strikeHTML=()=>{try{const b=currentBrief();return b?rlStrike(b):""}catch(_){return ""}};window.RG_swipe=d=>{try{return rlSwipeGo(d)}catch(_){return false}};window.RG_openStory=id=>openStory(id); /* v-incorpora: per i link che si aprono nel pannello */
+window.RG_openBox=(...a)=>rlOpenBox(...a);window.RG_strikeHTML=()=>"";window.RG_swipe=d=>{try{return rlSwipeGo(d)}catch(_){return false}};window.RG_openStory=id=>openStory(id); /* v-incorpora: per i link che si aprono nel pannello */
 {const f=rlOpen;rlOpen=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
 {const f=thOpen;thOpen=function(id,...a){const r=f.call(this,id,...a);if(r)rlLnk("tema="+encodeURIComponent(id));return r}}
 {const f=dosOpenBox;dosOpenBox=function(d,...a){const r=f.call(this,d,...a);rlLnk("dossier="+encodeURIComponent(d.id));return r}}
@@ -6792,7 +6823,7 @@ const mins=s=>Math.max(1,Math.round((+s||0)/60));
 podLoad();
 /* v-fix (8/11): un solo «Ascolta il briefing», sempre subito sotto l'intestazione (prima, quando la lista si ricostruiva, ne aggiungeva un altro);
    sotto il lettore il riquadro degli scioperi, se ce n'è uno */
-function topStrike(br,anchor){let w=br.querySelector(":scope>.sciop-w");const html=typeof window.RG_strikeHTML==="function"?window.RG_strikeHTML():"";
+function topStrike(br,anchor){try{window.RG_scBar&&window.RG_scBar()}catch(_){}let w=br.querySelector(":scope>.sciop-w");const html=typeof window.RG_strikeHTML==="function"?window.RG_strikeHTML():"";
   if(!html){if(w)w.remove();return}if(!w){w=document.createElement("div");w.className="sciop-w"}if(w.dataset.h!==html){w.innerHTML=html;w.dataset.h=html}if(anchor.nextElementSibling!==w)anchor.after(w)}
 async function podFill(){
   const br=document.getElementById("briefing");const h=br&&br.querySelector(":scope>.brief-head[data-bdate]");if(!h)return;const d=h.dataset.bdate;
@@ -7261,6 +7292,23 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 .sc-pos,.sciop-r span .sc-pos,.sc-r span.sc-pos{display:inline-block!important;margin-left:6px;padding:0 4px;border:1px dashed var(--muted);border-radius:3px;font:500 10px/1.5 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);vertical-align:2px}
 .sc-r{border-top:1px solid var(--line);padding:12px 4px}.sc-r .sc-d{display:block;font:500 11px/1.3 "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:#C98F2E}
 .sc-r.est .sc-d{color:var(--muted)}.sc-r b{display:block;margin-top:3px}.sc-r span:not(.sc-d){display:block;color:var(--muted);font-size:14px}.sc-r a{font-size:13px}
+.sc-bar{display:block;width:100%;border:0;border-bottom:1px solid rgba(240,174,69,.35);background:linear-gradient(90deg,rgba(240,174,69,.13),rgba(240,174,69,.04));color:var(--ink);font:inherit;text-align:left;cursor:pointer;padding:7px 0}
+.sc-bar>.wrap{display:flex;align-items:center;gap:9px;min-height:22px}.sb-i{font-size:15px}.sb-k{font:600 11px "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);white-space:nowrap}
+.sb-t{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.sb-d{margin-left:auto;font:600 12px "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--mid);white-space:nowrap}.sb-d small{font:inherit;opacity:.8}
+.sc-bar.on{background:linear-gradient(90deg,rgba(240,174,69,.26),rgba(240,174,69,.08))}.sc-bar.rv .sb-t{text-decoration:line-through;text-decoration-color:var(--muted)}.sc-bar.pos .sb-k{opacity:.85}
+body.has-sc #pubBar[data-plain="1"]{display:none}
+.sk-tl{position:relative;height:56px;margin:4px 4px 10px}.sk-tl .in{position:absolute;left:52px;right:60px;top:0;bottom:0}.sk-tl .ax{position:absolute;left:-8px;right:-8px;top:31px;height:2px;background:var(--line)}.sk-tl .t0,.sk-tl .t1{position:absolute;top:25px;font:500 10.5px "IBM Plex Mono",monospace;color:var(--muted)}.sk-tl .t0{left:0}.sk-tl .t1{right:0}
+.sk-tl .m{position:absolute;top:0;transform:translateX(-50%);text-align:center;line-height:1}.sk-tl .m b{display:block;font-size:15px;font-weight:400}.sk-tl .m i{display:block;width:10px;height:10px;border-radius:50%;background:#8fa0bd;margin:6px auto 0;border:2px solid var(--surface)}.sk-tl .m.on i{background:#F0AE45}.sk-tl .m small{display:block;font:500 10.5px "IBM Plex Mono",monospace;color:var(--ink);margin-top:3px}
+.sk-g{display:flex;align-items:center;gap:8px;padding:14px 4px 6px;border-top:1px solid var(--line);font:500 11.5px "IBM Plex Mono",monospace;letter-spacing:.12em;color:var(--muted)}
+.sk{border-top:1px solid var(--line)}.sk-g+.sk{border-top:0}.sk>summary{list-style:none;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 4px;cursor:pointer;min-height:64px}.sk>summary::-webkit-details-marker{display:none}
+.sk-db{text-align:center;line-height:1}.sk-db small{display:block;font:500 10px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.sk-db b{display:block;font:600 24px "IBM Plex Serif",Georgia,serif;margin:3px 0 2px}.sk.hot .sk-db b,.sk.hot .sk-db small{color:var(--mid)}
+.sk-tx{min-width:0}.sk-s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sk-t{display:block;font-weight:600;font-size:15px;line-height:1.3}.sk-s{display:block;color:var(--muted);font-size:13px;margin-top:3px}.sk-cd{font:500 12px "IBM Plex Mono",monospace;color:var(--muted);white-space:nowrap;text-align:right}.sk-cd::after{content:" ▾";font-size:10px}.sk[open] .sk-cd::after{content:" ▴"}
+.sk.rv .sk-t{text-decoration:line-through;text-decoration-color:var(--muted);font-weight:400}.sk[open]{background:var(--surface-2);border-left:3px solid #F0AE45;border-radius:0 8px 8px 0}.sk[open]>summary{padding-left:1px}
+.sk-kv{display:grid;grid-template-columns:70px 1fr;gap:5px 10px;margin:0;padding:0 12px 4px 57px;font-size:14px;line-height:1.45}.sk-kv dt{font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--muted);padding-top:3px}.sk-kv dd{margin:0}.sk-kv .na{color:var(--muted);font-style:italic}
+.sk-th{margin:10px 12px 0 57px;border-top:1px solid var(--line);padding:10px 0 14px}.sk-th small{display:block;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.sk-st{display:block;background:none;border:0;padding:4px 0 0;text-align:left;color:var(--accent);font-family:inherit;font-weight:600;font-size:14px;line-height:1.35;cursor:pointer}.sk-th p{color:var(--muted);font-size:13.5px;margin:4px 0 0}
+.sk-act{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px}.sk-act button{background:none;border:0;padding:6px 0;min-height:36px;color:var(--accent);font-family:inherit;font-size:14px;cursor:pointer}.sk-act button[aria-pressed="true"]{color:var(--mid)}
+@media (max-width:420px){.sk-kv{padding-left:12px}.sk-th{margin-left:12px}}
 .sc-n,.sc-f{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding:12px 4px 0}
 </style>
 </body></html>
