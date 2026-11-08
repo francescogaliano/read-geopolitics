@@ -54,6 +54,7 @@
   };
   function hideBar() { const b = document.getElementById("rgAppBar"); if (b) b.remove(); }
   function maybeBar() {
+    if (window.RG_pushInvite) return; // v-push: sul telefono l'invito alle notifiche (con la guida per iPhone) prende il posto di questa striscia
     if (standalone || !mobile || days < 3 || ls("rg-app-bar") || ls("rg-app-ok") === "1") return;
     if (document.getElementById("gate") || document.getElementById("nlm") || document.getElementById("rgAppG")) { setTimeout(maybeBar, 8000); return; }
     ls("rg-app-bar", day);

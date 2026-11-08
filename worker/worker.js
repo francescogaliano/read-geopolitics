@@ -5,6 +5,7 @@ import KIT_SALA from "./kit/sala.py";
 import KIT_RGDB from "./kit/rgdb.py";
 import SALA_HTML from "./sala.html";
 import SPIEGATI_HTML from "./spiegati.html";
+import { pushEncrypt, vapidNew, vapidHeader, pushHostOK, pushMatch, clip as pClip } from "./push.js";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
 // v50: Threads, «Rispondi su Threads» nel pannello: ricerca per parola chiave e risposta approvata a mano (max 3 al giorno); permesso threads_keyword_search nel collegamento.
@@ -4705,6 +4706,139 @@ async function igScelte(env) {
 }
 // ============ fine proposte ============
 
+/* ---------- v-push: notifiche del sito (briefing, aggiornamenti, sciopero domani, temi seguiti) ----------
+   Ogni telefono/browser che le attiva è una riga di push_subs, con le sue scelte (prefs) e quello che segue (segui).
+   Arriva solo quello che il lettore ha acceso; nessun tetto giornaliero. */
+let PUSH_T = false;
+async function pushTable(env) {
+  if (PUSH_T) return;
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL, uid TEXT, prefs TEXT NOT NULL, segui TEXT, app INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, last_ok TEXT, fails INTEGER NOT NULL DEFAULT 0)").run();
+  PUSH_T = true;
+}
+async function pushKeys(env) {
+  await kvInit(env);
+  let k = await kvGet(env, "push_vapid");
+  if (k && k.pub && k.jwk) return k;
+  const n = await vapidNew(); // se due richieste partono insieme vince la prima scritta: tutti usano quella
+  await env.DB.prepare("INSERT OR IGNORE INTO kv (k, v, updated_at) VALUES ('push_vapid', ?1, ?2)").bind(JSON.stringify(n), n.at).run();
+  return await kvGet(env, "push_vapid");
+}
+async function pushClaim(env, key) { // una sola volta per chiave, anche se due cron girano insieme
+  await kvInit(env);
+  const r = await env.DB.prepare("INSERT OR IGNORE INTO kv (k, v, updated_at) VALUES (?1, '1', ?2)").bind(key, new Date().toISOString()).run();
+  return !!(r && r.meta && r.meta.changes);
+}
+const PUSH_DEF = { briefing: true, agg: true, sciopero: true, temi: true };
+function pushPrefs(x) { const o = {}; for (const k of Object.keys(PUSH_DEF)) o[k] = !!(x && x[k]); return o; }
+function pushSegui(x) {
+  if (!x || typeof x !== "object") return null;
+  const L = (a, n) => (Array.isArray(a) ? a : []).filter((v) => typeof v === "string" && v.length < 80).slice(0, n);
+  return { filoni: L(x.filoni, 300), paesi: L(x.paesi, 250), temi: L(x.temi, 60), incroci: (Array.isArray(x.incroci) ? x.incroci : []).slice(0, 80).map((i) => ({ p: L(i && i.p, 80), t: typeof (i && i.t) === "string" ? i.t.slice(0, 60) : "" })) };
+}
+async function pushRoute(request, env, p, method, url) {
+  if (method === "GET" && p === "/api/push/key") return json({ ok: true, key: (await pushKeys(env)).pub });
+  if (method === "GET" && p === "/api/push/app") { // c'è un'app installata (iPhone) per questo account? Serve a non riproporre «installa» in Safari
+    const uid = url.searchParams.get("uid") || "";
+    if (!uid || uid.length > 80) return json({ ok: true, app: false });
+    await pushTable(env);
+    const r = await env.DB.prepare("SELECT 1 FROM push_subs WHERE uid=?1 AND app=1 LIMIT 1").bind(uid).first();
+    return json({ ok: true, app: !!r });
+  }
+  if (method !== "POST") return null;
+  const b = await request.json().catch(() => null);
+  if (!b) return json({ ok: false, error: "bad_request" }, 400);
+  await pushTable(env);
+  if (p === "/api/push/sub") {
+    const sub = b.sub || {}, keys = sub.keys || {};
+    if (!pushHostOK(sub.endpoint) || typeof keys.p256dh !== "string" || typeof keys.auth !== "string" || keys.p256dh.length > 200 || keys.auth.length > 60) return json({ ok: false, error: "bad_subscription" }, 400);
+    const now = new Date().toISOString(), uid = typeof b.uid === "string" && b.uid.length < 80 && b.uid !== "admin" ? b.uid : null;
+    await env.DB.prepare("INSERT INTO push_subs (endpoint, p256dh, auth, uid, prefs, segui, app, created_at, updated_at, fails) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8, 0) ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth, uid=COALESCE(excluded.uid, push_subs.uid), prefs=excluded.prefs, segui=excluded.segui, app=excluded.app, updated_at=excluded.updated_at, fails=0")
+      .bind(sub.endpoint, keys.p256dh, keys.auth, uid, JSON.stringify(pushPrefs(b.prefs)), JSON.stringify(pushSegui(b.segui)), b.app ? 1 : 0, now).run();
+    if (b.prova && (await pushClaim(env, "push:prova:" + sub.endpoint.slice(-40) + ":" + now.slice(0, 15)))) {
+      const st = await pushOne(env, { endpoint: sub.endpoint, p256dh: keys.p256dh, auth: keys.auth }, { t: "✓ Notifiche attive", b: "Riceverai solo quelle che hai scelto. Le cambi quando vuoi da «Il mio Read».", u: "/?utm_source=push", tag: "rg-prova" }, {});
+      return json({ ok: true, prova: st });
+    }
+    return json({ ok: true });
+  }
+  if (p === "/api/push/off") {
+    if (typeof b.endpoint === "string") await env.DB.prepare("DELETE FROM push_subs WHERE endpoint=?1").bind(b.endpoint).run();
+    return json({ ok: true });
+  }
+  return null;
+}
+async function pushOne(env, sub, msg, cache) {
+  try {
+    const keys = cache.keys || (cache.keys = await pushKeys(env));
+    const origin = new URL(sub.endpoint).origin;
+    cache.auth = cache.auth || {};
+    const auth = cache.auth[origin] || (cache.auth[origin] = await vapidHeader(keys, sub.endpoint, "https://www.readgeopolitics.com"));
+    const body = await pushEncrypt(sub.p256dh, sub.auth, JSON.stringify(msg));
+    const r = await fetch(sub.endpoint, { method: "POST", headers: { TTL: String(msg.ttl || 6 * 3600), Urgency: "normal", "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", Authorization: auth }, body });
+    if (r.status === 404 || r.status === 410) { await env.DB.prepare("DELETE FROM push_subs WHERE endpoint=?1").bind(sub.endpoint).run(); return r.status; }
+    if (r.ok) await env.DB.prepare("UPDATE push_subs SET last_ok=?2, fails=0 WHERE endpoint=?1").bind(sub.endpoint, new Date().toISOString()).run();
+    else await env.DB.prepare("UPDATE push_subs SET fails=fails+1 WHERE endpoint=?1").bind(sub.endpoint).run();
+    return r.status;
+  } catch (e) { return 0; }
+}
+async function pushAll(env, make) { // make(sub) -> messaggio o null
+  const rs = (await env.DB.prepare("SELECT endpoint, p256dh, auth, prefs, segui FROM push_subs WHERE fails < 10").all()).results || [];
+  const cache = {}, jobs = [];
+  for (const r of rs) {
+    let pr = {}, sg = null; try { pr = JSON.parse(r.prefs) || {}; } catch (e) {} try { sg = JSON.parse(r.segui); } catch (e) {}
+    const m = make(pr, sg); if (m) jobs.push([r, m]);
+  }
+  let ok = 0;
+  for (let i = 0; i < jobs.length; i += 20) { const st = await Promise.all(jobs.slice(i, i + 20).map(([r, m]) => pushOne(env, r, m, cache))); ok += st.filter((x) => x >= 200 && x < 300).length; }
+  return { iscritti: rs.length, inviate: jobs.length, ok };
+}
+async function pushTick(env) {
+  await pushTable(env);
+  const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subs").first();
+  if (!c || !c.n) return;
+  const now = Date.now(), day = romeDay(now), hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(now));
+  const log = {};
+  // 1. il briefing del mattino (le storie sui temi seguiti vanno nella stessa notifica)
+  const b = await env.DB.prepare("SELECT data FROM docs WHERE type='briefings' AND key=?1 AND status='published'").bind(day).first();
+  if (b && hm < "12:00" && (await pushClaim(env, "push:b:" + day))) {
+    const br = JSON.parse(b.data), ids = (br.storie_mondo || []).concat(br.storie_italia || []);
+    let st = [];
+    if (ids.length) { const q = await env.DB.prepare("SELECT key, data FROM docs WHERE type='stories' AND status='published' AND key IN (" + ids.map((_, i) => "?" + (i + 1)).join(",") + ")").bind(...ids).all(); const M = {}; (q.results || []).forEach((r) => { try { M[r.key] = { id: r.key, ...JSON.parse(r.data) }; } catch (e) {} }); st = ids.map((id) => M[id]).filter(Boolean); }
+    const in60 = Array.isArray(br.in60) ? br.in60 : [];
+    log.briefing = await pushAll(env, (pr, sg) => {
+      const mine = pr.temi ? st.filter((x) => pushMatch(sg, x)) : [];
+      if (pr.briefing) return { t: "📰 Il briefing di oggi è pronto", b: mine.length ? `★ Per te: ${pClip(mine[0].titolo, 90)}${mine.length > 1 ? ` · e altre ${mine.length - 1}` : ""}` : `${ids.length} storie. ${pClip(in60[0] || "", 110)}`, u: "/?utm_source=push&utm_medium=briefing", tag: "rg-b-" + day };
+      if (mine.length) return { t: "★ Sui temi che segui", b: pClip(mine[0].titolo, 110) + (mine.length > 1 ? ` · e altre ${mine.length - 1}` : ""), u: `/?storia=${encodeURIComponent(mine[0].id)}&utm_source=push&utm_medium=temi`, tag: "rg-t-" + day };
+      return null;
+    });
+  }
+  // 2. gli aggiornamenti dopo il briefing: una notifica per giro, solo per quelli appena usciti
+  const ag = (await env.DB.prepare("SELECT key, data, published_at FROM docs WHERE type='aggiornamenti' AND status='published' AND json_extract(data,'$.data')=?1 ORDER BY key").bind(day).all()).results || [];
+  const fresh = [];
+  for (const r of ag) { if (now - Date.parse(r.published_at || 0) > 3 * 3600e3) continue; if (await pushClaim(env, "push:a:" + r.key)) { try { fresh.push({ id: r.key, ...JSON.parse(r.data) }); } catch (e) {} } }
+  if (fresh.length) {
+    const ora = fresh[fresh.length - 1].ora || hm;
+    log.agg = await pushAll(env, (pr, sg) => {
+      const mine = pr.temi ? fresh.filter((x) => pushMatch(sg, x)) : [];
+      const first = mine[0] || fresh[0], u = first.storia_id ? `/?storia=${encodeURIComponent(first.storia_id)}&utm_source=push&utm_medium=agg` : "/?utm_source=push&utm_medium=agg";
+      if (pr.agg) return { t: `⚡ Aggiornamenti delle ${ora}`, b: (mine.length ? "★ " : "") + pClip(first.titolo, 110) + (fresh.length > 1 ? ` · e ${fresh.length === 2 ? "1 altra" : "altre " + (fresh.length - 1)}` : ""), u, tag: "rg-a-" + day + "-" + ora };
+      if (mine.length) return { t: "★ Sui temi che segui", b: pClip(mine[0].titolo, 110) + (mine.length > 1 ? ` · e altre ${mine.length - 1}` : ""), u, tag: "rg-ta-" + day + "-" + ora };
+      return null;
+    });
+  }
+  // 3. sciopero domani, alle 19
+  if (hm >= "19:00" && hm < "22:00") {
+    const dom = romeDay(now + 86400000);
+    const rs = (await env.DB.prepare("SELECT data FROM docs WHERE type='agenda' AND status='published' AND json_extract(data,'$.data')=?1").bind(dom).all()).results || [];
+    const sc = rs.map((r) => { try { return JSON.parse(r.data); } catch (e) { return null; } }).filter((a) => a && (a.tipo === "sciopero" || /scioper/i.test(a.titolo || "")) && a.stato !== "revocato" && (!(a.paesi || []).length || (a.paesi || []).includes("ITA")));
+    if (sc.length && (await pushClaim(env, "push:s:" + dom))) {
+      const a = sc[0], t = sc.length > 1 ? `🚆 Domani ${sc.length} scioperi` : `🚆 Domani ${/generale/i.test(a.titolo || "") || a.settore === "generale" ? "sciopero generale" : "sciopero"}`;
+      const bd = sc.length > 1 ? sc.map((x) => pClip(x.titolo, 60)).join(" · ") : pClip(a.titolo, 90) + (a.orari ? ` · ${a.orari}` : a.durata ? ` · ${a.durata}` : "") + ". Tocca per i dettagli.";
+      log.sciopero = await pushAll(env, (pr) => (pr.sciopero ? { t, b: pClip(bd, 170), u: "/?sciopero=1&utm_source=push&utm_medium=sciopero", tag: "rg-s-" + dom, ttl: 4 * 3600 } : null));
+    }
+  }
+  if (Object.keys(log).length) await kvSet(env, "push_last", { at: new Date().toISOString(), ...log });
+}
+
 async function route(request, env, ctx) {
   const url = new URL(request.url);
   const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -4737,6 +4871,7 @@ async function route(request, env, ctx) {
   if (method === "GET" && p === "/api/numeri_aperti") { if (url.searchParams.get("run") === "1") { const c = await kvGet(env, "num_aperti"); if (!c || Date.now() - Date.parse(c.at) > 600000) await numAperti(env, true); } return json(await numConfronto(env), 200, { ...CORS, "cache-control": "no-store" }); } // v63: confronto cruscotto / fonti aperte (?run=1 rilegge, al massimo ogni 10 minuti)
   if (method === "GET" && p === "/api/sond_scelte") return json({ ok: true, scelte: (await kvGet(env, "sond_scelte")) || {}, mie: (await kvGet(env, "sond_mia")) || {}, post: (await kvGet(env, "sond_post")) || {} }, 200, { "cache-control": "no-store" }); // v60: quale domanda Instagram è stata scelta ogni giorno (0 = la principale), la legge l'agente per i verdetti
   if (method === "GET" && p === "/api/meteo") return await meteoApi(request, url, env);
+  if (p.startsWith("/api/push/")) { const r = await pushRoute(request, env, p, method, url); if (r) return r; } // v-push
   if (method === "GET" && p === "/api/seguire") return json(await seguireData(env), 200, { "cache-control": "public, max-age=300" }); // v62: la pagina «Da seguire»
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
@@ -6192,6 +6327,7 @@ export default {
     try { await tgMorning(env, false, null); } catch (e) { try { await kvSet(env, "tg_err", { at: new Date().toISOString(), msg: thErr(e) }); } catch (_) {} } // v33: Telegram, il mattino
     try { await salaTick(env); } catch (e) {} // v73: sala di controllo, avvisi
     try { await igStatsTick(env); } catch (e) {} // v86: statistiche Instagram, una volta al giorno
+    try { await pushTick(env); } catch (e) { try { await kvSet(env, "push_err", { at: new Date().toISOString(), msg: String((e && e.message) || e) }); } catch (_) {} } // v-push: notifiche del sito
     try { await siteWarm(env); } catch (e) {} // v26: file dei dati del sito già pronto
     try { await numAperti(env, false); } catch (e) {} // v63: numeri da fonti aperte, una volta al giorno dopo le 7
     try { await kvInit(env); await env.DB.prepare("DELETE FROM kv WHERE (k >= 'perf:' AND k < 'perf:' || char(65535)) AND k < ?1").bind("perf:" + new Date(Date.now() - 14 * 86400000).toISOString()).run(); } catch (e) {}
