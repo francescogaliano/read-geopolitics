@@ -2054,15 +2054,19 @@ function sciopIta(a){return !(a.paesi||[]).length||(a.paesi||[]).includes("ITA")
 function sciopDet(a){return [a.settore&&a.settore!=="altro"&&a.settore!=="generale"?a.settore:"",a.orari||""].filter(Boolean).join(" · ")}
 function sciopPos(a){return a.stato==="possibile"?'<span class="sc-pos">possibile</span>':""}
 /* v-scioperi 7 giorni (8/11): tutti gli scioperi in Italia dei prossimi 7 giorni, in ordine di data; a 1-2 giorni il titolo diventa «Oggi/Domani…» e la riga si accende; «possibile» se non ancora proclamato */
-function rlStrike(b){if(!(S.briefings[0]&&b===S.briefings[0]))return "";const L=sciopList(b.data,7).filter(sciopIta);const inL=new Set(L);const N=sciopNews(b.data).filter(n=>n.k==="revocato"||!inL.has(n.a));if(!L.length&&!N.length)return "";
-  const NM=new Map(sciopNews(b.data).map(n=>[n.a,n]));
+/* v-scioperi riga (8/11): una sola riga stringata sotto il lettore: cosa (breve) e data in evidenza; il resto nel pannello.
+   Prima la novità (annunciato/confermato/revocato oggi o ieri), altrimenti il prossimo sciopero in Italia entro 3 settimane. Ambra se oggi/domani o se è una novità */
+const SC_SETT={generale:"sciopero generale",treni:"sciopero dei treni",aerei:"sciopero aerei","trasporto locale":"sciopero trasporti",taxi:"sciopero dei taxi",scuola:"sciopero della scuola","sanità":"sciopero della sanità"};
+function sciopShort(a){const k=SC_SETT[a.settore]||(/generale/i.test(a.titolo||"")?"sciopero generale":"");return k||String(a.titolo||"sciopero").replace(/^./,c=>c.toLowerCase())}
+function rlStrike(b){if(!(S.briefings[0]&&b===S.briefings[0]))return "";const L=sciopList(b.data,21).filter(sciopIta),N=sciopNews(b.data);if(!L.length&&!N.length)return "";
   const dn=a=>Math.round((new Date(a.data+"T12:00:00")-new Date(b.data+"T12:00:00"))/864e5);
-  const near=L.filter(a=>dn(a)<=1&&a.stato!=="possibile"),f=near[0];
-  const tit=f?((dn(f)<=0?"Oggi ":"Domani ")+(/generale/i.test(f.titolo)||f.settore==="generale"?"sciopero generale":"uno sciopero")+(near.length>1?" e altri "+(near.length-1):"")):L.length?"Scioperi nei prossimi 7 giorni":"Novità sugli scioperi";
-  const lab=a=>{const n=dn(a),x=new Date(a.data+"T12:00:00");if(n<=0)return "Oggi";if(n===1)return "Domani";if(n>7)return x.getDate()+" "+MONTHS[x.getMonth()].slice(0,3)+(a.data_fine&&a.data_fine!==a.data?"–"+new Date(a.data_fine+"T12:00:00").getDate():"");const g=DAYS[x.getDay()].slice(0,3);return g.charAt(0).toUpperCase()+g.slice(1)+" "+x.getDate()+(a.data_fine&&a.data_fine!==a.data?"–"+new Date(a.data_fine+"T12:00:00").getDate():"")};
-  const nw=n=>n?`<span class="sc-new${n.k==="revocato"?" rev":""}">${n.k} ${n.q}</span>`:"";
-  const row=(a,n)=>`<div class="sciop-r${dn(a)<=1&&a.stato!=="possibile"&&a.stato!=="revocato"?" on":""}${a.stato==="possibile"?" pos":""}${a.stato==="revocato"?" sc-rv":""}"><span class="sciop-d">${esc(lab(a))}</span><span><b>${esc(a.titolo)}${a.stato==="revocato"?"":sciopPos(a)}${nw(n)}</b>${sciopDet(a)?`<span>${esc(sciopDet(a))}</span>`:""}</span></div>`;
-  return `<div class="sciop" role="button" tabindex="0" data-rl-sciop><div class="sciop-h"><b>🚆 ${esc(tit)}</b><span>Tutti ›</span></div>${L.map(a=>[a,NM.get(a)]).concat(N.map(n=>[n.a,n])).sort((x,y)=>x[0].data.localeCompare(y[0].data)).map(([a,n])=>row(a,n)).join("")}</div>`}
+  const n0=N[0],a=n0?n0.a:L[0];const altri=new Set(L.concat(N.map(x=>x.a)).filter(x=>x.stato!=="revocato"));altri.delete(a);
+  const n=dn(a),x=new Date(a.data+"T12:00:00"),g=DAYS[x.getDay()].slice(0,3);
+  const chip=n<=0?"oggi":n===1?"domani":n<=6?g+" "+x.getDate():(n0?"":g+" ")+x.getDate()+" "+MONTHS[x.getMonth()].slice(0,3);
+  const hot=!!n0||(n<=1&&a.stato!=="possibile");
+  const pre=n0?{annunciato:"Annunciato ",confermato:"Confermato ",revocato:"Revocato "}[n0.k]:a.stato==="possibile"?"Possibile ":"";
+  const t=pre?pre+sciopShort(a):sciopShort(a).replace(/^./,c=>c.toUpperCase());
+  return `<button type="button" class="sciop${hot?" on":""}${n0&&n0.k==="revocato"?" rv":""}${!n0&&a.stato==="possibile"?" pos":""}" data-rl-sciop aria-label="${esc(t+", "+chip+(altri.size?", e altri "+altri.size:"")+". Apri tutti gli scioperi")}"><span class="sciop-i" aria-hidden="true">🚆</span><span class="sciop-t">${esc(t)}</span><span class="sciop-d">${esc(chip)}${altri.size?`<small>+${altri.size}</small>`:""}</span><span class="sciop-a" aria-hidden="true">›</span></button>`}
 function sciopPanel(oggi){const L=sciopList(oggi,366).concat(sciopNews(oggi).filter(n=>n.k==="revocato").map(n=>n.a)).sort((x,y)=>x.data.localeCompare(y.data));const it=L.filter(sciopIta),ex=L.filter(a=>!sciopIta(a));
   const r=(a,est)=>`<div class="sc-r${est?" est":""}"><span class="sc-d">${est?"Estero · ":""}${esc(sciopDay(a.data,oggi))}</span><b${a.stato==="revocato"?' style="text-decoration:line-through;font-weight:400"':""}>${esc(a.titolo)}${a.stato==="revocato"?'<span class="sc-new rev">revocato</span>':sciopPos(a)}</b>${sciopDet(a)?`<span>${esc(sciopDet(a))}</span>`:""}${a.fonte&&a.fonte.url?`<a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">Fonte: ${esc(a.fonte.nome||"fonte")} ›</a>`:""}</div>`;
   return (it.length||ex.length?it.map(a=>r(a,false)).join("")+ex.map(a=>r(a,true)).join(""):'<p class="sc-n">Nessuno sciopero annunciato.</p>')+'<p class="sc-f">L’elenco ufficiale di tutti gli scioperi è sul sito del Ministero dei Trasporti: <a href="https://scioperi.mit.gov.it/" target="_blank" rel="noopener">scioperi.mit.gov.it ›</a></p>'}
@@ -7247,11 +7251,12 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 .nm-n b,.nm-v b{display:block;font-weight:600}.nm-n small,.nm-v small{display:block;font-size:12.5px;color:var(--muted)}.nm-v{text-align:right;font-variant-numeric:tabular-nums}
 .nm-why{grid-column:1/3;margin-top:6px;font-size:13.5px;line-height:1.45;border-left:2px solid #F0AE45;padding-left:10px;color:var(--ink)}
 .nm-ok{color:#2E9E6A}.nm-ko{color:#D9545E}.nm-f{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding:12px 4px 0;margin-top:2px}
-.sciop{display:block;margin:0 0 16px;border:1px solid rgba(240,174,69,.45);border-left:4px solid #F0AE45;border-radius:10px;background:rgba(240,174,69,.07);cursor:pointer}
-.sciop-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px 8px}.sciop-h b{font-size:15px}.sciop-h span{color:#C98F2E;font-size:13px;white-space:nowrap}
-.sciop-r{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:9px 14px;border-top:1px solid rgba(240,174,69,.18)}.sciop-r.on{background:rgba(240,174,69,.12)}
-.sciop-d{font:500 11px/1.3 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#C98F2E;padding-top:3px}.sciop-r b{display:block;font-size:14.5px;line-height:1.35}.sciop-r span span{display:block;color:var(--muted);font-size:12.5px}
-.sciop-r.pos .sciop-d{color:var(--muted)}.sciop-r.pos b{font-weight:400}
+.sciop{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;width:100%;text-align:left;margin:0 0 14px;padding:0 12px 0 14px;height:46px;border:1px solid var(--line);border-left:3px solid #8fa0bd;border-radius:10px;background:var(--surface);color:inherit;font:inherit;cursor:pointer}
+.sciop-i{font-size:18px}.sciop-t{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sciop-d{font:600 12.5px "IBM Plex Mono",monospace;letter-spacing:.04em;text-transform:uppercase;background:rgba(150,175,225,.14);padding:3px 7px;border-radius:5px;white-space:nowrap}.sciop-d small{font:inherit;color:#C98F2E;margin-left:6px}
+.sciop-a{color:var(--muted)}.sciop.on{border-color:rgba(240,174,69,.45);border-left-color:#F0AE45;background:rgba(240,174,69,.07)}.sciop.on .sciop-d{background:#F0AE45;color:#0a0f1c}.sciop.on .sciop-d small{color:#0a0f1c}.sciop.on .sciop-a{color:#C98F2E}
+.sciop.pos .sciop-t{font-weight:400}.sciop.rv .sciop-t{text-decoration:line-through;text-decoration-color:var(--muted);font-weight:400}
+.sc-x{text-decoration:line-through;text-decoration-color:var(--muted);font-weight:400!important}
 .sc-new,.sciop-r span .sc-new,.sc-r span.sc-new{display:inline-block!important;margin-left:6px;padding:0 5px;border-radius:3px;background:#F0AE45;color:#0a0f1c;font:600 10px/1.6 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}.sc-new.rev{background:#8fa0bd}.sciop-r.sc-rv b{text-decoration:line-through;text-decoration-color:var(--muted);font-weight:400}
 .sc-pos,.sciop-r span .sc-pos,.sc-r span.sc-pos{display:inline-block!important;margin-left:6px;padding:0 4px;border:1px dashed var(--muted);border-radius:3px;font:500 10px/1.5 "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);vertical-align:2px}
 .sc-r{border-top:1px solid var(--line);padding:12px 4px}.sc-r .sc-d{display:block;font:500 11px/1.3 "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:#C98F2E}
