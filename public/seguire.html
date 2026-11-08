@@ -89,5 +89,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tog]");if(
 fetch(RG_API+"/api/seguire").then(r=>r.json()).then(d=>{if(!d||!d.ok)throw 0;render(d)}).catch(()=>{document.getElementById("box").innerHTML='<p class="err">Non riesco a caricare i dati adesso. Riprova tra qualche minuto.</p>'});
 </script>
 <script data-goatcounter="https://read-geopolitics.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<script>
+/* dentro il pannello del sito: scorrere a destra torna indietro, come nel resto del pannello */
+(function(){if(!document.documentElement.classList.contains("emb")||window.parent===window)return;var x0=null,y0=0,t0=0;
+ document.addEventListener("touchstart",function(e){var t=e.target;if(e.touches.length!==1||(t.closest&&t.closest("svg,canvas,input,textarea,select,[data-noswipe]"))){x0=null;return}x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now()},{passive:true});
+ document.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)<Math.abs(dy)*1.4)return;if(Math.abs(dx)>innerWidth*.28||(Date.now()-t0<450&&Math.abs(dx)>60)){try{window.parent.postMessage({rg:"swipe",dir:dx>0?-1:1},location.origin)}catch(_){}}},{passive:true})})();
+</script>
 </body>
 </html>

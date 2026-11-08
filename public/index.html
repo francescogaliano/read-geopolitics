@@ -5465,6 +5465,9 @@ function hookDossierLink(){
   if(!a){a=document.createElement("button");a.type="button";a.id="tmDos";a.className="tm-dos";a.addEventListener("click",()=>show("dossier"));tl.insertBefore(a,tl.firstChild)}
   a.innerHTML=`<span>🧭 <b>I dossier</b> · i temi più grandi spiegati per intero${lab?` <em>${esc(lab.replace(/^·\s*/,""))}</em>`:""}</span><span aria-hidden="true">›</span>`;
 }
+/* v-scioperi: il riquadro dello sciopero va in cima, sopra «Per te oggi» */
+function sciopTop(){try{const b=document.getElementById("briefing");if(!b)return;const x=b.querySelector(".sciop"),pt=b.querySelector(".pt2");if(x&&pt&&(pt.compareDocumentPosition(x)&4))pt.before(x)}catch(_){}}
+{const _ra4=renderAll;renderAll=function(){const r=_ra4.apply(this,arguments);sciopTop();setTimeout(sciopTop,0);setTimeout(sciopTop,400);return r}}
 {const _ra2=renderAll;renderAll=function(){const r=_ra2.apply(this,arguments);try{hookNumeri();renderPulse();if(S.view==="calendario"&&typeof renderCal==="function"){S.tlMode="cal";renderCal();S.tlMode="temi";const c=document.getElementById("tlCal");if(c)c.hidden=false}updNav()}catch(e){console.warn("temi",e)}return r}}
 function hookWeakLink(){const tl=document.querySelector("#v-timeline .read");if(!tl||!RD.weak)return;let a=document.getElementById("tmWeak");const n=RD.weak.querySelectorAll(".wk,.weak,[class*=wk-]").length;
   if(!a){a=document.createElement("button");a.type="button";a.id="tmWeak";a.className="tm-dos tm-weak";a.dataset.weakGo="1";const d=document.getElementById("tmDos");if(d)d.insertAdjacentElement("afterend",a);else tl.insertBefore(a,tl.firstChild)}
@@ -5887,7 +5890,7 @@ document.addEventListener("click",e=>{const b=e.target.closest(".logbadge[data-s
 RL.lnk=null;
 function rlLnk(v){RL.lnk=v||null;const b=AGS.el&&AGS.el.querySelector("[data-rl-new]");if(b)b.hidden=!RL.lnk&&!RL.sel}
 {const f=rlOpenBox;rlOpenBox=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
-window.RG_openBox=(...a)=>rlOpenBox(...a);window.RG_openStory=id=>openStory(id); /* v-incorpora: per i link che si aprono nel pannello */
+window.RG_openBox=(...a)=>rlOpenBox(...a);window.RG_swipe=d=>{try{return rlSwipeGo(d)}catch(_){return false}};window.RG_openStory=id=>openStory(id); /* v-incorpora: per i link che si aprono nel pannello */
 {const f=rlOpen;rlOpen=function(...a){const r=f.apply(this,a);rlLnk(null);return r}}
 {const f=thOpen;thOpen=function(id,...a){const r=f.call(this,id,...a);if(r)rlLnk("tema="+encodeURIComponent(id));return r}}
 {const f=dosOpenBox;dosOpenBox=function(d,...a){const r=f.call(this,d,...a);rlLnk("dossier="+encodeURIComponent(d.id));return r}}
@@ -7219,6 +7222,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
     try{if(typeof track==="function")track(sg?"seguire-pannello":"spiegato-pannello")}catch(_){}
   },true);
   /* dall'interno del pannello: «La storia ›» apre la storia nel sito */
+  window.addEventListener("message",function(e){if(e.origin===location.origin&&e.data&&e.data.rg==="swipe"&&typeof window.RG_swipe==="function")window.RG_swipe(e.data.dir===1?1:-1)});
   window.addEventListener("message",function(e){if(e.origin!==location.origin||!e.data||e.data.rg!=="storia")return;try{if(typeof window.RG_openStory==="function")window.RG_openStory(String(e.data.id))}catch(_){}});
 })();
 </script>
