@@ -107,7 +107,8 @@ details.src{border-top:0;margin-top:8px}
 .vidb video{width:100%;max-width:360px;aspect-ratio:9/16;background:#000;border-radius:10px;display:block;margin:0 0 10px}
 .err{padding:60px 18px;text-align:center;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style></head><body>
+.emb #spBack,.emb .crumb{display:none!important}
+</style><script>try{if(new URLSearchParams(location.search).get("embed")==="1")document.documentElement.classList.add("emb")}catch(e){}</script></head><body>
 <a class="mono tag" id="spBack" href="/#spiegati">‹ Torna a Read Geopolitics</a>
 <div id="root"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="false"><button class="x" id="shx" aria-label="Chiudi">×</button><span class="mono k" id="shk"></span><h3 id="sht"></h3><p id="shp"></p><a class="go" id="shg" href="#">Apri <span>›</span></a></div>
@@ -327,4 +328,12 @@ FORMATO di /spiegato/<id>.json (lo scrive la routine; i fatti vengono dalle stor
   "video": {"ig":"link del reel","mp4":"link del file"} (lo mette il pannello) }
 Link del sito: /#p=ISO3 (scheda paese), /#t=filone, /#s=storia, /#g=voce del glossario, /#calendario, /#spiegati.
 -->
+<script>
+/* aperto nel pannello del sito (?embed=1): i link al resto del sito escono dal pannello; le storie si aprono nel sito */
+(function(){if(!document.documentElement.classList.contains("emb")||window.parent===window)return;
+document.addEventListener("click",function(e){var a=e.target.closest("a[href]");if(!a||a.target==="_blank"||e.defaultPrevented)return;var u;try{u=new URL(a.getAttribute("href"),location.href)}catch(_){return}if(u.origin!==location.origin)return;
+ var st=u.searchParams.get("storia");if(st){e.preventDefault();try{window.parent.postMessage({rg:"storia",id:st},location.origin)}catch(_){}return}
+ if(u.pathname.indexOf("/spiegato/")===0){if(!u.searchParams.get("embed")){u.searchParams.set("embed","1");a.setAttribute("href",u.pathname+u.search+u.hash)}return}
+ a.target="_top"},true)})();
+</script>
 </body></html>
