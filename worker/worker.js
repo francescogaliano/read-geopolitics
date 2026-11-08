@@ -4132,14 +4132,19 @@ async function finitaData(env, day) {
   return { periodo, si: (B.ok || []).length, no: (B.alt || []).length, nr: (B.fermi || []).length, open: B.open || 0,
     esempi: E.slice(0, 2).map((v) => ({ tema: v.tema || "", q: asQ(v.segnale), esito: v.esito === "avvenuto" ? "sì" : "no", nota: String(v.nota || "").slice(0, 220) })) };
 }
-function bilancioText(B) {
-  const n = (x) => (x || []).length;
-  let msg = "<b>Com'è andata la settimana</b>\nSotto ogni storia indichiamo cosa osservare: i fatti che dicono da che parte andrà. Ecco da che parte sono andati.\n\n" +
-    "Questa settimana " + (n(B.ok) + n(B.alt) + n(B.fermi)) + " segnali sono arrivati a scadenza:\n🟢 " + n(B.ok) + " sono successi · 🔀 " + n(B.alt) + " sono andati diversamente · ⚪ " + n(B.fermi) + " non si sono mossi" + (B.open ? "\n(" + B.open + " sono ancora aperti)" : "");
-  const S = (B.scelti || []).slice(0, 2); // v61: due fatti da ricordare, non quattro
-  if (S.length) msg += "\n\n<b>Da ricordare</b>\n" + S.map((v) => (v.esito === "avvenuto" ? "🟢 " : "🔀 ") + (v.tema ? "<b>" + esc(v.tema) + "</b> · " : "") + esc(tgClip(v.nota || v.segnale, 200)) + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
+function bilancioText(B, day) { // v62: stessa forma della storia «Com'è finita»: sì / no / ancora nessuna risposta, due esempi domanda-risposta
+  const n = (x) => (x || []).length; const tot = n(B.ok) + n(B.alt) + n(B.fermi);
+  let per = "";
+  if (day) { const from = new Date(Date.parse(day + "T12:00:00Z") - 6 * 86400000).toISOString().slice(0, 10); const a = new Date(from + "T12:00:00Z"), z = new Date(day + "T12:00:00Z");
+    per = " · " + (a.getUTCMonth() === z.getUTCMonth() ? a.getUTCDate() + "–" + z.getUTCDate() + " " + IT_MM[z.getUTCMonth()] : a.getUTCDate() + " " + IT_MM[a.getUTCMonth()] + " – " + z.getUTCDate() + " " + IT_MM[z.getUTCMonth()]); }
+  let msg = "<b>Com'è finita</b>" + per + "\nOgni giorno, sotto ogni storia, indichiamo i fatti da seguire. Questa settimana " + tot + " sono arrivati a scadenza:\n" +
+    "🟢 " + n(B.ok) + " sì, è successo\n🔵 " + n(B.alt) + " no, non è successo\n⚪ " + n(B.fermi) + " ancora nessuna risposta" + (B.open ? "\n\nAltri " + B.open + " si decidono nei prossimi giorni." : "");
+  const S = B.scelti || []; const no = S.find((v) => v.esito === "smentito"), si = S.find((v) => v.esito === "avvenuto");
+  const E = [no, si].filter(Boolean); for (const v of S) if (E.length < 2 && !E.includes(v)) E.push(v);
+  const asQ = (t) => { t = String(t || "").trim().replace(/[.;\s]+$/, ""); return /\?$/.test(t) ? t : t + "?"; };
+  if (E.length) msg += "\n\n<b>" + (E.length > 1 ? "Due esempi" : "Un esempio") + "</b>\n" + E.slice(0, 2).map((v) => (v.tema ? "<b>" + esc(v.tema) + "</b> · " : "") + esc(tgClip(asQ(v.segnale), 200)) + "\n<b>" + (v.esito === "avvenuto" ? "Sì." : "No.") + "</b> " + esc(tgClip(v.nota || "", 200)) + (v.lettori != null ? "\n<i>Il " + v.lettori + "% dei lettori aveva detto sì</i>" : "")).join("\n\n");
   if ((B.scen || []).length) msg += "\n\n<b>Gli scenari</b>\n" + B.scen.slice(0, 4).map((s) => "📊 " + esc(tgClip(s.domanda || s.titolo || "", 160)) + "\nÈ andata: <b>" + esc(tgClip(s.esito_titolo || "—", 120)) + "</b>" + (s.esito_prob != null ? "\n<i>L'agente gli dava il " + s.esito_prob + "%" + (s.lettori != null ? ", i lettori il " + s.lettori + "%" : "") + "</i>" : "")).join("\n\n");
-  return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Tutti i temi su Read Geopolitics</a>";
+  return msg + "\n\n<a href=\"https://www.readgeopolitics.com/?utm_source=telegram&utm_campaign=bilancio\">Le prossime da seguire su Read Geopolitics</a>";
 }
 async function tgBilancio(env, force) {
   const st = await tgSettings(env); const day = romeToday();
@@ -4147,7 +4152,7 @@ async function tgBilancio(env, force) {
   if (!force) { if (!st.bilancio || romeDow(day) !== 7 || (await kvGet(env, "tg_b:" + day)) || romeHM() < (st.ora_bil || "18:00")) return null; }
   const B = await bilancioData(env, day);
   if (!B.ok.length && !B.no.length && !(B.scen || []).length) { if (!force) await kvSet(env, "tg_b:" + day, { none: true, at: new Date().toISOString() }); return null; }
-  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: bilancioText(B), parse_mode: "HTML", disable_web_page_preview: true });
+  const r = await tgCall(env, "sendMessage", { chat_id: st.chat, text: bilancioText(B, day), parse_mode: "HTML", disable_web_page_preview: true });
   await kvSet(env, "tg_b:" + day, { at: new Date().toISOString(), msg: r && r.message_id });
   return { ok: true };
 }
