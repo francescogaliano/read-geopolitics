@@ -1985,7 +1985,7 @@ function agendaHTML(b){
   if(!items.length)return"";
   return `<div class="agenda"><span class="label">In agenda · prossime 3 settimane${later?` · altre ${later} più avanti in Timeline`:""}</span><div class="agenda-row">${items.map(a=>`<div class="ag${a.data===from?" oggi":""}"><span class="d">${esc(fmtDate(a.data))}${a.data_fine&&a.data_fine!==a.data?"–"+esc(fmtDate(a.data_fine)):""}</span>${esc(a.titolo)}${a.fonte&&a.fonte.url?`<br><a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">${esc(a.fonte.nome||"fonte")}</a>`:""}</div>`).join("")}</div></div>`;
 }
-const ESITI={"avvenuto":"avvenuto","non ancora":"non ancora","smentito":"smentito","scaduto":"scaduto"};
+const ESITI={"avvenuto":"sì, è successo","non ancora":"ancora aperto","smentito":"no, non è successo","scaduto":"nessuna risposta"};
 function verificheHTML(b){
   const v=b.verifiche||[];if(!v.length)return"";
   return `<div class="verif"><span class="label">I segnali di ieri: cosa è successo</span><ul>${v.map(x=>{const s=S.stories[x.storia_id];const cls=(x.esito||"").replace(" ","-");return `<li><span class="esito ${esc(cls)}">${esc(ESITI[x.esito]||x.esito)}</span><span>${esc(x.segnale)}</span><span class="nota">${esc(x.nota||"")}${x.fonte&&x.fonte.url?` · <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}${s?` · <button class="linkbtn" data-story="${esc(s.id)}">storia</button>`:""}</span></li>`}).join("")}</ul></div>`;
@@ -2007,7 +2007,7 @@ function levelMoves(b){
 function fmtDM(d){if(!d)return"";const x=new Date(d+"T12:00:00");return `${x.getDate()} ${MONTHS[x.getMonth()].slice(0,3)}`}
 function sgTag(g){
   if(!g)return"";
-  const st=g.stato&&g.stato!=="aperto"?`<span class="esito ${esc(g.stato)}">${esc(g.stato)}</span>`:(g.scadenza?`<span class="sgd">da verificare entro ${esc(fmtDM(g.scadenza))}</span>`:"");
+  const st=g.stato&&g.stato!=="aperto"?`<span class="esito ${esc(g.stato)}">${esc(ESITI[g.stato]||g.stato)}</span>`:(g.scadenza?`<span class="sgd">si decide entro il ${esc(fmtDM(g.scadenza))}</span>`:"");
   return ` <span class="sgt">${g.attesa&&ATTESA[g.attesa]?`<span class="att at-${esc(g.attesa)}" title="Stima dell'agente, scritta il giorno della storia">${esc(ATTESA[g.attesa])}</span>`:""}${st}</span>`;
 }
 function calib(){
@@ -2037,7 +2037,7 @@ function sinceHTML(b){
   const cnt=k=>ver.filter(v=>v.esito===k).length;
   const chSum=[ch.length?`${ch.length} ${plur(ch.length,"sviluppo","sviluppi")}`:"",lm.length?`${lm.length} ${plur(lm.length,"paese cambia","paesi cambiano")} livello`:""].filter(Boolean).join(" · ")||"nessun cambiamento";
   const a=cnt("avvenuto"),sm=cnt("smentito"),sc=cnt("scaduto"),na=cnt("non ancora");
-  const sgSum=ver.length?[a?`<b class="ok">${a} ${plur(a,"avvenuto","avvenuti")}</b>`:"",sm?`<b class="ko">${sm} ${plur(sm,"smentito","smentiti")}</b>`:"",sc?`${sc} ${plur(sc,"scaduto","scaduti")}`:"",na?`${na} non ancora`:""].filter(Boolean).join(" · "):`nessuno da verificare oggi`;
+  const sgSum=ver.length?[a?`<b class="ok">${a} sì</b>`:"",sm?`<b class="ko">${sm} no</b>`:"",sc?`${sc} senza risposta`:"",na?`${na} ancora aperti`:""].filter(Boolean).join(" · "):`nessuno da verificare oggi`;
   const op=S.since;
   const btn=(k,t,sum)=>`<button class="since-t" data-since="${k}" aria-expanded="${op===k}"><span class="st">${t}</span><span class="sc">${sum}</span></button>`;
   const chP=`<div class="since-p">
@@ -2047,6 +2047,7 @@ function sinceHTML(b){
   </div>`;
   const sgP=`<div class="since-p">
     ${ver.length?`<ul class="vlist">${ver.map(x=>{const s=S.stories[x.storia_id];const cls=(x.esito||"").replace(" ","-");const g=Object.values(S.segnali).find(z=>z.storia_id===x.storia_id&&z.testo===x.segnale);return `<li><span class="esito ${esc(cls)}">${esc(ESITI[x.esito]||x.esito)}</span><span>${esc(x.segnale)}${g&&g.attesa?` <span class="att at-${esc(g.attesa)}" title="Stima iniziale">${esc(g.attesa)}</span>`:""}</span><span class="nota">${esc(x.nota||"")}${x.fonte&&x.fonte.url?` · <a href="${esc(x.fonte.url)}" target="_blank" rel="noopener">${esc(x.fonte.nome||"fonte")}</a>`:""}${s?` · <button class="linkbtn" data-story="${esc(s.id)}">storia</button>`:""}</span></li>`}).join("")}</ul>`:`<p class="hint" style="margin:0">Oggi nessun segnale da verificare.</p>`}
+    <p class="hint" style="margin:12px 0 0"><a href="/seguire.html?utm_source=sito">Cosa si decide nei prossimi giorni ›</a></p>
     <p class="hint" style="margin:12px 0 0">🎯 Quanto spesso le stime si avverano: in Temi › In osservazione, in fondo. <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>
   </div>`;
   const nOpen=Object.values(S.segnali).filter(g=>(g.stato||"aperto")==="aperto").length;
@@ -2059,7 +2060,7 @@ function sinceHTML(b){
     if(P.avvisi.temi)P.seguiti.forEach(id=>{const t=S.threads[id];if(!t)return;const ev=S.events.filter(e=>e.filone_id===id&&e.data===b.data);if(ev.length)al.push(`<li>⭐ <button class="linkbtn" data-thread="${esc(id)}">${thFlags(t)} ${esc(thShort(t))}</button>: ${esc(clip(ev[0].testo,110))}${ev.length>1?` e altri ${ev.length-1}`:""}</li>`)});
     if(al.length)rows.unshift({k:"avvisi",i:"🔔",t:`Avvisi per te · ${al.length}`,sum:esc(clip(al[0].replace(/<[^>]+>/g,""),90)),body:`<ul style="margin:6px 0 0;padding-left:0;list-style:none;display:grid;gap:6px">${al.join("")}</ul><p><button class="linkbtn" data-open-prefs="avvisi">Gestisci gli avvisi</button></p>`})}
   if(showCh)rows.push({k:"cambiato",i:"🔄",t:"Cosa è cambiato da ieri",sum:chSum,body:chP});
-  if(showSg)rows.push({k:"segnali",i:"✅",t:"Segnali verificati",sum:sgSum+(nOpen?` · ${nOpen} aperti`:""),body:sgP});
+  if(showSg)rows.push({k:"segnali",i:"✅",t:"Com'è finita",sum:sgSum+(nOpen?` · ${nOpen} aperti`:""),body:sgP});
   const ac=b.accadde;
   if(ac&&ac.testo){const d=new Date(b.data+"T12:00:00");const y=parseInt(ac.anno,10);const ago=y?d.getFullYear()-y:0;const th=S.threads[ac.filone_id];
     rows.push({k:"accadde",i:"📜",t:`Accadde oggi${ago>0?` · ${ago} anni fa`:""}`,sum:`${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} ${y||""}: ${esc(clip(ac.testo,80))}`,body:`<div class="acc-b"><p><b>${d.getDate()} ${MONTHS[d.getMonth()]} ${y||""}</b> · ${esc(ac.testo)}</p>${ac.legame?`<p class="acc-l">${esc(ac.legame)}</p>`:""}<p>${th?`<button class="linkbtn" data-thread="${esc(th.id)}">filone</button> `:""}${ac.fonte&&ac.fonte.url?`<a class="src-inline" href="${esc(ac.fonte.url)}" target="_blank" rel="noopener">${esc(ac.fonte.nome||"fonte")}</a>`:""}</p></div>`})}
@@ -5581,7 +5582,7 @@ function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>
   const cnt=k=>ver.filter(v=>v.esito===k).length;const a=cnt("avvenuto"),sm=cnt("smentito"),sc=cnt("scaduto"),na=cnt("non ancora");
   const vd=(b.storia_ig_verdetti||[]).filter(v=>v&&v.riga&&rlYes(v.esito));
   const src=f=>f&&f.nome?` · <span class="rl-src">${esc(f.nome)}</span>`:"";
-  const vrow=v=>{const ok=v.esito==="avvenuto",sid=S.stories[v.storia_id]?v.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-story="${esc(sid)}"`:""}><span class="rl-ic ${ok?"ok":"ko"}">${ok?"✓":"✗"}</span><span class="rl-tx">${esc(v.segnale)}<small>${ok?"Avvenuto":"Smentito"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`};
+  const vrow=v=>{const ok=v.esito==="avvenuto",sid=S.stories[v.storia_id]?v.storia_id:"";return `<button type="button" class="rl-r"${sid?` data-story="${esc(sid)}"`:""}><span class="rl-ic ${ok?"ok":"ko"}">${ok?"✓":"✗"}</span><span class="rl-tx">${esc(v.segnale)}<small>${ok?"Sì, è successo":"No, non è successo"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span>${sid?'<span class="rl-ar" aria-hidden="true">›</span>':""}</button>`};
   const drow=v=>{const e=rlYes(v.esito),m=vtMine("p:"+v.data+":"+(v.n||0)),q=rlQd(v),ai=q&&q.attesa==="probabile"?"si":q&&q.attesa==="improbabile"?"no":"";const lab=e==="si"?(q&&q.a||"Sì"):(q&&q.b||"No");
     return `<div class="rl-r"><span class="rl-ic">🎯</span><span class="rl-tx"><span class="rl-k2">Pronostico del ${esc(fmtDM(v.data))} · è andata: ${esc(lab)}</span>${q&&(q.sticker||q.titolo)?`<b>${esc(String(q.sticker||q.titolo).replace(/\*/g,""))}</b> `:""}${esc(v.riga)}<small>${m==="si"||m==="no"?`<b class="${m===e?"ok":"ko"}">${m===e?"✓ Ci hai preso":"✗ Non ci hai preso"}</b> · `:""}${ai?`L'AI ${ai===e?"ci aveva preso":"aveva sbagliato"}`:""}${src(v.fonte)}</small></span></div>`};
   const last=!!(S.briefings[0]&&b===S.briefings[0]);
@@ -5589,10 +5590,11 @@ function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>
   const row=(k,ic,t,sub,mt,attr,cls)=>`<button type="button" class="rl-ar2${cls?" "+cls:""}" ${attr||`data-rl-a="${k}"`}><span class="rl-aic" aria-hidden="true">${ic}</span><span class="rl-atx"><b>${t}</b><span>${esc(sub||"")}</span></span>${mt?`<span class="rl-amt">${mt}</span>`:""}<span class="rl-ach" aria-hidden="true">›</span></button>`;
   const al=tl("since:avvisi");if(al)R.push(row("","🔔",esc(al.t),al.s,"",'data-rl-t="since:avvisi"'));
   /* il rendiconto */
-  if(ver.length||vd.length){const sum=[a?`<b class="ok">${a} ${plur(a,"avvenuto","avvenuti")}</b>`:"",sm?`<b class="ko">${sm} ${plur(sm,"smentito","smentiti")}</b>`:"",sc?`${sc} non ${plur(sc,"successo","successi")} entro la data`:"",na?`${na} ancora da vedere`:""].filter(Boolean).join(" · ");
-    P.rend={t:"🧾 Il rendiconto",s:"Avevamo detto · com'è andata",h:`<div class="rl-s rl-sp">${ver.length?`<p class="rl-sl">I segnali indicati nei giorni scorsi, verificati stamattina: ${sum}.</p>`:""}${vd.map(drow).join("")}${fin.map(vrow).join("")}${altri.length?`<button type="button" class="rl-m2" data-rl-alt>Vedi ${plur(altri.length,"l'altro","gli altri "+altri.length)} ›</button><div class="rl-altri" hidden>${altri.map(v=>`<div class="rl-r"><span class="rl-ic mu">${v.esito==="scaduto"?"–":"…"}</span><span class="rl-tx">${esc(v.segnale)}<small>${v.esito==="scaduto"?"Non successo entro la data":"Ancora da vedere"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span></div>`).join("")}</div>`:""}</div>`};
+  if(ver.length||vd.length){const sum=[a?`<b class="ok">${a} sì, ${plur(a,"è successo","sono successi")}</b>`:"",sm?`<b class="ko">${sm} no, non ${plur(sm,"è successo","sono successi")}</b>`:"",sc?`${sc} senza risposta entro la data`:"",na?`${na} ancora aperti`:""].filter(Boolean).join(" · ");
+    P.rend={t:"🧾 Com'è finita",s:"Avevamo detto · com'è andata",h:`<div class="rl-s rl-sp">${ver.length?`<p class="rl-sl">I segnali indicati nei giorni scorsi, verificati stamattina: ${sum}.</p>`:""}${vd.map(drow).join("")}${fin.map(vrow).join("")}${altri.length?`<button type="button" class="rl-m2" data-rl-alt>Vedi ${plur(altri.length,"l'altro","gli altri "+altri.length)} ›</button><div class="rl-altri" hidden>${altri.map(v=>`<div class="rl-r"><span class="rl-ic mu">${v.esito==="scaduto"?"–":"…"}</span><span class="rl-tx">${esc(v.segnale)}<small>${v.esito==="scaduto"?"Nessuna risposta entro la data":"Ancora aperto"}${v.nota?": "+esc(v.nota):""}${src(v.fonte)}</small></span></div>`).join("")}</div>`:""}</div>`};
+    P.rend.h=P.rend.h.replace(/<\/div>$/,'<a class="rl-m2" href="/seguire.html?utm_source=sito">Cosa si decide nei prossimi giorni ›</a></div>');
     const first=vd.length?vd[0].riga:(fin.find(v=>v.esito==="avvenuto")||fin[0]||{}).segnale||(ver[0]||{}).segnale;
-    R.push(row("rend","🧾","Il rendiconto",first?"Avevamo detto: "+first:"Avevamo detto, com'è andata",(a||sm)?[a?`<span class="ok">${a}✓</span>`:"",sm?`<span class="ko">${sm}✗</span>`:""].filter(Boolean).join(" "):ver.length?String(ver.length):""))}
+    R.push(row("rend","🧾","Com'è finita",first?"Avevamo detto: "+first:"Avevamo detto, com'è andata",(a||sm)?[a?`<span class="ok">${a}✓</span>`:"",sm?`<span class="ko">${sm}✗</span>`:""].filter(Boolean).join(" "):ver.length?String(ver.length):""))}
   /* il pronostico (la scommessa del giorno): la riga c'è solo sul briefing di oggi; si riempie quando arriva la domanda */
   const B=last&&S.bet&&S.bet.day===b.data?S.bet:null;if(B){const m=vtMine(B.poll);
     P.bet={t:"🎯 Il tuo pronostico",s:"",h:`<div class="rl-s rl-sp"><div class="rl-betw">${rlBetHTML(b)}</div></div>`};
