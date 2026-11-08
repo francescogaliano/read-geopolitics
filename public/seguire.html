@@ -8,6 +8,7 @@
 <meta name="description" content="Cosa si decide nei prossimi giorni, e com'è finita questa settimana: i fatti da seguire indicati sotto ogni storia di Read Geopolitics.">
 <meta name="theme-color" content="#0a0f1c">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>try{if(new URLSearchParams(location.search).get("embed")==="1")document.documentElement.classList.add("emb")}catch(e){}</script>
 <style>
 @font-face{font-family:"IBM Plex Serif";font-weight:600;font-display:swap;src:url(/fonts/ibm-plex-serif-latin-600-normal.woff2)}
 @font-face{font-family:"IBM Plex Sans";font-weight:400;font-display:swap;src:url(/fonts/ibm-plex-sans-latin-400-normal.woff2)}
@@ -48,6 +49,7 @@ h3{color:var(--amb);margin:24px 0 4px}
 .cta b{font-size:16px}.cta span{color:var(--amb);font-weight:600;white-space:nowrap}
 footer{margin-top:26px;font-size:13px;color:var(--faint);text-align:center}
 footer a{color:var(--faint)}
+.emb body{background:transparent}.emb header,.emb .k,.emb h1,.emb .cta,.emb footer{display:none}.emb .sub{margin-top:14px}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
 </head>
@@ -81,6 +83,8 @@ function render(d){
   (d.giorni||[]).forEach((g,i)=>{h+='<h3 class="mono">'+esc(giorno(g.d,d.day))+'</h3>'+g.items.slice(0,SHOW).map(row).join("");
     if(g.items.length>SHOW)h+='<button type="button" class="more" aria-expanded="false" data-tog="g'+i+'">Altri '+(g.items.length-SHOW)+' ›</button><div id="g'+i+'" hidden>'+g.items.slice(SHOW).map(row).join("")+'</div>'});
   document.getElementById("box").innerHTML=h}
+/* dentro il pannello del sito: la storia si apre nel sito, non qui */
+document.addEventListener("click",e=>{if(!document.documentElement.classList.contains("emb"))return;const a=e.target.closest("a.go");if(!a||window.parent===window)return;const m=/storia=([^&]+)/.exec(a.getAttribute("href")||"");if(!m)return;e.preventDefault();try{window.parent.postMessage({rg:"storia",id:decodeURIComponent(m[1])},location.origin)}catch(_){}});
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tog]");if(!b)return;const el=document.getElementById(b.dataset.tog);if(!el)return;el.hidden=false;b.remove()});
 fetch(RG_API+"/api/seguire").then(r=>r.json()).then(d=>{if(!d||!d.ok)throw 0;render(d)}).catch(()=>{document.getElementById("box").innerHTML='<p class="err">Non riesco a caricare i dati adesso. Riprova tra qualche minuto.</p>'});
 </script>
