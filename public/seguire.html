@@ -50,10 +50,13 @@ h3{color:var(--amb);margin:24px 0 4px}
 footer{margin-top:26px;font-size:13px;color:var(--faint);text-align:center}
 footer a{color:var(--faint)}
 .emb,.emb body{background:#16212A;color-scheme:dark}.emb header,.emb .k,.emb h1,.emb .cta,.emb footer{display:none}.emb .sub{margin-top:14px}
+.back{display:block;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));color:var(--amb);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60;background:var(--bg);text-decoration:none}
+.emb .back{display:none}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
 </head>
 <body>
+<a class="back mono" id="sgBack" href="/?utm_source=seguire">‹ Torna a Read Geopolitics</a>
 <div class="wrap">
 <header><a href="/?utm_source=seguire"><svg viewBox="65 73 380 380" aria-hidden="true"><defs><clipPath id="cS"><path d="M127 160 L383 124 V440 H127 Z"/></clipPath></defs><g clip-path="url(#cS)"><path d="M140 304 Q 250 208 384 198 L384 250 Q 262 252 140 304 Z" fill="#E8B050"/><path d="M126 352 Q 250 268 384 266 L384 322 Q 246 322 126 352 Z" fill="#4D7DB0"/><path d="M150 440 Q 262 346 384 338 L384 440 Z" fill="#2D4C70"/></g><path d="M110 440 V146 L400 106 V440" fill="none" stroke="#8CB9EE" stroke-width="34"/></svg><span class="rule"></span><span class="nm ser">Read<br>Geopolitics</span></a><span class="d mono" id="oggi"></span></header>
 <div class="k mono">Da seguire</div>
@@ -65,6 +68,7 @@ footer a{color:var(--faint)}
 <footer><a href="/?utm_source=seguire">Torna a Read Geopolitics</a> · <a href="/metodo.html">Fonti e metodo</a></footer>
 </div>
 <script>
+document.getElementById("sgBack").addEventListener("click",function(ev){try{var r=document.referrer&&new URL(document.referrer);if(r&&r.origin===location.origin&&history.length>1){ev.preventDefault();history.back()}}catch(_){}});
 const RG_API="https://rg-api.briefinghub.workers.dev";
 const MESI=["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"],GG=["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -89,5 +93,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-tog]");if(
 fetch(RG_API+"/api/seguire").then(r=>r.json()).then(d=>{if(!d||!d.ok)throw 0;render(d)}).catch(()=>{document.getElementById("box").innerHTML='<p class="err">Non riesco a caricare i dati adesso. Riprova tra qualche minuto.</p>'});
 </script>
 <script data-goatcounter="https://read-geopolitics.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<script>
+/* dentro il pannello del sito: scorrere a destra torna indietro, come nel resto del pannello */
+(function(){if(!document.documentElement.classList.contains("emb")||window.parent===window)return;var x0=null,y0=0,t0=0;
+ document.addEventListener("touchstart",function(e){var t=e.target;if(e.touches.length!==1||(t.closest&&t.closest("svg,canvas,input,textarea,select,[data-noswipe]"))){x0=null;return}x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now()},{passive:true});
+ document.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)<Math.abs(dy)*1.4)return;if(Math.abs(dx)>innerWidth*.28||(Date.now()-t0<450&&Math.abs(dx)>60)){try{window.parent.postMessage({rg:"swipe",dir:dx>0?-1:1},location.origin)}catch(_){}}},{passive:true})})();
+</script>
 </body>
 </html>

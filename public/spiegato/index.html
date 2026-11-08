@@ -336,4 +336,10 @@ document.addEventListener("click",function(e){var a=e.target.closest("a[href]");
  if(u.pathname.indexOf("/spiegato/")===0){if(!u.searchParams.get("embed")){u.searchParams.set("embed","1");a.setAttribute("href",u.pathname+u.search+u.hash)}return}
  a.target="_top"},true)})();
 </script>
+<script>
+/* dentro il pannello del sito: scorrere a destra torna indietro, come nel resto del pannello */
+(function(){if(!document.documentElement.classList.contains("emb")||window.parent===window)return;var x0=null,y0=0,t0=0;
+ document.addEventListener("touchstart",function(e){var t=e.target;if(e.touches.length!==1||(t.closest&&t.closest("svg,canvas,input,textarea,select,[data-noswipe]"))){x0=null;return}x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now()},{passive:true});
+ document.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)<Math.abs(dy)*1.4)return;if(Math.abs(dx)>innerWidth*.28||(Date.now()-t0<450&&Math.abs(dx)>60)){try{window.parent.postMessage({rg:"swipe",dir:dx>0?-1:1},location.origin)}catch(_){}}},{passive:true})})();
+</script>
 </body></html>
