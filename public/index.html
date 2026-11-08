@@ -2028,6 +2028,33 @@ function calibHTML(){
   <p class="aff-d">${c.closed<10?`Ancora pochi dati: ${c.closed} ${plur(c.closed,"segnale chiuso","segnali chiusi")}. Il tasso diventa leggibile dopo una decina per tipo.`:`${c.closed} segnali chiusi in tutto.`}${c.sc?` Scenari chiusi: ${c.sc}; quello indicato come più probabile è avvenuto ${c.scHit} ${plur(c.scHit,"volta","volte")}.`:""}</p>
   ${openL.length?`<details class="aff-open"><summary>${openL.length} ${plur(openL.length,"segnale ancora aperto","segnali ancora aperti")}</summary><ul>${openL.map(g=>`<li><span>${esc(g.testo)}</span>${sgTag(g)}${S.stories[g.storia_id]?` <button class="linkbtn" data-story="${esc(g.storia_id)}">storia</button>`:""}</li>`).join("")}</ul></details>`:""}</div>`;
 }
+/* v-numeri (8/11): il pannello «Numeri» mostra i numeri, non solo le note: righe per gruppo, valore, giorno e mese, «perché si muove» sotto quelli mossi; tocca una riga per il grafico */
+var NUM_GRP=[["Energia",["brent","ttf","gasolio_it","benzina_it"]],["Italia",["spread","btp10","bce"]],["Mondo",["eurusd","oro","grano","noli","cny"]]];
+/* +1: per chi vive in Italia è meglio se sale; -1: meglio se scende; assente: neutro */
+var NUM_BENE={brent:-1,ttf:-1,gasolio_it:-1,benzina_it:-1,spread:-1,btp10:-1,bce:-1,eurusd:1,grano:-1,noli:-1};
+function numVar(v,x,u){if(typeof x!=="number")return "";const d=u==="%"?1:(v.id==="spread"?0:2);const t=Math.abs(x)<Math.pow(10,-d)/2?"=":(x>0?"+":"−")+Math.abs(x).toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d})+(u==="%"?"%":"");
+  const b=NUM_BENE[v.id]||0;const cls=t==="="||!b?"":((x>0)===(b>0)?"nm-ok":"nm-ko");return `<span class="${cls}">${t}</span>`}
+function numPanelHTML(c){const V=(c&&c.voci)||[];if(!V.length)return '<div class="numeri-b"><p>Oggi niente numeri.</p></div>';
+  const by={};V.forEach(v=>by[v.id]=v);const used=new Set();const cnt={};V.forEach(v=>{if(v.data)cnt[v.data]=(cnt[v.data]||0)+1});const dd=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  const row=v=>{used.add(v.id);const u=v.var_unita||"";const dec=v.id==="eurusd"||v.id==="cny"?4:Math.min(2,v.decimali??2);
+    const why=v.mosso&&v.perche&&v.perche.testo?`<span class="nm-why">Perché si muove: ${esc(v.perche.testo)}</span>`:"";
+    const m=typeof v.var_1m==="number"?` · mese ${numVar(v,v.var_1m,u)}`:"";
+    return `<button type="button" class="nm-r" data-ind="${esc(v.id)}"><span class="nm-n"><b>${esc(v.nome)}</b><small>${esc(v.unita||"")}</small></span><span class="nm-v"><b>${fmtN(v.valore,dec)}</b><small>${numVar(v,v.var,u)||"="}${m}</small></span>${why}</button>`};
+  let h='<div class="nm">';NUM_GRP.forEach(([g,ids])=>{const L=ids.map(id=>by[id]).filter(Boolean);if(L.length)h+=`<div class="nm-g">${g}</div>`+L.map(row).join("")});
+  const rest=V.filter(v=>!used.has(v.id));if(rest.length)h+='<div class="nm-g">Altri</div>'+rest.map(row).join("");
+  return h+`<p class="nm-f">${dd?"Chiusure di "+esc(fmtDate(dd))+". ":""}Verde e rosso dicono se il movimento pesa sulle tasche di chi vive in Italia, non se il numero sale o scende. Tocca una riga per il grafico e le fonti.</p></div>`}
+/* v-scioperi (8/11): in cima a «Oggi» gli scioperi in Italia di oggi e dei 2 giorni dopo; tocca per l'elenco dei prossimi */
+function isSciop(a){return a&&(a.tipo==="sciopero"||/scioper/i.test(a.titolo||""))}
+function sciopDay(d,oggi){const x=new Date(d+"T12:00:00"),o=new Date(oggi+"T12:00:00"),n=Math.round((x-o)/864e5);const s=`${DAYS[x.getDay()]} ${x.getDate()} ${MONTHS[x.getMonth()]}`;return n===0?"Oggi · "+s:n===1?"Domani · "+s:s}
+function sciopList(oggi,days){const end=new Date(oggi+"T12:00:00");end.setDate(end.getDate()+days);const to=isoDay(end);return (S.agenda||[]).filter(a=>isSciop(a)&&(a.data_fine||a.data)>=oggi&&a.data<=to).sort((x,y)=>x.data.localeCompare(y.data))}
+function sciopIta(a){return !(a.paesi||[]).length||(a.paesi||[]).includes("ITA")}
+function rlStrike(b){if(!(S.briefings[0]&&b===S.briefings[0]))return "";const near=sciopList(b.data,2).filter(sciopIta);if(!near.length)return "";const a=near[0];const all=sciopList(b.data,21).length;
+  const x=new Date(a.data+"T12:00:00"),o=new Date(b.data+"T12:00:00"),n=Math.round((x-o)/864e5);const quando=n<=0?"Oggi":n===1?"Domani":DAYS[x.getDay()].replace(/^./,c=>c.toUpperCase());
+  return `<button type="button" class="sciop" data-rl-sciop><span class="sciop-i" aria-hidden="true">🚆</span><span class="sciop-t"><b>${quando}: ${esc(a.titolo)}</b><span>${esc(sciopDay(a.data,b.data))}${all>1?` · ${all-1} ${all-1===1?"altro sciopero":"altri scioperi"} in arrivo`:""}</span></span><span class="sciop-a" aria-hidden="true">›</span></button>`}
+function sciopPanel(oggi){const L=sciopList(oggi,21);const it=L.filter(sciopIta),ex=L.filter(a=>!sciopIta(a));
+  const r=(a,est)=>`<div class="sc-r${est?" est":""}"><span class="sc-d">${est?"Estero · ":""}${esc(sciopDay(a.data,oggi))}</span><b>${esc(a.titolo)}</b>${a.orari?`<span>${esc(a.orari)}</span>`:""}${a.fonte&&a.fonte.url?`<a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">Fonte: ${esc(a.fonte.nome||"fonte")} ›</a>`:""}</div>`;
+  return (it.length||ex.length?it.map(a=>r(a,false)).join("")+ex.map(a=>r(a,true)).join(""):'<p class="sc-n">Nessuno sciopero annunciato nelle prossime tre settimane.</p>')+'<p class="sc-f">L’elenco ufficiale di tutti gli scioperi è sul sito del Ministero dei Trasporti: <a href="https://scioperi.mit.gov.it/" target="_blank" rel="noopener">scioperi.mit.gov.it ›</a></p>'}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-sciop]"))return;e.preventDefault();const b=currentBrief();if(!b)return;(window.RG_openBox||function(){})("Scioperi in arrivo","in Italia nelle prossime tre settimane, e all'estero",sciopPanel(b.data));try{track("scioperi-apri")}catch(_){}});
 function sinceHTML(b){
   const pb=prevBrief(b);
   const ch=(b.cambiato||[]).filter(x=>x&&x.testo),lm=pb?levelMoves(b):[];
@@ -5576,33 +5603,6 @@ function rlBetFill(){let b=null;try{b=currentBrief()}catch(_){}document.querySel
   const B=S.bet;document.querySelectorAll('.rl-ar2[data-rl-a="bet"]').forEach(r=>{const m=B?vtMine(B.poll):"";const mt=r.querySelector(".rl-amt");if(mt)mt.textContent=m?"✓ "+(m==="si"?(B.a||"Sì"):(B.b||"No")):"da fare";const d=r.querySelector(".rl-dot");if(d)d.hidden=!!m;
     const sp=r.querySelector(".rl-atx span");if(sp&&B)sp.textContent=String(B.sticker||B.titolo||"").replace(/\*/g,"")})}
 /* v95: «Anche oggi» compatto: un riquadro separato dalle notizie («Fine delle notizie»), una riga per cosa (icona, mezza frase, numero); il contenuto si apre nel pannello */
-/* v-numeri (8/11): il pannello «Numeri» mostra i numeri, non solo le note: righe per gruppo, valore, giorno e mese, «perché si muove» sotto quelli mossi; tocca una riga per il grafico */
-const NUM_GRP=[["Energia",["brent","ttf","gasolio_it","benzina_it"]],["Italia",["spread","btp10","bce"]],["Mondo",["eurusd","oro","grano","noli","cny"]]];
-/* +1: per chi vive in Italia è meglio se sale; -1: meglio se scende; assente: neutro */
-const NUM_BENE={brent:-1,ttf:-1,gasolio_it:-1,benzina_it:-1,spread:-1,btp10:-1,bce:-1,eurusd:1,grano:-1,noli:-1};
-function numVar(v,x,u){if(typeof x!=="number")return "";const d=u==="%"?1:(v.id==="spread"?0:2);const t=Math.abs(x)<Math.pow(10,-d)/2?"=":(x>0?"+":"−")+Math.abs(x).toLocaleString("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d})+(u==="%"?"%":"");
-  const b=NUM_BENE[v.id]||0;const cls=t==="="||!b?"":((x>0)===(b>0)?"nm-ok":"nm-ko");return `<span class="${cls}">${t}</span>`}
-function numPanelHTML(c){const V=(c&&c.voci)||[];if(!V.length)return '<div class="numeri-b"><p>Oggi niente numeri.</p></div>';
-  const by={};V.forEach(v=>by[v.id]=v);const used=new Set();const cnt={};V.forEach(v=>{if(v.data)cnt[v.data]=(cnt[v.data]||0)+1});const dd=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
-  const row=v=>{used.add(v.id);const u=v.var_unita||"";const dec=v.id==="eurusd"||v.id==="cny"?4:Math.min(2,v.decimali??2);
-    const why=v.mosso&&v.perche&&v.perche.testo?`<span class="nm-why">Perché si muove: ${esc(v.perche.testo)}</span>`:"";
-    const m=typeof v.var_1m==="number"?` · mese ${numVar(v,v.var_1m,u)}`:"";
-    return `<button type="button" class="nm-r" data-ind="${esc(v.id)}"><span class="nm-n"><b>${esc(v.nome)}</b><small>${esc(v.unita||"")}</small></span><span class="nm-v"><b>${fmtN(v.valore,dec)}</b><small>${numVar(v,v.var,u)||"="}${m}</small></span>${why}</button>`};
-  let h='<div class="nm">';NUM_GRP.forEach(([g,ids])=>{const L=ids.map(id=>by[id]).filter(Boolean);if(L.length)h+=`<div class="nm-g">${g}</div>`+L.map(row).join("")});
-  const rest=V.filter(v=>!used.has(v.id));if(rest.length)h+='<div class="nm-g">Altri</div>'+rest.map(row).join("");
-  return h+`<p class="nm-f">${dd?"Chiusure di "+esc(fmtDate(dd))+". ":""}Verde e rosso dicono se il movimento pesa sulle tasche di chi vive in Italia, non se il numero sale o scende. Tocca una riga per il grafico e le fonti.</p></div>`}
-/* v-scioperi (8/11): in cima a «Oggi» gli scioperi in Italia di oggi e dei 2 giorni dopo; tocca per l'elenco dei prossimi */
-function isSciop(a){return a&&(a.tipo==="sciopero"||/scioper/i.test(a.titolo||""))}
-function sciopDay(d,oggi){const x=new Date(d+"T12:00:00"),o=new Date(oggi+"T12:00:00"),n=Math.round((x-o)/864e5);const s=`${DAYS[x.getDay()]} ${x.getDate()} ${MONTHS[x.getMonth()]}`;return n===0?"Oggi · "+s:n===1?"Domani · "+s:s}
-function sciopList(oggi,days){const end=new Date(oggi+"T12:00:00");end.setDate(end.getDate()+days);const to=isoDay(end);return (S.agenda||[]).filter(a=>isSciop(a)&&(a.data_fine||a.data)>=oggi&&a.data<=to).sort((x,y)=>x.data.localeCompare(y.data))}
-const isIta=a=>!(a.paesi||[]).length||(a.paesi||[]).includes("ITA");
-function rlStrike(b){if(!(S.briefings[0]&&b===S.briefings[0]))return "";const near=sciopList(b.data,2).filter(isIta);if(!near.length)return "";const a=near[0];const all=sciopList(b.data,21).length;
-  const x=new Date(a.data+"T12:00:00"),o=new Date(b.data+"T12:00:00"),n=Math.round((x-o)/864e5);const quando=n<=0?"Oggi":n===1?"Domani":DAYS[x.getDay()].replace(/^./,c=>c.toUpperCase());
-  return `<button type="button" class="sciop" data-rl-sciop><span class="sciop-i" aria-hidden="true">🚆</span><span class="sciop-t"><b>${quando}: ${esc(a.titolo)}</b><span>${esc(sciopDay(a.data,b.data))}${all>1?` · ${all-1} ${all-1===1?"altro sciopero":"altri scioperi"} in arrivo`:""}</span></span><span class="sciop-a" aria-hidden="true">›</span></button>`}
-function sciopPanel(oggi){const L=sciopList(oggi,21);const it=L.filter(isIta),ex=L.filter(a=>!isIta(a));
-  const r=(a,est)=>`<div class="sc-r${est?" est":""}"><span class="sc-d">${est?"Estero · ":""}${esc(sciopDay(a.data,oggi))}</span><b>${esc(a.titolo)}</b>${a.orari?`<span>${esc(a.orari)}</span>`:""}${a.fonte&&a.fonte.url?`<a href="${esc(a.fonte.url)}" target="_blank" rel="noopener">Fonte: ${esc(a.fonte.nome||"fonte")} ›</a>`:""}</div>`;
-  return (it.length||ex.length?it.map(a=>r(a,false)).join("")+ex.map(a=>r(a,true)).join(""):'<p class="sc-n">Nessuno sciopero annunciato nelle prossime tre settimane.</p>')+'<p class="sc-f">L’elenco ufficiale di tutti gli scioperi è sul sito del Ministero dei Trasporti: <a href="https://scioperi.mit.gov.it/" target="_blank" rel="noopener">scioperi.mit.gov.it ›</a></p>'}
-document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-sciop]"))return;e.preventDefault();const b=currentBrief();if(!b)return;rlOpenBox("Scioperi in arrivo","in Italia nelle prossime tre settimane, e all'estero",sciopPanel(b.data));try{track("scioperi-apri")}catch(_){}});
 function rlAnche(b,T){const has=id=>T.some(t=>t.id===id);const tl=id=>T.find(t=>t.id===id);
   const fine=v=>v.esito==="avvenuto"||v.esito==="smentito";
   const ver=b.verifiche||[],fin=ver.filter(fine),altri=ver.filter(v=>!fine(v));
