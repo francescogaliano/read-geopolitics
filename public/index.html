@@ -699,7 +699,8 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .ab-hd{display:flex;gap:14px;align-items:center;margin:0 0 10px}.ab-hd .ab-role{margin:0}.ab-av{position:relative;flex:none;width:76px;height:76px;border-radius:50%;overflow:hidden;background:var(--surface-2);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--c)}.ab-av img{width:100%;height:100%;object-fit:cover;display:block}.ab-cr{font-size:11.5px;color:var(--muted);margin:-2px 0 12px}.ab-cr a{color:inherit}
 .pp-av{position:relative;width:50px;height:50px;border-radius:50%;background:var(--c);color:var(--bg);display:flex;align-items:center;justify-content:center;font:600 16px var(--serif,Georgia),serif;margin-bottom:4px}
 .pp-i b{font-size:12.5px;line-height:1.25;font-weight:600}.pp-i>span:last-child:not(.pp-av){font-size:11px;line-height:1.25;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pp-a{position:absolute;top:12px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}.pp-l{left:-2px}.pp-r{right:-2px}
+.pp-a{position:absolute;top:12px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}.pp-l{left:-2px}
+.pp-i.gl{text-decoration:none}.pp-av.pp-gli{background:none;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--faint)}.pp-r{right:-2px}
 .pp.pp-more::after{content:"";position:absolute;right:0;top:0;bottom:14px;width:56px;background:linear-gradient(90deg,transparent,var(--pp-bg,var(--surface)) 70%);pointer-events:none;z-index:1}
 .pp-bar{height:3px;border-radius:2px;background:var(--line);margin:6px 2px 0;overflow:hidden}.pp-bar i{display:block;height:100%;background:var(--accent);border-radius:2px;transition:margin-left .1s}
 .tm-tabs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}.tm-tabs button{background:none;border:0;padding:9px 6px;font:500 13.5px var(--sans);color:var(--muted);cursor:pointer}.tm-tabs button[aria-selected="true"]{color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
@@ -2420,6 +2421,12 @@ const A={open:null};
 /* v56: oltre alle persone collegate dal briefing, anche quelle con una scheda che la storia nomina (nome o alias) in titolo, fatti, posizioni o sintesi */
 const ACT_RX=new Map();function actRx(a){let r=ACT_RX.get(a.id);if(r===undefined){const ns=[a.nome,...(a.alias||[])].map(x=>String(x||"").trim()).filter(x=>x.length>=4);r=ns.length?new RegExp("(^|[^\\p{L}])("+ns.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(?![\\p{L}])","u"):null;ACT_RX.set(a.id,r)}return r}
 const ACT_ST=new Map();
+/* persone del glossario citate nella storia ma senza scheda completa: compaiono tra «Le persone coinvolte» con le iniziali; il tocco apre la spiegazione */
+function ppGlItem(g,ini){return `<button type="button" class="pp-i gl" data-gl="${esc(g.id)}" aria-label="${esc(g.nome)}: mostra spiegazione"><span class="pp-av pp-gli" style="--c:var(--faint)">${esc(ini(g.nome))}</span><b>${esc(g.nome)}</b>${g.ruolo?`<span>${esc(g.ruolo)}</span>`:""}</button>`}
+function glPeopleOf(s,ids){const txt=[s.titolo,s.fatti,s.perche_conta,s.sintesi,s.pro&&JSON.stringify(s.pro),s.contro&&JSON.stringify(s.contro)].filter(Boolean).join(" \n ");if(!txt||!S.glossario)return[];
+  const ac=ids.map(id=>S.attori[id]).filter(Boolean),gid=new Set(ac.map(a=>a.glossario).filter(Boolean)),nm=new Set(ac.map(a=>String(a.nome||"").toLowerCase()));
+  return Object.values(S.glossario).filter(g=>g&&g.tipo==="persona"&&!gid.has(g.id)&&!nm.has(String(g.termine||"").toLowerCase())&&[g.termine,...(g.alias||[])].filter(t=>t&&t.length>3).some(t=>new RegExp("(^|[^\\p{L}\\p{N}])"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?=$|[^\\p{L}\\p{N}])","u").test(txt)))
+    .map(g=>({id:g.id,_gl:1,nome:g.termine,ruolo:g.spiegazione}))}
 function actorsOfStory(s){if(!s)return[];if(ACT_ST.has(s.id)&&ACT_ST.get(s.id).n===Object.keys(S.attori).length)return ACT_ST.get(s.id).v;const ids=new Set((s.attori||[]).filter(id=>S.attori[id]));Object.values(S.attori).forEach(a=>{if((a.storie||[]).includes(s.id))ids.add(a.id)});
   const txt=[s.titolo,s.fatti,s.perche_conta,s.sintesi,s.pro&&JSON.stringify(s.pro),s.contro&&JSON.stringify(s.contro)].filter(Boolean).join(" \n ");
   if(txt)Object.values(S.attori).forEach(a=>{if(ids.has(a.id))return;const r=actRx(a);if(r&&r.test(txt))ids.add(a.id)});
@@ -2433,7 +2440,7 @@ const ppFotoSrc=a=>a&&(PP_FOTO.has(a.id)?"/img/persone/"+a.id+".jpg":(a.foto&&/^
 let PP_CRED=null;const ppCred=()=>PP_CRED||(PP_CRED=fetch("/img/persone/crediti.json").then(r=>r.ok?r.json():{}).catch(()=>({})));
 function ppHTML(list,title){if(!list.length)return"";
   const ini=n=>String(n||"").replace(/[^\p{L}\s.-]/gu,"").split(/\s+/).filter(Boolean).map(w=>w[0]).filter(c=>/\p{Lu}/u.test(c)).slice(0,2).join("")||"·";
-  return `${title?`<div class="tm-sec">${title} · ${list.length}</div>`:""}<div class="pp"><button type="button" class="pp-a pp-l" aria-label="Persone precedenti" hidden>‹</button><div class="pp-s">${list.map(a=>`<button type="button" class="pp-i" data-actor="${esc(a.id)}"><span class="pp-av${ppFotoSrc(a)?" pp-ph":""}" style="--c:${PP_COL[a.paese]||"var(--faint)"}">${ppFotoSrc(a)?`<img src="${esc(ppFotoSrc(a))}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove('pp-ph');this.remove()">`:""}${esc(ini(a.nome))}${a._n?`<i class="pp-k" title="${a._n} storie insieme">${a._n}</i>`:""}</span><b>${esc(a.nome)}</b>${a.ruolo?`<span>${esc(a.ruolo)}</span>`:""}</button>`).join("")}</div><button type="button" class="pp-a pp-r" aria-label="Altre persone" hidden>›</button><div class="pp-bar" hidden><i></i></div></div>`}
+  return `${title?`<div class="tm-sec">${title} · ${list.length}</div>`:""}<div class="pp"><button type="button" class="pp-a pp-l" aria-label="Persone precedenti" hidden>‹</button><div class="pp-s">${list.map(a=>a._gl?ppGlItem(a,ini):`<button type="button" class="pp-i" data-actor="${esc(a.id)}"><span class="pp-av${ppFotoSrc(a)?" pp-ph":""}" style="--c:${PP_COL[a.paese]||"var(--faint)"}">${ppFotoSrc(a)?`<img src="${esc(ppFotoSrc(a))}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.remove('pp-ph');this.remove()">`:""}${esc(ini(a.nome))}${a._n?`<i class="pp-k" title="${a._n} storie insieme">${a._n}</i>`:""}</span><b>${esc(a.nome)}</b>${a.ruolo?`<span>${esc(a.ruolo)}</span>`:""}</button>`).join("")}</div><button type="button" class="pp-a pp-r" aria-label="Altre persone" hidden>›</button><div class="pp-bar" hidden><i></i></div></div>`}
 /* linguette «Fatti / Storie del briefing» dentro ogni mese del tema (ripristinato: era sparito nella v55) */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tmt]");if(!b)return;const [k]=b.dataset.tmt.split(/:(?=[fs]$)/);const box=b.closest(".tm")||document;box.querySelectorAll(`[data-tmt^="${CSS.escape(k)}:"]`).forEach(x=>x.setAttribute("aria-selected",String(x===b)));box.querySelectorAll(`[data-tmp^="${CSS.escape(k)}:"]`).forEach(x=>x.hidden=x.dataset.tmp!==b.dataset.tmt)});
 function threadActorsHTML(t){const cnt={};(t.storie||[]).forEach(x=>{const st=S.stories[x.id];const ids=st?actorsOfStory(st):Object.values(S.attori).filter(a=>(a.storie||[]).includes(x.id)).map(a=>a.id);ids.forEach(id=>cnt[id]=(cnt[id]||0)+1)});const L=Object.keys(cnt).filter(id=>S.attori[id]).sort((a,b)=>cnt[b]-cnt[a]).slice(0,12).map(id=>S.attori[id]);return ppHTML(L,"Chi conta")}
@@ -5213,15 +5220,17 @@ function acctLine(){
   if(uidOK()){const em=ACC.email||gStore("rg-email");return `<div class="ip-acct"><span>Sei entrato come <b>${em?esc(em):"…"}</b></span><button type="button" class="xp-lnk" data-logout="1">Non sei tu? Esci</button></div>`}
   return `<div class="ip-acct"><span>Non sei entrato</span><button type="button" class="xp-lnk" data-xp-mail="1">Entra con la tua email</button></div>`;
 }
-function otherTab(t){
-  if(t==="push")return window.RG_push?`<p class="ip-hint">Scegli tu cosa ricevere su questo dispositivo: arrivano solo quelle che accendi.</p>`+window.RG_push.panelHTML():"";
-  if(t==="nl"){
+function nlTab(){
     if(!uidOK())return `<p class="ip-hint">Ogni mattina alle 8 l’anteprima del briefing nella tua casella: le notizie del giorno in 2 minuti, con il link al briefing completo.</p>${gStore("rg-uid")==="admin"?`<p class="ip-hint">Non disponibile per l’account amministratore.</p>`:`<button type="button" class="xp-cta" data-xp-mail="1">Entra con la tua email</button>`}`;
     const on=ACC.newsletter;
     if(on===null)return `<p class="ip-hint">Controllo la tua iscrizione…</p>`;
     return on?`<p class="ip-state on">✓ Sei iscritto alla newsletter</p><p class="ip-hint">Ricevi ogni mattina alle 8 l’anteprima del briefing a <b>${esc(ACC.email||gStore("rg-email")||"")}</b>.</p><button type="button" class="xp-follow" data-nl-set="off">Disiscriviti</button><p class="ip-err" hidden></p>`
       :`<p class="ip-state">Non sei iscritto alla newsletter</p><p class="ip-hint">Ogni mattina alle 8 l’anteprima del briefing nella tua casella: le notizie del giorno in 2 minuti, con il link al briefing completo. Ti puoi disiscrivere quando vuoi.</p><button type="button" class="xp-cta" data-nl-set="on">Iscrivimi</button><p class="ip-err" hidden></p>`;
-  }
+}
+function nlPvHTML(){return `<button type="button" class="xp-lnk ip-pvb" data-ip-pv="1">Mostra anteprima dell'email</button><div class="nl-pv" hidden><div class="nl-pvi"></div></div>`}
+function otherTab(t){
+  if(t==="push")return window.RG_push?`<p class="ip-hint">Scegli tu cosa ricevere su questo dispositivo: arrivano solo quelle che accendi.</p>`+window.RG_push.panelHTML():"";
+  if(t==="nl")return nlTab()+nlPvHTML();
   if(t==="asp"){
     const dark=document.documentElement.getAttribute("data-theme")!=="light";
     return `<h3>Aspetto</h3><div class="xp-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark" aria-pressed="${dark}">🌙 Scuro</button><button type="button" data-theme-set="light" aria-pressed="${!dark}">☀️ Chiaro</button></div>
@@ -5232,6 +5241,7 @@ function otherTab(t){
 }
 document.addEventListener("click",async e=>{
   if(!e.target.closest("#intPanel"))return;
+  const pv=e.target.closest("[data-ip-pv]");if(pv){const box=pv.nextElementSibling,w=box&&box.querySelector(".nl-pvi");if(!box)return;if(box.hidden){box.hidden=false;if(!w.firstChild){const sc=Math.min(1,(box.clientWidth||320)/620),f=document.createElement("iframe");f.src=RG_API+"/api/newsletter/esempio";f.title="Esempio dell'email del mattino";f.setAttribute("sandbox","");f.tabIndex=-1;f.style.transform="scale("+sc+")";w.style.height=Math.round(1700*sc)+"px";w.appendChild(f)}pv.textContent="Nascondi anteprima";try{track("nl-anteprima-mioread")}catch(_){}}else{box.hidden=true;pv.textContent="Mostra anteprima dell'email"}return}
   const tb=e.target.closest("[data-ptab]");if(tb){PE.tab=tb.dataset.ptab;renderPanel2();const b=panel.querySelector(".ip-box");if(b)b.scrollTop=0;if(PE.tab==="nl"&&ACC.newsletter===null)pullF();return}
   const th=e.target.closest("[data-theme-set]");if(th){const want=th.dataset.themeSet,dark=document.documentElement.getAttribute("data-theme")!=="light";if((want==="dark")!==dark){const b=document.getElementById("themeBtn");if(b)b.click()}renderPanel2();return}
   const ap=e.target.closest("[data-app]");if(ap){closePanel();if(window.rgAppInstall)window.rgAppInstall("menu");return}
@@ -5833,7 +5843,7 @@ function rlStoryHTML(s,rank){if(!s)return"";const conf=s.confidenza||{},th=S.thr
    ${s.divergenze?acc("div","Le fonti non coincidono",`<p>${rlNr(s.divergenze)}</p>`,'<span class="rla-n">!</span>'):""}
    ${acc("oss","Da osservare nei prossimi giorni",segs?`<div class="sx-ck">${segs}</div>${pSc?`<button type="button" class="linkbtn" data-rla-go="scn">La tua previsione: «Come va a finire?» ›</button>`:""}`:"",(s.segnali||[]).length?`<span class="rla-n">${(s.segnali||[]).length}</span>`:"")}
    ${hasSc?acc("scn",(th&&th.scenari&&th.scenari.stato==="chiuso")?"Com'è andata":"Come può andare · stima",scenMiniHTML(th)):""}
-   ${ids.length?acc("ppl","Le persone coinvolte",ppHTML(ids.map(x=>S.attori[x]).filter(Boolean)),`<span class="rla-n">${ids.length}</span>`):""}
+   ${(P=>P.length?acc("ppl","Le persone coinvolte",ppHTML(P),`<span class="rla-n">${P.length}</span>`):"")(ids.map(x=>S.attori[x]).filter(Boolean).concat(glPeopleOf(s,ids)))}
    ${acc("ctx","Il tema, il dossier e le prossime date",ctx?`<div class="sx-ctx">${ctx}</div>`:"")}
    ${acc("src",`Le fonti · ${d.n} da ${d.paesi} ${plur(d.paesi,"paese","paesi")}`,`<p class="sx-src">${divHTML(s.fonti)}<span class="muted">Confidenza ${esc(confF(conf.livello))}: ${esc(conf.motivo||"")}</span></p>${srcList(s.fonti)}`)}
    </div>
