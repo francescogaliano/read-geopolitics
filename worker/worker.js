@@ -1044,7 +1044,7 @@ async function draftCreate(env, origin, b) {
   const type = isReel ? "reel" : (b.type || (urls.length > 1 ? "carousel" : "image"));
   const st = await igSettings(env);
   const f = st.formats[format] || { mode: "approva", time: "08:30" };
-  const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400), ...(typeof b.th_domanda === "string" && b.th_domanda.trim() ? { th_domanda: b.th_domanda.trim().slice(0, 500) } : {}) };
+  const d = { id, format, date, type, caption: igCaption(String(b.caption || "").slice(0, 2200)), image_urls: urls, ...(video ? { video_url: video.url, video_bytes: video.bytes, ...(Number.isFinite(+b.thumb_ms) && +b.thumb_ms > 0 && +b.thumb_ms < 90000 ? { thumb_ms: Math.round(+b.thumb_ms) } : {}) } : {}), template: clip(b.template, 40), req_id: clip(b.req_id, 40), ...(b.yt_title ? { yt_title: clip(String(b.yt_title).replace(/[<>]/g, "").replace(/\s+/g, " "), 100) } : {}), status: "bozza", mode: f.mode, publish_at: romeLocal(date, (format === "daily" && ((await igPlan(env))[romeDow(date) - 1] || {}).ora) || f.time || "08:30"), created_at: new Date().toISOString(), note: String(b.note || "").slice(0, 400), ...(typeof b.th_domanda === "string" && b.th_domanda.trim() ? { th_domanda: b.th_domanda.trim().slice(0, 500) } : {}) };
   await kvSet(env, "draft:" + id, d);
   if (d.template === "video-principale") await kvSet(env, "vp:last", { date, id, via: "richiesta" }).catch(() => {});
   if (format === "daily" && b.sond_post && typeof b.sond_post === "object") await sondPostSet(env, date, b.sond_post).catch(() => {});
@@ -1663,7 +1663,7 @@ function ytRow(x){if(!ytOk(x))return "";const t=(D.yt||{})[x.id];const auto=chEf
  if(!t)act=chTog(x,"yt",auto,'<button class="sm yts">Carica</button>');
  else if(t.status==="errore")act='<button class="sm yts">Riprova</button>';
  else if(t.status==="caricato")act='<a href="'+esc(pub?t.link:t.studio)+'" target="_blank">'+(pub?'Apri ›':'Apri in Studio ›')+'</a>';
- return '<div class="dr"><span class="ic">YT</span><div>YouTube Shorts <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+ return '<div class="dr"><span class="ic">YT</span><div>YouTube Shorts <span class="st">· '+esc(st)+(t&&t.playlist?' · playlist «'+esc(t.playlist)+'»':'')+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')+(t&&t.dopo_err?'<div class="sub" style="color:#E5B45A">Playlist e commento: '+esc(t.dopo_err)+'</div>':'')}
 function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=chEff(x,"tg",!!D.telegram.settings.post)&&x.status!=="pubblicata";
  const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.tg==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(!t)act=chTog(x,"tg",auto,'<button class="sm tgs">Invia</button>');else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
@@ -3556,9 +3556,35 @@ async function ytSend(env, id, by, force) {
     if (!r2.ok || !j2.id) throw { code: "youtube_" + r2.status, detail: ytErr(j2, r2.status) };
     x.status = "caricato"; x.video_id = j2.id; x.link = "https://youtube.com/shorts/" + j2.id; x.studio = "https://studio.youtube.com/video/" + j2.id + "/edit";
     x.privacy = (j2.status && j2.status.privacyStatus) || null; x.done_at = new Date().toISOString();
+    try { await ytDopo(env, t, d, x); } catch (e) { x.dopo_err = String((e && (e.detail || e.message)) || e).slice(0, 200); }
   } catch (e) { x.status = "errore"; x.error = String((e && (e.detail || e.message)) || e).slice(0, 400); }
   await kvSet(env, "yt:" + id, x);
   return x;
+}
+// v140: dopo il caricamento, la playlist della rubrica (creata la prima volta con il nome della rubrica) e il commento con il link.
+// Servono il permesso youtube.force-ssl (nuovo «Ricollega YouTube»): senza, il video resta caricato e la riga dice cosa manca.
+// Fissare il commento in cima non si può fare via API: lo fa YouTube Studio, a mano.
+const YT_COMMENTO = "Fatti, fonti e mappe ogni mattina, gratis: " + YT_LINK;
+async function ytPost(t, path, params, body) {
+  const r = await fetch("https://www.googleapis.com/youtube/v3" + path + "?" + new URLSearchParams(params), { method: "POST", headers: { authorization: "Bearer " + t.access_token, "content-type": "application/json; charset=UTF-8" }, body: JSON.stringify(body) });
+  const j = await gj(r);
+  if (!r.ok) throw { status: r.status, code: "youtube_" + r.status, detail: r.status === 403 ? "manca il permesso per playlist e commenti: premi «Ricollega YouTube»" : ytErr(j, r.status) };
+  return j;
+}
+async function ytDopo(env, t, d, x) {
+  const tpl = IG_TEMPLATES.find((z) => z.id === d.template);
+  const nome = tpl ? tpl.nome : null;
+  if (nome) {
+    const pl = (await kvGet(env, "yt_playlists")) || {};
+    if (!pl[nome]) {
+      const c = await ytPost(t, "/playlists", { part: "snippet,status" }, { snippet: { title: nome, description: (tpl.desc || "") + "\nOgni mattina su " + YT_LINK, defaultLanguage: "it" }, status: { privacyStatus: "public" } });
+      pl[nome] = c.id; await kvSet(env, "yt_playlists", pl);
+    }
+    await ytPost(t, "/playlistItems", { part: "snippet" }, { snippet: { playlistId: pl[nome], resourceId: { kind: "youtube#video", videoId: x.video_id } } });
+    x.playlist = nome;
+  }
+  const cm = await ytPost(t, "/commentThreads", { part: "snippet" }, { snippet: { videoId: x.video_id, topLevelComment: { snippet: { textOriginal: YT_COMMENTO } } } });
+  x.commento = cm.id || true;
 }
 async function ytCheck(env, id) { // rilegge la visibilità (dopo che l'hai resa pubblica in Studio)
   const x = await kvGet(env, "yt:" + id);
@@ -3593,7 +3619,7 @@ async function ytPublic(request, env, p, url) {
     const state = crypto.randomUUID().replace(/-/g, "");
     await kvSet(env, "yt_state", { state, exp: Date.now() + 10 * 60000 });
     return Response.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({ client_id: ytCid(env), redirect_uri: redirect, response_type: "code",
-      scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly", access_type: "offline", prompt: "consent", include_granted_scopes: "true", state }), 302);
+      scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl", access_type: "offline", prompt: "consent", include_granted_scopes: "true", state }), 302);
   }
   if (p === "/yt/callback") {
     const err = url.searchParams.get("error");
