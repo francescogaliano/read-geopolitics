@@ -2200,7 +2200,7 @@ function stLi(lab,n){return '<div class="li"><span>'+esc(lab)+'</span><span>'+st
 async function loadStats(force){const el=document.getElementById("sts");el.innerHTML='<div class="card sub">Carico le statistiche da GoatCounter…</div>';
  const r=await api({action:"stats",days:STP,force:!!force});
  if(!r.ok){el.innerHTML='<div class="card"><b>Statistiche non disponibili</b><div class="err" style="margin-top:6px">'+esc(r.detail||r.error||"errore")+'</div>'+(r.error==="gc_missing"?'<div class="sub" style="margin-top:6px">In Cloudflare: rg-api → Settings → Variables and Secrets → aggiungi il secret GC_TOKEN con la chiave API di GoatCounter (permessi di sola lettura).</div>':'')+'</div>';return}
- stRender(r.stats);vtStats()}
+ stRender(r.stats);if(r.stats&&r.stats.vecchi)el.insertAdjacentHTML("afterbegin",'<div class="sub" style="color:#E5B45A;margin:8px 0">GoatCounter non ha risposto: mostro l&#39;ultima fotografia salvata. Riprova tra un minuto.</div>');vtStats()}
 function ppHtml(s,part){let h="";const W=s.settimane||[];const fd=d=>(+d.slice(8))+"/"+(+d.slice(5,7));
  if(part!=="sito"&&W.length){const cur=W[W.length-1],mx=Math.max(1,...W.map(w=>w.n));const F=(cur.n?(s.fonti||{}).cur:(s.fonti||{}).prev)||[];
   h+='<div class="card pp"><div class="ppl">Il numero della settimana · nuovi iscritti</div><div class="ppb">'+cur.n+'<small>finora · settimana dal '+fd(cur.da)+'</small></div><div class="ppw">'+W.map((w,i)=>'<div class="'+(i===W.length-1?'cur':'')+'"><b>'+w.n+'</b><i style="height:'+Math.max(3,Math.round(w.n/mx*80))+'px"></i>dal '+fd(w.da)+'</div>').join("")+'</div>'+(F.length?'<div class="ppi">Da dove sono arrivati '+(cur.n?'questa settimana':'la settimana scorsa')+': '+F.slice(0,4).map((x,i)=>i?esc(x.name)+' '+x.n:'<b>'+esc(x.name)+' '+x.n+'</b>').join(" · ")+'</div>':'')+'</div>'}
@@ -3788,7 +3788,7 @@ async function ytPanelApi(env, b) {
   if (act === "yt_stats") { // v138: Statistiche → YouTube
     const stats = await ytStatsTick(env, !!b.force) || await kvGet(env, "yt_stats");
     const sito = {};
-    try { const ss = await siteStats(env, 7, false); const y = (ss.refs || ss.provenienza || ss.top || []).find((x) => x.name === "YouTube"); sito.visite7 = y ? y.n : 0; } catch (e) { sito.visite7 = null; sito.visite_err = String(e.detail || e.message || e).slice(0, 120); }
+    try { const gc = await kvGet(env, "gc_cache:7"); const ss = gc && gc.data ? gc.data : await siteStats(env, 7, false); const y = (ss.refs || ss.provenienza || ss.top || []).find((x) => x.name === "YouTube"); sito.visite7 = y ? y.n : 0; } catch (e) { sito.visite7 = null; sito.visite_err = String(e.detail || e.message || e).slice(0, 120); }
     try { const since = new Date(Date.now() - 7 * 86400000).toISOString(); const q = await env.DB.prepare("SELECT COUNT(*) AS n, SUM(CASE WHEN created_at >= ?1 THEN 1 ELSE 0 END) AS n7 FROM users WHERE lower(coalesce(source,'')) LIKE '%youtube%' OR lower(coalesce(referrer,'')) LIKE '%youtube%'").bind(since).first(); sito.iscritti = +(q && q.n) || 0; sito.iscritti7 = +(q && q.n7) || 0; } catch (e) {}
     const confronto = [];
     const ig = (await kvGet(env, "ig_stats:last")) || {};
@@ -4934,8 +4934,14 @@ const gcIso = (ms) => { const d = new Date(ms); d.setUTCMinutes(0, 0, 0); return
 async function gcGet(env, path, params) {
   const u = new URL(gcApi(env) + path);
   for (const [k, v] of Object.entries(params || {})) u.searchParams.set(k, String(v));
-  const r = await fetch(u.toString(), { headers: { authorization: "Bearer " + env.GC_TOKEN, "content-type": "application/json" } });
-  const j = await gj(r);
+  let r, j;
+  for (let k = 0; ; k++) { // v143: con più schede aperte insieme GoatCounter risponde 429 (max 4 richieste al secondo): aspetta e riprova
+    r = await fetch(u.toString(), { headers: { authorization: "Bearer " + env.GC_TOKEN, "content-type": "application/json" } });
+    j = await gj(r);
+    if (r.status !== 429 || k >= 4) break;
+    const m = String((j && j.error) || "").match(/try again in ([\d.]+)\s*(ms|s)/i);
+    await new Promise((res) => setTimeout(res, Math.min(3000, Math.max(400, m ? (+m[1]) * (m[2].toLowerCase() === "s" ? 1000 : 1) + 300 : 1100)) * (k + 1)));
+  }
   // GoatCounter risponde 404 «not found» quando nel periodo non c'è nessun dato (es. prima che il sito esistesse): lo trattiamo come vuoto
   if (r.status === 404 && /not found/i.test(String((j && j.error) || ""))) { await new Promise((res) => setTimeout(res, 260)); return { empty: true }; }
   if (!r.ok) throw { status: 502, code: "goatcounter_" + r.status, detail: "GoatCounter " + path + " (" + u.host + "): " + (r.status === 401 ? "chiave non valida o non di questo sito (GC_TOKEN)." : r.status === 403 ? "alla chiave manca il permesso «Read statistics»." : "HTTP " + r.status + " " + String((j && (j.error || JSON.stringify(j.errors || ""))) || "").slice(0, 200)) + (r.status === 404 ? " Controlla che il codice del sito sia giusto: è la parte prima di .goatcounter.com nell'indirizzo della tua dashboard." : "") };
@@ -4964,8 +4970,12 @@ function statSrc(s) {
   if (s === "team") return "Team";
   return s.slice(0, 30);
 }
-async function siteStats(env, days, force) {
+async function siteStats(env, days, force) { // v143: se GoatCounter non risponde, mostra l'ultima fotografia salvata invece dell'errore
   days = +days === 30 ? 30 : 7;
+  try { return await siteStatsLive(env, days, force); }
+  catch (e) { const c = await kvGet(env, "gc_cache:" + days); if (c && c.data) return { ...c.data, vecchi: true, avviso: String(e.detail || e.message || e).slice(0, 160) }; throw e; }
+}
+async function siteStatsLive(env, days, force) {
   if (!env.GC_TOKEN) throw { status: 409, code: "gc_missing", detail: "Manca il secret GC_TOKEN (chiave API di GoatCounter) nel Worker." };
   const ck = "gc_cache:" + days;
   if (!force) { const c = await kvGet(env, ck); if (c && Date.now() - c.at < 15 * 60000) return c.data; }
