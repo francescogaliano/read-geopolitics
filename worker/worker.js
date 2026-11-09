@@ -1074,6 +1074,7 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
+  if (d.status === "pubblicata") { try { await ytAuto(env, id); } catch (e) {} } // v136: e su YouTube (solo i reel)
   if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
   if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
@@ -1092,6 +1093,7 @@ async function draftPublish(env, origin, id, by) {
   await kvSet(env, "draft:" + id, d);
   if (d.status === "pubblicata") { try { await ttAuto(env, id); } catch (e) {} } // v20: copia su TikTok se attivato
   if (d.status === "pubblicata") { try { await thAuto(env, id); } catch (e) {} } // v30: e su Threads
+  if (d.status === "pubblicata") { try { await ytAuto(env, id); } catch (e) {} } // v136: e su YouTube (solo i reel)
   if (d.status === "pubblicata") { try { await tgAuto(env, id); } catch (e) {} } // v33: e su Telegram
   if (d.status === "pubblicata") { try { await spLinkVideo(env, d); } catch (e) {} } // v75: e sotto lo Spiegato
   return d;
@@ -1114,6 +1116,7 @@ async function draftAllinea(env, id) {
   await kvSet(env, "draft:" + id, d);
   try { await ttAuto(env, id); } catch (e) {}
   try { await thAuto(env, id); } catch (e) {}
+  try { await ytAuto(env, id); } catch (e) {}
   try { await tgAuto(env, id); } catch (e) {}
   try { await spLinkVideo(env, d); } catch (e) {}
   return { found: true, draft: d };
@@ -1183,6 +1186,7 @@ async function panelApi(env, origin, b, ctx) {
   const act = b.action;
   if (String(act || "").startsWith("tt_")) { const r = await ttPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("th_")) { const r = await thPanelApi(env, b); if (r) return r; }
+  if (String(act || "").startsWith("yt_")) { const r = await ytPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("tg_")) { const r = await tgPanelApi(env, b); if (r) return r; }
   if (String(act || "").startsWith("sv_")) { const r = await svPanelApi(env, b); if (r) return r; }
   /* v60: queste azioni stavano dentro tgPanelApi, che però riceve solo le azioni «tg_…»: non arrivavano mai */
@@ -1224,14 +1228,14 @@ async function panelApi(env, origin, b, ctx) {
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
     await kvInit(env);
-    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows, canali, svAll, giri, sond, fbAll] = await Promise.all([
+    const [t, st, draftsRaw, reqsRaw, plan, reqSeen, tiktok, ttRows, threads, thRows, telegram, tgRows, canali, svAll, giri, sond, fbAll, youtube, ytRows] = await Promise.all([
       igSeed(env).catch(() => null), igSettings(env), kvList(env, "draft:", 30), kvList(env, "req:", 30),
-      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40), canaliInfo(env).catch(() => null), svList(env).catch(() => []), kvGet(env, "giri:" + romeToday()), sondInfo(env).catch(() => null), fbList(env).catch(() => []),
+      igPlan(env), kvGet(env, "ig_req_seen"), ttPanelInfo(env), kvList(env, "tt:", 40), thPanelInfo(env), kvList(env, "th:", 40), tgPanelInfo(env), kvList(env, "tg:", 40), canaliInfo(env).catch(() => null), svList(env).catch(() => []), kvGet(env, "giri:" + romeToday()), sondInfo(env).catch(() => null), fbList(env).catch(() => []), ytPanelInfo(env), kvList(env, "yt:", 40),
     ]);
     const drafts = draftsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at)));
     const reqs = reqsRaw.sort((a, z) => String(z.created_at).localeCompare(String(a.created_at))).map(({ _k, _u, ...x }) => (x.stato === "in_lavorazione" && Date.now() - Date.parse(x.started_at || x.created_at) > 3 * 3600000 ? { ...x, stato: "bloccata" } : x));
     const ieri = romeYesterday();
-    return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, vp: (await kvGet(env, "vp:last")) || null, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption) })) };
+    return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, vp: (await kvGet(env, "vp:last")) || null, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), youtube, yt: Object.fromEntries(ytRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption), ...(x.type === "reel" ? { yt_t: x.yt_title || ytTitle(x.caption), yt_d: x.yt_caption || ytDesc(x.caption) } : {}) })) };
   }
 
   if (act === "users") {
@@ -1313,7 +1317,7 @@ async function panelApi(env, origin, b, ctx) {
     if (act === "draft_programma") {
       if (b.at) { const t = Date.parse(String(b.at)); if (!t || t < Date.now() + 60000) throw { status: 400, code: "orario", detail: "scegli un orario nel futuro" }; if (t > Date.now() + 14 * 86400000) throw { status: 400, code: "orario", detail: "al massimo tra 14 giorni" }; d.programma = new Date(t).toISOString(); }
       else delete d.programma;
-    } else { const k = String(b.ch || ""); if (!["tt", "th", "tg"].includes(k)) throw { status: 400, code: "canale" }; d.canali = { ...(d.canali || {}), [k]: !!b.on }; }
+    } else { const k = String(b.ch || ""); if (!["tt", "th", "tg", "yt"].includes(k)) throw { status: 400, code: "canale" }; d.canali = { ...(d.canali || {}), [k]: !!b.on }; }
     await kvSet(env, "draft:" + d.id, d); return { ok: true, draft: d };
   }
   if (act === "publish") { // v85: la pubblicazione va in coda e prosegue dietro le quinte: il pannello si può chiudere
@@ -1517,6 +1521,10 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="thr"><b>Rispondi su Threads</b><div class="sub">Cerca i post su un tema e rispondi con un fatto e la fonte. Ogni risposta parte solo quando premi «Rispondi» (al massimo 3 al giorno).</div>
 <div class="row" style="margin-top:8px"><input id="thrq" value="geopolitica" maxlength="100" style="flex:1"><select id="thrt" style="max-width:120px"><option value="TOP">Più discussi</option><option value="RECENT">Più recenti</option></select><button class="g" id="thrgo" type="button">Cerca</button></div>
 <div id="thrl" class="thrl"></div></div></div></details>
+<details class="chr" id="ytc"><summary><span class="ic">YT</span><div class="cht"><b>YouTube Shorts</b><div class="s"><span class="dot" id="ytdot"></span><span id="yts">carico…</span></div></div><span class="tg" id="yttag"></span></summary>
+<div class="set"><label><input type="checkbox" id="ytauto"> carica da solo i reel dopo Instagram</label>
+<div class="sub">Finché Google non approva l&#39;audit dell&#39;app, i video caricati restano privati: in YouTube Studio si rendono pubblici con un tocco. Limite di Google: circa 6 caricamenti al giorno.</div>
+<div class="row"><a id="ytcon" href="/ig/yt/connect"><button class="g" type="button">Collega YouTube</button></a></div></div></details>
 <details class="chr" id="tgc"><summary><span class="ic">TG</span><div class="cht"><b>Telegram</b><div class="s"><span class="dot" id="tgdot"></span><span id="tgs">carico…</span></div></div><span class="tg" id="tgtag"></span></summary>
 <div class="set"><div class="row"><span>Canale</span><input id="tgchat" placeholder="@readgeopolitics" style="max-width:180px"></div>
 <label><input type="checkbox" id="tgm"> ogni mattina: 60 secondi e puntata, alle <input type="time" id="tgora" value="08:00" style="width:auto"></label>
@@ -1616,7 +1624,7 @@ const DNS=["dom","lun","mar","mer","gio","ven","sab"];
 let MAILERR=false;
 const NL=String.fromCharCode(10);
 function arcRow(x){const tt=(D.tt||{})[x.id],th=(D.th||{})[x.id],tg=(D.tg||{})[x.id];
- const ch=[[x.status==="pubblicata","IG"],[tt&&tt.status==="pubblicato","TikTok"],[th&&th.status==="pubblicato","Threads"],[tg&&tg.status==="inviato","Telegram"]].filter(z=>z[0]).map(z=>z[1]);
+ const ch=[[x.status==="pubblicata","IG"],[tt&&tt.status==="pubblicato","TikTok"],[th&&th.status==="pubblicato","Threads"],[(D.yt||{})[x.id]&&(D.yt||{})[x.id].status==="caricato","YouTube"],[tg&&tg.status==="inviato","Telegram"]].filter(z=>z[0]).map(z=>z[1]);
  const st=x.status==="pubblicata"?"":'<span class="pill p-'+x.status+'">'+esc(STL[x.status]||x.status.toUpperCase())+'</span>';
  return '<div class="orow" data-oid="'+x.id+'"><button type="button" class="ohd"><span class="oic">'+(x.type==="reel"?"▶":x.type==="story"?"◔":"▦")+'</span><span class="otx"><b>'+esc(dTitle(x))+'</b><span class="sub">'+dSub(x)+(ch.length?' · uscito su '+ch.join(", "):'')+'</span></span>'+st+'<span class="chev">▾</span></button><div class="obody" hidden></div></div>'}
 function dTitle(x){const l=(String(x.caption||"").split(NL).find(s=>s.trim())||x.format||"").trim();return l.length>70?l.slice(0,68)+"…":l}
@@ -1645,6 +1653,14 @@ function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=chEf
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  else if(t.status==="in_elaborazione")act='<button class="sm thk">Aggiorna</button>';
  return '<div class="dr"><span class="ic">TH</span><div>Threads <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+function ytOk(x){return x.type==="reel"&&x.status!=="scartata"&&D&&D.youtube&&D.youtube.collegato}
+function ytRow(x){if(!ytOk(x))return "";const t=(D.yt||{})[x.id];const auto=chEff(x,"yt",!!(D.youtube.settings&&D.youtube.settings.auto))&&x.status!=="pubblicata";
+ const pub=t&&t.status==="caricato"&&t.privacy==="public";
+ const st=t?(t.status==="invio"?"caricamento in corso":t.status==="errore"?"non caricato":pub?"uscito":"caricato come privato: rendilo pubblico in Studio"):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.yt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ if(!t)act=chTog(x,"yt",auto,'<button class="sm yts">Carica</button>');
+ else if(t.status==="errore")act='<button class="sm yts">Riprova</button>';
+ else if(t.status==="caricato")act='<a href="'+esc(pub?t.link:t.studio)+'" target="_blank">'+(pub?'Apri ›':'Apri in Studio ›')+'</a>';
+ return '<div class="dr"><span class="ic">YT</span><div>YouTube Shorts <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
 function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=chEff(x,"tg",!!D.telegram.settings.post)&&x.status!=="pubblicata";
  const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo dopo Instagram":"non parte da solo")+(x.canali&&typeof x.canali.tg==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(!t)act=chTog(x,"tg",auto,'<button class="sm tgs">Invia</button>');else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
@@ -1654,14 +1670,16 @@ function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=
  if(x.status==="in_pubblicazione"||x.status==="in_elaborazione"||x.status==="in_coda")m+='<button class="mi rst">Reset a bozza (solo se bloccata)</button>';
  if(ttOk(x)){if(x.type==="reel")m+='<button class="mi ttc">Copia didascalia TikTok</button>';if(t&&(t.status==="in_elaborazione"||t.status==="nella_casella"))m+='<button class="mi ttk">Aggiorna stato TikTok</button>';if(t&&t.status==="nella_casella")m+='<button class="mi ttf">Reinvia a TikTok</button>'}
  if(thOk(x)&&h&&h.status==="in_elaborazione")m+='<button class="mi thk">Aggiorna stato Threads</button>';
+ if(ytOk(x)&&(D.yt||{})[x.id]&&D.yt[x.id].status==="caricato"&&D.yt[x.id].privacy!=="public")m+='<button class="mi ytk">Aggiorna stato YouTube</button>';
  if(open)m+='<button class="mi d dis">Scarta la bozza</button>';
  return m}
 function capsHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];
- const tabs=[["ig","Instagram"]];if(ttOk(x))tabs.push(["tt","TikTok"]);if(thOk(x))tabs.push(["th","Threads"]);
+ const tabs=[["ig","Instagram"]];if(ttOk(x))tabs.push(["tt","TikTok"]);if(thOk(x))tabs.push(["th","Threads"]);if(ytOk(x))tabs.push(["yt","YouTube"]);
  let s=tabs.length>1?'<div class="seg">'+tabs.map((a,i)=>'<button type="button" data-cp="'+a[0]+'"'+(i===0?' class="on"':'')+'>'+a[1]+'</button>').join("")+'</div>':'';
  s+='<div class="cp" data-cp="ig"><textarea rows="5" class="cap"'+(open?'':' readonly')+'>'+esc(x.caption)+'</textarea><div class="cnt"><span class="svm">'+(open?'si salva da sola':'già pubblicata')+'</span><span>'+nTags(x.caption)+' hashtag</span><button type="button" class="cpy">Copia</button></div></div>';
  if(ttOk(x)){const ed=!(t&&t.status==="pubblicato");s+='<div class="cp" data-cp="tt" hidden><textarea rows="5" class="ttcap"'+(ed?'':' readonly')+'>'+esc(x.tt_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span>'+(x.type==="reel"?'per i reel va incollata a mano':nTags(x.tt_cap)+' hashtag')+'</span><button type="button" class="cpy">Copia</button></div></div>'}
  if(thOk(x)){const ed=!(h&&h.status==="pubblicato");s+='<div class="cp" data-cp="th" hidden><textarea rows="5" maxlength="500" class="thcap"'+(ed?'':' readonly')+'>'+esc(x.th_cap||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'si salva da sola':'già pubblicata')+'</span><span class="thn">'+String(x.th_cap||"").length+'/500</span><button type="button" class="cpy">Copia</button></div></div>'}
+ if(ytOk(x)){const y=(D.yt||{})[x.id];const ed=!(y&&y.status==="caricato");s+='<div class="cp" data-cp="yt" hidden><input class="yttit" maxlength="100"'+(ed?'':' readonly')+' value="'+esc(x.yt_t||"")+'" style="width:100%;box-sizing:border-box;margin:8px 0 0;background:#0E151B;color:#E4EAEF;border:1px solid #34475A;border-radius:8px;padding:8px;font:600 15px system-ui" placeholder="Titolo (max 100)"><textarea rows="5" maxlength="4900" class="ytcap"'+(ed?'':' readonly')+'>'+esc(x.yt_d||"")+'</textarea><div class="cnt"><span class="svm">'+(ed?'titolo e descrizione si salvano da soli':'già caricato')+'</span><span></span><button type="button" class="cpy">Copia</button></div></div>'}
  return s}
 function cnlSt(x,ora){if(!x.on)return '<span class="cp no">spento</span>';if(x.stato==="uscito")return '<span class="cp ok">uscito ✓</span>';if(x.stato==="saltato")return '<span class="cp no">saltato: '+esc(x.motivo||'')+'</span>';if(x.skip||x.stato==="fermato")return '<span class="cp no">fermato per oggi</span>';if(x.stato==="errore")return '<span class="cp bad">errore</span>';if(x.stato==="assente")return '<span class="cp no">oggi non c&#39;è</span>';return '<span class="cp wait">esce alle '+esc(ora)+'</span>'}
 function cnlIt(k,ic,tit,x,why){let h='<div class="cit" data-k="'+k+'"><div class="cih"><span class="ic">'+ic+'</span><b>'+tit+'</b>'+cnlSt(x,x.ora)+'</div>';
@@ -1701,6 +1719,7 @@ function chUpd(d){const iss=[];const A=d.account,T=d.tiktok||{},H=d.threads||{},
  g("tgtag").textContent=G.configurato&&GS.chat?(GS.mattino?"mattino "+GS.ora:"")+(GS.post?(GS.mattino?" + post":"post"):""):"";g("tgtag").className="tg";
  if(document.activeElement!==g("tgchat")){g("tgchat").value=GS.chat||"";g("tgm").checked=!!GS.mattino;g("tgora").value=GS.ora||"08:00";g("tgp").checked=!!GS.post;g("tgdv").checked=GS.divergenze!==false;g("tgbl").checked=GS.bilancio!==false;g("tgsr").checked=GS.sera!==false;g("tgdz").checked=GS.dossier!==false}
  g("thdot").className="dot "+(!H.collegato?"y":H.scaduto?"r":"g");if(H.scaduto)iss.push("Threads da ricollegare");
+ {const Y=d.youtube||{},ya=!!(Y.settings&&Y.settings.auto);g("ytdot").className="dot "+(!Y.collegato?"y":Y.revocato?"r":"g");g("yts").textContent=!Y.configurato?"chiavi YouTube mancanti nel Worker":Y.collegato?((Y.canale||"collegato")+(Y.revocato?" · accesso revocato, ricollega":"")):"non collegato";if(Y.revocato)iss.push("YouTube da ricollegare");g("yttag").textContent=Y.collegato?(ya?"auto dopo IG":"manuale"):"";g("yttag").className="tg"+(ya?"":" off");if(document.activeElement!==g("ytauto"))g("ytauto").checked=ya;g("ytcon").querySelector("button").textContent=Y.collegato?"Ricollega YouTube":"Collega YouTube"}
  const ha=!!(H.settings&&H.settings.auto);g("thtag").textContent=H.collegato?(ha?"auto dopo IG":"manuale"):"";g("thtag").className="tg"+(ha?"":" off");
  const f=S.formats.daily||{};g("ussum").textContent=(S.paused?"in pausa · ":"")+(f.mode==="auto"?"pubblica da solo":"chiedi approvazione")+" · alle "+(f.time||"");g("usd").className="dot "+(S.paused?"y":"g");if(S.paused)iss.push("pubblicazione in pausa");
  if(MAILERR)iss.push("email del mattino");
@@ -1968,7 +1987,7 @@ async function load(){
   const pg=x.programma?new Date(x.programma):null,pgs=pg?pg.toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"}):"";
   const pl=x.status==="bozza"?(pg?"PROGRAMMATO "+pgs.toUpperCase():x.mode==="auto"?"ESCE ALLE "+tm:"DA APPROVARE"):(STL[x.status]||x.status.toUpperCase());
   let pri="";if(open)pri='<button class="btn main pub">Pubblica su Instagram</button>';else if(x.status==="in_elaborazione")pri='<button class="btn main fin">Controlla e pubblica</button>';else if(x.status==="in_pubblicazione")pri='<button class="btn main alg">Controlla su Instagram</button>';else if(x.status==="in_coda")pri='<div class="sub">In coda: esce da sola entro pochi minuti, puoi chiudere il pannello.</div>';else if(x.status==="scartata")pri='<button class="btn res">Ripristina</button>';
-  const rows=igRow(x)+ttRow(x)+thRow(x)+tgRow(x);
+  const rows=igRow(x)+ttRow(x)+thRow(x)+ytRow(x)+tgRow(x);
   return '<div class="card dc" data-id="'+x.id+'"><div class="dh"><div style="min-width:0"><b>'+esc(dTitle(x))+'</b><div class="sub">'+dSub(x)+'</div></div><span class="pill p-'+x.status+'">'+esc(pl)+'</span></div>'
   +stripHtml(x)+(open&&x.video_url?dcovHtml(x):"")
   +((pri||m)?'<div class="pri">'+(pri||'<span style="flex:1"></span>')+(m?'<button class="btn more mo" type="button" aria-label="Altre azioni">⋯</button>':'')+'</div>':'')
@@ -2005,7 +2024,9 @@ async function load(){
   c.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{c.querySelectorAll(".seg button").forEach(z=>z.classList.toggle("on",z===b));c.querySelectorAll(".cp").forEach(z=>{z.hidden=z.dataset.cp!==b.dataset.cp})});
   const autosave=(sel,action)=>{const ta=q(sel);if(!ta||ta.readOnly)return;const sv=ta.parentNode.querySelector(".svm");ta.oninput=()=>{if(sv)sv.textContent="modifiche non salvate…";const n=ta.parentNode.querySelector(".thn");if(n)n.textContent=ta.value.length+"/500"};ta.onchange=async()=>{const r=await api({action,id,caption:ta.value});if(sv)sv.textContent=r.ok?"salvata ✓":"errore: "+(r.detail||r.error)}};
   if(q(".tgs"))q(".tgs").onclick=async e=>{if(!await ask("Inviare subito sul canale Telegram?"))return;e.target.disabled=true;e.target.textContent="Invio…";const r=await api({action:"tg_send",id});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.tg&&r.tg.status==="errore")say(r.tg.error);load()};
-  autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");
+  autosave(".cap","caption");autosave(".ttcap","tt_caption");autosave(".thcap","th_caption");autosave(".yttit","yt_title");autosave(".ytcap","yt_caption");
+  if(q(".yts"))q(".yts").onclick=async e=>{if(!await ask("Caricare il reel su YouTube Shorts? Finché Google non approva l\u2019app, il video resta privato e lo rendi pubblico da Studio."))return;e.target.disabled=true;e.target.textContent="Carico…";if(q(".yttit"))await api({action:"yt_title",id,caption:q(".yttit").value});if(q(".ytcap"))await api({action:"yt_caption",id,caption:q(".ytcap").value});const r=await api({action:"yt_send",id,force:true});if(!r.ok)say("Errore: "+(r.detail||r.error));else if(r.yt&&r.yt.status==="errore")say(r.yt.error);load()};
+  if(q(".ytk"))q(".ytk").onclick=async e=>{e.target.disabled=true;const r=await api({action:"yt_check",id});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
   if(q(".pub"))q(".pub").onclick=async e=>{if(!await ask("Pubblicare ora su Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
     if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok)say("Errore: "+((r.draft&&r.draft.error)||JSON.stringify(r)));load()};
   if(q(".alg"))q(".alg").onclick=async e=>{e.target.disabled=true;e.target.textContent="Cerco su Instagram…";const r=await api({action:"allinea",id});if(!r.ok)say("Non l\u2019ho trovato su Instagram ("+(r.nota||"nessun dettaglio")+"). Riprovo da solo ogni 5 minuti; dopo 10 minuti, se non c\u2019è, la bozza torna ripubblicabile.");load()};
@@ -2136,7 +2157,7 @@ document.getElementById("ttmode").onchange=async e=>{if(e.target.value==="dirett
 document.getElementById("ttauto").onchange=async e=>{await api({action:"tt_settings",auto:e.target.checked});load()};
 document.getElementById("tgsv").onclick=async()=>{const r=await api({action:"tg_settings",chat:document.getElementById("tgchat").value,mattino:document.getElementById("tgm").checked,ora:document.getElementById("tgora").value,post:document.getElementById("tgp").checked,divergenze:document.getElementById("tgdv").checked,bilancio:document.getElementById("tgbl").checked,sera:document.getElementById("tgsr").checked,dossier:document.getElementById("tgdz").checked});document.getElementById("tgmsg").textContent=r.ok?"Salvato ✓":"Errore: "+(r.detail||r.error);load()};
 document.getElementById("tgnow").onclick=async e=>{if(!await ask("Inviare adesso sul canale il messaggio del mattino di oggi?"))return;e.target.disabled=true;const r=await api({action:"tg_morning"});document.getElementById("tgmsg").textContent=r.ok?"Inviato ✓"+(r.sent&&r.sent.audio?" con la puntata":" senza puntata (non ancora pronta)"):"Errore: "+(r.detail||r.error);e.target.disabled=false;load()};
-document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
+document.getElementById("thauto").onchange=async e=>{await api({action:"th_settings",auto:e.target.checked});load()}; document.getElementById("ytauto").onchange=async e=>{await api({action:"yt_settings",auto:e.target.checked});load()}; document.getElementById("thdom").onchange=async e=>{await api({action:"th_settings",domanda:e.target.checked});load()};
 async function thrSearch(){const L=document.getElementById("thrl");L.innerHTML='<div class="sub">Cerco…</div>';const r=await api({action:"th_search",q:document.getElementById("thrq").value,type:document.getElementById("thrt").value});
  if(!r.ok){L.innerHTML='<div class="err">'+esc(r.detail||r.error)+(String(r.error||"").indexOf("threads_")===0?'<br>Se dice che manca il permesso, premi «Ricollega Threads» qui sopra.':'')+'</div>';return}
  if(!r.posts.length){L.innerHTML='<div class="sub">Nessun post trovato.</div>';return}
@@ -3426,6 +3447,166 @@ async function ttPanelInfo(env) {
   const v = await kvGet(env, "tt_verify");
   return { configurato: !!(env.TT_CLIENT_KEY && env.TT_CLIENT_SECRET), collegato: !!(t && t.access_token), username: t ? t.username || null : null, nickname: t ? t.nickname || null : null,
     scope: t ? t.scope || "" : "", scaduto: !!(t && t.refresh_expires_at && t.refresh_expires_at < Date.now()), settings: await ttSettings(env), verifica: v ? (Array.isArray(v.list) ? v.list.map((x) => x.name).join(", ") : v.name) : null };
+}
+// ============ YOUTUBE (v136): i reel anche come YouTube Shorts ============
+// Progetto Google Cloud «Read Geopolitics» con YouTube Data API v3 e client OAuth «Web application» con redirect /yt/callback.
+// Secret del Worker: YT_CLIENT_ID e YT_CLIENT_SECRET. Finché Google non approva l'audit dell'app, i video caricati restano privati (regola di Google):
+// il pannello lo dice e porta a YouTube Studio. Quota: un caricamento costa 1.600 unità su 10.000 al giorno (circa 6 video).
+const YT_DEFAULT = { auto: false };
+const YT_LINK = "https://www.readgeopolitics.com/?utm_source=youtube";
+const ytCid = (env) => String(env.YT_CLIENT_ID || "").trim().replace(/^["']|["']$/g, "");
+const ytSec = (env) => String(env.YT_CLIENT_SECRET || "").trim().replace(/^["']|["']$/g, "");
+async function ytSettings(env) { return { ...YT_DEFAULT, ...((await kvGet(env, "yt_settings")) || {}) }; }
+function ytTitle(cap) { // la prima riga della didascalia, max 100 caratteri con #Shorts; YouTube non accetta < e >
+  let l = (String(cap || "").split("\n").find((x) => x.trim()) || "Read Geopolitics").replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
+  const tag = " #Shorts", max = 100 - tag.length;
+  if (l.length > max) l = l.slice(0, max - 1).replace(/[\s,;:.]+\S*$/, "") + "…";
+  return l + tag;
+}
+function ytDesc(cap) { // la didascalia con il link al sito (utm youtube) al posto di «link in bio»
+  let t = String(cap || "").replace(/[<>]/g, "").trim();
+  t = t.replace(/link (nella|in|nel) (bio|profilo)/gi, YT_LINK);
+  if (!t.includes(YT_LINK)) t += "\n\nFatti, fonti e mappe ogni mattina: " + YT_LINK;
+  return t.slice(0, 4900);
+}
+function ytErr(j, st) { const e = j && j.error; const m = e ? (e.message || (e.errors && e.errors[0] && e.errors[0].reason) || e.status) : ""; return "YouTube: " + (m || "HTTP " + st); }
+async function ytAccess(env) { // token di accesso valido (si rinnova con il refresh token)
+  const t = await kvGet(env, "yt_token");
+  if (!t || !t.refresh_token) throw { status: 409, code: "youtube_non_collegato", detail: "YouTube non è collegato: premi «Collega YouTube» nel pannello." };
+  if (t.access_token && t.expires_at > Date.now() + 60000) return t;
+  const r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: ytCid(env), client_secret: ytSec(env), refresh_token: t.refresh_token, grant_type: "refresh_token" }) });
+  const j = await gj(r);
+  if (!j.access_token) {
+    if (j.error === "invalid_grant") { t.revocato = true; await kvSet(env, "yt_token", t); }
+    throw { status: 502, code: "youtube_token", detail: "YouTube: accesso non rinnovato (" + (j.error_description || j.error || r.status) + "). Premi «Ricollega YouTube»." };
+  }
+  t.access_token = j.access_token; t.expires_at = Date.now() + (+j.expires_in || 3600) * 1000; delete t.revocato;
+  await kvSet(env, "yt_token", t);
+  return t;
+}
+async function ytVideoBytes(env, d) { // il video della bozza, dallo stesso archivio da cui lo scarica Instagram
+  const m = String(d.video_url || "").match(/\/ig\/vid\/([A-Za-z0-9_-]+)\.mp4/);
+  if (!m) throw { code: "youtube_video", detail: "Nessun video nella bozza." };
+  const meta = await kvGet(env, "vid:" + m[1]);
+  if (!meta) throw { code: "youtube_video", detail: "Il video della bozza non è più in archivio." };
+  if (meta.r2 && env.PODCAST) {
+    const o = await env.PODCAST.get("igvid/" + m[1] + ".mp4");
+    if (!o) throw { code: "youtube_video", detail: "Il video della bozza non è più in archivio." };
+    return new Uint8Array(await o.arrayBuffer());
+  }
+  let b64 = ""; for (let i = 0; i < meta.n; i++) b64 += (await kvGet(env, "vidc:" + m[1] + ":" + i)) || "";
+  const bin = atob(b64), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function ytSend(env, id, by, force) {
+  const d = await kvGet(env, "draft:" + id);
+  if (!d) throw { status: 404, code: "draft_not_found" };
+  if (d.type !== "reel") throw { status: 400, code: "youtube_formato", detail: "Su YouTube vanno solo i reel." };
+  const old = await kvGet(env, "yt:" + id);
+  if (old && old.status === "caricato") throw { status: 409, code: "youtube_gia_caricato", detail: "Già caricato su YouTube." };
+  if (old && old.status === "invio" && Date.now() - Date.parse(old.started_at || 0) < 10 * 60000) throw { status: 409, code: "youtube_in_corso", detail: "Caricamento già in corso." };
+  const x = { id, status: "invio", by, started_at: new Date().toISOString() };
+  await kvSet(env, "yt:" + id, x);
+  try {
+    const t = await ytAccess(env);
+    const bytes = await ytVideoBytes(env, d);
+    const meta = { snippet: { title: String(d.yt_title || ytTitle(d.caption)).replace(/[<>]/g, "").slice(0, 100), description: String(d.yt_caption || ytDesc(d.caption)).replace(/[<>]/g, "").slice(0, 4900), categoryId: "25", defaultLanguage: "it", defaultAudioLanguage: "it" },
+      status: { privacyStatus: "public", selfDeclaredMadeForKids: false, embeddable: true } };
+    const r1 = await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", { method: "POST",
+      headers: { authorization: "Bearer " + t.access_token, "content-type": "application/json; charset=UTF-8", "x-upload-content-type": "video/mp4", "x-upload-content-length": String(bytes.length) }, body: JSON.stringify(meta) });
+    const loc = r1.headers.get("location");
+    if (!r1.ok || !loc) throw { code: "youtube_" + r1.status, detail: ytErr(await gj(r1), r1.status) };
+    const r2 = await fetch(loc, { method: "PUT", headers: { "content-type": "video/mp4" }, body: bytes });
+    const j2 = await gj(r2);
+    if (!r2.ok || !j2.id) throw { code: "youtube_" + r2.status, detail: ytErr(j2, r2.status) };
+    x.status = "caricato"; x.video_id = j2.id; x.link = "https://youtube.com/shorts/" + j2.id; x.studio = "https://studio.youtube.com/video/" + j2.id + "/edit";
+    x.privacy = (j2.status && j2.status.privacyStatus) || null; x.done_at = new Date().toISOString();
+  } catch (e) { x.status = "errore"; x.error = String((e && (e.detail || e.message)) || e).slice(0, 400); }
+  await kvSet(env, "yt:" + id, x);
+  return x;
+}
+async function ytCheck(env, id) { // rilegge la visibilità (dopo che l'hai resa pubblica in Studio)
+  const x = await kvGet(env, "yt:" + id);
+  if (!x || !x.video_id) throw { status: 404, code: "youtube_nessun_video" };
+  const t = await ytAccess(env);
+  const r = await fetch("https://www.googleapis.com/youtube/v3/videos?" + new URLSearchParams({ part: "status", id: x.video_id }), { headers: { authorization: "Bearer " + t.access_token } });
+  const j = await gj(r);
+  if (!r.ok) throw { status: 502, code: "youtube_" + r.status, detail: ytErr(j, r.status) };
+  const v = (j.items || [])[0];
+  if (!v) { x.status = "errore"; x.error = "Il video non c'è più su YouTube."; }
+  else x.privacy = (v.status && v.status.privacyStatus) || x.privacy;
+  await kvSet(env, "yt:" + id, x);
+  return x;
+}
+async function ytAuto(env, id) { // dopo una pubblicazione Instagram riuscita (solo reel, se attivo o scelto per il post)
+  const st = await ytSettings(env);
+  const d = await kvGet(env, "draft:" + id);
+  if (!d || d.type !== "reel" || !dCanale(d, "yt", st.auto)) return;
+  if (await kvGet(env, "yt:" + id)) return;
+  if (!(await kvGet(env, "yt_token"))) return;
+  await ytSend(env, id, "auto", false);
+}
+async function ytPanelInfo(env) {
+  const t = await kvGet(env, "yt_token");
+  return { configurato: !!(ytCid(env) && ytSec(env)), collegato: !!(t && t.refresh_token), canale: t ? t.channel_title || null : null, revocato: !!(t && t.revocato), settings: await ytSettings(env) };
+}
+async function ytPublic(request, env, p, url) {
+  const redirect = url.origin + "/yt/callback";
+  if (p === "/yt/connect") {
+    if (!(await sessionOk(request, env))) return htmlPage("Accesso negato", "<p>Entra prima nel pannello (/ig/panel) e premi «Collega YouTube» da lì.</p>", 401);
+    if (!ytCid(env) || !ytSec(env)) return htmlPage("Mancano le chiavi YouTube", "<p>Aggiungi al Worker <b>YT_CLIENT_ID</b> e il secret <b>YT_CLIENT_SECRET</b> (Google Cloud → Credenziali → client OAuth «Web application») e riprova.</p>", 500);
+    const state = crypto.randomUUID().replace(/-/g, "");
+    await kvSet(env, "yt_state", { state, exp: Date.now() + 10 * 60000 });
+    return Response.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({ client_id: ytCid(env), redirect_uri: redirect, response_type: "code",
+      scope: "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly", access_type: "offline", prompt: "consent", include_granted_scopes: "true", state }), 302);
+  }
+  if (p === "/yt/callback") {
+    const err = url.searchParams.get("error");
+    if (err) return htmlPage("Google ha rifiutato", `<p>${esc(err)}</p><p><a href="/ig/panel">Torna al pannello</a></p>`, 400);
+    const code = url.searchParams.get("code") || "";
+    const st = await kvGet(env, "yt_state");
+    if (!code || !st || st.exp < Date.now() || !safeEq(url.searchParams.get("state") || "", st.state))
+      return htmlPage("Richiesta non valida", "<p>Stato scaduto o non riconosciuto. Torna nel pannello e premi di nuovo «Collega YouTube».</p>", 400);
+    await kvDel(env, "yt_state");
+    const r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: ytCid(env), client_secret: ytSec(env), code, grant_type: "authorization_code", redirect_uri: redirect }) });
+    const j = await gj(r);
+    if (!j.access_token) return htmlPage("Scambio del codice fallito", `<pre>${esc(String(j.error_description || j.error || r.status).slice(0, 400))}</pre>`, 502);
+    const old = await kvGet(env, "yt_token");
+    const refresh = j.refresh_token || (old && old.refresh_token);
+    if (!refresh) return htmlPage("Collegamento incompleto", "<p>Google non ha dato l'accesso permanente. Su myaccount.google.com → Sicurezza → App di terze parti togli «Read Geopolitics» e ricollega.</p>", 502);
+    const t = { refresh_token: refresh, access_token: j.access_token, expires_at: Date.now() + (+j.expires_in || 3600) * 1000, scope: j.scope || "", connected_at: new Date().toISOString() };
+    try {
+      const c = await fetch("https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true", { headers: { authorization: "Bearer " + j.access_token } });
+      const cj = await gj(c); const ch = (cj.items || [])[0];
+      if (ch) { t.channel_id = ch.id; t.channel_title = (ch.snippet && ch.snippet.title) || null; }
+    } catch (e) {}
+    await kvSet(env, "yt_token", t);
+    return htmlPage("YouTube collegato ✅", `<p>Canale: <b>${t.channel_title ? esc(t.channel_title) : "(nome non letto)"}</b>.</p><p>Finché Google non approva l'audit dell'app, i video caricati restano privati: li rendi pubblici da YouTube Studio.</p><p><a href="/ig/panel">Torna al pannello</a></p>`);
+  }
+  return null;
+}
+async function ytPanelApi(env, b) {
+  const act = b.action;
+  if (act === "yt_send") return { ok: true, yt: await ytSend(env, String(b.id), "panel", !!b.force) };
+  if (act === "yt_check") return { ok: true, yt: await ytCheck(env, String(b.id)) };
+  if (act === "yt_title" || act === "yt_caption") {
+    const d = await kvGet(env, "draft:" + String(b.id));
+    if (!d) throw { status: 404, code: "draft_not_found" };
+    if (act === "yt_title") { const c = String(b.caption || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 100); if (c && c !== ytTitle(d.caption)) d.yt_title = c; else delete d.yt_title; }
+    else { const c = String(b.caption || "").replace(/[<>]/g, "").trim().slice(0, 4900); if (c && c !== ytDesc(d.caption)) d.yt_caption = c; else delete d.yt_caption; }
+    await kvSet(env, "draft:" + d.id, d);
+    return { ok: true };
+  }
+  if (act === "yt_settings") {
+    const cur = await ytSettings(env);
+    if (typeof b.auto === "boolean") cur.auto = b.auto;
+    await kvSet(env, "yt_settings", cur);
+    return { ok: true, youtube: await ytPanelInfo(env) };
+  }
+  if (act === "yt_disconnect") { await kvDel(env, "yt_token"); return { ok: true, youtube: await ytPanelInfo(env) }; }
+  return null;
 }
 // ============ THREADS (v30): pubblica su Threads gli stessi caroselli e reel di Instagram ============
 // App Meta con il caso d'uso «Accesso all'API di Threads»; secret TH_APP_ID e TH_APP_SECRET (quelli di Threads, non di Instagram).
@@ -4975,6 +5156,8 @@ async function route(request, env, ctx) {
   if (method === "GET" || method === "HEAD") { const vf = await ttVerifyFile(env, p); if (vf) return vf; }
   if (method === "GET" && p === "/ig/tt/connect") return await ttPublic(request, env, "/tt/connect", url); // sotto /ig: il cookie del pannello vale solo lì
   if (method === "GET" && p === "/ig/th/connect") return await thPublic(request, env, "/th/connect", url); // v30: Threads
+  if (method === "GET" && p === "/ig/yt/connect") return await ytPublic(request, env, "/yt/connect", url); // v86: YouTube
+  if (method === "GET" && p.startsWith("/yt/")) { const r = await ytPublic(request, env, p, url); if (r) return r; }
   if ((method === "GET" || method === "POST") && p.startsWith("/th/")) { const r = await thPublic(request, env, p, url); if (r) return r; }
   if (method === "GET" && p.startsWith("/tt/")) { const r = await ttPublic(request, env, p, url); if (r) return r; }
   if ((method === "GET" || method === "HEAD" || (method === "POST" && p === "/ig/login")) && p.startsWith("/ig/")) return await igPublic(request, env, p, url);
