@@ -22,7 +22,7 @@ h1 em{font-style:normal;color:var(--gold)}
 .dek{font-size:19px;color:#C8D3DE;margin:0 0 16px;max-width:60ch}
 .meta{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0 20px;border-bottom:1px solid var(--line)}
 .scrolly{position:relative;margin-top:8px}
-.stage{position:sticky;top:42px;height:50vh;z-index:3;background:var(--bg);border-bottom:1px solid var(--line)}
+.stage{position:sticky;top:42px;top:var(--tagh,42px);height:50vh;z-index:3;background:var(--bg);border-bottom:1px solid var(--line)}
 .stage svg{width:100%;height:100%;display:block}
 .stage .note{position:absolute;left:12px;bottom:10px;font:500 10.5px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;opacity:0;transition:opacity .4s}
 .stage .cnt{position:absolute;right:14px;top:12px;text-align:right;opacity:0;transition:opacity .4s}
@@ -108,6 +108,17 @@ details.src{border-top:0;margin-top:8px}
 .err{padding:60px 18px;text-align:center;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .emb #spBack,.emb .crumb{display:none!important}
+/* telefono: la grafica resta incollata in alto (sotto la barra, o al bordo se la barra non c'è, come nel pannello del sito): il testo scorre solo sotto.
+   Il numero grande sta in una fascia sul fondo della grafica, con lo sfondo pieno, invece che sopra la mappa */
+.emb{--tagh:0px}
+@media (max-width:759px){
+ .stage .cnt{left:0;right:0;top:auto;bottom:0;text-align:left;padding:18px 14px 10px;background:linear-gradient(to top,var(--bg) 62%,rgba(11,24,48,0));display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+ .stage .cnt b{display:inline;font-size:36px}
+ .stage .cnt .mono{font-size:11px}
+ .stage .note{display:none}
+ .steps{padding-top:2vh}
+ .step{min-height:56vh}
+}
 </style><script>try{if(new URLSearchParams(location.search).get("embed")==="1")document.documentElement.classList.add("emb")}catch(e){}</script></head><body>
 <a class="mono tag" id="spBack" href="/#spiegati">‹ Torna a Read Geopolitics</a>
 <div id="root"></div>
@@ -135,6 +146,7 @@ function share(){var url=location.origin+"/spiegato/?id="+encodeURIComponent(SP.
  var done=function(){toast("Link copiato")};
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done,function(){prompt("Copia il link",url)});else prompt("Copia il link",url)}
 document.addEventListener("click",function(ev){if(ev.target.closest("[data-share]")){ev.preventDefault();share()}});
+(function(){function th(){try{var t=document.getElementById("spBack");document.documentElement.style.setProperty("--tagh",(t&&t.offsetParent?t.offsetHeight:0)+"px")}catch(_){}}th();addEventListener("resize",th);addEventListener("load",th)})();
 document.getElementById("spBack").addEventListener("click",function(ev){try{var r=document.referrer&&new URL(document.referrer);if(r&&r.origin===location.origin&&history.length>1){ev.preventDefault();history.back()}}catch(_){}});
 document.addEventListener("click",function(ev){var a=ev.target.closest(".ent");var sh=document.getElementById("sheet");
  if(a){ev.preventDefault();var d=SP.ent[a.dataset.e];if(!d)return;document.getElementById("shk").textContent=d.tipo||"";document.getElementById("sht").textContent=d.nome||"";document.getElementById("shp").textContent=d.testo||"";var g=document.getElementById("shg");g.firstChild.textContent=(d.go||"Apri")+" ";g.href=a.getAttribute("href");sh.classList.add("on");return}
