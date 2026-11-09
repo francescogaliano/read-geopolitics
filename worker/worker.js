@@ -905,10 +905,10 @@ const IG_TEMPLATES = [
   { id: "oggi-reel", formato: "reel", nome: "Oggi in 40 secondi", desc: "Le notizie del giorno (3 dal mondo, 1 dall'Italia) su un globo, con apertura radar a tempo di musica", pronto: true, auto_ok: true, param: null },
   { id: "settimana-reel", formato: "reel", nome: "La settimana in 40 secondi", desc: "Il riepilogo della settimana su un globo che ruota verso ogni storia", pronto: true, auto_ok: true, param: null },
   { id: "numero-reel", formato: "reel", nome: "Il numero in 30 secondi", desc: "Un indicatore che si è mosso: il grafico che si disegna, cosa misura, perché si è mosso, cosa non dice", pronto: true, auto_ok: true, param: "Indicatore (facoltativo, per esempio spread)" },
-  { id: "due-letture", formato: "carosello", nome: "Due letture", desc: "Una storia: i fatti, le due tesi a confronto, dove reggono e dove cedono", pronto: true, auto_ok: true, param: "Storia (facoltativo)" },
+  { id: "due-letture", formato: "reel", nome: "Due letture", desc: "Reel: una storia, le due tesi una alla volta, dove cedono, cosa deciderà", pronto: true, auto_ok: true, param: "Storia (facoltativo)" },
   { id: "sito-schermate", formato: "carosello", nome: "Il sito in 3 schermate", desc: "Tre schermate vere del sito (briefing, numeri, cronologia), con i dati di oggi", pronto: true, auto_ok: true, param: null },
-  { id: "settimana-apre", formato: "carosello", nome: "La settimana che si apre", desc: "Date in agenda, segnali da osservare, numeri in movimento", pronto: true, auto_ok: true, param: null },
-  { id: "filone", formato: "carosello", nome: "Il punto che sfugge", desc: "Una distinzione o un collegamento che le singole notizie non mostrano", pronto: true, auto_ok: true, param: "Filone (facoltativo: id o titolo; altrimenti il più mosso della settimana)" },
+  { id: "settimana-apre", formato: "reel", nome: "La settimana che si apre", desc: "Reel sul globo: 4-5 appuntamenti della settimana con contesto, un segnale da osservare", pronto: true, auto_ok: true, param: null },
+  { id: "filone", formato: "reel", nome: "Il punto che sfugge", desc: "Reel ragionato: una distinzione o un collegamento che le singole notizie non mostrano", pronto: true, auto_ok: true, param: "Filone (facoltativo: id o titolo; altrimenti il più mosso della settimana)" },
   { id: "settimana-sintesi", formato: "carosello", nome: "La settimana in sintesi", desc: "Il bilancio dei sette giorni: da dove si è partiti, dove si è arrivati, perché conta", pronto: true, auto_ok: true, param: null },
   { id: "iconografica", formato: "reel", nome: "Iconografica · spiegato da zero", desc: "Reel animato: mappa che si muove, persone e oggetti della storia, azioni. Con voce. Pronto in 10-15 minuti", pronto: true, auto_ok: false, param: "Storia del briefing o tema (per esempio Tregua di Oleshky)" },
   { id: "spiegato", formato: "reel", nome: "Spiegato in 40 secondi", desc: "Un tema caldo spiegato: dove, perché, il punto aperto, il dossier", pronto: true, auto_ok: false, param: "Tema (per esempio Tregua di Oleshky)" },
@@ -916,12 +916,12 @@ const IG_TEMPLATES = [
   { id: "story-titolo", formato: "story", nome: "Storia: il titolo del giorno", desc: "Una carta verticale statica", pronto: false, auto_ok: false, param: null },
 ];
 const PLAN_DEFAULT = [
-  { dow: 1, rubrica: "La settimana che si apre", formato: "carosello", template: "settimana-apre", ora: "08:30", auto: true, note: "Agenda, segnali, numeri" },
+  { dow: 1, rubrica: "La settimana che si apre", formato: "reel", template: "settimana-apre", ora: "08:30", auto: true, note: "Gli appuntamenti della settimana sul globo" },
   { dow: 2, rubrica: "La storia in 40 secondi", formato: "reel", template: "reel-storia", ora: "12:30", auto: true, note: "Reel dalla storia più forte" },
   { dow: 3, rubrica: "La parola", formato: "carosello", template: "parola", ora: "08:30", auto: true, note: "Una parola delle notizie, spiegata nel contesto" },
-  { dow: 4, rubrica: "Due letture", formato: "carosello", template: "due-letture", ora: "08:30", auto: true, note: "Una storia, due tesi a confronto" },
+  { dow: 4, rubrica: "Due letture", formato: "reel", template: "due-letture", ora: "08:30", auto: true, note: "Una storia, due tesi a confronto" },
   { dow: 5, rubrica: "Oggi in 40 secondi", formato: "reel", template: "oggi-reel", ora: "08:30", auto: true, note: "Le notizie del giorno sul globo, apertura radar" },
-  { dow: 6, rubrica: "Il punto che sfugge", formato: "carosello", template: "filone", ora: "10:00", auto: true, note: "Quello che le singole notizie non mostrano" },
+  { dow: 6, rubrica: "Il punto che sfugge", formato: "reel", template: "filone", ora: "10:00", auto: true, note: "Quello che le singole notizie non mostrano" },
   { dow: 7, rubrica: "La settimana in 40 secondi", formato: "reel", template: "settimana-reel", ora: "10:00", auto: true, note: "Riepilogo sul globo" },
 ];
 async function igPlan(env) {
