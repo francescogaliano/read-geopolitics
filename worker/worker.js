@@ -1224,6 +1224,8 @@ async function panelApi(env, origin, b, ctx) {
   if (act === "stats") return { ok: true, stats: await siteStats(env, b.days, !!b.force) };
   if (act === "vote_stats") return { ok: true, v: await voteStats(env) };
   if (act === "ig_stats") return await igStatsPanel(env, !!b.fresche); // v87
+  if (act === "canali_confronto") return { ok: true, ...(await canaliConfronto(env)) }; // v141
+  if (act === "tt_stats") return { ok: true, stats: await ttStatsTick(env, !!b.force) }; // v141
   if (act === "iscritti_stats") return await iscrittiStats(env); // v87
   if (act === "list") {
     /* v26: letture in parallelo invece che una dopo l'altra (il pannello si apriva lento). */
@@ -1459,10 +1461,20 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 .sst{display:flex;gap:20px;border-bottom:1px solid #27353F;margin:12px 0 4px;overflow-x:auto;scrollbar-width:none}.sst button{all:unset;cursor:pointer;padding:12px 0;font-weight:600;font-size:14.5px;color:#8FA0AE;white-space:nowrap}.sst button.on{color:#E4EAEF;box-shadow:inset 0 -2px 0 #F2B84B}
 #st .ssl{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#8FA0AE;text-transform:uppercase;margin:22px 0 8px}
 #st .igh{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px}#st .igh b{display:block;font:600 40px/1 Georgia,serif}#st .igh span{font-size:13px;color:#8FA0AE}#st .igq{text-align:right;font:500 11px/1.7 ui-monospace,monospace;color:#8FA0AE}
+#sty .ytg .igt{aspect-ratio:9/16}#sty .ytdet{margin-top:10px;padding:10px 0;border-top:1px solid #1E2A33;font-size:14px}#sty .ytdet .m{display:flex;flex-wrap:wrap;gap:4px 14px;font:500 12px ui-monospace,monospace;color:#8FA0AE;margin-top:6px}#sty .ytdet .m b{color:#E4EAEF}#sty .ytdet a{color:#86B4EA}#sty .ytfun{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #1E2A33;border-bottom:1px solid #1E2A33}#sty .ytfun div{padding:10px 0;min-width:0}#sty .ytfun div+div{border-left:1px solid #1E2A33;padding-left:12px}#sty .ytfun b{display:block;font:600 22px/1.1 Georgia,serif}#sty .ytfun span{display:block;font-size:12px;color:#8FA0AE;line-height:1.3;margin-top:3px}
 #sty .vr{border-top:1px solid #1E2A33;padding:10px 0}#sty .vr .t{font-size:14px;font-weight:600}#sty .vr .m{display:flex;flex-wrap:wrap;gap:4px 14px;font:500 12px ui-monospace,monospace;color:#8FA0AE;margin-top:4px}#sty .vr .m b{color:#E4EAEF;font-weight:600}#sty .vr a{color:#86B4EA}
 #sty .cmp{display:grid;grid-template-columns:1fr 64px 64px;gap:6px;font-size:13.5px;border-top:1px solid #1E2A33;padding:8px 0}#sty .ssl+.cmp{border-top:0}#sty .cmp.h{font:600 11px ui-monospace,monospace;color:#8FA0AE}#sty .cmp b{text-align:right;font-variant-numeric:tabular-nums}#sty .cmp b:only-of-type{grid-column:3}#st .igq a{text-decoration:none}
 #st .sgn,#st .tap{display:flex;gap:14px;align-items:center;padding:12px 14px;background:#16212A;border:0;border-left:4px solid #5E7180;border-radius:8px;margin:0 0 8px}#st .sgb{display:flex;flex-direction:column;align-items:center;min-width:70px;text-align:center}#st .sgb b{font:700 24px/1 Georgia,serif;font-variant-numeric:tabular-nums}#st .sgb span{font:600 10px ui-monospace,monospace;color:#8FA0AE;padding-top:4px}#st .sgt{display:flex;flex-direction:column;gap:2px;min-width:0}#st .sgt i{font:700 11px ui-monospace,monospace;font-style:normal;letter-spacing:.08em}#st .sgt b{font-size:15px;line-height:1.3}#st .sgt span{font-size:13.5px;color:#A9B6C1;line-height:1.4}
 #st .tap{all:unset;box-sizing:border-box;width:100%;display:flex;gap:14px;align-items:center;padding:14px;background:#16212A;border-left:4px solid;border-radius:8px;cursor:pointer}#st .tap .sgb b{font-size:28px}#st .tap em{font-style:normal;color:#86B4EA;margin-left:auto}#st .tap .sgt span{color:#E4EAEF;font-size:14px}#st .tapa{text-align:center;color:#34475A;padding:3px 0}
+#stp .pnsum{margin:14px 0 4px}#stp .pnsum i{display:block;font:600 11px ui-monospace,monospace;font-style:normal;letter-spacing:.1em;color:#8FA0AE;margin-bottom:4px}#stp .pnsum div{font-size:15px;line-height:1.5}#stp .pnsum b{white-space:nowrap}
+#stp .pn3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#stp .pnc{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;min-width:0;padding:10px 9px 11px;background:#16212A;border-left:4px solid;border-radius:8px}
+#stp .pnc b{font:600 24px/1 Georgia,serif;font-variant-numeric:tabular-nums}#stp .pnc .u{font:500 9.5px ui-monospace,monospace;letter-spacing:.04em;color:#8FA0AE;margin-top:4px;white-space:nowrap}#stp .pnc i{font:700 10.5px ui-monospace,monospace;font-style:normal;letter-spacing:.06em;margin-top:8px;white-space:nowrap}#stp .pnc .d{font-size:12px;color:#B9C6D2;line-height:1.3;margin-top:2px}
+#stp .pnr{all:unset;box-sizing:border-box;cursor:pointer;width:100%;display:flex;gap:12px;align-items:center;padding:12px 14px;background:#16212A;border-left:4px solid;border-radius:8px}
+#stp .pnr .n{display:flex;flex-direction:column;align-items:center;min-width:76px}#stp .pnr .n b{font:600 26px/1 Georgia,serif;font-variant-numeric:tabular-nums}#stp .pnr .n span{font:500 9.5px ui-monospace,monospace;color:#8FA0AE;margin-top:4px;white-space:nowrap}
+#stp .pnr .t{display:flex;flex-direction:column;gap:2px;min-width:0}#stp .pnr .t i{font:700 11px ui-monospace,monospace;font-style:normal;letter-spacing:.08em}#stp .pnr .t span{font-size:13.5px;line-height:1.35}#stp .pnr em{margin-left:auto;font-style:normal;color:#5E7180}
+#stp .pnt{width:100%;border-collapse:collapse;font-size:13.5px}#stp .pnt th{font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;color:#8FA0AE;text-align:right;padding:6px 0 6px 8px;border-bottom:1px solid #27353F}#stp .pnt th:first-child{text-align:left;padding-left:0}
+#stp .pnt td{padding:9px 0 9px 8px;border-bottom:1px solid #1E2A33;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;vertical-align:top}#stp .pnt td:first-child{text-align:left;font-weight:500;white-space:normal;padding-left:0}#stp .pnt td small{display:block;color:#8FA0AE;font:500 10.5px ui-monospace,monospace;margin-top:2px}#stp .pnt td.best{color:#6FCB9F}#stp .pnt td.na{color:#4A5A66;font-weight:400}#stp .pnt th:not(:first-child),#stp .pnt td:not(:first-child){width:44px}#stp .pnt{table-layout:fixed}#stp .pnt th:last-child,#stp .pnt td:last-child{padding-right:3px}#stp .pnt th:first-child,#stp .pnt td:first-child{width:auto;overflow-wrap:anywhere}
 #stp .tapw{display:grid;grid-template-columns:1fr 1fr;gap:8px}#stp .tap.tap2{flex-direction:column;align-items:flex-start;gap:8px;min-width:0}#stp .tap2 .sgb{align-items:flex-start;text-align:left}#stp .tap2 .sgb b{font-size:30px}#stp .tap2 .sgt span{font-size:12.5px}
 #st .dga{margin-top:18px;padding:14px;border:1px solid #5A4520;border-radius:8px;background:rgba(242,184,75,.06);display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.45}#st .dga i{font:700 11px ui-monospace,monospace;font-style:normal;letter-spacing:.08em;color:#F2B84B}
 #st .fb{margin:0 0 9px}#st .fb>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:4px}#st .fb small{color:#8FA0AE}#st .fb b{font-variant-numeric:tabular-nums}#st .fb>i{display:block;height:10px;background:#1A2630;border-radius:5px;overflow:hidden}#st .fb u{display:block;height:10px;border-radius:5px}
@@ -2270,26 +2282,41 @@ function igsPrep(r){const at=Date.parse(r.at);const avg=a=>a.length?a.reduce((s,
  return {r,at,P,fs}}
 // v138: Statistiche → YouTube
 const YTF={SHORTS:"Feed degli Shorts",YT_CHANNEL:"Pagina del canale",YT_SEARCH:"Ricerca su YouTube",EXT_URL:"Siti e app esterni",SUBSCRIBER:"Iscritti",RELATED_VIDEO:"Video suggeriti",YT_OTHER_PAGE:"Altre pagine di YouTube",NO_LINK_OTHER:"Diretto o sconosciuto",PLAYLIST:"Playlist",NOTIFICATION:"Notifiche",HASHTAGS:"Hashtag",SOUND_PAGE:"Pagina dell&#39;audio",END_SCREEN:"Schermate finali",ADVERTISING:"Annunci"};
+let YTD=null,YTSEL=null;
 async function ytsLoad(fresh){const el=document.getElementById("sty");
- el.innerHTML='<div class="card sub">'+(fresh?'Chiedo i numeri a YouTube: qualche secondo…':'Carico…')+'</div>';
- const r=await api({action:"yt_stats",force:!!fresh});
- if(!r.ok||!r.stats){el.innerHTML='<div class="card"><b>Statistiche YouTube non disponibili</b><div class="sub" style="margin-top:6px">'+esc((r&&(r.detail||r.error))||"YouTube non è collegato, o non ci sono ancora dati.")+'</div><button class="btn" id="ytrf" style="margin-top:10px">Aggiorna da YouTube</button></div>';const b=document.getElementById("ytrf");if(b)b.onclick=()=>ytsLoad(true);return}
- const S=r.stats,C=S.canale||{},V=(S.video||[]).slice().sort((a,b)=>String(b.pubblicato).localeCompare(String(a.pubblicato)));
+ /* v141: stesso formato della scheda Instagram */
+ if(!YTD||fresh){el.innerHTML='<div class="card sub">'+(fresh?'Chiedo i numeri a YouTube: qualche secondo…':'Carico…')+'</div>';
+  const r=await api({action:"yt_stats",force:!!fresh});
+  if(!r.ok||!r.stats){el.innerHTML='<div class="card"><b>Statistiche YouTube non disponibili</b><div class="sub" style="margin-top:6px">'+esc((r&&(r.detail||r.error))||"YouTube non è collegato, o non ci sono ancora dati.")+'</div><button class="btn" id="ytrf" style="margin-top:10px">Aggiorna da YouTube</button></div>';const b=document.getElementById("ytrf");if(b)b.onclick=()=>ytsLoad(true);return}
+  YTD=r}
+ ytsRender()}
+function ytsRender(){const r=YTD,el=document.getElementById("sty");if(!r)return;const S=r.stats,C=S.canale||{};
+ const V=(S.video||[]).slice().sort((a,b)=>String(b.pubblicato).localeCompare(String(a.pubblicato))).map((v,i)=>({...v,i,fresco:Date.parse(S.at)-Date.parse(v.pubblicato)<48*36e5}));
  const ora=new Date(S.at),quando=ora.toLocaleDateString("it-IT",{day:"numeric",month:"short"})+", "+ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
  const tv=V.reduce((a,v)=>a+(v.views||0),0);
- let h='<div class="igh"><div><b>'+stN(C.iscritti)+'</b><span>iscritti al canale</span></div><div class="igq">'+V.length+(V.length===1?' SHORT':' SHORT')+' · '+stN(tv)+' VISUALIZZAZIONI<br>DATI DEL '+esc(quando.toUpperCase())+'<br><a href="#" id="ytrf">AGGIORNA DA YOUTUBE</a></div></div>';
+ let h='<div class="igh"><div><b>'+stN(C.iscritti)+'</b><span>iscritti · @ReadGeopolitics</span></div><div class="igq">'+V.length+' SHORT · '+stN(tv)+' VISUALIZZAZIONI<br>DATI DEL '+esc(quando.toUpperCase())+'<br><a href="#" id="ytrf">AGGIORNA DA YOUTUBE</a></div></div>';
  if(S.an_err)h+='<div class="sub" style="color:#E5B45A;margin-top:8px">'+esc(S.an_err)+'.</div>';
- const X=r.sito||{};
- h+='<div class="ssl">Dal video al sito</div><div class="cmp"><span>Visite al sito arrivate da YouTube · 7 giorni</span><b>'+(X.visite7==null?'—':stN(X.visite7))+'</b></div><div class="cmp"><span>Iscritti arrivati da YouTube · 7 giorni</span><b>'+stN(X.iscritti7||0)+'</b></div><div class="cmp"><span>Iscritti arrivati da YouTube · in tutto</span><b>'+stN(X.iscritti||0)+'</b></div>';
- h+='<p class="note">Le visite sono i clic sul link del canale o della descrizione (con ?utm_source=youtube), contati da GoatCounter'+(X.visite_err?': '+esc(X.visite_err):'')+'.</p>';
- h+='<div class="ssl">Gli Short</div>'+(V.length?V.map(v=>{const d=new Date(v.pubblicato),a=v.an||{};const m=[['<b>'+stN(v.views)+'</b> viste'],['<b>'+stN(v.likes)+'</b> like']];if(v.commenti)m.push(['<b>'+stN(v.commenti)+'</b> commenti']);if(a.perc_vista!=null)m.push(['<b>'+Math.round(a.perc_vista)+'%</b> visto']);if(a.iscritti)m.push(['<b>+'+stN(a.iscritti)+'</b> iscritti']);
-  return '<div class="vr"><div class="t">'+esc(String(v.titolo||"").replace(/\s*#Shorts\s*$/i,""))+'</div><div class="m">'+m.map(x=>'<span>'+x[0]+'</span>').join("")+'</div><div class="m"><span>'+esc(DNS[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1))+' · '+(v.privacy==="public"?"pubblico":v.privacy==="private"?'<span style="color:#E0705F">privato</span>':esc(v.privacy||""))+' · <a href="https://youtube.com/shorts/'+esc(v.id)+'" target="_blank">apri ›</a></span></div></div>'}).join(""):'<div class="sub">Ancora nessuno Short sul canale.</div>');
- h+='<p class="note">Percentuale vista e iscritti portati arrivano da YouTube Analytics con 1–2 giorni di ritardo.</p>';
+ const R={};V.forEach(v=>{const k=v.rubrica||"Altri Short";(R[k]=R[k]||[]).push(v)});
+ const RS=Object.keys(R).map(k=>{const all=R[k],b=all.filter(v=>!v.fresco),u=b.length?b:all;return {k,n:all.length,v:u.reduce((a,x)=>a+x.views,0)/u.length}}).sort((a,b)=>b.v-a.v);
+ if(RS.length){const mx=Math.max(1,...RS.map(x=>x.v));h+='<div class="ssl">Visualizzazioni medie per rubrica</div>'+RS.map((f,i)=>'<div class="fb"><div><span>'+esc(f.k)+' <small>· '+f.n+' Short</small></span><b>'+stN(Math.round(f.v))+'</b></div><i><u style="width:'+Math.max(3,f.v/mx*100)+'%;background:'+(i?SC.g:SC.v)+'"></u></i></div>').join("")+'<p class="note" style="margin-top:6px">Esclusi dalle medie gli Short di meno di due giorni: stanno ancora crescendo.</p>'}
+ if(V.length){const vmax=Math.max(1,...V.map(v=>v.views));const shade=v=>{const x=Math.pow(v/vmax,.6),a=[34,49,60],b=[111,203,159];return "rgb("+a.map((c,j)=>Math.round(c+(b[j]-c)*x)).join(",")+")"};
+  const tag=v=>esc(String(v.rubrica||"SHORT").replace(/^(La|Il|Lo|Le|I|Gli)\\s+/i,"").split(" ")[0].toUpperCase().slice(0,11));
+  h+='<div class="ssl" style="display:flex;justify-content:space-between"><span>La griglia</span><span style="letter-spacing:0;text-transform:none;font-family:system-ui">tocca uno Short</span></div><div class="igg ytg">'+V.map(v=>'<button type="button" class="igt'+(YTSEL===v.i?' on':'')+'" data-yt="'+v.i+'" style="background:'+shade(v.views)+'"><img src="https://i.ytimg.com/vi/'+esc(v.id)+'/oardefault.jpg" alt="" loading="lazy" onerror="this.onerror=null;this.src=&#39;https://i.ytimg.com/vi/'+esc(v.id)+'/hqdefault.jpg&#39;"><span class="igs">'+tag(v)+'</span><b>'+igK(v.views)+'</b><i style="background:'+shade(v.views)+'"></i></button>').join("")+'</div><div class="igl"><span>meno viste</span><i></i><span>più viste</span></div>';
+  const v=V.find(x=>x.i===YTSEL);
+  if(v){const a=v.an||{},d=new Date(v.pubblicato);h+='<div class="ytdet"><b>'+esc(String(v.titolo||"").replace(/\\s*#Shorts\\s*$/i,""))+'</b><div class="m"><span><b>'+stN(v.views)+'</b> viste</span><span><b>'+stN(v.likes)+'</b> like</span>'+(v.commenti?'<span><b>'+stN(v.commenti)+'</b> commenti</span>':'')+(a.perc_vista!=null?'<span><b>'+Math.round(a.perc_vista)+'%</b> visto</span>':'')+(a.iscritti?'<span><b>+'+stN(a.iscritti)+'</b> iscritti</span>':'')+'</div><div class="m">'+esc(DNS[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1))+' · '+(v.privacy==="public"?"pubblico":'<span style="color:#E0705F">'+esc(v.privacy||"")+'</span>')+' · <a href="https://youtube.com/shorts/'+esc(v.id)+'" target="_blank">apri ›</a></div></div>'}}
+ else h+='<div class="sub" style="margin-top:14px">Ancora nessuno Short sul canale.</div>';
  const F=S.fonti||[],ft=F.reduce((a,x)=>a+(+x.views||0),0);
  if(ft)h+='<div class="ssl">Da dove arrivano · 28 giorni</div>'+F.slice(0,6).map((f,i)=>{const pc=Math.round(f.views/ft*100);return '<div class="fb"><div><span>'+(YTF[f.tipo]||esc(f.tipo))+'</span><b>'+pc+'%</b></div><i><u style="width:'+Math.max(3,pc)+'%;background:'+(i?SC.g:SC.v)+'"></u></i></div>'}).join("");
- const K=r.confronto||[];
- if(K.length)h+='<div class="ssl">Lo stesso reel, YouTube e Instagram</div><div class="cmp h"><span>REEL</span><b>YT</b><b>IG</b></div>'+K.map(k=>'<div class="cmp"><span>'+esc(k.titolo)+' · '+esc(k.data)+'</span><b>'+stN(k.yt)+'</b><b>'+(k.ig==null?'—':stN(k.ig))+'</b></div>').join("")+'<p class="note">Viste di Instagram dall&#39;ultima lettura delle statistiche Instagram.</p>';
- el.innerHTML=h;const b=document.getElementById("ytrf");if(b)b.onclick=e=>{e.preventDefault();ytsLoad(true)}}
+ const X=r.sito||{};
+ h+='<div class="ssl">Dal video al sito</div><div class="ytfun"><div><b>'+(X.visite7==null?'—':stN(X.visite7))+'</b><span>visite al sito, 7 giorni</span></div><div><b>'+stN(X.iscritti7||0)+'</b><span>iscritti, 7 giorni</span></div><div><b>'+stN(X.iscritti||0)+'</b><span>iscritti in tutto</span></div></div><p class="note" style="margin-top:6px">Clic sul link del canale e del commento sotto ogni Short (?utm_source=youtube).</p>';
+ const ST=r.storia||[];
+ h+='<div class="ssl">Iscritti giorno per giorno</div>';
+ if(ST.length>=2){const fm=Math.min(...ST.map(x=>x.f)),fM=Math.max(...ST.map(x=>x.f)),rg=Math.max(1,fM-fm);
+  h+='<div class="igf">'+ST.map((x,i,a)=>{const dl=i?x.f-a[i-1].f:0;return '<div><b>'+(i&&dl?(dl>0?'+':'')+dl:'')+'</b><i style="height:'+(8+Math.round((x.f-fm)/rg*60))+'px"></i><span>'+(+x.d.slice(8))+'</span></div>'}).join("")+'</div>'}
+ else h+='<p class="note">Una fotografia al giorno: il grafico compare dal secondo giorno.</p>';
+ el.innerHTML=h;
+ const b=document.getElementById("ytrf");if(b)b.onclick=e=>{e.preventDefault();ytsLoad(true)};
+ el.querySelectorAll("[data-yt]").forEach(t=>t.onclick=()=>{const i=+t.dataset.yt;YTSEL=YTSEL===i?null:i;ytsRender()})}
 async function igsLoad(fresh){const el=document.getElementById("sti");
  if(!IGD||fresh){el.innerHTML='<div class="card sub">'+(fresh?'Chiedo i numeri a Instagram: qualche secondo…':'Carico…')+'</div>';
   const r=await api({action:"ig_stats",fresche:!!fresh});
@@ -2336,32 +2363,35 @@ function igsOpen(i){const d=IGD;if(!d)return;if(IGSEL===i){igsClose();return}igs
  document.body.appendChild(el);document.getElementById("igshx").onclick=igsClose}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&IGSEL!=null)igsClose()});
 async function ssPan(){const el=document.getElementById("stp");el.innerHTML='<div class="card sub">Carico…</div>';
- const [s,ig,u,yt]=await Promise.all([api({action:"stats",days:7}).catch(()=>({})),IGD?Promise.resolve(null):api({action:"ig_stats"}).catch(()=>({})),api({action:"iscritti_stats"}).catch(()=>({})),api({action:"yt_stats"}).catch(()=>({}))]);
+ /* v141: Panoramica completa: sintesi, dove ti scoprono (Instagram, YouTube, TikTok), sito, iscritti, lo stesso contenuto sui canali */
+ const [s,ig,u,yt,cc]=await Promise.all([api({action:"stats",days:7}).catch(()=>({})),IGD?Promise.resolve(null):api({action:"ig_stats"}).catch(()=>({})),api({action:"iscritti_stats"}).catch(()=>({})),api({action:"yt_stats"}).catch(()=>({})),api({action:"canali_confronto"}).catch(()=>({}))]);
  if(ig&&ig.ok)IGD=igsPrep(ig);const S=s&&s.ok?s.stats:null;
  const G=u&&u.ok?u.giorni:[];const n7=G.slice(7).reduce((a,x)=>a+x.n,0),p7=G.slice(0,7).reduce((a,x)=>a+x.n,0);
- const fIg=u&&u.ok?((u.fonti.find(x=>x.name==="Instagram")||{}).n||0):0;
- const best=IGD&&IGD.fs.find(f=>f.nb>=2);
- /* v139: YouTube accanto a Instagram */
- const fYt=u&&u.ok?((u.fonti.find(x=>x.name==="YouTube")||{}).n||0):0;
+ const fonte=n=>u&&u.ok?((u.fonti.find(x=>x.name===n)||{}).n||0):0;
  const Y=yt&&yt.ok&&yt.stats?yt.stats:null,yv=Y?(Y.video||[]).slice().sort((a,b)=>String(b.pubblicato).localeCompare(String(a.pubblicato)))[0]:null;
  const igR=IGD?IGD.P.filter(p=>p.reel).sort((a,b)=>igT(b)-igT(a))[0]:null;
- const dd=t=>{const d=new Date(t);return isNaN(d)?"":d.getDate()+"/"+(d.getMonth()+1)};
+ const K=cc&&cc.ok?cc:{rows:[],tot:{ig:0,yt:0,tt:0},tt:null},TT=K.tt||{},TP=TT.profilo||{};
  const sYt=S&&S.refs?((S.refs.find(x=>x.name==="YouTube")||{}).n||0):0;
- const T=[
-  {go:"ig",k:"INSTAGRAM",c:SC.v,big:IGD?stN((IGD.r.account||{}).follower):"—",u:"FOLLOWER",d:igR?"Reel del "+dd(igT(igR))+": "+stN(igR.views)+" viste.":best?"Rende di più «"+IGF[best.k]+"»: "+stN(Math.round(best.v))+" visualizzazioni in media.":"Numeri dei post e dei formati.",pair:1},
-  {go:"yt",k:"YOUTUBE",c:SC.r,big:Y?stN((Y.canale||{}).iscritti):"—",u:"ISCRITTI AL CANALE",d:yv?"Short del "+dd(yv.pubblicato)+": "+stN(yv.views)+" viste.":Y?"Ancora nessuno Short.":"YouTube non collegato.",pair:1},
-  {go:"sito",k:"SITO",c:SC.b,big:S?stN(S.visits):"—",u:"VISITE · 7 GIORNI",d:S?((S.persone&&(S.persone.nuove+S.persone.tornate))?"≈ "+stN(S.persone.nuove+S.persone.tornate)+" persone diverse. ":"")+(S.refs&&S.refs[0]?"Arrivano soprattutto da "+S.refs[0].name+" · da YouTube: "+stN(sYt)+".":""):"Statistiche del sito non disponibili."},
-  {go:"isc",k:"ISCRITTI",c:SC.a,big:u&&u.ok?stN(u.tot):"—",u:"ISCRITTI",d:u&&u.ok?stN(u.nl)+" ricevono la mail · "+stN(fIg)+" da Instagram · "+stN(fYt)+" da YouTube.":""}];
- let h='<p class="note" style="margin:14px 0 10px;font-size:14px">Il percorso di chi ti scopre: dai video al sito, dal sito all&#39;iscrizione. Tocca una tappa per i dettagli.</p>';
- const tapH=t=>'<button type="button" class="tap'+(t.pair?' tap2':'')+'" data-go="'+t.go+'" style="border-left-color:'+t.c+'"><div class="sgb"><b>'+t.big+'</b><span>'+t.u+'</span></div><div class="sgt"><i style="color:'+t.c+'">'+t.k+'</i><span>'+esc(t.d)+'</span></div>'+(t.pair?'':'<em>→</em>')+'</button>';
- const TP=T.filter(t=>t.pair),TR=T.filter(t=>!t.pair);
- h+='<div class="tapw">'+TP.map(tapH).join("")+'</div><div class="tapa">↓</div>'+TR.map((t,i)=>tapH(t)+(i<TR.length-1?'<div class="tapa">↓</div>':'')).join("");
+ const CH={ig:["Instagram",SC.v],yt:["YouTube",SC.r],tt:["TikTok",SC.b]};
+ const tv=K.tot.ig+K.tot.yt+K.tot.tt,bestC=Object.keys(K.tot).sort((a,b)=>K.tot[b]-K.tot[a])[0];
+ let h='<div class="pnsum"><i>ULTIMI 7 GIORNI</i><div><b>'+stN(tv)+'</b> visualizzazioni dei contenuti · <b>'+(S?stN(S.visits):"—")+'</b> visite al sito · <b>'+stN(n7)+'</b> nuovi iscritti.'+(tv?' Il canale che rende di più: <b style="color:'+CH[bestC][1]+'">'+CH[bestC][0]+'</b>.':'')+'</div></div>';
+ const card=(go,k,c,big,un,d)=>'<button type="button" class="pnc" data-go="'+go+'" style="border-left-color:'+c+'"><b>'+big+'</b><span class="u">'+un+'</span><i style="color:'+c+'">'+k+'</i><span class="d">'+d+'</span></button>';
+ h+='<div class="ssl">1 · Dove ti scoprono</div><div class="pn3">'+
+  card("ig","INSTAGRAM",SC.v,IGD?stN((IGD.r.account||{}).follower):"—","FOLLOWER",igR?"ultimo reel "+stN(igR.views):"apri per i numeri")+
+  card("yt","YOUTUBE",SC.r,Y?stN((Y.canale||{}).iscritti):"—","ISCRITTI",yv?"ultimo Short "+stN(yv.views):Y?"nessuno Short":"non collegato")+
+  card("","TIKTOK",SC.b,TP.follower!=null?stN(TP.follower):"—","FOLLOWER",TT.err?"ricollega per i numeri":TT.ultimo?"ultimo video "+stN(TT.ultimo.views):"numeri in arrivo")+'</div>';
+ const row=(go,k,c,big,un,d)=>'<div class="tapa">↓</div><button type="button" class="pnr" data-go="'+go+'" style="border-left-color:'+c+'"><span class="n"><b>'+big+'</b><span>'+un+'</span></span><span class="t"><i style="color:'+c+'">'+k+'</i><span>'+d+'</span></span><em>→</em></button>';
+ h+=row("sito","2 · SITO",SC.b,S?stN(S.visits):"—","VISITE 7 GG",S?(S.refs&&S.refs[0]?"Soprattutto da "+esc(S.refs[0].name)+" · da YouTube "+stN(sYt):""):"non disponibile");
+ h+=row("isc","3 · ISCRITTI",SC.a,u&&u.ok?stN(u.tot):"—","ISCRITTI",u&&u.ok?"+"+stN(n7)+" in 7 giorni · "+stN(fonte("Instagram"))+" da Instagram · "+stN(fonte("YouTube"))+" da YouTube":"");
+ if(K.rows.length){const f=v=>v==null?'<td class="na">—</td>':null;
+  h+='<div class="ssl">Lo stesso contenuto sui canali</div><table class="pnt"><tr><th>CONTENUTO</th><th>YT</th><th>IG</th><th>TT</th></tr>'+K.rows.map(r=>{const vals={yt:r.yt,ig:r.ig,tt:r.tt},mx=Math.max(...Object.values(vals).filter(v=>v!=null),-1);const d=new Date(r.data+"T12:00:00Z");
+   return '<tr><td>'+esc(r.titolo)+'<small>'+(isNaN(d)?"":DNS[d.getUTCDay()]+" "+d.getUTCDate()+"/"+(d.getUTCMonth()+1))+' · '+(TYL[r.tipo]||esc(r.tipo||""))+'</small></td>'+["yt","ig","tt"].map(c=>f(vals[c])||'<td'+(vals[c]===mx&&mx>0&&Object.values(vals).filter(v=>v!=null).length>1?' class="best"':'')+'>'+stN(vals[c])+'</td>').join("")+'</tr>'}).join("")+'</table><p class="note">Visualizzazioni. In verde il canale migliore per ogni contenuto; il trattino vuol dire che lì non è uscito o che mancano i numeri.</p>'}
  const W=[];
  if(G.length)W.push({c:p7>=5&&n7<p7*.6?SC.a:n7>p7*1.4&&n7>=3?SC.v:null,t:"Iscritti nuovi: <b>"+n7+"</b> negli ultimi 7 giorni, <b>"+p7+"</b> nei 7 prima."});
  if(S&&S.prev_visits>=10){const c=Math.round((S.visits-S.prev_visits)/S.prev_visits*100);W.push({c:c<=-15?SC.a:c>=15?SC.v:null,t:"Visite al sito: <b>"+(c>0?"+":"")+c+"%</b> rispetto ai 7 giorni prima."})}
  if(S&&S.seen>=5)W.push({c:null,t:"Lascia l&#39;email il <b>"+Math.round(S.joined/S.seen*100)+"%</b> di chi vede l&#39;invito sul sito."});
  if(W.length)h+='<div class="dga"><i>DA GUARDARE ADESSO</i>'+W.map(w=>'<div'+(w.c?' style="border-left:3px solid '+w.c+';padding-left:10px"':'')+'>'+w.t+'</div>').join("")+'</div>';
- el.innerHTML=h;el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>ssOpen(b.dataset.go))}
+ el.innerHTML=h;el.querySelectorAll("[data-go]").forEach(b=>{if(b.dataset.go)b.onclick=()=>ssOpen(b.dataset.go)})}
 async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<div class="card sub">Carico…</div>';
  const [u,s]=await Promise.all([api({action:"iscritti_stats"}).catch(()=>({})),api({action:"stats",days:7}).catch(()=>({}))]);
  if(!u||!u.ok){el.innerHTML='<div class="card"><b>Numeri degli iscritti non disponibili</b><div class="sub">'+esc((u&&(u.error||u.detail))||"errore")+'</div></div>';return}
@@ -3317,7 +3347,7 @@ ${items}
 // I video si caricano dal bucket R2 (igvid/<id>.mp4); le foto TikTok le scarica da /ig/img/<id>.jpg (serve il prefisso URL verificato).
 const TT_API = "https://open.tiktokapis.com";
 // Senza "Direct Post" attivo nell'app TikTok basta video.upload; se un giorno lo attivi, metti il secret TT_DIRECT=1 e ricollega.
-const ttScope = (env) => "user.info.basic,video.upload" + (env.TT_DIRECT ? ",video.publish" : "");
+const ttScope = (env) => "user.info.basic,video.upload,video.list,user.info.stats" + (env.TT_DIRECT ? ",video.publish" : ""); // v141: anche lettura dei video e dei numeri del profilo (statistiche)
 const TT_DEFAULT = { mode: "bozza", auto: false, privacy: "PUBLIC_TO_EVERYONE" };
 const TT_TYPES = ["reel", "carousel", "image"];
 async function ttSettings(env) { return { ...TT_DEFAULT, ...((await kvGet(env, "tt_settings")) || {}) }; }
@@ -3685,6 +3715,50 @@ async function ytStatsTick(env, force) {
   await kvSet(env, "yt_hist:" + romeToday(), { at: out.at, iscritti: out.canale.iscritti, v: Object.fromEntries(out.video.map((v) => [v.id, v.views])) });
   return out;
 }
+// v141: numeri di TikTok (follower e visualizzazioni dei video) in kv «tt_stats», ogni 6 ore dal cron. Servono i permessi
+// video.list e user.info.stats, attivi nell'app TikTok e chiesti da «Ricollega TikTok»: senza, tt_stats.err dice cosa manca.
+async function ttStatsTick(env, force) {
+  const tok = await kvGet(env, "tt_token");
+  if (!tok || !tok.access_token) return null;
+  const old = await kvGet(env, "tt_stats");
+  if (!force && old && Date.now() - Date.parse(old.at || 0) < 6 * 3600000) return old;
+  const out = { at: new Date().toISOString() };
+  if (!/video\.list/.test(tok.scope || "")) { out.err = "manca il permesso per leggere i video: premi «Ricollega TikTok»"; await kvSet(env, "tt_stats", out); return out; }
+  try {
+    const t = await ttToken(env);
+    try {
+      const r = await fetch(TT_API + "/v2/user/info/?fields=display_name,follower_count,likes_count,video_count", { headers: { authorization: "Bearer " + t.access_token } });
+      const j = await gj(r); const u = (j.data && j.data.user) || {};
+      out.profilo = { follower: u.follower_count ?? null, like: u.likes_count ?? null, video: u.video_count ?? null, nome: u.display_name || null };
+    } catch (e) {}
+    const d = await ttCall(t, "/v2/video/list/?fields=id,title,video_description,create_time,view_count,like_count,comment_count,share_count,share_url,cover_image_url", { max_count: 20 });
+    out.video = (d.videos || []).map((v) => ({ id: v.id, titolo: String(v.title || v.video_description || "").slice(0, 160), data: new Date((+v.create_time || 0) * 1000).toISOString(), views: +v.view_count || 0, likes: +v.like_count || 0, commenti: +v.comment_count || 0, link: v.share_url || null, img: v.cover_image_url || null }));
+  } catch (e) { out.err = ttErr(e); }
+  await kvSet(env, "tt_stats", out);
+  return out;
+}
+// v141: lo stesso contenuto sui canali (ultimi contenuti pubblicati su Instagram) e la sintesi della settimana per la Panoramica
+const romeDayIso = (iso) => { try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(iso)); } catch (e) { return ""; } };
+const capKey = (s) => String(s || "").toLowerCase().replace(/[^a-zà-ù0-9]+/g, " ").trim().slice(0, 40);
+async function canaliConfronto(env) {
+  const [ig, yt, tt] = await Promise.all([kvGet(env, "ig_stats:last"), kvGet(env, "yt_stats"), kvGet(env, "tt_stats")]);
+  const drafts = (await kvList(env, "draft:", 60)).filter((d) => d.status === "pubblicata" && d.type !== "story").sort((a, z) => String(z.published_at || z.date).localeCompare(String(a.published_at || a.date))).slice(0, 7);
+  const ttV = (tt && tt.video) || [], usati = new Set();
+  const rows = drafts.map((d) => {
+    const p = ((ig && ig.post) || []).find((x) => x.id === d.media_id);
+    const y = ((yt && yt.video) || []).find((v) => v.bozza === d.id);
+    const day = d.date || romeDayIso(d.published_at), ck = capKey(String(d.caption || "").split("\n")[0]);
+    let k = ttV.find((v) => !usati.has(v.id) && romeDayIso(v.data) === day && ck && capKey(v.titolo).slice(0, 25) === ck.slice(0, 25));
+    if (!k) { const sameDay = ttV.filter((v) => !usati.has(v.id) && romeDayIso(v.data) === day); if (sameDay.length === 1) k = sameDay[0]; }
+    if (k) usati.add(k.id);
+    const tit = String(d.caption || "").split("\n").find((x) => x.trim()) || d.id;
+    return { id: d.id, titolo: tit.replace(/\s*[#].*$/, "").trim().slice(0, 70), data: day, tipo: d.type, ig: p && p.views != null ? p.views : null, yt: y ? y.views : null, tt: k ? k.views : null };
+  });
+  const sett = romeDayIso(new Date(Date.now() - 7 * 86400000).toISOString());
+  const tot = { ig: 0, yt: 0, tt: 0 };
+  for (const r of rows) if (r.data > sett) for (const c of ["ig", "yt", "tt"]) tot[c] += r[c] || 0;
+  return { rows, tot, tt: tt ? { profilo: tt.profilo || null, err: tt.err || null, ultimo: ttV[0] || null } : null };
+}
 async function ytPanelApi(env, b) {
   const act = b.action;
   if (act === "yt_stats") { // v138: Statistiche → YouTube
@@ -3700,7 +3774,9 @@ async function ytPanelApi(env, b) {
       const p = (ig.post || []).find((x) => x.id === d.media_id);
       confronto.push({ titolo: String(v.titolo || "").replace(/\s*#Shorts\s*$/i, "").slice(0, 60), data: String(d.date || "").slice(8) + "/" + (+String(d.date || "").slice(5, 7)), yt: v.views, ig: p && p.views != null ? p.views : null });
     }
-    return { ok: true, stats, sito, confronto };
+    if (stats && stats.video) for (const v of stats.video) { if (!v.bozza) continue; const d = await kvGet(env, "draft:" + v.bozza); const tp = d && IG_TEMPLATES.find((z) => z.id === d.template); if (tp) v.rubrica = tp.nome; }
+    const storia = (await kvList(env, "yt_hist:", 30)).map((x) => ({ d: x._k.slice(8), f: x.iscritti })).sort((a, z) => a.d.localeCompare(z.d)).slice(-14);
+    return { ok: true, stats, sito, confronto, storia };
   }
   if (act === "yt_send") return { ok: true, yt: await ytSend(env, String(b.id), "panel", !!b.force) };
   if (act === "yt_check") return { ok: true, yt: await ytCheck(env, String(b.id)) };
@@ -6617,6 +6693,7 @@ export default {
     } catch (e) {}
     try { await autoPublish(env); } catch (e) {}
     try { await ttPoll(env); } catch (e) {} // v20: stato degli invii a TikTok
+    try { await ttStatsTick(env); } catch (e) {} // v141: numeri dei video TikTok, ogni 6 ore
     try { await thPoll(env); } catch (e) {} // v30: Threads (pubblicazioni in attesa e rinnovo del token)
     try { await ytStatsTick(env); } catch (e) {} // v137: numeri dei video YouTube, ogni 6 ore
     try { await tgDivergenza(env, false); } catch (e) {} // v41
