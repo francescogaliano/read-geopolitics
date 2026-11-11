@@ -3943,15 +3943,18 @@ async function canaliConfronto(env) {
   const [ig, yt, tt] = await Promise.all([kvGet(env, "ig_stats:last"), kvGet(env, "yt_stats"), kvGet(env, "tt_stats")]);
   const drafts = (await kvList(env, "draft:", 60)).filter((d) => d.status === "pubblicata" && d.type !== "story").sort((a, z) => String(z.published_at || z.date).localeCompare(String(a.published_at || a.date))).slice(0, 7);
   const ttV = (tt && tt.video) || [], usati = new Set();
+  // v144: un video TikTok si abbina solo a una bozza mandata davvero su TikTok (record tt:), prima per titolo e poi, come ripiego, se è l'unico di quel giorno
+  const suTT = await Promise.all(drafts.map(async (d) => !!(await kvGet(env, "tt:" + d.id))));
+  const day = (d) => d.date || romeDayIso(d.published_at), ck = (d) => capKey(String(d.caption || "").split("\n")[0]);
+  const ttOf = {};
+  drafts.forEach((d, i) => { if (!suTT[i]) return; const c = ck(d); const k = c && ttV.find((v) => !usati.has(v.id) && romeDayIso(v.data) === day(d) && capKey(v.titolo).slice(0, 25) === c.slice(0, 25)); if (k) { usati.add(k.id); ttOf[d.id] = k; } });
+  drafts.forEach((d, i) => { if (!suTT[i] || ttOf[d.id]) return; const sameDay = ttV.filter((v) => !usati.has(v.id) && romeDayIso(v.data) === day(d)); const altre = drafts.filter((z, j) => suTT[j] && !ttOf[z.id] && day(z) === day(d)).length; if (sameDay.length === 1 && altre === 1) { usati.add(sameDay[0].id); ttOf[d.id] = sameDay[0]; } });
   const rows = drafts.map((d) => {
     const p = ((ig && ig.post) || []).find((x) => x.id === d.media_id);
     const y = ((yt && yt.video) || []).find((v) => v.bozza === d.id);
-    const day = d.date || romeDayIso(d.published_at), ck = capKey(String(d.caption || "").split("\n")[0]);
-    let k = ttV.find((v) => !usati.has(v.id) && romeDayIso(v.data) === day && ck && capKey(v.titolo).slice(0, 25) === ck.slice(0, 25));
-    if (!k) { const sameDay = ttV.filter((v) => !usati.has(v.id) && romeDayIso(v.data) === day); if (sameDay.length === 1) k = sameDay[0]; }
-    if (k) usati.add(k.id);
+    const k = ttOf[d.id];
     const tit = String(d.caption || "").split("\n").find((x) => x.trim()) || d.id;
-    return { id: d.id, titolo: tit.replace(/\s*[#].*$/, "").trim().slice(0, 70), data: day, tipo: d.type, ig: p && p.views != null ? p.views : null, yt: y ? y.views : null, tt: k ? k.views : null };
+    return { id: d.id, titolo: tit.replace(/\s*[#].*$/, "").trim().slice(0, 70), data: day(d), tipo: d.type, ig: p && p.views != null ? p.views : null, yt: y ? y.views : null, tt: k ? k.views : null };
   });
   const sett = romeDayIso(new Date(Date.now() - 7 * 86400000).toISOString());
   const tot = { ig: 0, yt: 0, tt: 0 };
