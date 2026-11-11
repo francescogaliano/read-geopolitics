@@ -1,0 +1,69 @@
+@font-face{font-family:"Plex Serif RG";font-weight:600;src:url('fonts/ibm-plex-serif-latin-600-normal.woff2')}
+@font-face{font-family:"Plex Sans RG";font-weight:400;src:url('fonts/ibm-plex-sans-latin-400-normal.woff2')}
+@font-face{font-family:"Plex Sans RG";font-weight:600;src:url('fonts/ibm-plex-sans-latin-600-normal.woff2')}
+@font-face{font-family:"Plex Mono RG";font-weight:500;src:url('fonts/ibm-plex-mono-latin-500-normal.woff2')}
+:root{--bg:#0a0f1c;--ink:#EEF2F6;--oro:#E8A33D;--azz:#86B4EA;--muto:#8FA0AE;--ard:#4a5b74;--rosso:#E0705F;--verde:#5fbf8f}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+#root{position:relative;width:1080px;height:1920px;overflow:hidden;background:radial-gradient(circle at 50% 40%,#15223b 0,#0c1424 45%,#0a0f1c 80%);color:var(--ink);font-family:"Plex Sans RG"}
+#cam{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0;background:radial-gradient(circle at 50% 35%,#0d2142 0,#091631 55%,#070f22 100%)}
+#map,#ov{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:visible}
+#map path{fill:#1e2534;stroke:#3a4558;stroke-width:1.2;vector-effect:non-scaling-stroke}
+#map path.on{fill:#2b3a55;stroke:#86B4EA;stroke-width:2.2}
+#globe{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#globe .oc{fill:#111a2b;stroke:#3a4c66;stroke-width:3}#globe .gr{fill:none;stroke:#1c2840;stroke-width:1.2}
+#globe .c{fill:#1f2b40;stroke:#2c3d5a;stroke-width:1}#globe .ev{fill:#E8A33D;stroke:#ffd38a;stroke-width:2}
+#shade{position:absolute;left:0;top:0;width:1080px;height:820px;background:linear-gradient(180deg,rgba(10,15,28,.95),rgba(10,15,28,0))}
+#dim{position:absolute;inset:0;background:#0a0f1c;opacity:0}
+#scrim{position:absolute;left:0;right:0;top:860px;height:620px;background:linear-gradient(180deg,rgba(10,15,28,0),rgba(10,15,28,.86) 30%,rgba(10,15,28,.86) 75%,rgba(10,15,28,0));opacity:0}
+#kick{position:absolute;left:90px;top:190px;font:500 28px "Plex Mono RG";letter-spacing:.16em;color:var(--azz);display:flex;gap:16px;align-items:center}
+#dots{display:flex;gap:8px}#dots i{width:13px;height:13px;border-radius:50%;background:#24324a;display:block}
+.tit{position:absolute;left:90px;right:90px;top:250px;font:600 66px/1.12 "Plex Serif RG";color:var(--ink);opacity:0}
+.tit b{color:var(--oro);font-weight:600}
+#prom{position:absolute;left:0;right:0;top:1440px;text-align:center;font:500 32px "Plex Mono RG";color:var(--oro);letter-spacing:.12em}
+#src{position:absolute;left:90px;right:90px;top:1318px;font:500 28px "Plex Mono RG";letter-spacing:.06em;color:var(--muto)}
+.cap{position:absolute;left:60px;right:60px;top:1150px;text-align:center;font:600 62px/1.15 "Plex Sans RG";color:var(--ink)}
+.cap span{display:inline-block;margin:0 .14em;opacity:0}.cap span.k{color:var(--oro)}
+.sc{position:absolute;left:0;top:0;width:1080px;height:1920px;opacity:0}
+.blk{position:absolute}
+/* numero */
+.num{left:90px;right:90px;text-align:center}
+.num .v{font:600 200px/1 "Plex Serif RG";color:var(--oro);font-variant-numeric:tabular-nums;white-space:nowrap}
+.num .v small{font-size:.42em;margin-left:.15em}
+.num .l{margin-top:14px;font:600 46px "Plex Serif RG";color:var(--ink)}
+.num .n{margin-top:10px;font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.08em}
+.num svg{width:200px;height:200px;margin-bottom:20px}
+/* giorni */
+.gg{left:150px;width:780px}.gg .row{display:flex;gap:10px;height:60px}.gg i{flex:1;background:#1f2b40;border-radius:6px;display:block;position:relative;overflow:hidden}
+.gg i u{position:absolute;inset:0;background:var(--azz);display:block;transform-origin:bottom}
+.gg .t{text-align:center;font:500 28px "Plex Mono RG";color:var(--azz);letter-spacing:.1em;margin-bottom:12px}
+.gg .e{display:flex;justify-content:space-between;margin-top:12px;font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.08em}
+/* barra divisa */
+.bar{left:90px;width:900px}.bar .lab{font:500 28px "Plex Mono RG";color:var(--azz);letter-spacing:.12em}
+.bar .tot{font:600 190px/1 "Plex Serif RG";color:var(--ink);font-variant-numeric:tabular-nums}.bar .tot small{font-size:.28em;margin-left:.3em}
+.bar .b{position:relative;margin-top:30px;height:130px;border-radius:14px;background:var(--azz);transform-origin:left center;overflow:hidden}
+.bar .p{position:absolute;left:0;top:0;bottom:0;background:var(--oro);transform-origin:left center}
+.bar .q{position:absolute;top:-10px;bottom:-10px;width:4px;background:var(--bg);opacity:0}
+.bar .ls{display:flex;justify-content:space-between;margin-top:22px}.bar .ls div b{display:block;font:600 58px "Plex Serif RG"}.bar .ls div span{font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.06em}
+/* barre nel tempo */
+.brr{left:90px;width:900px;height:640px}.brr .ti{font:500 28px "Plex Mono RG";color:var(--azz);letter-spacing:.1em}
+.brr .c{position:absolute;bottom:80px}.brr .c .r{position:absolute;bottom:0;left:0;right:0;background:var(--oro);border-radius:10px 10px 0 0;transform-origin:bottom}
+.brr .c .v{position:absolute;left:-30px;right:-30px;text-align:center;font:600 50px "Plex Serif RG";color:var(--ink);opacity:0}
+.brr .c .d{position:absolute;bottom:-56px;left:-30px;right:-30px;text-align:center;font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.04em}
+/* fila di icone */
+.fila{left:90px;right:90px;text-align:center}.fila .ic{display:flex;justify-content:center;gap:26px}.fila svg{width:120px;height:120px}
+.fila .l{margin-top:16px;font:600 46px "Plex Serif RG"}
+/* timbro */
+.stamp{font:600 64px "Plex Mono RG";letter-spacing:.06em;color:var(--rosso);border:7px solid var(--rosso);border-radius:14px;padding:8px 26px;opacity:0;white-space:nowrap}
+.stamp.azz{color:var(--azz);border-color:var(--azz)}.stamp.oro{color:var(--oro);border-color:var(--oro)}
+/* scelta */
+.opt{left:90px;right:90px;height:150px;border-top:2px solid #24324a;display:flex;align-items:center;gap:30px;opacity:0}
+.opt.ult{border-bottom:2px solid #24324a}.opt i{font:500 34px "Plex Mono RG";color:var(--bg);background:var(--oro);min-width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal}
+.opt div b{display:block;font:600 48px/1.1 "Plex Serif RG"}.opt div span{font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.08em}
+.brand{left:0;right:0;text-align:center;opacity:0}.brand b{display:block;font:600 76px "Plex Serif RG"}
+.brand span{display:block;margin-top:10px;font:500 30px "Plex Mono RG";color:var(--oro);letter-spacing:.14em}
+.brand em{display:block;margin-top:34px;font:400 36px "Plex Sans RG";color:var(--muto);font-style:normal}
+/* sovrapposizioni sulla mappa */
+#ov .lab{font:500 30px "Plex Mono RG";letter-spacing:.08em;fill:var(--ink);paint-order:stroke;stroke:#0a0f1c;stroke-width:6px}
+#ov .nome{font:600 34px "Plex Mono RG";letter-spacing:.2em;fill:#9fb3cf;paint-order:stroke;stroke:#0a0f1c;stroke-width:6px}
+.nota{position:absolute;right:90px;top:1318px;font:500 28px "Plex Mono RG";color:var(--muto);letter-spacing:.04em;opacity:0}
