@@ -2299,10 +2299,11 @@ function elsRender(){const S=ELD,el=document.getElementById("stv");if(!S)return;
  const ora=new Date(S.at),quando=ora.toLocaleDateString("it-IT",{day:"numeric",month:"short"})+", "+ora.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
  let h='<div class="ssl" style="margin-top:14px">Crediti ElevenLabs · ciclo in corso</div><div class="elb">'+stN(rest)+'<small>rimasti su '+stN(S.tetto)+'</small></div>';
  h+='<div class="elbar"><i style="width:'+pu.toFixed(1)+'%;background:'+(st==="ko"?SC.r:st==="warn"?SC.a:SC.v)+'"></i>'+(pf!=null?'<u style="left:'+pf.toFixed(1)+'%"></u>':'')+'</div>';
- h+='<p class="note">Usati '+stN(S.usati)+(rd?' · si ricaricano il <b>'+esc(rd)+'</b>, tra <b>'+S.giorni_alla_ricarica+' giorni</b>':'')+(pf!=null?' · la linea tratteggiata è dove arrivi a fine ciclo, a questo ritmo':'')+'</p>';
+ h+='<p class="note">Usati '+stN(S.usati)+(rd?' · si ricaricano il <b>'+esc(rd)+'</b>'+(S.giorni_alla_ricarica!=null?', tra <b>'+S.giorni_alla_ricarica+' giorni</b>':''):'')+(pf!=null?' · la linea tratteggiata è dove arrivi a fine ciclo, a questo ritmo':'')+'</p>';
  if(S.err)h+='<div class="sub" style="color:#E5B45A;margin-top:8px">'+esc(S.err)+(S.vecchi?' · numeri della lettura precedente':'')+'.</div>';
  if(S.stima_fine!=null){if(S.finiscono){const f=new Date(S.finiscono).toLocaleDateString("it-IT",{day:"numeric",month:"long"});h+='<div class="dga elko"><i>CREDITI IN ESAURIMENTO</i><div>Al ritmo degli ultimi 7 giorni (<b>≈ '+stN(S.ritmo)+'</b> crediti al giorno) finiscono il <b>'+esc(f)+'</b>, prima della ricarica. Da quel giorno podcast e video passano da soli alla voce Gemini. Per evitarlo: meno video con la tua voce, oppure «Aggiungi crediti» su ElevenLabs.</div></div>'}
   else h+='<div class="dga '+(st==="warn"?"":"elok")+'"><i>STIMA A FINE CICLO</i><div>Al ritmo degli ultimi 7 giorni (<b>≈ '+stN(S.ritmo)+'</b> crediti al giorno) arrivi a <b>≈ '+stN(S.stima_fine)+'</b> su '+stN(S.tetto)+'. <b style="color:'+(st==="warn"?SC.a:SC.v)+'">'+(st==="warn"?"Ci stai, ma di poco.":"Ci stai.")+'</b></div></div>'}
+ if(!S.ciclo){h+='<p class="note" style="margin-top:12px">Dati del '+esc(quando)+'. Senza la cronologia non posso dire quanto va a podcast, reel e video, né stimare il ritmo.</p><button class="btn" id="elrf" style="margin-top:12px;width:100%">Aggiorna da ElevenLabs</button>';el.innerHTML=h;const b0=document.getElementById("elrf");if(b0)b0.onclick=()=>elsLoad(true);return}
  const C=S.ciclo||{},N=S.n||{},mx=Math.max(1,...Object.values(C));
  h+='<div class="ssl">Dove vanno i crediti · questo ciclo</div>'+["pod","reel","video","prove"].map(k=>{const n=N[k],av=n?Math.round((C[k]||0)/n):null;
   return '<div class="elr"><div><span>'+ELN[k]+'<small>'+(k==="prove"?"non legate a un contenuto":(n?n+(k==="pod"?(n===1?" puntata":" puntate"):(n===1?" video":" video"))+' · media <b>≈ '+stN(av)+'</b> l&#39;uno':"nessuno in questo ciclo"))+'</small></span><b>'+stN(C[k]||0)+'</b></div><p style="width:'+((C[k]||0)/mx*100).toFixed(1)+'%;background:'+ELC[k]+'"></p></div>'}).join("");
@@ -3814,12 +3815,20 @@ async function elStatsTick(env, force) {
     const s = await elGet(env, "/v1/user/subscription");
     out.usati = +s.character_count || 0; out.tetto = +s.character_limit || 0; out.piano = s.tier || null;
     out.reset = s.next_character_count_reset_unix ? new Date(s.next_character_count_reset_unix * 1000).toISOString() : null;
+    const reset = Date.parse(out.reset || 0);
+    if (reset) out.giorni_alla_ricarica = Math.ceil(Math.max(0, (reset - Date.now()) / 86400000));
     let items = [], after = null;
+    try {
     for (let i = 0; i < 4; i++) {
       const h = await elGet(env, "/v1/history?page_size=1000" + (after ? "&start_after_history_item_id=" + encodeURIComponent(after) : ""));
       const H = h.history || []; items = items.concat(H.map((x) => ({ t: (+x.date_unix || 0) * 1000, c: Math.max(0, (+x.character_count_change_to || 0) - (+x.character_count_change_from || 0)) })));
       if (!h.has_more || !H.length || H[H.length - 1].date_unix * 1000 < Date.now() - 45 * 86400000) break;
       after = h.last_history_item_id || H[H.length - 1].history_item_id;
+    }
+    } catch (e) { // v: la chiave legge i crediti ma non la cronologia (permesso mancante): mostro i crediti senza ripartizione
+      const d = String((e && e.detail) || "");
+      out.err = e && (e.status === 401 || e.status === 403) ? "alla chiave ElevenLabs manca il permesso di lettura della cronologia (History → Read): i crediti si vedono, ma non si possono dividere per uso" + (/missing_permission/.test(d) ? "" : " (risposta: " + d.slice(0, 120) + ")") : "cronologia ElevenLabs non letta: " + (d || String((e && e.message) || e)).slice(0, 160);
+      out.senza_cronologia = true; await kvSet(env, "el_stats", out); return out;
     }
     // finestre dei contenuti
     const W = [], M = 60000;
@@ -3828,7 +3837,7 @@ async function elStatsTick(env, force) {
     for (const r of await kvList(env, "req:", 200)) { const a = Date.parse(r.started_at || r.created_at || 0); if (!a) continue; const b = Date.parse(r.done_at || 0) || a + 90 * M; W.push({ a: a - 2 * M, b: b + 2 * M, k: r.template === "iconografica" ? "video" : "reel", id: "r:" + r.id }); }
     for (const d of await kvList(env, "draft:", 120)) { if (d.req_id || d.type !== "reel") continue; const e = Date.parse(d.created_at || 0); if (e) W.push({ a: e - 40 * M, b: e + 2 * M, k: "reel", id: "d:" + d.id }); }
     const day = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date(t));
-    const reset = Date.parse(out.reset || 0); let start = 0;
+    let start = 0;
     if (reset) { const x = new Date(reset); x.setUTCMonth(x.getUTCMonth() - 1); start = x.getTime(); }
     out.inizio = start ? new Date(start).toISOString() : null;
     const ciclo = { pod: 0, reel: 0, video: 0, prove: 0 }, usati = { pod: new Set(), reel: new Set(), video: new Set() }, G = {};
@@ -3844,7 +3853,7 @@ async function elStatsTick(env, force) {
     out.ciclo = ciclo; out.n = { pod: usati.pod.size, reel: usati.reel.size, video: usati.video.size };
     out.giorni = Array.from({ length: 14 }, (_, i) => { const d = day(Date.now() - (13 - i) * 86400000); return { d, ...(G[d] || { pod: 0, reel: 0, video: 0, prove: 0 }) }; });
     out.ritmo = Math.round(ult7 / 7);
-    if (reset) { const gg = Math.max(0, (reset - Date.now()) / 86400000); out.giorni_alla_ricarica = Math.ceil(gg); out.stima_fine = Math.round(out.usati + out.ritmo * gg);
+    if (reset) { const gg = Math.max(0, (reset - Date.now()) / 86400000); out.stima_fine = Math.round(out.usati + out.ritmo * gg);
       if (out.ritmo > 0 && out.stima_fine > out.tetto) out.finiscono = new Date(Date.now() + ((out.tetto - out.usati) / out.ritmo) * 86400000).toISOString(); }
   } catch (e) { out.err = e && e.status === 401 ? "chiave ElevenLabs non valida (segreto ELEVENLABS_API_KEY)" : String((e && (e.detail || e.message)) || e).slice(0, 200); if (old && old.usati != null) { const keep = { ...old, at: old.at, err: out.err, vecchi: true }; await kvSet(env, "el_stats", keep); return keep; } }
   await kvSet(env, "el_stats", out);
