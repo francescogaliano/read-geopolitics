@@ -1427,6 +1427,7 @@ textarea{width:100%}
 .err{color:#FF9A9A;font-size:14px;white-space:pre-wrap}a{color:#86B4EA}
 .vpl{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#E8B050;text-transform:uppercase}.vpr{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid #1F2C36}.vpr>span:first-child{flex:1;min-width:0}.vpr b{display:block;font-size:15.5px}.vpr .sub{font-size:13px}.vpc .vpseg{display:flex;border:1px solid #34475A;border-radius:10px;overflow:hidden}.vpc .vpseg button{flex:1;border-radius:0;background:transparent;color:#8FA0AE;border-left:1px solid #34475A;padding:9px 4px;font-size:14px}.vpc .vpseg button:first-child{border-left:0}.vpc .vpseg button.on{background:#86B4EA;color:#0E151B}.vpc .vpseg small{display:block;font-weight:400;font-size:11.5px;opacity:.85}.vpc .vpseg button.on small,.upl .seg button.on small{color:#0E151B;opacity:.8}.vpf{padding:0 0 10px}.vpo{display:flex;gap:10px;align-items:center;background:#1B2A36;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px;cursor:pointer}.vpo b{color:#F2B84B}.vpoa{color:#86B4EA;font-weight:600}
 .upl{padding:0}.upl>summary{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 14px;cursor:pointer;list-style:none;color:#C9D3DB;font-size:15px;border:1px dashed #4A5B6A;border-radius:14px}.upl>summary::-webkit-details-marker{display:none}.upl[open]>summary{border-style:solid;border-color:transparent;border-bottom:1px solid #27353F;border-radius:14px 14px 0 0}.upp{font-size:20px;color:#86B4EA;font-weight:600}.upl>summary span{flex:1}.upc{font-style:normal;color:#8FA0AE;transition:transform .15s}.upl[open] .upc{transform:rotate(90deg)}.upb{padding:12px 14px 14px}.ups{font:600 11px ui-monospace,monospace;letter-spacing:.1em;color:#8FA0AE;text-transform:uppercase;margin:16px 0 6px}.upl .seg{display:flex;border:1px solid #34475A;border-radius:10px;overflow:hidden}.upl .seg button{flex:1;border-radius:0;background:transparent;color:#8FA0AE;border-left:1px solid #34475A;padding:9px 4px;font-size:14px}.upl .seg button:first-child{border-left:0}.upl .seg button.on{background:#86B4EA;color:#0E151B}.upl .seg small{display:block;font-weight:400;font-size:11.5px;opacity:.85}.upk{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid #1F2C36;cursor:pointer}.upk input{width:20px;height:20px;margin:2px 0 0;accent-color:#86B4EA}.upk b{display:block;font-size:15.5px}.upk .sub{display:block;font-size:13px}.upvp{border-bottom:0;margin-top:8px;background:#1B2A36;border-radius:10px;padding:10px 12px}.upd{margin-top:8px}.upd summary{cursor:pointer;color:#86B4EA;list-style:none;font-size:14px}.upd summary::-webkit-details-marker{display:none}.upd summary i{font-style:normal;display:inline-block;transition:transform .15s}.upd[open] summary i{transform:rotate(90deg)}.upd textarea{margin-top:8px}.upb textarea{width:100%;box-sizing:border-box;min-height:96px}
+.ttp{margin:8px 0 4px;padding-top:10px;border-top:1px solid #2a3a4a}.ttp .lab{margin-top:12px}.ttp select{width:100%;min-height:44px}.ttp textarea{width:100%;box-sizing:border-box}.ttpv{width:140px;max-height:250px;border-radius:8px;margin:10px 0 4px;background:#000}.ttoff{opacity:.55}
 #upyt{width:100%;box-sizing:border-box;margin-top:8px;min-height:44px;background:#0E151B;color:#E4EAEF;border:1px solid #34475A;border-radius:8px;padding:8px;font:15px system-ui}.upcd{margin:14px 0 4px;border:1px solid #27353F;border-radius:12px;padding:0 12px}.upcd>summary{display:flex;align-items:center;gap:10px;min-height:52px;list-style:none;cursor:pointer}.upcd>summary::-webkit-details-marker{display:none}.upcd>summary>span:nth-child(2){flex:1;display:flex;flex-direction:column}.upcd>summary small{color:#8FA0AE;font-size:13.5px}.upcd>summary>i{font-style:normal;color:#8FA0AE;transition:transform .2s}.upcd[open]>summary>i{transform:rotate(90deg)}.upcd[open]{padding-bottom:12px}.upci{font-size:20px}.upcp{position:relative;width:96px;height:170px;flex:none;border-radius:10px;border:2px solid #E3B341;overflow:hidden;background:#0E151B}.upcp video,.upcp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;border-radius:0}.upc0{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#8FA0AE;font-size:13px;line-height:1.3}.upcfb{min-height:44px;margin-top:10px}.upcn{font-size:13px!important;margin-top:6px}#upcfr.off,.dcfr.off{opacity:.45}.upcp{cursor:zoom-in}.upcp:after{content:"⤢";position:absolute;right:4px;bottom:4px;width:22px;height:22px;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center}#cz{position:fixed;inset:0;z-index:80}#cz[hidden]{display:none}.cz-dim{position:absolute;inset:0;background:rgba(0,0,0,.6)}.cz-p{position:absolute;left:0;right:0;bottom:0;max-height:94vh;overflow:auto;background:#15202A;border-radius:16px 16px 0 0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;animation:czUp .22s ease-out}@media(min-width:760px){.cz-p{left:auto;top:0;bottom:0;width:440px;max-height:none;border-radius:0;animation:czIn .22s ease-out}}@keyframes czUp{from{transform:translateY(30px);opacity:0}}@keyframes czIn{from{transform:translateX(30px);opacity:0}}@media(prefers-reduced-motion:reduce){.cz-p{animation:none}}.cz-h{display:flex;align-items:center;justify-content:space-between;min-height:44px}.cz-h b{font-size:17px}.cz-x{background:none;border:0;color:#C9D3DB;font-size:22px;width:44px;height:44px;cursor:pointer}.cz-v{position:relative;height:min(56vh,620px);aspect-ratio:9/16;margin:4px auto 10px;border-radius:12px;overflow:hidden;background:#000;border:2px solid #E3B341}.cz-v video,.cz-v img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.cz-g{position:absolute;inset:0;pointer-events:none}.cz-g:before,.cz-g:after{content:"";position:absolute;left:0;right:0;height:12.5%;background:rgba(10,14,18,.62)}.cz-g:before{top:0;border-bottom:1px dashed #E3B341}.cz-g:after{bottom:0;border-top:1px dashed #E3B341}.cz-g[hidden]{display:none}.cz-c{display:flex;align-items:center;gap:8px}.cz-c input{flex:1;height:44px;accent-color:#E3B341;margin:0}.cz-c button{width:44px;height:44px;flex:none;border-radius:10px;border:1px solid #34475A;background:#0E151B;color:#E4EAEF;font-size:20px;cursor:pointer}.cz-l{text-align:center;margin:4px 0 8px;font-size:15px}.cz-v{touch-action:none;cursor:grab}.cz-v.drag{cursor:grabbing}.cz-m{display:flex;align-items:center;gap:10px;justify-content:space-between;margin:0 0 4px}.cz-m .sub{font-size:13.5px}.cz-r{flex:none;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid #E3B341;background:none;color:#E3B341;font-weight:600;cursor:pointer}.cz-k{display:flex;align-items:center;gap:10px;min-height:44px;color:#C9D3DB;font-size:14.5px;cursor:pointer}.cz-k input{width:20px;height:20px;accent-color:#E3B341}.cz-b{display:grid;gap:8px;margin-top:8px}.cz-b button{min-height:46px;border-radius:10px;font-size:15.5px;cursor:pointer}.cz-f{background:none;border:1px dashed #4A5B6A;color:#86B4EA;font-weight:600}.cz-ok{background:#86B4EA;border:0;color:#0E151B;font-weight:700}.dcov{margin:10px 0 4px}.upcb{display:flex;gap:14px;align-items:center;margin:6px 0 4px}.upcs{flex:1;min-width:0}.upcs input[type=range]{width:100%;height:44px;accent-color:#E3B341;margin:0}.upcs .sub{font-size:14px;line-height:1.35}.upat{display:block;width:100%;box-sizing:border-box;margin-top:8px;background:#0E151B;color:#E4EAEF;border:1px solid #34475A;border-radius:8px;padding:9px;font:15px system-ui}.upfl{display:flex;align-items:center;justify-content:center;min-height:52px;border:1px dashed #4A5B6A;border-radius:10px;color:#86B4EA;font-weight:600;cursor:pointer;text-align:center;padding:8px 12px}.upfl input{position:absolute;width:1px;height:1px;opacity:0}.upbar{height:6px;border-radius:3px;background:#27353F;margin-top:8px;overflow:hidden}.upbar i{display:block;height:100%;width:0;background:#86B4EA;transition:width .2s}.upgo{width:100%}.upmsg{margin-top:8px;font-size:14px;color:#8FA0AE}.upmsg.err{color:#FF9A9A}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}.tab{flex:1 1 auto;padding:10px 10px;background:#27353F;color:#E4EAEF}.tab.on{background:#86B4EA;color:#0E151B}[hidden]{display:none!important}
 .chip.in_elaborazione,.chip.in_coda{background:#86B4EA;color:#0E151B}.chip.in_lavorazione{background:#F2B84B;color:#0E151B}.chip.pronta{background:#3C8D5A}.chip.annullata,.chip.scartata{background:#4A5560}.chip.bloccata{background:#B04040}
@@ -1687,16 +1688,49 @@ function igRow(x){if(x.status==="bozza"&&x.type!=="story"){const on=igOn(x);retu
  if(x.status!=="pubblicata")return "";const tm=x.published_at?new Date(x.published_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· uscito'+(tm?" alle "+tm:"")+'</span></div>'+(x.permalink?'<a href="'+esc(x.permalink)+'" target="_blank">Apri ›</a>':'<span></span>')+'</div>'}
 function chEff(x,k,g){return x.canali&&typeof x.canali[k]==="boolean"?x.canali[k]:g}
 function chTog(x,k,on,manual){if(x.status!=="bozza")return on?'<span class="tg">auto</span>':manual;const own=x.canali&&typeof x.canali[k]==="boolean";return '<span class="cht2">'+(on?'':manual)+'<button class="sm chsw'+(on?' on':'')+'" data-ch="'+k+'" data-on="'+(on?0:1)+'" title="'+(own?'scelta solo per questo post':'come nelle preferenze')+'">'+(on?'auto ✓':'auto ✗')+'</button></span>'}
-function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=chEff(x,"tt",!!(D.tiktok.settings&&D.tiktok.settings.auto))&&x.status!=="pubblicata";
+function ttDir(){return !!(D.tiktok&&D.tiktok.settings&&D.tiktok.settings.mode==="diretto")}
+function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=chEff(x,"tt",!!(D.tiktok.settings&&D.tiktok.settings.auto))&&x.status!=="pubblicata";const dir=ttDir(),ok=!!(x.tt_post&&x.tt_post.consenso_at);
  const lab={invio:"invio in corso",in_elaborazione:"TikTok sta elaborando",nella_casella:"nella casella: scegli il suono e pubblica",pubblicato:(t&&t.marked?"pubblicato (segnato da te)":"pubblicato"),errore:"non inviato"};
- const st=t?(lab[t.status]||t.status):(auto?"partirà da solo "+aft(x):"non parte da solo")+(x.canali&&typeof x.canali.tt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
- if(!t)act=chTog(x,"tt",auto,'<button class="sm tts">Invia</button>');
+ const st=t?(lab[t.status]||t.status):(dir&&!ok?"da confermare in «Pubblica su TikTok»":(dir?"confermato · ":"")+(auto?"partirà da solo "+aft(x):"non parte da solo"))+(x.canali&&typeof x.canali.tt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ if(dir&&(!t||t.status==="errore"))act='<span class="cht2">'+(x.status==="bozza"&&ok?chTog(x,"tt",auto,""):"")+'<button class="sm ttpo">'+(t?"Riprova…":x.status==="pubblicata"?"Pubblica…":ok?"Modifica":"Apri")+'</button></span>';
+ else if(!t)act=chTog(x,"tt",auto,'<button class="sm tts">Invia</button>');
  else if(t.status==="errore")act='<button class="sm tts">Riprova</button>';
  else if(t.status==="nella_casella")act='<button class="sm ttm">Fatto</button>';
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  else if(t.status==="pubblicato")act='<button class="sm ttl">Link</button>';
  else if(t.status==="in_elaborazione")act='<button class="sm ttk">Aggiorna</button>';
- return '<div class="dr"><span class="ic">TT</span><div>TikTok <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
+ return '<div class="dr"><span class="ic">TT</span><div>TikTok <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')+(dir?'<div class="ttfbox" hidden></div>':'')}
+/* v143: «Pubblica su TikTok» (pubblicazione diretta): le regole di TikTok per la verifica dell'app.
+   Account e limiti letti a ogni apertura; visibilità senza valore di partenza; interazioni spente di base; contenuto commerciale; anteprima; consenso esplicito. */
+const TTPV={PUBLIC_TO_EVERYONE:"Tutti",MUTUAL_FOLLOW_FRIENDS:"Amici (follower reciproci)",FOLLOWER_OF_CREATOR:"I tuoi follower",SELF_ONLY:"Solo io"};
+async function ttForm(c,id){const x=((D&&D.drafts)||[]).find(z=>z.id===id);const box=c.querySelector(".ttfbox");if(!x||!box)return;if(!box.hidden&&box.dataset.on){box.hidden=true;box.dataset.on="";return}
+ box.hidden=false;box.dataset.on="1";box.innerHTML='<div class="sub">Chiedo a TikTok l’account e le opzioni…</div>';
+ const r=await api({action:"tt_creator"});if(!r.ok){box.innerHTML='<div class="err">'+esc(r.detail||r.error||"TikTok non risponde")+'</div>';return}
+ const C=r.creator,P=x.tt_post||{},pub=x.status==="pubblicata",tit=P.titolo||x.tt_caption||String(x.caption||"").slice(0,2200);
+ const ck=(k,lab,off,on)=>'<label class="upk'+(off?' ttoff':'')+'"><input type="checkbox" data-tk="'+k+'"'+(on&&!off?' checked':'')+(off?' disabled':'')+'><span><b>'+lab+'</b>'+(off?'<span class="sub">disattivato nelle impostazioni del tuo account TikTok</span>':'')+'</span></label>';
+ box.innerHTML='<div class="ttp"><div class="lab">Pubblica su TikTok</div><div class="sub">Account: <b>'+esc(C.nickname||C.username)+'</b>'+(C.username?' (@'+esc(C.username)+')':'')+'<span class="ttdur"></span></div>'
+  +(x.video_url?'<video class="ttpv" src="'+esc(x.video_url)+'" controls muted playsinline preload="metadata"></video>':'')+'<div class="sub">È il contenuto che arriva su TikTok, così com’è: il pannello non aggiunge loghi né link.</div>'
+  +'<div class="lab">Titolo</div><textarea class="tttit" rows="3" maxlength="2200">'+esc(tit)+'</textarea>'
+  +'<div class="lab">Chi può vederlo</div><select class="ttpvsel"><option value="">Scegli…</option>'+C.privacy.map(v=>'<option value="'+v+'"'+(P.privacy===v?' selected':'')+'>'+(TTPV[v]||v)+'</option>').join("")+'</select>'
+  +'<div class="lab">Interazioni</div>'+ck("commenti","Consenti commenti",C.commenti_off,P.commenti)+(x.type==="reel"?ck("duetti","Consenti duetti",C.duetti_off,P.duetti)+ck("stitch","Consenti stitch",C.stitch_off,P.stitch):"")
+  +'<div class="lab">Contenuto commerciale</div>'+ck("commerciale","Questo contenuto promuove un marchio, un prodotto o un servizio",false,P.brand_tuo||P.brand_terzi)
+  +'<div class="ttbr" hidden>'+ck("brand_tuo","Il tuo marchio · promuovi te stesso o la tua attività",false,P.brand_tuo)+ck("brand_terzi","Contenuto brandizzato · promuovi un altro marchio o una terza parte",false,P.brand_terzi)+'<div class="sub ttlbl" style="color:#E5B45A"></div></div>'
+  +'<div class="sub ttdec"></div><button class="btn main ttgo" style="width:100%" disabled>'+(pub?"Pubblica su TikTok":"Conferma per TikTok")+'</button><div class="sub ttwhy"></div>'
+  +'<div class="sub">'+(pub?"":"Esce su TikTok quando pubblichi la bozza, con queste scelte. ")+'Dopo l’invio TikTok può impiegare qualche minuto prima di mostrarlo sul profilo: lo stato si aggiorna qui.</div></div>';
+ const q=s=>box.querySelector(s),tk=k=>q('[data-tk="'+k+'"]');let durOk=true;
+ const v=q(".ttpv");if(v&&C.max_sec)v.onloadedmetadata=()=>{durOk=v.duration<=C.max_sec;q(".ttdur").textContent=" · durata "+Math.round(v.duration)+" s su massimo "+C.max_sec+" s"+(durOk?" ✓":" ✗ troppo lungo");upd()};
+ const MUC='<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Music Usage Confirmation</a>',BCP='<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener">Branded Content Policy</a>';
+ function upd(){const com=tk("commerciale").checked,bt=tk("brand_tuo").checked,bc=tk("brand_terzi").checked,sel=q(".ttpvsel");q(".ttbr").hidden=!com;
+  const so=[...sel.options].find(o=>o.value==="SELF_ONLY");if(so){so.disabled=com&&bc;so.textContent=com&&bc?"Solo io (non possibile per un contenuto brandizzato)":"Solo io";if(com&&bc&&sel.value==="SELF_ONLY"){sel.value="";say("Un contenuto brandizzato non può essere privato: scegli un’altra visibilità.")}}
+  q(".ttlbl").textContent=!com?"":bc?"Sarà etichettato «Partnership retribuita» (Paid partnership).":bt?"Sarà etichettato «Contenuto promozionale» (Promotional content).":"";
+  q(".ttdec").innerHTML="Pubblicando accetti "+(com&&bc?"la "+BCP+" e la "+MUC:"la "+MUC)+" di TikTok.";
+  let why="";if(!durOk)why="Il video è più lungo di quanto TikTok permette a questo account.";else if(!sel.value)why="Scegli chi può vederlo.";else if(com&&!bt&&!bc)why="Indica se il contenuto promuove te stesso, una terza parte o entrambi.";
+  q(".ttgo").disabled=!!why;q(".ttwhy").textContent=why}
+ box.querySelectorAll("input,select").forEach(e=>e.onchange=upd);upd();
+ q(".ttgo").onclick=async e=>{if(pub&&!await ask("Pubblicare ora su TikTok con queste scelte?"))return;e.target.disabled=true;e.target.textContent="Invio…";
+  const body={action:"tt_post_set",id,titolo:q(".tttit").value,privacy:q(".ttpvsel").value,commerciale:tk("commerciale").checked,brand_tuo:tk("brand_tuo").checked,brand_terzi:tk("brand_terzi").checked,invia:pub};
+  for(const k of ["commenti","duetti","stitch"]){const i=tk(k);body[k]=!!(i&&i.checked)}
+  const r2=await api(body);if(!r2.ok){say("Errore: "+(r2.detail||r2.error||""));e.target.disabled=false;e.target.textContent=pub?"Pubblica su TikTok":"Conferma per TikTok";return}say(pub?"Inviato a TikTok: lo stato si aggiorna qui.":"Scelte salvate: esce su TikTok quando pubblichi.");load()}}
 function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=chEff(x,"th",!!(D.threads.settings&&D.threads.settings.auto))&&x.status!=="pubblicata";
  const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"uscito",errore:"non pubblicato"};
  const st=t?(lab[t.status]||t.status):(auto?"partirà da solo "+aft(x):"non parte da solo")+(x.canali&&typeof x.canali.th==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
@@ -2081,6 +2115,7 @@ async function load(){
   if(q(".ytk"))q(".ytk").onclick=async e=>{e.target.disabled=true;const r=await api({action:"yt_check",id});if(!r.ok)say("Errore: "+(r.detail||r.error));load()};
   if(q(".pub"))q(".pub").onclick=async e=>{if(!await ask(igOn(((D&&D.drafts)||[]).find(z=>z.id===id)||{})?"Pubblicare ora su Instagram?":"Pubblicare ora sugli altri canali, senza Instagram?"))return;e.target.disabled=true;e.target.textContent="Pubblico…";
     if(q(".cap"))await api({action:"caption",id,caption:q(".cap").value});const r=await api({action:"publish",id});if(!r.ok)say("Errore: "+((r.draft&&r.draft.error)||JSON.stringify(r)));load()};
+  c.querySelectorAll(".ttpo").forEach(b=>b.onclick=()=>ttForm(c,id));
   if(q(".igd"))q(".igd").onclick=async e=>{if(!await ask("Pubblicare ora anche su Instagram? Gli altri canali già usciti non ripartono."))return;e.target.disabled=true;e.target.textContent="Pubblico…";const r=await api({action:"ig_dopo",id});if(!r.ok)say("Errore: "+(r.detail||r.error||""));load()};
   if(q(".alg"))q(".alg").onclick=async e=>{e.target.disabled=true;e.target.textContent="Cerco su Instagram…";const r=await api({action:"allinea",id});if(!r.ok)say("Non l\u2019ho trovato su Instagram ("+(r.nota||"nessun dettaglio")+"). Riprovo da solo ogni 5 minuti; dopo 10 minuti, se non c\u2019è, la bozza torna ripubblicabile.");load()};
   const X=d.drafts.find(z=>z.id===id);
@@ -3517,12 +3552,14 @@ async function ttSend(env, id, by, force) {
     const t = await ttToken(env);
     if (direct) {
       if (!env.TT_DIRECT) throw { code: "tiktok_diretto_non_attivo", detail: "La pubblicazione diretta non è attiva nell'app TikTok (Direct Post spento). Usa la modalità «bozza nella casella»." };
+      const P = d.tt_post; // v143: regole TikTok per la pubblicazione diretta: visibilità, interazioni e consenso scelti da Francesco per questo post
+      if (!P || !P.consenso_at) throw { code: "tiktok_consenso", detail: "Apri «Pubblica su TikTok» nella bozza e conferma le scelte: senza, TikTok non permette la pubblicazione diretta." };
       const ci = await ttCall(t, "/v2/post/publish/creator_info/query/", {});
       const opts = ci.privacy_level_options || [];
-      x.privacy = opts.includes(st.privacy) ? st.privacy : opts.includes("SELF_ONLY") ? "SELF_ONLY" : opts[0];
-      if (!x.privacy) throw { code: "tiktok_privacy", detail: "TikTok non ha indicato nessuna visibilità consentita per questo account." };
+      if (!opts.includes(P.privacy)) throw { code: "tiktok_privacy", detail: "La visibilità scelta non è più consentita da TikTok per questo account: riaprila e scegline un'altra." };
+      x.privacy = P.privacy;
     }
-    const cap = String(d.tt_caption || ttCaption(d.caption)).trim().replace(/(^|[^\w.@/])readgeopolitics\.com/g, "$1www.readgeopolitics.com"); // il dominio senza www non ha il certificato
+    const cap = String((direct && d.tt_post && d.tt_post.titolo) || d.tt_caption || ttCaption(d.caption)).trim().replace(/(^|[^\w.@/])readgeopolitics\.com/g, "$1www.readgeopolitics.com"); // il dominio senza www non ha il certificato
     let data;
     if (d.type === "reel") {
       const vid = (String(d.video_url || "").match(/\/ig\/vid\/([0-9a-f]{32})\.mp4/) || [])[1];
@@ -3549,7 +3586,7 @@ async function ttSend(env, id, by, force) {
       if (size > 64 * 1024 * 1024) throw { code: "tiktok_video_grande", detail: "Video oltre 64 MB." };
       const source_info = { source: "FILE_UPLOAD", video_size: size, chunk_size: size, total_chunk_count: 1 };
       data = direct
-        ? await ttCall(t, "/v2/post/publish/video/init/", { post_info: { title: ttClip(cap, 2200), privacy_level: x.privacy, disable_comment: false, disable_duet: false, disable_stitch: false, brand_content_toggle: false, brand_organic_toggle: false }, source_info })
+        ? await ttCall(t, "/v2/post/publish/video/init/", { post_info: { title: ttClip(cap, 2200), privacy_level: x.privacy, disable_comment: !d.tt_post.commenti, disable_duet: !d.tt_post.duetti, disable_stitch: !d.tt_post.stitch, brand_content_toggle: !!d.tt_post.brand_terzi, brand_organic_toggle: !!d.tt_post.brand_tuo }, source_info })
         : await ttCall(t, "/v2/post/publish/inbox/video/init/", { source_info });
       if (!data.upload_url) throw { code: "tiktok_upload", detail: "TikTok non ha restituito l'indirizzo di caricamento." };
       const up = await fetch(data.upload_url, { method: "PUT", headers: { "content-type": "video/mp4", "content-range": `bytes 0-${size - 1}/${size}` }, body: buf });
@@ -3560,7 +3597,7 @@ async function ttSend(env, id, by, force) {
       if (!imgs.length) throw { code: "tiktok_immagini", detail: "Nessuna immagine nella bozza." };
       const first = (cap.split("\n").find((l) => l.trim()) || "").trim();
       const post_info = { title: ttClip(first, 90), description: ttClip(cap, 4000) };
-      if (direct) Object.assign(post_info, { privacy_level: x.privacy, disable_comment: false, auto_add_music: true, brand_content_toggle: false, brand_organic_toggle: false });
+      if (direct) Object.assign(post_info, { privacy_level: x.privacy, disable_comment: !d.tt_post.commenti, auto_add_music: true, brand_content_toggle: !!d.tt_post.brand_terzi, brand_organic_toggle: !!d.tt_post.brand_tuo });
       data = await ttCall(t, "/v2/post/publish/content/init/", { media_type: "PHOTO", post_mode: direct ? "DIRECT_POST" : "MEDIA_UPLOAD", post_info, source_info: { source: "PULL_FROM_URL", photo_images: imgs, photo_cover_index: 0 } });
     }
     x.publish_id = data.publish_id; x.status = "in_elaborazione"; x.sent_at = new Date().toISOString();
@@ -3593,6 +3630,7 @@ async function ttAuto(env, id) { // dopo una pubblicazione Instagram riuscita
   const d = await kvGet(env, "draft:" + id);
   if (!dCanale(d, "tt", st.auto)) return;
   if (!d || !TT_TYPES.includes(d.type) || (await kvGet(env, "tt:" + id))) return;
+  if (st.mode === "diretto" && !(d.tt_post && d.tt_post.consenso_at)) return; // v143: senza le scelte confermate nel pannello non parte
   if (!(await kvGet(env, "tt_token"))) return;
   await ttSend(env, id, "auto", false);
 }
@@ -5014,6 +5052,25 @@ async function ttPublic(request, env, p, url) {
 async function ttPanelApi(env, b) {
   const act = b.action;
   if (act === "tt_send") return { ok: true, tt: await ttSend(env, String(b.id), "panel", !!b.force) };
+  if (act === "tt_creator") { // v143: chi pubblica e cosa permette TikTok, letto ogni volta che si apre «Pubblica su TikTok»
+    if (!env.TT_DIRECT) return { ok: false, error: "pubblicazione diretta non attiva (secret TT_DIRECT)" };
+    const ci = await ttCall(await ttToken(env), "/v2/post/publish/creator_info/query/", {});
+    return { ok: true, creator: { nickname: ci.creator_nickname || "", username: ci.creator_username || "", avatar: ci.creator_avatar_url || "", privacy: ci.privacy_level_options || [], commenti_off: !!ci.comment_disabled, duetti_off: !!ci.duet_disabled, stitch_off: !!ci.stitch_disabled, max_sec: +ci.max_video_post_duration_sec || 0 } };
+  }
+  if (act === "tt_post_set") { // v143: le scelte di Francesco per la pubblicazione diretta di questo post (e, se la bozza è già uscita, l'invio)
+    const d = await kvGet(env, "draft:" + String(b.id)); if (!d) throw { status: 404, code: "draft_not_found" };
+    if (!env.TT_DIRECT) throw { status: 409, code: "tiktok_diretto_non_attivo" };
+    const ci = await ttCall(await ttToken(env), "/v2/post/publish/creator_info/query/", {});
+    const opts = ci.privacy_level_options || [], pv = String(b.privacy || "");
+    if (!opts.includes(pv)) throw { status: 400, code: "tiktok_privacy", detail: "scegli chi può vederlo" };
+    const bt = !!b.brand_tuo, bc = !!b.brand_terzi;
+    if (b.commerciale && !bt && !bc) throw { status: 400, code: "tiktok_commerciale", detail: "indica se promuovi te stesso, una terza parte o entrambi" };
+    if (bc && pv === "SELF_ONLY") throw { status: 400, code: "tiktok_privacy", detail: "un contenuto brandizzato non può essere privato" };
+    d.tt_post = { titolo: String(b.titolo || "").slice(0, 2200), privacy: pv, commenti: !!b.commenti && !ci.comment_disabled, duetti: !!b.duetti && !ci.duet_disabled, stitch: !!b.stitch && !ci.stitch_disabled, brand_tuo: !!b.commerciale && bt, brand_terzi: !!b.commerciale && bc, consenso_at: new Date().toISOString() };
+    await kvSet(env, "draft:" + d.id, d);
+    if (b.invia) return { ok: true, draft: d, tt: await ttSend(env, d.id, "panel", false) };
+    return { ok: true, draft: d };
+  }
   if (act === "tt_caption") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
