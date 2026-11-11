@@ -70,16 +70,16 @@
    "un quinto del consumo mondiale."
   ],
   [
-   "Il *28 febbraio*",
-   "Il ventotto febbraio"
+   "Lo scontro nasce dal *nucleare*",
+   "Lo scontro nasce dal programma nucleare iraniano."
   ],
   [
-   "USA e Israele *attaccano l'Iran*",
-   "Stati Uniti e Israele attaccano l'Iran."
+   "Il *28 febbraio* diventa guerra",
+   "Il ventotto febbraio diventa guerra, tra Stati Uniti, Israele e Iran."
   ],
   [
    "L'Iran *ferma* il traffico",
-   "L'Iran risponde e ferma di fatto il traffico nello stretto."
+   "L'Iran ferma di fatto il traffico nello stretto."
   ],
   [
    "Il *13 aprile*",
@@ -119,11 +119,6 @@
    "quinto"
   ],
   [
-   "attaccano",
-   8,
-   "attaccano"
-  ],
-  [
    "ferma",
    9,
    "ferma"
@@ -142,6 +137,11 @@
    "primo",
    13,
    "primo"
+  ],
+  [
+   "guerra",
+   8,
+   "guerra"
   ]
  ],
  "scene": [
@@ -320,12 +320,24 @@
    },
    "blocchi": [
     {
-     "tipo": "accendi",
-     "quando": "k:attaccano",
-     "paesi": [
-      "IRN"
-     ],
-     "colore": "rosso"
+     "tipo": "nomi",
+     "quando": "k:guerra",
+     "voci": [
+      {
+       "dove": [
+        55.7,
+        27.25
+       ],
+       "testo": "IRAN"
+      },
+      {
+       "dove": [
+        56.25,
+        25.75
+       ],
+       "testo": "OMAN"
+      }
+     ]
     },
     {
      "tipo": "navi",
