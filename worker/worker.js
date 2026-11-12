@@ -1171,6 +1171,26 @@ async function codaPubblica(env) { // v85: ogni 5 minuti: pubblica le bozze in c
     } catch (e) {}
   }
 }
+/* v144: la catena «dopo Instagram» (TikTok, Threads, YouTube, Telegram) gira in una sola esecuzione e a volte si interrompe
+   prima degli ultimi canali. Ogni 5 minuti: per le bozze uscite da 3 minuti a 6 ore, un canale voluto e rimasto senza
+   alcun invio viene fatto ripartire, una volta sola per canale e un solo invio per giro. */
+async function canaliRecupero(env) {
+  const now = Date.now();
+  const giri = [["yt", ytAuto], ["tg", tgAuto], ["th", thAuto], ["tt", ttAuto]];
+  for (const d of await kvList(env, "draft:", 20)) {
+    if (d.status !== "pubblicata" || !d.published_at) continue;
+    const eta = now - Date.parse(d.published_at);
+    if (!(eta > 3 * 60000 && eta < 6 * 3600000)) continue;
+    for (const [k, fn] of giri) {
+      if (d.canali && d.canali[k] === false) continue;
+      if (k === "yt" && d.type !== "reel") continue;
+      if ((await kvGet(env, k + ":" + d.id)) || (await kvGet(env, "recupero:" + k + ":" + d.id))) continue;
+      await kvSet(env, "recupero:" + k + ":" + d.id, { at: new Date().toISOString() });
+      try { await fn(env, d.id); } catch (e) {}
+      if (await kvGet(env, k + ":" + d.id)) return; // un invio partito: il resto al prossimo giro
+    }
+  }
+}
 async function autoProgrammati(env) { // v83: ogni 5 minuti, leggero: pubblica solo le bozze con un'uscita programmata arrivata
   const st = await igSettings(env); if (st.paused) return;
   const now = Date.now();
@@ -1683,6 +1703,7 @@ function ttOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status
 function thOk(x){return ["reel","carousel","image"].indexOf(x.type)>=0&&x.status!=="scartata"&&D&&D.threads&&D.threads.collegato}
 function igOn(x){return !(x.canali&&x.canali.ig===false)}
 function aft(x){return igOn(x)?"dopo Instagram":"quando pubblichi"}
+function nps(x,k,g){return x.status==="pubblicata"&&x.published_at&&chEff(x,k,g)&&Date.now()-Date.parse(x.published_at)<12*60000?"in partenza da solo (entro 10 minuti)":"non parte da solo"}
 function igRow(x){if(x.status==="bozza"&&x.type!=="story"){const on=igOn(x);return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· '+(on?'esce quando pubblichi':'non esce: puoi aggiungerlo dopo')+'</span></div><button class="sm chsw'+(on?' on':'')+'" data-ch="ig" data-on="'+(on?0:1)+'">'+(on?'sì ✓':'no ✗')+'</button></div>'}
  if(x.status==="pubblicata"&&x.senza_ig)return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· non pubblicato</span></div><button class="sm igd">Pubblica ora</button></div>'+(x.ig_err?'<div class="err">'+esc(x.ig_err)+'</div>':'');
  if(x.status!=="pubblicata")return "";const tm=x.published_at?new Date(x.published_at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"";return '<div class="dr"><span class="ic">IG</span><div>Instagram <span class="st">· uscito'+(tm?" alle "+tm:"")+'</span></div>'+(x.permalink?'<a href="'+esc(x.permalink)+'" target="_blank">Apri ›</a>':'<span></span>')+'</div>'}
@@ -1691,7 +1712,7 @@ function chTog(x,k,on,manual){if(x.status!=="bozza")return on?'<span class="tg">
 function ttDir(){return !!(D.tiktok&&D.tiktok.settings&&D.tiktok.settings.mode==="diretto")}
 function ttRow(x){if(!ttOk(x))return "";const t=(D.tt||{})[x.id];const auto=chEff(x,"tt",!!(D.tiktok.settings&&D.tiktok.settings.auto))&&x.status!=="pubblicata";const dir=ttDir(),ok=!!(x.tt_post&&x.tt_post.consenso_at);
  const lab={invio:"invio in corso",in_elaborazione:"TikTok sta elaborando",nella_casella:"nella casella: scegli il suono e pubblica",pubblicato:(t&&t.marked?"pubblicato (segnato da te)":"pubblicato"),errore:"non inviato"};
- const st=t?(lab[t.status]||t.status):(dir&&!ok?"da confermare in «Pubblica su TikTok»":(dir?"confermato · ":"")+(auto?"partirà da solo "+aft(x):"non parte da solo"))+(x.canali&&typeof x.canali.tt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ const st=t?(lab[t.status]||t.status):(dir&&!ok?"da confermare in «Pubblica su TikTok»":(dir?"confermato · ":"")+(auto?"partirà da solo "+aft(x):nps(x,"tt",!!(D.tiktok.settings&&D.tiktok.settings.auto))))+(x.canali&&typeof x.canali.tt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(dir&&(!t||t.status==="errore"))act='<span class="cht2">'+(x.status==="bozza"&&ok?chTog(x,"tt",auto,""):"")+'<button class="sm ttpo">'+(t?"Riprova…":x.status==="pubblicata"?"Pubblica…":ok?"Modifica":"Apri")+'</button></span>';
  else if(!t)act=chTog(x,"tt",auto,'<button class="sm tts">Invia</button>');
  else if(t.status==="errore")act='<button class="sm tts">Riprova</button>';
@@ -1733,7 +1754,7 @@ async function ttForm(c,id){const x=((D&&D.drafts)||[]).find(z=>z.id===id);const
   const r2=await api(body);if(!r2.ok){say("Errore: "+(r2.detail||r2.error||""));e.target.disabled=false;e.target.textContent=pub?"Pubblica su TikTok":"Conferma per TikTok";return}say(pub?"Inviato a TikTok: lo stato si aggiorna qui.":"Scelte salvate: esce su TikTok quando pubblichi.");load()}}
 function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=chEff(x,"th",!!(D.threads.settings&&D.threads.settings.auto))&&x.status!=="pubblicata";
  const lab={invio:"invio in corso",in_elaborazione:"Threads sta preparando il post",pubblicato:"uscito",errore:"non pubblicato"};
- const st=t?(lab[t.status]||t.status):(auto?"partirà da solo "+aft(x):"non parte da solo")+(x.canali&&typeof x.canali.th==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ const st=t?(lab[t.status]||t.status):(auto?"partirà da solo "+aft(x):nps(x,"th",!!(D.threads&&D.threads.settings&&D.threads.settings.auto)))+(x.canali&&typeof x.canali.th==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(!t)act=chTog(x,"th",auto,'<button class="sm thsd">Pubblica</button>');
  else if(t.status==="errore")act='<button class="sm thsd">Riprova</button>';
  else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
@@ -1742,13 +1763,13 @@ function thRow(x){if(!thOk(x))return "";const t=(D.th||{})[x.id];const auto=chEf
 function ytOk(x){return x.type==="reel"&&x.status!=="scartata"&&D&&D.youtube&&D.youtube.collegato}
 function ytRow(x){if(!ytOk(x))return "";const t=(D.yt||{})[x.id];const auto=chEff(x,"yt",!!(D.youtube.settings&&D.youtube.settings.auto))&&x.status!=="pubblicata";
  const pub=t&&t.status==="caricato"&&t.privacy==="public";
- const st=t?(t.status==="invio"?"caricamento in corso":t.status==="errore"?"non caricato":pub?"uscito":"caricato come privato: rendilo pubblico in Studio"):(auto?"partirà da solo "+aft(x):"non parte da solo")+(x.canali&&typeof x.canali.yt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ const st=t?(t.status==="invio"?"caricamento in corso":t.status==="errore"?"non caricato":pub?"uscito":"caricato come privato: rendilo pubblico in Studio"):(auto?"partirà da solo "+aft(x):nps(x,"yt",!!(D.youtube.settings&&D.youtube.settings.auto)))+(x.canali&&typeof x.canali.yt==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(!t)act=chTog(x,"yt",auto,'<button class="sm yts">Carica</button>');
  else if(t.status==="errore")act='<button class="sm yts">Riprova</button>';
  else if(t.status==="caricato")act='<a href="'+esc(pub?t.link:t.studio)+'" target="_blank">'+(pub?'Apri ›':'Apri in Studio ›')+'</a>';
  return '<div class="dr"><span class="ic">YT</span><div>YouTube Shorts <span class="st">· '+esc(st)+(t&&t.playlist?' · playlist «'+esc(t.playlist)+'»':'')+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')+(t&&t.dopo_err?'<div class="sub" style="color:#E5B45A">Playlist e commento: '+esc(t.dopo_err)+'</div>':'')}
 function tgRow(x){if(["reel","carousel","image"].indexOf(x.type)<0||x.status==="scartata"||!D||!D.telegram||!D.telegram.configurato||!D.telegram.settings.chat)return "";const t=(D.tg||{})[x.id];const auto=chEff(x,"tg",!!D.telegram.settings.post)&&x.status!=="pubblicata";
- const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo "+aft(x):"non parte da solo")+(x.canali&&typeof x.canali.tg==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
+ const st=t?(t.status==="inviato"?"inviato":t.status==="errore"?"non inviato":"invio in corso"):(auto?"partirà da solo "+aft(x):nps(x,"tg",!!D.telegram.settings.post))+(x.canali&&typeof x.canali.tg==="boolean"&&x.status==="bozza"?" (solo questo post)":"");let act='<span></span>';
  if(!t)act=chTog(x,"tg",auto,'<button class="sm tgs">Invia</button>');else if(t.status==="errore")act='<button class="sm tgs">Riprova</button>';else if(t.link)act='<a href="'+esc(t.link)+'" target="_blank">Apri ›</a>';
  return '<div class="dr"><span class="ic">TG</span><div>Telegram <span class="st">· '+esc(st)+'</span></div>'+act+'</div>'+(t&&t.error?'<div class="err">'+esc(t.error)+'</div>':'')}
 function menuHtml(x){const open=x.status==="bozza"||x.status==="errore";const t=(D.tt||{})[x.id];const h=(D.th||{})[x.id];let m="";
@@ -6916,7 +6937,7 @@ async function salaRoute(request, env, p, method, url) {
 
 export default {
   async scheduled(event, env, ctx) {
-    if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} return; } // v83: solo le uscite programmate
+    if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} try { await canaliRecupero(env); } catch (e) {} return; } // v83: solo le uscite programmate
     // rinnovo del token Instagram: se mancano meno di 30 giorni
     try {
       const t = await kvGet(env, "ig_token");
