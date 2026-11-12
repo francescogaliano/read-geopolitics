@@ -636,6 +636,21 @@ async function buildSiteData(env, parte = "tutto") {
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/;
 const clip = (v, n) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
 
+/* v146: inviti per creator. Un link personale (?invito=codice) apre tutto il sito senza email per i giorni decisi dal pannello.
+   kv «invito:<codice>» = {codice, nome, giorni, creato, attivo, aperture, prima, ultima}. La scadenza è creato + giorni. */
+const invSlug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
+const invGiorni = (n) => Math.max(1, Math.min(365, Math.round(+n || 30)));
+const invScade = (v) => new Date(Date.parse(v.creato) + invGiorni(v.giorni) * 86400000).toISOString();
+async function invitoPubblico(request, env) {
+  let b = {}; try { b = JSON.parse((await request.text()).slice(0, 500)); } catch {}
+  const c = b && typeof b.codice === "string" && /^[a-z0-9-]{3,40}$/.test(b.codice) ? b.codice : null;
+  const v = c ? await kvGet(env, "invito:" + c) : null;
+  if (!v || v.attivo === false) return json({ ok: false, error: "non_valido" });
+  const scade = invScade(v);
+  if (Date.now() > Date.parse(scade)) return json({ ok: false, error: "scaduto" });
+  if (!b.check) { const now = new Date().toISOString(); v.aperture = (+v.aperture || 0) + 1; if (!v.prima) v.prima = now; v.ultima = now; await kvSet(env, "invito:" + c, v); }
+  return json({ ok: true, scade });
+}
 async function joinUser(request, env) {
   const text = await request.text();
   if (text.length > 4000) return fail(413, "too_large");
@@ -1291,6 +1306,28 @@ async function panelApi(env, origin, b, ctx) {
     return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, vp: (await kvGet(env, "vp:last")) || null, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), youtube, yt: Object.fromEntries(ytRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption), ...(x.type === "reel" ? { yt_t: x.yt_title || ytTitle(x.caption), yt_d: x.yt_caption || ytDesc(x.caption) } : {}) })) };
   }
 
+  if (act === "inviti") {
+    const L = await kvList(env, "invito:", 200); const by = {};
+    try { const r = await env.DB.prepare("SELECT lower(source) s, count(*) n FROM users WHERE source IS NOT NULL GROUP BY 1").all(); for (const x of r.results || []) by[x.s] = +x.n || 0; } catch (e) {}
+    return { ok: true, sito: "https://readgeopolitics.com", inviti: L.filter((v) => v && v.codice).map((v) => ({ codice: v.codice, nome: v.nome, giorni: invGiorni(v.giorni), creato: v.creato, scade: invScade(v), attivo: v.attivo !== false, aperture: +v.aperture || 0, prima: v.prima || null, ultima: v.ultima || null, iscritti: by[v.codice] || 0 })).sort((a, c) => (a.creato < c.creato ? 1 : -1)) };
+  }
+  if (act === "invito_crea") {
+    const nome = String(b.nome || "").trim().slice(0, 60), base = invSlug(nome);
+    if (!base) return { ok: false, error: "Scrivi un nome." };
+    const A = "abcdefghjkmnpqrstuvwxyz23456789", suf = [...crypto.getRandomValues(new Uint8Array(4))].map((x) => A[x % A.length]).join("");
+    const codice = base + "-" + suf;
+    await kvSet(env, "invito:" + codice, { codice, nome, giorni: invGiorni(b.giorni), creato: new Date().toISOString(), attivo: true, aperture: 0 });
+    return { ok: true, codice };
+  }
+  if (act === "invito_mod" || act === "invito_del") {
+    const c = typeof b.codice === "string" && /^[a-z0-9-]{3,40}$/.test(b.codice) ? b.codice : null; const v = c ? await kvGet(env, "invito:" + c) : null;
+    if (!v) return { ok: false, error: "Invito non trovato." };
+    if (act === "invito_del") { await kvDel(env, "invito:" + c); return { ok: true }; }
+    if (b.rinnova === true) { v.creato = new Date().toISOString(); v.attivo = true; }
+    if (b.giorni != null) v.giorni = invGiorni(b.giorni);
+    if (typeof b.attivo === "boolean") v.attivo = b.attivo;
+    await kvSet(env, "invito:" + c, v); return { ok: true, scade: invScade(v) };
+  }
   if (act === "users") {
     const { results } = await env.DB.prepare(
       "SELECT id, email, created_at, last_seen, visits, source, campaign, newsletter_at, unsub_at FROM users ORDER BY created_at DESC LIMIT 5000"
@@ -1435,6 +1472,14 @@ main{max-width:720px;margin:0 auto;padding:16px}
 h1{font:600 22px Georgia,serif;margin:6px 0 2px}.sub{color:#8FA0AE;font-size:14px}
 .card{background:#16212A;border:1px solid #27353F;border-radius:14px;padding:14px;margin:14px 0}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#invcard .ik{font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8FA0AE}.inv-new{border-top:1px solid #27353F;padding-top:14px;margin-top:12px}.inv-f{display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px}#invcard input.ii{width:100%;min-height:48px;background:#0E151B;border:1px solid #27353F;border-radius:10px;color:#E4EAEF;font:400 16px system-ui;padding:0 14px}.inv-d{display:flex;align-items:center;gap:10px;color:#8FA0AE;font-size:14px;font-variant-numeric:tabular-nums}#invcard .inv-d input.ii{width:96px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}.inv-f button{width:100%;min-height:48px}
+@media(min-width:700px){.inv-f{grid-template-columns:1fr auto auto;align-items:center;gap:12px}.inv-f button{width:auto;padding:0 20px}.inv-f .inv-d .h{min-width:128px}}
+.inv-rdy{border-top:1px solid #27353F;border-left:3px solid #6FCB9F;padding:14px 0 4px 14px;margin-top:12px}.inv-rdy .ik{color:#6FCB9F}.inv-rdy h3{font:600 19px Georgia,serif;margin:6px 0 4px}.inv-rdy p{margin:0 0 12px;font-size:14px;color:#8FA0AE;max-width:60ch}.inv-rdy p b{color:#E4EAEF;font-weight:600}.inv-rdy .big{width:100%;min-height:52px;font-size:16px}.inv-rdy .u{font:400 12px ui-monospace,monospace;color:#8FA0AE;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.inv-more{margin-top:14px;border-top:1px solid #1F2C36;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:4px;font-size:14px;color:#8FA0AE}#invcard button.inv-lk{background:none;color:#86B4EA;padding:0 2px;min-height:44px;white-space:nowrap;border-radius:0}.inv-aft{display:flex;gap:10px;margin-top:12px}.inv-aft button{flex:1;min-height:44px}
+@media(min-width:700px){.inv-rdy .big{width:auto;padding:0 28px}.inv-aft button{flex:0 0 auto}.inv-more{justify-content:flex-start;gap:20px}}
+.inv-g{margin-top:18px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:8px;border-bottom:1px solid #27353F}.invr{border-bottom:1px solid #27353F;border-left:3px solid var(--c)}.invr>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:12px 4px 12px 14px;min-height:64px}.invr>summary::-webkit-details-marker,.inv-man>summary::-webkit-details-marker{display:none}.invr[open]>summary{padding-bottom:6px}.invr .n{font:600 17px system-ui;color:#E4EAEF;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.invr .n i{font:600 10.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#6FCB9F;margin-left:10px;vertical-align:2px}.invr .sd{display:flex;align-items:center;gap:10px}.invr .s{font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--c)}.invr .m{grid-column:1/-1;font-size:14px;color:#8FA0AE;margin-top:2px;font-variant-numeric:tabular-nums}.invr .m b{color:#E4EAEF;font-weight:600}.inv-ch{width:10px;height:10px;border-right:2px solid #8FA0AE;border-bottom:2px solid #8FA0AE;transform:rotate(45deg);margin:0 6px 4px 2px;flex:none}.invr[open]>summary .inv-ch,.inv-man[open]>summary .inv-ch{transform:rotate(-135deg);margin-bottom:-4px}
+.inv-b{padding:0 4px 6px 14px}.inv-l,.inv-m{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #1F2C36}.inv-b>:first-child{border-top:0}.inv-l>div:first-child,.inv-m>div:first-child{flex:1;min-width:0}.inv-l b,.inv-m b{display:block;font:600 15px system-ui;color:#E4EAEF}.inv-l span.d,.inv-m span.d{display:block;font-size:14px;color:#8FA0AE;margin-top:1px}.inv-l span.u{display:block;font:400 12px ui-monospace,monospace;color:#64788A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inv-l button{flex:none;min-width:96px;min-height:44px}.inv-m button{flex:none;min-width:110px;min-height:44px}#invcard .inv-m .inv-d input.ii{width:78px;min-height:44px}
+.inv-fa{padding:12px 0 6px;border-top:1px solid #1F2C36}.inv-fa dl{max-width:520px;margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;font-variant-numeric:tabular-nums}.inv-fa dt{color:#8FA0AE}.inv-fa dd{margin:0;text-align:right;color:#E4EAEF}.inv-fa dd b{font-weight:600}.inv-fa dd .ok{color:#6FCB9F}.inv-man{border-top:1px solid #1F2C36}.inv-man>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:48px;padding-right:4px;color:#8FA0AE;font:600 14px system-ui}
+@media(max-width:420px){.inv-m.w{flex-wrap:wrap}.inv-m.w>div:first-child{flex-basis:100%}.inv-m.w .inv-d{flex:1}}
 button{font:600 15px system-ui;border:0;border-radius:10px;padding:10px 14px;background:#86B4EA;color:#0E151B}
 button.g{background:#27353F;color:#E4EAEF}button.r{background:#6B2B2B;color:#fff}button:disabled{opacity:.5}
 select,input[type=time],textarea{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;border-radius:8px;padding:8px;font:15px system-ui}
@@ -1626,6 +1671,9 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="ukp" id="ukp"><span class="sub" id="ust">carico…</span></div>
 <input type="text" id="usq" placeholder="Cerca un indirizzo" style="width:100%;box-sizing:border-box;margin-top:12px"><div class="row" style="margin-top:8px"><span class="sub">Ordina per</span><select id="uss" aria-label="Ordina per" style="flex:1;min-width:0"><option value="visits">Più visite</option><option value="last">Ultima visita</option><option value="created">Iscritti da poco</option><option value="sent">Più newsletter ricevute</option><option value="email">Email A-Z</option></select></div>
 <div id="us" style="margin-top:6px"></div></div>
+<div class="card" id="invcard"><b style="font:600 21px Georgia,serif">Inviti per creator</b><p class="sub" style="margin-top:6px;max-width:62ch">Fai provare il sito a chi lo racconta. Ogni invito dà un link personale, che apre tutto il sito per i giorni che scegli.</p>
+<div class="inv-new" id="invnew"><span class="ik">Nuovo invito</span><div class="inv-f"><input class="ii" type="text" id="invn" maxlength="60" placeholder="Persona o canale" aria-label="Nome della persona o del canale"><div class="inv-d"><input class="ii" type="number" id="invg" value="30" min="1" max="365" aria-label="Giorni di accesso"><span class="h" id="invh">giorni</span></div><button id="invc">Crea invito</button></div><p class="e" id="invm" hidden></p></div>
+<div id="invrdy"></div><div id="invl"></div></div>
 <div class="card" id="mlogcard"><details id="ml-log"><summary style="cursor:pointer"><b>Email inviate</b> <span id="mls" class="sub">carico…</span></summary><div id="mld" style="margin-top:10px"></div></details></div>
 <div class="card" id="mlcard"><div class="row"><b>Email del mattino</b><span class="sub" id="mlst">carico…</span></div>
 <div class="row" style="margin-top:10px"><label><input type="checkbox" id="ml-en"> invio acceso</label><select id="ml-mode"><option value="test">solo prova (a un indirizzo)</option><option value="live">reale (iscritti con consenso)</option></select></div>
@@ -2203,6 +2251,42 @@ document.getElementById("ml-t1").onclick=async e=>{e.target.disabled=true;const 
  document.getElementById("ml-m").textContent=r.ok?"Prova inviata (briefing del "+r.date+"). Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?");loadLog()};
 let UT_GEN=false;
 let USERS=[];
+let INV=[],INVSITO="https://readgeopolitics.com",INVNEW=null;
+const invG=g=>Math.min(365,Math.max(1,Math.round(+g)||30));
+const invArt=(d,a,b)=>{const n=parseInt(d,10);return(n===1||n===8||n===11?a:b)+d};
+const invAl=x=>invArt(usDay(x),"all'","al "),invIl=x=>invArt(usDay(x),"l'","il ");
+const invVolte=n=>n+(n===1?" volta":" volte"),invIscr=n=>n+(n===1?" iscritto":" iscritti");
+function invHint(){const h=document.getElementById("invh"),g=document.getElementById("invg");if(h&&g)h.textContent="giorni · fino "+invAl(Date.now()+invG(g.value)*864e5)}
+async function loadInviti(){const el=document.getElementById("invl");if(!el)return;invHint();const d=await api({action:"inviti"});if(!d.ok){el.innerHTML='<p class="sub" style="margin-top:12px">Errore nel caricamento degli inviti</p>';return}INV=d.inviti||[];INVSITO=d.sito||INVSITO;invRender()}
+function invRender(){const el=document.getElementById("invl"),rd=document.getElementById("invrdy");if(!el)return;
+ const now=Date.now(),open=new Set([...el.querySelectorAll("details.invr[open]")].map(d=>d.dataset.c)),man=new Set([...el.querySelectorAll("details.inv-man[open]")].map(d=>d.closest(".invr").dataset.c));
+ const corto=u=>esc(u.indexOf("https://")===0?u.slice(8):u),lp=v=>INVSITO+"/?invito="+v.codice,lu=v=>INVSITO+"/?utm_source="+v.codice;
+ const scad=v=>Date.parse(v.scade)<now,stato=v=>!v.attivo?"spento":scad(v)?"scaduto":"attivo";
+ const nu=INVNEW?INV.find(v=>v.codice===INVNEW):null;document.getElementById("invnew").hidden=!!nu;
+ rd.innerHTML=nu?'<div class="inv-rdy"><span class="ik">Invito pronto</span><h3>'+esc(nu.nome||nu.codice)+' · '+nu.giorni+(nu.giorni===1?' giorno':' giorni')+'</h3><p>Copia il link e mandalo <b>solo a '+esc(nu.nome||"questa persona")+'</b>, in un messaggio. Apre tutto il sito fino '+'<b>'+invAl(nu.scade)+'</b>.</p><button class="big" data-cp="'+esc(lp(nu))+'">Copia il link personale</button><div class="u">'+corto(lp(nu))+'</div><div class="inv-more"><span>E per i suoi follower?</span><button class="inv-lk" data-cp="'+esc(lu(nu))+'">Copia link pubblico</button></div><div class="inv-aft"><button class="g" data-invn="fatto">Fatto</button><button class="g" data-invn="altro">Crea un altro</button></div></div>':"";
+ const del='<div class="inv-m"><div><b>Elimina</b><span class="d">Non si torna indietro.</span></div><button class="r" data-inv="elimina">Elimina</button></div>';
+ const giorni=(v,n)=>'<div class="inv-d"><input class="ii invd" type="number" value="'+n+'" min="1" max="365" aria-label="Giorni di accesso"><span class="h">giorni</span></div>';
+ const row=v=>{const st=stato(v),sc=scad(v),col=st==="attivo"?"#6FCB9F":st==="scaduto"?"#E8B04B":"#4F6272",nm=esc(v.nome||v.codice);
+  const ap=v.aperture?'<b>Aperto '+invVolte(v.aperture)+'</b>':(st==="scaduto"?'Mai aperto':'Non ancora aperto'),is=v.iscritti?'<b>'+invIscr(v.iscritti)+'</b>':'0 iscritti';
+  const meta=ap+' · '+is+' · '+(st==="attivo"?'fino '+invAl(v.scade):st==="spento"?'spento da te':'scaduto '+invIl(v.scade));
+  const fatti='<div class="inv-fa"><span class="ik">Com’è andata</span><dl><dt>Ha aperto il link</dt><dd>'+(v.aperture?'<b>'+invVolte(v.aperture)+'</b>'+(v.ultima?' · ultima '+usDay(v.ultima):''):'non ancora')+'</dd><dt>Iscritti portati</dt><dd><b'+(v.iscritti?' class="ok"':'')+'>'+v.iscritti+'</b></dd><dt>Accesso</dt><dd>'+usDay(v.creato)+' → '+usDay(v.scade)+'</dd></dl></div>';
+  let b;
+  if(st==="attivo")b='<div class="inv-l"><div><b>Link personale</b><span class="d">Solo per '+nm+'. Apre tutto il sito.</span><span class="u">'+corto(lp(v))+'</span></div><button data-cp="'+esc(lp(v))+'">Copia</button></div>'
+   +'<div class="inv-l"><div><b>Link pubblico</b><span class="d">Per i suoi follower. Chi si iscrive da qui viene contato sotto.</span><span class="u">'+corto(lu(v))+'</span></div><button class="g" data-cp="'+esc(lu(v))+'">Copia</button></div>'+fatti
+   +'<details class="inv-man"'+(man.has(v.codice)?' open':'')+'><summary>Cambia giorni, spegni o elimina <span class="inv-ch"></span></summary><div class="inv-m w"><div><b>Giorni di accesso</b><span class="d">Contati dal '+usDay(v.creato)+'</span></div>'+giorni(v,v.giorni)+'<button class="g" data-inv="giorni">Salva</button></div><div class="inv-m"><div><b>Spegni</b><span class="d">Il link smette di funzionare. Puoi riaccenderlo.</span></div><button class="g" data-inv="spegni">Spegni</button></div>'+del+'</details>';
+  else b=(sc?'<div class="inv-m w"><div><b>Rinnova</b><span class="d">Riparte da oggi per i giorni che scegli.</span></div>'+giorni(v,v.giorni)+'<button data-inv="rinnova">Rinnova</button></div>':'<div class="inv-m"><div><b>Riaccendi</b><span class="d">Il link torna a funzionare fino '+invAl(v.scade)+'.</span></div><button data-inv="accendi">Riaccendi</button></div>')+fatti+del;
+  return '<details class="invr" data-c="'+esc(v.codice)+'" style="--c:'+col+'"'+(open.has(v.codice)?' open':'')+'><summary><span class="n">'+nm+(nu&&nu.codice===v.codice?'<i>nuovo</i>':'')+'</span><span class="sd"><span class="s">'+st+'</span><span class="inv-ch"></span></span><span class="m">'+meta+'</span></summary><div class="inv-b">'+b+'</div></details>'};
+ const A=INV.filter(v=>stato(v)==="attivo"),B=INV.filter(v=>stato(v)!=="attivo"),gr=(t,n,h)=>'<div class="inv-g"><span class="ik">'+t+' · '+n+'</span>'+(h?'<span class="ik">Tocca per aprire</span>':'')+'</div>';
+ el.innerHTML=!INV.length?'<p class="sub" style="margin-top:14px">Nessun invito ancora. Scrivi un nome qui sopra per creare il primo.</p>':(A.length?gr("Attivi",A.length,true)+A.map(row).join(""):"")+(B.length?gr("Spenti o scaduti",B.length,!A.length)+B.map(row).join(""):"")}
+document.addEventListener("input",e=>{if(e.target.id==="invg")invHint()});
+document.addEventListener("click",async e=>{
+ if(e.target.id==="invc"){const n=document.getElementById("invn"),g=document.getElementById("invg"),m=document.getElementById("invm");e.target.disabled=true;const r=await api({action:"invito_crea",nome:n.value,giorni:invG(g.value)});e.target.disabled=false;m.hidden=!!r.ok;if(!r.ok){m.textContent=r.error||"Non riesco a creare l’invito.";return}n.value="";INVNEW=r.codice;await loadInviti();return}
+ const nn=e.target.closest("#invcard [data-invn]");if(nn){INVNEW=null;invRender();if(nn.dataset.invn==="altro")document.getElementById("invn").focus();return}
+ const cp=e.target.closest("#invcard [data-cp]");if(cp){const t=cp.textContent;try{await navigator.clipboard.writeText(cp.dataset.cp);cp.textContent="Copiato"}catch(_){cp.textContent="Non copiato"}setTimeout(()=>{cp.textContent=t},1800);return}
+ const b=e.target.closest("#invl [data-inv]");if(!b)return;const row=b.closest(".invr"),c=row.dataset.c,k=b.dataset.inv,gi=()=>invG(b.closest(".inv-m").querySelector(".invd").value);
+ if(k==="elimina"&&!await ask("Eliminare questo invito? Chi lo ha aperto torna all’anteprima."))return;
+ b.disabled=true;const r=k==="elimina"?await api({action:"invito_del",codice:c}):await api(Object.assign({action:"invito_mod",codice:c},k==="giorni"?{giorni:gi()}:k==="rinnova"?{rinnova:true,giorni:gi()}:{attivo:k==="accendi"}));
+ b.disabled=false;if(!r.ok){b.textContent=r.error||"Errore";return}if(k==="elimina"&&INVNEW===c)INVNEW=null;await loadInviti()});
 async function loadUsers(){
  const d=await api({action:"users"});
  if(!d.ok){document.getElementById("ukp").innerHTML='<span class="sub">Errore nel caricamento</span>';return}
@@ -2554,7 +2638,7 @@ async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<di
  if(s&&s.ok)h+=ppHtml(s.stats,"isc");
  h+='<div class="card"><div class="li"><span>Seguono almeno un tema</span><span>'+stN(u.seguono)+'</span></div><div class="li"><span>Hanno smesso di ricevere la mail</span><span>'+stN(u.unsub)+'</span></div></div><p class="note">L&#39;elenco delle persone, l&#39;invio della mail e il registro restano in Pannello → Utenti.</p>';
  el.innerHTML=h}
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers();loadInviti()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
 document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t)); document.addEventListener("click",e=>{if(!e.target.closest("#vpo"))return;VPS.open=true;setTab("rq");setTimeout(()=>{const f=document.getElementById("vpf");if(f){f.hidden=false;f.scrollIntoView({block:"center"})}},60)});
 document.getElementById("tbx").onclick=e=>{e.stopPropagation();const m=document.getElementById("tbm");m.hidden=!m.hidden};
 /* v82: pulsanti delle sezioni, tanti quanti ne stanno nella riga; gli altri in «Altro» (nell'ordine) */
@@ -2863,7 +2947,7 @@ load().then(()=>{
  /* v27: misura e precarica. Appena le bozze sono a schermo: tempo registrato (anonimo) e le altre tab si caricano in sottofondo, così al tocco sono pronte. */
  try{const n=performance.getEntriesByType("navigation")[0]||{};const c=navigator.connection||{};fetch("/api/perf",{method:"POST",body:JSON.stringify({src:"pannello",net:c.effectiveType||"",m:{html:n.responseEnd||0,dom:n.domContentLoadedEventEnd||0,bozze:performance.now()}}),keepalive:true}).catch(()=>{})}catch(e){}
  setTimeout(()=>{
-  if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}
+  if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers();loadInviti()}
   if(!PROP)loadProp(false);
   setTimeout(()=>{if(!SS_SITO){SS_SITO=true;loadStats(false)}},1500); /* v87: precarica solo la sottoscheda Sito */
  },400);
@@ -5504,6 +5588,7 @@ async function route(request, env, ctx) {
   if (p.startsWith("/api/push/")) { const r = await pushRoute(request, env, p, method, url); if (r) return r; } // v-push
   if (method === "GET" && p === "/api/seguire") return json(await seguireData(env), 200, { "cache-control": "public, max-age=300" }); // v62: la pagina «Da seguire»
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
+  if (method === "POST" && p === "/api/invito") return await invitoPubblico(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
   if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d + ":" + q.n } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
   if (method === "POST" && p === "/api/vote") return await voteApi(request, env);

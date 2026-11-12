@@ -3884,7 +3884,7 @@ function captureAttrib(){
   if(gStore("rg-attr"))return;
   const q=new URLSearchParams(location.search);let ref="";
   try{if(document.referrer){const h=new URL(document.referrer).hostname;if(h!==location.hostname)ref=h}}catch(e){}
-  gStore("rg-attr",JSON.stringify({source:q.get("utm_source")||ref||"diretto",campaign:q.get("utm_campaign")||"",content:q.get("utm_content")||"",referrer:ref}));
+  gStore("rg-attr",JSON.stringify({source:q.get("utm_source")||q.get("invito")||ref||"diretto",campaign:q.get("utm_campaign")||"",content:q.get("utm_content")||"",referrer:ref}));
 }
 function getAttrib(){try{return JSON.parse(gStore("rg-attr")||"{}")||{}}catch(e){return{}}}
 const ADMIN_HASH="fda41f8efb52484c331da29b51c8f0dee31b8bf0dced59bd0b16c2812e0b466b";
@@ -3897,12 +3897,24 @@ function pingSeen(){
 }
 function earlyBar(){
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
-  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · 2 storie aperte e un assaggio di ogni sezione · <a href="#" data-lock="tutto">Sblocca tutto con l\'email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";if(S.guest)delete bar.dataset.plain;else bar.dataset.plain="1";bar.hidden=false}
+  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · 2 storie aperte e un assaggio di ogni sezione · <a href="#" data-lock="tutto">Sblocca tutto con l\'email</a>':(S.inv&&!gStore("rg-uid"))?'<strong>ACCESSO SU INVITO</strong> · tutto aperto fino al '+esc(fmtDate(String(S.inv.s).slice(0,10)))+' · <a href="#" data-inv-join>Tienilo con la tua email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";if(S.guest||(S.inv&&!gStore("rg-uid")))delete bar.dataset.plain;else bar.dataset.plain="1";bar.hidden=false}
 }
 function gateLock(on){document.body.classList.toggle("gated",on);document.querySelectorAll("header.top,main,.foot").forEach(e=>{e.inert=on})}
+/* v-inviti (12/11/2026): accesso completo e temporaneo per chi riceve un link personale creato dal pannello (?invito=codice).
+   Il codice si toglie dall'indirizzo dopo l'uso, così chi copia il link dalla barra non lo passa in giro. */
+function invGet(){try{const v=JSON.parse(gStore("rg-inv")||"null");if(v&&v.c&&v.s&&Date.now()<Date.parse(v.s))return v;if(v)localStorage.removeItem("rg-inv")}catch(e){}return null}
+function invUrlCode(){const m=location.search.match(/[?&]invito=([a-z0-9-]{3,40})(&|$)/i);return m?m[1].toLowerCase():null}
+function invCleanUrl(){try{const u=new URL(location.href);if(!u.searchParams.has("invito"))return;u.searchParams.delete("invito");history.replaceState(null,"",u.pathname+u.search+u.hash)}catch(e){}}
+async function invCheck(code,check){try{const r=await fetch(RG_API+"/api/invito",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({codice:code,check:!!check})});return await r.json()}catch(e){return null}}
+function invOff(){try{localStorage.removeItem("rg-inv")}catch(e){}S.inv=null;sSet("rg-guest","1");setGuest(true);renderAll();try{antCal()}catch(_){}}
+document.addEventListener("click",e=>{if(e.target.closest("[data-inv-join]")){e.preventDefault();showLock({what:"tutto"})}});
 function earlyAccess(P){
   earlyBar();
   if(gStore("rg-uid")){pingSeen();nlPrompt();return}
+  const iv=invGet(),code=invUrlCode();
+  if(iv){S.inv=iv;earlyBar();invCleanUrl();schedule();
+    invCheck(iv.c,true).then(j=>{if(j&&j.ok===false)invOff();else if(j&&j.ok&&j.scade){gStore("rg-inv",JSON.stringify({c:iv.c,s:j.scade}));S.inv={c:iv.c,s:j.scade};earlyBar()}});return}
+  if(code)invCheck(code,false).then(j=>{invCleanUrl();if(!(j&&j.ok&&j.scade))return;gStore("rg-inv",JSON.stringify({c:code,s:j.scade}));S.inv={c:code,s:j.scade};trackSure("invito-aperto");if(S.guest)leaveGuest();else earlyBar()});
   if(sGet("rg-guest")){setGuest(true);if(LOCK_VIEWS[S.view])show("briefing",false);schedule();return}
   /* v-anteprima: chi arriva senza email entra subito in anteprima; la pagina d'ingresso resta raggiungibile con ?gate=1 */
   sSet("rg-guest","1");setGuest(true);trackSure("anteprima-entra");if(LOCK_VIEWS[S.view])show("briefing",false);schedule();
