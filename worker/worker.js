@@ -636,6 +636,21 @@ async function buildSiteData(env, parte = "tutto") {
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/;
 const clip = (v, n) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
 
+/* v146: inviti per creator. Un link personale (?invito=codice) apre tutto il sito senza email per i giorni decisi dal pannello.
+   kv «invito:<codice>» = {codice, nome, giorni, creato, attivo, aperture, prima, ultima}. La scadenza è creato + giorni. */
+const invSlug = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
+const invGiorni = (n) => Math.max(1, Math.min(365, Math.round(+n || 30)));
+const invScade = (v) => new Date(Date.parse(v.creato) + invGiorni(v.giorni) * 86400000).toISOString();
+async function invitoPubblico(request, env) {
+  let b = {}; try { b = JSON.parse((await request.text()).slice(0, 500)); } catch {}
+  const c = b && typeof b.codice === "string" && /^[a-z0-9-]{3,40}$/.test(b.codice) ? b.codice : null;
+  const v = c ? await kvGet(env, "invito:" + c) : null;
+  if (!v || v.attivo === false) return json({ ok: false, error: "non_valido" });
+  const scade = invScade(v);
+  if (Date.now() > Date.parse(scade)) return json({ ok: false, error: "scaduto" });
+  if (!b.check) { const now = new Date().toISOString(); v.aperture = (+v.aperture || 0) + 1; if (!v.prima) v.prima = now; v.ultima = now; await kvSet(env, "invito:" + c, v); }
+  return json({ ok: true, scade });
+}
 async function joinUser(request, env) {
   const text = await request.text();
   if (text.length > 4000) return fail(413, "too_large");
@@ -1291,6 +1306,27 @@ async function panelApi(env, origin, b, ctx) {
     return { ok: true, fb: fbAll.filter((x) => x.stato === "nuova").slice(0, 20).map((x) => ({ id: x.id, ref: x.ref, tipo: x.tipo, testo: String(x.testo).slice(0, 160), at: x.at })), svolte: svAll.filter((x) => x.date >= ieri), giri: giri || [], settings: st, today: romeToday(), plan, templates: IG_TEMPLATES, vp: (await kvGet(env, "vp:last")) || null, requests: reqs, req_seen: reqSeen, tiktok, tt: Object.fromEntries(ttRows.map(({ _k, _u, ...x }) => [x.id, x])), threads, th: Object.fromEntries(thRows.map(({ _k, _u, ...x }) => [x.id, x])), telegram, tg: Object.fromEntries(tgRows.map(({ _k, _u, ...x }) => [x.id, x])), youtube, yt: Object.fromEntries(ytRows.map(({ _k, _u, ...x }) => [x.id, x])), canali, sond, account: t ? { username: t.username, days_left: Math.floor((Date.parse(t.expires_at) - Date.now()) / 86400000) } : null, drafts: drafts.map(({ _k, _u, ...x }) => ({ ...x, tt_cap: x.tt_caption || ttCaption(x.caption), th_cap: x.th_caption || thCaption(x.caption), ...(x.type === "reel" ? { yt_t: x.yt_title || ytTitle(x.caption), yt_d: x.yt_caption || ytDesc(x.caption) } : {}) })) };
   }
 
+  if (act === "inviti") {
+    const L = await kvList(env, "invito:", 200); const by = {};
+    try { const r = await env.DB.prepare("SELECT lower(source) s, count(*) n FROM users WHERE source IS NOT NULL GROUP BY 1").all(); for (const x of r.results || []) by[x.s] = +x.n || 0; } catch (e) {}
+    return { ok: true, sito: "https://readgeopolitics.com", inviti: L.filter((v) => v && v.codice).map((v) => ({ codice: v.codice, nome: v.nome, giorni: invGiorni(v.giorni), creato: v.creato, scade: invScade(v), attivo: v.attivo !== false, aperture: +v.aperture || 0, prima: v.prima || null, ultima: v.ultima || null, iscritti: by[v.codice] || 0 })).sort((a, c) => (a.creato < c.creato ? 1 : -1)) };
+  }
+  if (act === "invito_crea") {
+    const nome = String(b.nome || "").trim().slice(0, 60), base = invSlug(nome);
+    if (!base) return { ok: false, error: "Scrivi un nome." };
+    const A = "abcdefghjkmnpqrstuvwxyz23456789", suf = [...crypto.getRandomValues(new Uint8Array(4))].map((x) => A[x % A.length]).join("");
+    const codice = base + "-" + suf;
+    await kvSet(env, "invito:" + codice, { codice, nome, giorni: invGiorni(b.giorni), creato: new Date().toISOString(), attivo: true, aperture: 0 });
+    return { ok: true, codice };
+  }
+  if (act === "invito_mod" || act === "invito_del") {
+    const c = typeof b.codice === "string" && /^[a-z0-9-]{3,40}$/.test(b.codice) ? b.codice : null; const v = c ? await kvGet(env, "invito:" + c) : null;
+    if (!v) return { ok: false, error: "Invito non trovato." };
+    if (act === "invito_del") { await kvDel(env, "invito:" + c); return { ok: true }; }
+    if (b.giorni != null) v.giorni = invGiorni(b.giorni);
+    if (typeof b.attivo === "boolean") v.attivo = b.attivo;
+    await kvSet(env, "invito:" + c, v); return { ok: true, scade: invScade(v) };
+  }
   if (act === "users") {
     const { results } = await env.DB.prepare(
       "SELECT id, email, created_at, last_seen, visits, source, campaign, newsletter_at, unsub_at FROM users ORDER BY created_at DESC LIMIT 5000"
@@ -1626,6 +1662,9 @@ input[type=text]{background:#0E151B;color:#E4EAEF;border:1px solid #34475A;borde
 <div class="ukp" id="ukp"><span class="sub" id="ust">carico…</span></div>
 <input type="text" id="usq" placeholder="Cerca un indirizzo" style="width:100%;box-sizing:border-box;margin-top:12px"><div class="row" style="margin-top:8px"><span class="sub">Ordina per</span><select id="uss" aria-label="Ordina per" style="flex:1;min-width:0"><option value="visits">Più visite</option><option value="last">Ultima visita</option><option value="created">Iscritti da poco</option><option value="sent">Più newsletter ricevute</option><option value="email">Email A-Z</option></select></div>
 <div id="us" style="margin-top:6px"></div></div>
+<div class="card" id="invcard"><b style="font:600 21px Georgia,serif">Inviti per creator</b><p class="sub" style="margin-top:6px">Il <b>link personale</b> apre tutto il sito senza email, per i giorni che decidi: è per la persona che inviti. Il <b>link pubblico</b> è per i suoi follower: li porta nell'anteprima e li conta come arrivati da lei.</p>
+<div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap"><input type="text" id="invn" placeholder="Nome (es. Elania Zito)" style="flex:2 1 180px;min-width:0"><label class="sub" style="display:flex;align-items:center;gap:6px">Giorni <input type="number" id="invg" value="30" min="1" max="365" style="width:76px"></label><button class="g" id="invc">Crea invito</button></div><p class="sub" id="invm" style="margin-top:6px" hidden></p>
+<div id="invl" style="margin-top:8px"></div></div>
 <div class="card" id="mlogcard"><details id="ml-log"><summary style="cursor:pointer"><b>Email inviate</b> <span id="mls" class="sub">carico…</span></summary><div id="mld" style="margin-top:10px"></div></details></div>
 <div class="card" id="mlcard"><div class="row"><b>Email del mattino</b><span class="sub" id="mlst">carico…</span></div>
 <div class="row" style="margin-top:10px"><label><input type="checkbox" id="ml-en"> invio acceso</label><select id="ml-mode"><option value="test">solo prova (a un indirizzo)</option><option value="live">reale (iscritti con consenso)</option></select></div>
@@ -2203,6 +2242,22 @@ document.getElementById("ml-t1").onclick=async e=>{e.target.disabled=true;const 
  document.getElementById("ml-m").textContent=r.ok?"Prova inviata (briefing del "+r.date+"). Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?");loadLog()};
 let UT_GEN=false;
 let USERS=[];
+let INV=[],INVSITO="https://readgeopolitics.com";
+async function loadInviti(){const el=document.getElementById("invl");if(!el)return;const d=await api({action:"inviti"});if(!d.ok){el.innerHTML='<span class="sub">Errore nel caricamento degli inviti</span>';return}INV=d.inviti||[];INVSITO=d.sito||INVSITO;invRender()}
+function invRender(){const el=document.getElementById("invl");if(!el)return;if(!INV.length){el.innerHTML='<p class="sub">Nessun invito. Crea il primo qui sopra.</p>';return}
+ const now=Date.now();el.innerHTML=INV.map(v=>{const sc=Date.parse(v.scade)<now,st=!v.attivo?"spento":sc?"scaduto":"attivo",col=st==="attivo"?"#6FCB9F":st==="scaduto"?"#E8B04B":"#8FA0AE",c=esc(v.codice);
+  const lp=INVSITO+"/?invito="+v.codice,lu=INVSITO+"/?utm_source="+v.codice;
+  return '<div class="invr" data-c="'+c+'" style="border-top:1px solid #27353F;padding:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><b>'+esc(v.nome||v.codice)+'</b><span style="color:'+col+';font:600 12px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">'+st+'</span></div>'
+   +'<div class="sub" style="margin-top:3px">'+(v.aperture?'Aperto '+v.aperture+(v.aperture===1?' volta':' volte')+' · ultima '+usDay(v.ultima):'Non ancora aperto')+' · iscritti dal link pubblico: <b>'+v.iscritti+'</b> · scade il '+usDay(v.scade)+'</div>'
+   +'<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="g" data-cp="'+esc(lp)+'">Copia link personale</button><button class="g" data-cp="'+esc(lu)+'">Copia link pubblico</button></div>'
+   +'<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap;align-items:center"><label class="sub" style="display:flex;align-items:center;gap:6px">Giorni dalla creazione <input type="number" class="invd" value="'+v.giorni+'" min="1" max="365" style="width:76px"></label><button class="g" data-inv="giorni">Salva giorni</button><button class="g" data-inv="'+(v.attivo?"spegni":"accendi")+'">'+(v.attivo?"Spegni":"Riaccendi")+'</button><button class="g" data-inv="elimina">Elimina</button></div></div>'}).join("")}
+document.addEventListener("click",async e=>{
+ if(e.target.id==="invc"){const n=document.getElementById("invn"),g=document.getElementById("invg"),m=document.getElementById("invm");e.target.disabled=true;const r=await api({action:"invito_crea",nome:n.value,giorni:+g.value||30});e.target.disabled=false;m.hidden=!!r.ok;if(!r.ok){m.textContent=r.error||"Non riesco a creare l'invito.";return}n.value="";await loadInviti();return}
+ const cp=e.target.closest("#invl [data-cp]");if(cp){const t=cp.textContent;try{await navigator.clipboard.writeText(cp.dataset.cp);cp.textContent="Copiato"}catch(_){cp.textContent=cp.dataset.cp}setTimeout(()=>{cp.textContent=t},1800);return}
+ const b=e.target.closest("#invl [data-inv]");if(!b)return;const row=b.closest(".invr"),c=row.dataset.c,k=b.dataset.inv;
+ if(k==="elimina"&&!await ask("Eliminare questo invito? Chi lo ha aperto torna all'anteprima."))return;
+ b.disabled=true;const r=k==="elimina"?await api({action:"invito_del",codice:c}):await api(Object.assign({action:"invito_mod",codice:c},k==="giorni"?{giorni:+row.querySelector(".invd").value||30}:{attivo:k==="accendi"}));
+ b.disabled=false;if(!r.ok){b.textContent=r.error||"Errore";return}await loadInviti()});
 async function loadUsers(){
  const d=await api({action:"users"});
  if(!d.ok){document.getElementById("ukp").innerHTML='<span class="sub">Errore nel caricamento</span>';return}
@@ -2554,7 +2609,7 @@ async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<di
  if(s&&s.ok)h+=ppHtml(s.stats,"isc");
  h+='<div class="card"><div class="li"><span>Seguono almeno un tema</span><span>'+stN(u.seguono)+'</span></div><div class="li"><span>Hanno smesso di ricevere la mail</span><span>'+stN(u.unsub)+'</span></div></div><p class="note">L&#39;elenco delle persone, l&#39;invio della mail e il registro restano in Pannello → Utenti.</p>';
  el.innerHTML=h}
-function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
+function setTab(t){TAB=t;if(t==="pd"&&!POD_GEN){POD_GEN=true;podLoad()}if(t==="wk"&&!PROP)loadProp(false);if(t==="st"&&!ST_GEN){ST_GEN=true;ssOpen(SS)}if(t==="lk")lkRender();if(t==="og"){ogRender();setTimeout(ogPod,0)}if(t==="ut"&&!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers();loadInviti()}if(t==="dc")dcLoad();["og","list","wk","rq","ut","pd","st","lk","dc"].forEach(k=>{document.getElementById(k).hidden=(k!==t)});document.querySelectorAll(".tab[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const tm=document.getElementById("tbm"),tx=document.getElementById("tbx"),inM=tm&&tm.querySelector('.tab[data-t="'+t+'"]');if(tx){tx.textContent=(inM?inM.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}if(tm)tm.hidden=true;document.querySelectorAll("#sw [data-sw]").forEach(b=>b.classList.toggle("on",t==="st"?b.dataset.sw==="st":b.dataset.sw==="og"))}
 document.querySelectorAll(".tab[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t)); document.addEventListener("click",e=>{if(!e.target.closest("#vpo"))return;VPS.open=true;setTab("rq");setTimeout(()=>{const f=document.getElementById("vpf");if(f){f.hidden=false;f.scrollIntoView({block:"center"})}},60)});
 document.getElementById("tbx").onclick=e=>{e.stopPropagation();const m=document.getElementById("tbm");m.hidden=!m.hidden};
 /* v82: pulsanti delle sezioni, tanti quanti ne stanno nella riga; gli altri in «Altro» (nell'ordine) */
@@ -2863,7 +2918,7 @@ load().then(()=>{
  /* v27: misura e precarica. Appena le bozze sono a schermo: tempo registrato (anonimo) e le altre tab si caricano in sottofondo, così al tocco sono pronte. */
  try{const n=performance.getEntriesByType("navigation")[0]||{};const c=navigator.connection||{};fetch("/api/perf",{method:"POST",body:JSON.stringify({src:"pannello",net:c.effectiveType||"",m:{html:n.responseEnd||0,dom:n.domContentLoadedEventEnd||0,bozze:performance.now()}}),keepalive:true}).catch(()=>{})}catch(e){}
  setTimeout(()=>{
-  if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers()}
+  if(!UT_GEN){UT_GEN=true;loadMail();loadLog();loadUsers();loadInviti()}
   if(!PROP)loadProp(false);
   setTimeout(()=>{if(!SS_SITO){SS_SITO=true;loadStats(false)}},1500); /* v87: precarica solo la sottoscheda Sito */
  },400);
@@ -5504,6 +5559,7 @@ async function route(request, env, ctx) {
   if (p.startsWith("/api/push/")) { const r = await pushRoute(request, env, p, method, url); if (r) return r; } // v-push
   if (method === "GET" && p === "/api/seguire") return json(await seguireData(env), 200, { "cache-control": "public, max-age=300" }); // v62: la pagina «Da seguire»
   if (method === "POST" && p === "/api/join") return await joinUser(request, env);
+  if (method === "POST" && p === "/api/invito") return await invitoPubblico(request, env);
   if (method === "POST" && p === "/api/seen") return await seenUser(request, env);
   if (method === "GET" && p === "/api/scommessa") { const d = romeToday(); const q = await scommessa(env, d); return json({ ok: true, day: d, q: q ? { tema: q.tema || "", titolo: q.titolo || "", sticker: q.sticker || "", a: q.a || "Sì", b: q.b || "No", scadenza: q.scadenza || "", contesto: q.contesto || "", storia_id: q.storia_id || "", poll: "p:" + d + ":" + q.n } : null }, 200, { ...CORS, "cache-control": "public, max-age=120" }); }
   if (method === "POST" && p === "/api/vote") return await voteApi(request, env);
