@@ -1309,7 +1309,7 @@ async function panelApi(env, origin, b, ctx) {
   if (act === "inviti") {
     const L = await kvList(env, "invito:", 200); const by = {};
     try { const r = await env.DB.prepare("SELECT lower(source) s, count(*) n FROM users WHERE source IS NOT NULL GROUP BY 1").all(); for (const x of r.results || []) by[x.s] = +x.n || 0; } catch (e) {}
-    return { ok: true, sito: "https://readgeopolitics.com", inviti: L.filter((v) => v && v.codice).map((v) => ({ codice: v.codice, nome: v.nome, giorni: invGiorni(v.giorni), creato: v.creato, scade: invScade(v), attivo: v.attivo !== false, aperture: +v.aperture || 0, prima: v.prima || null, ultima: v.ultima || null, iscritti: by[v.codice] || 0 })).sort((a, c) => (a.creato < c.creato ? 1 : -1)) };
+    return { ok: true, sito: "https://www.readgeopolitics.com", inviti: L.filter((v) => v && v.codice).map((v) => ({ codice: v.codice, nome: v.nome, giorni: invGiorni(v.giorni), creato: v.creato, scade: invScade(v), attivo: v.attivo !== false, aperture: +v.aperture || 0, prima: v.prima || null, ultima: v.ultima || null, iscritti: by[v.codice] || 0 })).sort((a, c) => (a.creato < c.creato ? 1 : -1)) };
   }
   if (act === "invito_crea") {
     const nome = String(b.nome || "").trim().slice(0, 60), base = invSlug(nome);
@@ -2251,7 +2251,7 @@ document.getElementById("ml-t1").onclick=async e=>{e.target.disabled=true;const 
  document.getElementById("ml-m").textContent=r.ok?"Prova inviata (briefing del "+r.date+"). Controlla la posta, anche lo spam.":"Errore: "+(r.error||"?");loadLog()};
 let UT_GEN=false;
 let USERS=[];
-let INV=[],INVSITO="https://readgeopolitics.com",INVNEW=null;
+let INV=[],INVSITO="https://www.readgeopolitics.com",INVNEW=null;
 const invG=g=>Math.min(365,Math.max(1,Math.round(+g)||30));
 const invArt=(d,a,b)=>{const n=parseInt(d,10);return(n===1||n===8||n===11?a:b)+d};
 const invAl=x=>invArt(usDay(x),"all'","al "),invIl=x=>invArt(usDay(x),"l'","il ");
