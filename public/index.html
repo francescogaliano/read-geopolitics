@@ -123,7 +123,8 @@ body.gated header.top,body.gated main,body.gated .foot{filter:blur(9px) saturate
 
 .lp-guest{display:block;margin-top:12px;font:500 15px var(--sans);color:#C9D4DD;background:transparent;border:1px solid #33444F;border-radius:10px;height:48px;padding:0 20px;cursor:pointer;max-width:560px;width:100%}
 .lp-guest:hover{border-color:#E8B04B;color:#fff}
-#lock{position:fixed;inset:0;z-index:190;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,12,17,.72);backdrop-filter:blur(3px);color:#E8EDF1;font-family:var(--sans);line-height:1.5}
+body.guest #v-calendario details.cr.ant-b{filter:blur(5px);opacity:.5;cursor:pointer;user-select:none}body.guest #v-calendario details.cr.ant-b>*{pointer-events:none}.ant-calmore{display:block;width:100%;margin:10px 0;padding:14px 16px;border:1px solid #E8B04B;border-radius:10px;background:rgba(232,176,75,.08);color:#E8B04B;font:600 15px var(--sans,"IBM Plex Sans",sans-serif);text-align:left;cursor:pointer}body:not(.guest) .ant-calmore{display:none}
+#lock{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,12,17,.72);backdrop-filter:blur(3px);color:#E8EDF1;font-family:var(--sans);line-height:1.5}
 #lock *{box-sizing:border-box}
 #lock .lk{position:relative;width:100%;max-width:520px;max-height:92vh;overflow:auto;background:#0F1A22;border:1px solid #33444F;border-radius:18px;padding:30px 28px 24px}
 #lock .lk-x{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:1px solid #33444F;background:#101A22;color:#E8EDF1;font-size:18px;cursor:pointer}
@@ -4063,7 +4064,7 @@ function enterGuest(o){
   if(LOCK_VIEWS[S.view])show("briefing",false);
   renderAll();window.scrollTo({top:0});
 }
-function leaveGuest(){sSet("rg-guest",null);setGuest(false);renderAll();const v=S.lockView;S.lockView=null;if(v)show(v)}
+function leaveGuest(){sSet("rg-guest",null);setGuest(false);renderAll();try{antCal()}catch(_){}const v=S.lockView;S.lockView=null;if(v)show(v)}
 const LOCK_TXT={
   storie:["Tutte le storie di oggi","Le altre storie del mondo e la sezione Italia, ognuna con le due tesi a confronto e la sintesi critica."],
   radar:["Radar","Spread, petrolio, gas, euro e oro: quando un numero si muove, trovi il tema che lo spiega."],
@@ -4077,7 +4078,7 @@ const LOCK_TXT={
   tema:["Tutti i temi","In anteprima si apre un tema. Con l'email li segui tutti, dall'inizio a oggi."],
   brevi:["Tutte le brevi","Le notizie minori del giorno, in poche righe ciascuna, con la fonte."],
   riquadri:["Il resto di oggi","Cosa è cambiato da ieri, com'è finita, i numeri, le lenti, accadde oggi: in anteprima se ne aprono due."],
-  calendario:["Tutto il calendario","Elezioni, vertici, banche centrali e scadenze, con il conto alla rovescia. In anteprima vedi i primi due."],
+  calendario:["Tutto il calendario","Elezioni, vertici, banche centrali e scadenze, con il conto alla rovescia. In anteprima vedi i primi tre."],
   esplora:["Esplora","Gli incroci tra aree e ambiti, i legami tra i paesi e tutte le schede di persone e organizzazioni."],
   spiegati:["Tutti gli Spiegati","In anteprima leggi l'ultimo. Con l'email li hai tutti."],
   chiedi:["Chiedi a Claude","Parti da una domanda già pronta, con dentro i fatti, le posizioni e le fonti della storia che stai leggendo."]
@@ -4095,7 +4096,8 @@ function showLock(o){
   d.querySelectorAll("form[data-gf]").forEach(f=>bindGateForm(f,()=>{d.remove();document.removeEventListener("keydown",kd);leaveGuest()}));
   const em=d.querySelector("input.em");if(em&&window.innerWidth>760)em.focus();
 }
-document.addEventListener("click",e=>{
+/* la guardia dell'anteprima sta su window, in cattura: così passa prima di tutti gli altri ascoltatori (anche quelli in cattura su document) */
+window.addEventListener("click",e=>{
   if(!S.guest)return;
   const l=e.target.closest("[data-lock]");if(l){e.preventDefault();e.stopImmediatePropagation();showLock({what:l.dataset.lock});return}
   const T=e.target,lk=w=>{e.preventDefault();e.stopImmediatePropagation();showLock({what:w})};let x;
@@ -4118,13 +4120,19 @@ document.addEventListener("click",e=>{
   if((x=T.closest("[data-country]"))){if(!x.closest("#v-mappa"))lk("collegamenti");else if(!antUse("c",x.dataset.country,2))lk("mappa");return}
   if((x=T.closest("#mapBox path.country"))){const iso=x.__data__&&x.__data__.id;if(iso&&!antUse("c",iso,2))lk("mappa");return}
   if((x=T.closest("[data-story]"))){if(!guestStoryOk(x.dataset.story))lk("storie");return}
-  /* Calendario: i primi 2 appuntamenti */
-  if((x=T.closest("#v-calendario details.cr>summary"))){const L=[...document.querySelectorAll("#v-calendario details.cr")].filter(d=>d.getClientRects().length);if(L.indexOf(x.parentNode)>=2)lk("calendario");return}
+  /* Calendario: i primi 3 appuntamenti si leggono, gli altri sono sfocati (vedi antCal) */
+  if(T.closest("#v-calendario details.cr.ant-b")){lk("calendario");return}
   /* Esplora: 2 schede di «Chi e cosa», l'ultimo Spiegato; incroci e legami chiusi */
   if(T.closest("[data-exl]")||T.closest('[data-exlens="rete"]')){lk("esplora");return}
   if((x=T.closest("[data-exe]"))){if(!antUse("a",x.dataset.exe,2))lk("protagonisti");return}
   if((x=T.closest("a.exspc"))){const L=[...document.querySelectorAll("#v-esplora a.exspc")];if(L.indexOf(x)>0)lk("spiegati");return}
 },true);
+/* Calendario in anteprima: dopo i primi 3 appuntamenti il resto è sfocato, con una riga che invita a sbloccare. Si riapplica a ogni ridisegno. */
+function antCal(){const v=document.getElementById("v-calendario");if(!v)return;const L=[...v.querySelectorAll("details.cr")];const old=v.querySelector(".ant-calmore");
+  if(!S.guest){L.forEach(d=>d.classList.remove("ant-b"));if(old)old.remove();return}
+  L.forEach((d,i)=>d.classList.toggle("ant-b",i>=3));const third=L[2];
+  if(L.length>3&&third){if(!old||old.previousElementSibling!==third){if(old)old.remove();third.insertAdjacentHTML("afterend",'<button type="button" class="ant-calmore" data-lock="calendario">🔒 Altri '+(L.length-3)+' appuntamenti · Sblocca con la tua email</button>')}}else if(old)old.remove()}
+(function(){const go=()=>{const v=document.getElementById("v-calendario");if(!v||typeof MutationObserver==="undefined")return;let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(()=>{try{antCal()}catch(_){}},60)}).observe(v,{childList:true,subtree:true});try{antCal()}catch(_){}};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go);else go()})();
 function closedScreen(P){
   document.body.classList.add("closed");
   const o=document.createElement("div");o.id="closed";
