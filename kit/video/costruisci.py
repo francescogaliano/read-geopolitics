@@ -23,6 +23,7 @@ key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
 if not key and not SENZA: sys.exit("manca ELEVENLABS_API_KEY")
 VID = os.environ.get("ELEVENLABS_VOICE_ID", "").strip() or "CBomCrEu5ntWbrwkEBIm"
 BASE = "https://api.elevenlabs.io"
+MODELLO = os.environ.get("RG_EL_MODEL", "").strip() or SC.get("el_modello") or "eleven_v4_turbo"  # dal 12/11/2026: v4 Turbo (metà crediti)
 TESTO = " ".join(g[1] for g in GRUPPI)
 SETT = {"stability": 0.5, "similarity_boost": 0.9}
 os.makedirs("assets", exist_ok=True)
@@ -42,7 +43,7 @@ if SENZA:
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono", "-t", str(round(sum(tenuta(x) for x in GRUPPI), 2) if MUTO else round(len(TESTO) / 14.5, 2)), "assets/voce.mp3"], check=True)
 else:
     try:
-        body = {"text": TESTO, "model_id": "eleven_v4", "language_code": "it", "voice_settings": SETT}
+        body = {"text": TESTO, "model_id": MODELLO, "language_code": "it", "voice_settings": SETT}
         r = json.loads(call(urllib.request.Request(BASE + f"/v1/text-to-speech/{VID}/with-timestamps?output_format=mp3_44100_128",
             data=json.dumps(body).encode(), headers={"xi-api-key": key, "content-type": "application/json"})))
         open("assets/voce.mp3", "wb").write(base64.b64decode(r["audio_base64"]))
@@ -52,7 +53,7 @@ else:
     except Exception as e:
         print("with-timestamps non riuscito:", e, file=sys.stderr)
     if not os.path.exists("assets/voce.mp3"):
-        body = {"text": TESTO, "model_id": "eleven_v4", "language_code": "it", "voice_settings": SETT}
+        body = {"text": TESTO, "model_id": MODELLO, "language_code": "it", "voice_settings": SETT}
         open("assets/voce.mp3", "wb").write(call(urllib.request.Request(BASE + f"/v1/text-to-speech/{VID}?output_format=mp3_44100_128",
             data=json.dumps(body).encode(), headers={"xi-api-key": key, "content-type": "application/json", "accept": "audio/mpeg"})))
     if chars is None:
@@ -129,5 +130,5 @@ for k_, v in {"END": END, "LEAD": LEAD, "D_GLOBO": d_globo}.items(): h = h.repla
 left = re.findall(r"\{\{\w+\}\}", h)
 if left: sys.exit("segnaposto non riempiti: " + ", ".join(sorted(set(left))))
 open("index.html", "w").write(h)
-print(json.dumps({"ok": True, "motore_tempi": motore, "voce_s": round(dur, 2), "video_s": END, "caratteri": len(TESTO),
+print(json.dumps({"ok": True, "motore_tempi": motore, "voce_s": round(dur, 2), "video_s": END, "caratteri": len(TESTO), "modello": (None if SENZA else MODELLO),
                   "paesi_mappa": len(feats), "chiavi": K}, ensure_ascii=False))
