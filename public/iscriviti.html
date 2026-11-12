@@ -60,6 +60,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:13px;color
 .err{color:#F4A39B;font-size:14.5px;margin:10px 2px 0}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .cta:disabled{opacity:.6;cursor:default}
+.cta.pv{display:flex;align-items:center;justify-content:center;width:100%;text-decoration:none;box-sizing:border-box}
+.cta.alt{background:transparent;color:var(--ink);border:1px solid #3A4A57;box-shadow:none}
+.pvn{font-size:13.5px;color:var(--mut);margin:10px 2px 0;text-align:center}
+.opp{display:flex;align-items:center;gap:12px;margin:22px 0 14px;color:var(--faint);font-size:13px}
+.opp:before,.opp:after{content:"";flex:1;height:1px;background:#24323D}
 .em:focus{outline:2px solid var(--amb);outline-offset:1px}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 </style>
@@ -106,10 +111,11 @@ function attrib(){
   try{return JSON.parse(gStore("rg-attr"))||a}catch(e){return a}
 }
 const ATTR=attrib();
-function formHTML(id){return '<form data-f novalidate><div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta">Iscriviti gratis</button></div><input class="hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="nl"><input type="checkbox" name="nl"><span>'+NL_TXT+'</span></label><p class="err" role="alert" hidden></p><p class="fine">Nessuna password, nessuna carta. L\'email serve a farti entrare. <a href="/privacy.html">Informativa privacy</a></p></form>'}
+function formHTML(id){return '<a class="cta pv" href="/?utm_source=landing" data-pv>Entra in anteprima →</a><p class="pvn">Senza email: guardi com\'è fatto, poi decidi.</p><div class="opp"><span>oppure sblocca tutto con la tua email</span></div><form data-f novalidate><div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta alt">Entra con l\'email</button></div><input class="hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="nl"><input type="checkbox" name="nl"><span>'+NL_TXT+'</span></label><p class="err" role="alert" hidden></p><p class="fine">Nessuna password, nessuna carta. L\'email serve a farti entrare. <a href="/privacy.html">Informativa privacy</a></p></form>'}
 function okHTML(nl){return '<div class="ok"><h2 class="ser">Sei dentro.</h2><p>'+(nl?"Da domani mattina ti arriva l'anteprima del briefing via email. ":"")+'Il briefing di oggi è pronto, ti bastano 15 minuti.</p><a class="cta" href="/?utm_source=landing">Apri il briefing di oggi →</a></div>'}
 function wire(host){
-  host.innerHTML=formHTML();const f=host.querySelector("[data-f]");
+  host.innerHTML=formHTML();
+  const pv=host.querySelector("[data-pv]");if(pv)pv.addEventListener("click",()=>{try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:"evento/iscriviti-anteprima",title:"iscriviti-anteprima",event:true})}catch(e){}});const f=host.querySelector("[data-f]");
   const em=f.querySelector(".em"),bt=f.querySelector(".cta"),er=f.querySelector(".err");
   const msg=t=>{er.textContent=t;er.hidden=!t};
   f.addEventListener("submit",async ev=>{
@@ -120,10 +126,10 @@ function wire(host){
       const nl=f.querySelector("[name=nl]").checked;
       const r=await fetch(RG_API+"/api/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,newsletter:nl,consent_text:NL_TXT,sito:f.querySelector("[name=sito]").value,source:ATTR.source,campaign:ATTR.campaign,content:ATTR.content,referrer:ATTR.referrer})});
       const j=await r.json().catch(()=>({}));
-      if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Iscriviti gratis";return}
+      if(!r.ok||!j.ok){msg(j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_many"?"Troppi tentativi, riprova tra poco.":"Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra con l'email";return}
       gStore("rg-uid",j.id);gStore("rg-seen",isoDay(new Date()));if(j.newsletter)gStore("rg-nl","1");
       document.querySelectorAll("#fw,#fw2").forEach(h=>{h.innerHTML=okHTML(!!j.newsletter)});
-    }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Iscriviti gratis"}
+    }catch(e){msg("Non riesco a salvare l'email in questo momento. Riprova.");bt.disabled=false;bt.textContent="Entra con l'email"}
   });
 }
 if(gStore("rg-uid")&&gStore("rg-uid")!=="admin"){document.querySelectorAll("#fw,#fw2").forEach(h=>{h.innerHTML='<div class="ok"><h2 class="ser">Sei già dentro.</h2><p>Il briefing di oggi ti aspetta.</p><a class="cta" href="/">Apri il briefing →</a></div>'})}

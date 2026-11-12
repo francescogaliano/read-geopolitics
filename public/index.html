@@ -1838,7 +1838,11 @@ function storyAmb(s){return (s&&(s.ambiti||(s.ambito?[s.ambito]:[])))||[]}
 function ambOff(s){const a=storyAmb(s);if(!a.length)return false;const p=prefs().ambiti;return p[a[0]]==="spento"}
 
 /* ---------- tabs ---------- */
-const LOCK_VIEWS={protagonisti:1,radar:1,timeline:1,archivio:1,dossier:1};
+const LOCK_VIEWS={protagonisti:1,radar:1,archivio:1,dossier:1};
+/* v-anteprima (12/11/2026): chi entra senza email vede un assaggio di ogni funzione. Storie aperte: la prima del mondo e la prima dell'Italia. */
+function guestStoryOk(id){const b0=S.briefings&&S.briefings[0];if(!b0)return false;return id===(b0.storie_mondo||[])[0]||id===(b0.storie_italia||[])[0]}
+/* aperture «a scelta» contate su questo browser: k = tipo (c paesi, t temi, a schede, b riquadri), max = quante */
+function antUse(k,id,max){let A={};try{A=JSON.parse(localStorage.getItem("rg-ant")||"{}")||{}}catch(_){}const L=Array.isArray(A[k])?A[k]:[];id=String(id);if(L.includes(id))return true;if(L.length>=max)return false;L.push(id);A[k]=L;try{localStorage.setItem("rg-ant",JSON.stringify(A))}catch(_){}return true}
 function show(v,push){
   if(S.guest&&LOCK_VIEWS[v]){showLock({view:v});return}
   if(v==="idee"||(v==="dossier"&&!dosReady().length))v="briefing";
@@ -1908,7 +1912,7 @@ function aggHTML(b){const A=aggDopo(b);if(!A.length)return"";const x=A[0],n=A.le
  return `<section class="agg aggc${n?" aggc-m":""}${n>1?" aggc-m2":""}" id="aggiornamenti" aria-label="Aggiornamenti dopo il briefing"><div class="aggh"><span class="label">⚡ Aggiornamenti dopo il briefing</span><i aria-hidden="true"></i></div><p class="aggnote">Notizie arrivate dopo le ${esc(b.ora||"07:00")}: non fanno parte del briefing qui sotto.</p><button type="button" class="aggc-card" data-agg-open="${esc(x.id||"")}"><span class="aggc-meta"><span class="agg-o${x.tipo==="svolta"?" agg-sv":""}">${esc(x.ora||"")}</span>${aggTag(x)?`<span class="aggc-tag">${esc(aggTag(x))}</span>`:""}<span class="label aggc-lab">aggiornamento</span></span><span class="aggc-t">${x.tipo==="svolta"?"<b>Svolta · </b>":""}${esc(aggTit(x))}</span><span class="aggc-f"><span>${n?`+${n} ${n===1?"aggiornamento":"aggiornamenti"} oggi`:"Dopo il briefing del mattino"}</span><span class="aggc-go">Apri ›</span></span></button></section>`}
 function aggStoryHTML(s){const A=aggForStory(s);if(!A.length)return"";const ids=A.map(x=>x.id||"").join(",");const op=A.some(x=>S.aggOpen.has(x.id));const n=A.length;return `<details class="agg-w" data-agg-ids="${esc(ids)}"${op?" open":""}><summary><span class="agg-wm"><span class="agg-o${A[0].tipo==="svolta"?" agg-sv":""}">${esc(A[0].ora||"")}</span><span class="aggc-tag">${A.some(x=>x.tipo==="svolta")?"Svolta · ":""}Aggiornata dopo il briefing</span><span class="agg-wn">${n} novità <i aria-hidden="true">›</i></span></span><span class="agg-wt">${esc(aggTit(A[0]))}</span></summary><ol class="agg-tl">${A.map((x,k)=>`<li id="ags-${esc(x.id||"")}" class="${k?"old":""}${x.tipo==="svolta"?" sv":""}"><span class="agg-tt">${esc(x.ora||"")}${x.tipo==="svolta"?" · SVOLTA":""}</span><b>${esc(aggTit(x))}</b>${x.testo?`<p>${esc(x.testo)}</p>`:""}${(x.fonti||[]).length?`<span class="agg-f">${aggSrc(x," · ")}</span>`:""}</li>`).join("")}</ol></details>`}
 /* v52d: un ospite non può aprire le storie oltre le prime 3 del Mondo: per quelle l'aggiornamento si apre sul posto invece di portare a una storia chiusa */
-function aggLocked(id){if(!S.guest)return false;const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;return !(mi>=0&&mi<3)}
+function aggLocked(id){if(!S.guest)return false;return !guestStoryOk(id)}
 /* v52f: pannello «Dalle ultime ore»: dal basso sul telefono, da destra sul computer. Si chiude con ×, tocco fuori, Esc, trascinando giù o col tasto indietro. */
 const AGS={el:null,open:false,pushed:false,skipPop:false};
 function agsEl(){if(AGS.el)return AGS.el;const w=document.createElement("div");w.id="aggSheet";w.className="ags";w.hidden=true;
@@ -2184,7 +2188,7 @@ function voteHTML(s){const P=pollForStory(s);if(!P)return "";const m=vtMine(P.id
 function voteK(s,th){if(pollForStory(s))return "pos";return predK(s)}
 /* v59: «Vota le storie di oggi». Dopo il voto del giorno un pulsante apre un percorso a schede, una storia alla volta: contesto in breve, la storia da leggere senza uscire, due domande numerate (opinione e previsione), il voto scelto sempre in evidenza, si passa da una storia all'altra scorrendo col pollice. Alla fine il riepilogo dei propri voti. */
 function vqList(){const b=S.briefings[0];if(!b)return[];const M=b.storie_mondo||[],I=b.storie_italia||[];const out=[];
-  M.concat(I).forEach((id,j)=>{const s=S.stories[id];if(!s)return;if(S.guest&&!(j<M.length&&j<3))return;const P=pollForStory(s),k=predK(s);if(!P&&!k)return;out.push({id,it:j>=M.length,P,k})});return out}
+  M.concat(I).forEach((id,j)=>{const s=S.stories[id];if(!s)return;if(S.guest&&!guestStoryOk(id))return;const P=pollForStory(s),k=predK(s);if(!P&&!k)return;out.push({id,it:j>=M.length,P,k})});return out}
 function vqPredId(x){const s=S.stories[x.id];if(x.k==="scn")return "c:"+s.filone_id+":"+S.threads[s.filone_id].scenari.orizzonte;if(x.k==="oss")return "g:"+s.id+":"+(predSig(s)+1);return ""}
 function vqState(x){const o=x.P?!!vtMine(x.P.id):true,p=x.k?!!vtMine(vqPredId(x)):true;return o&&p?"done":(x.P&&vtMine(x.P.id))||(x.k&&vtMine(vqPredId(x)))?"half":""}
 function vqTxt(t,n){t=String(t||"").replace(/\s*(\[\d+\])+/g,"").replace(/\s+/g," ").trim();const m=t.match(/^.{50,}?[.;](?=\s|$)/);let r=m&&m[0].length<=n?m[0]:t;if(r.length>n)r=r.slice(0,n-1).replace(/[\s,;:]+\S*$/,"")+"…";return r.replace(/;$/,".")}
@@ -2773,12 +2777,12 @@ function renderBriefing(){
   const idx=k=>tabs.findIndex(t=>t[0]===k);
   const nextBtn=i=>tabs[i+1]?`<div class="sub-next"><button class="askbtn ghost" data-sub="${tabs[i+1][0]}" data-sub-scroll="1">Avanti: ${esc(tabs[i+1][1])} →</button></div>`:"";
   const panel=(k,html)=>`<section class="subpanel" data-panel="${k}" role="tabpanel" aria-labelledby="sub-${k}"${S.sub===k?"":" hidden"}>${html}${nextBtn(idx(k))}</section>`;
-  const GUEST=!!S.guest,GN=3;
+  const GUEST=!!S.guest,GN=1;
   const lcl=a=>a.length?`<ul class="lc-l">${a.map(x=>`<li>${esc(x.titolo)}</li>`).join("")}</ul>`:"";
   const lockCard=(h,pp,list)=>`<div class="lockcard"><div class="lc-k">🔒 CON LA TUA EMAIL</div><h3>${h}</h3><p>${pp}</p>${list}<button type="button" class="askbtn lc-b" data-lock="storie">Sblocca con la tua email →</button><span class="lc-f">Gratis · niente password</span></div>`;
   const mondoShown=GUEST?mondo.slice(0,GN):mondo;
   const lockM=GUEST&&mondo.length>GN?lockCard(`Altre ${mondo.length-GN} storie del mondo`,"Ognuna con i fatti, le due tesi a confronto, la sintesi critica e cosa osservare nei prossimi giorni.",lcl(mondo.slice(GN))):"";
-  const lockI=GUEST&&ita.length?lockCard(`${ita.length} storie dall'Italia`,"Le due tesi a confronto, applicate a ciò che succede in casa nostra.",lcl(ita)):"";
+  const lockI=GUEST&&ita.length>GN?lockCard(`Altre ${ita.length-GN} storie dall'Italia`,"Le due tesi a confronto, applicate a ciò che succede in casa nostra.",lcl(ita.slice(GN))):"";
   el.classList.toggle("old-day",!latest);
   el.innerHTML=`
   ${latest?"":`<div class="arch-banner"><span class="lb">📅 Stai leggendo un giorno passato</span>Briefing di ${esc(fmtDate(b.data,true))}, non l'ultimo disponibile.<button type="button" class="askbtn ghost" id="toLatest">Torna a oggi →</button></div>`}
@@ -2791,7 +2795,7 @@ function renderBriefing(){
   ${sinceHTML(b)}
   <nav class="subtabs" role="tablist" aria-label="Sezioni del briefing" id="subtabs">${tabs.map(([k,l,n])=>`<button role="tab" id="sub-${k}" data-sub="${k}" aria-selected="${S.sub===k}">${SUBICO[k]?`<span class="ic" aria-hidden="true">${SUBICO[k]}</span>`:""}${esc(l)}${n!=null?`<span class="n">${n}</span>`:""}</button>`).join("")}</nav>
   ${panel("mondo",`<div class="section-h first"><span class="label">${mondo.length} storie · per impatto</span><span class="tools"><button class="linkbtn" data-expand="1">Apri tutte</button></span></div>${mondoShown.map((s,i)=>storyHTML(s,i+1)).join("")}${lockM}`)}
-  ${panel("italia",`<div class="section-h first"><span class="label">${ita.length} storie</span><span class="tools"><button class="linkbtn" data-expand="1">Apri tutte</button></span></div>${GUEST?lockI:ita.map((s,i)=>storyHTML(s,i+1)).join("")}${nHid?`<p class="hidden-note">${nHid===1?"1 storia nascosta":nHid+" storie nascoste"} perché il suo ambito è spento nelle Preferenze.</p>`:""}`)}
+  ${panel("italia",`<div class="section-h first"><span class="label">${ita.length} storie</span><span class="tools"><button class="linkbtn" data-expand="1">Apri tutte</button></span></div>${GUEST?ita.slice(0,GN).map((s,i)=>storyHTML(s,i+1)).join("")+lockI:ita.map((s,i)=>storyHTML(s,i+1)).join("")}${nHid?`<p class="hidden-note">${nHid===1?"1 storia nascosta":nHid+" storie nascoste"} perché il suo ambito è spento nelle Preferenze.</p>`:""}`)}
   ${tabs.some(t=>t[0]==="brevi")?panel("brevi",`<p class="hint" style="margin:10px 0 4px">Notizie verificate rimaste fuori dal briefing: pesano meno, ma restano nelle schede dei paesi.</p>${b.esclusioni?`<p class="excl" style="margin:4px 0 0"><strong>Criterio di oggi:</strong> ${esc(b.esclusioni)}</p>`:""}
   ${brevi.length?`<ul class="brevi">${brevi.map(x=>breveHTML(x)).join("")}</ul>`:""}
   ${oss.length?`<p class="hint" style="margin:14px 0 0">👁️ ${oss.length} ${plur(oss.length,"tema","temi")} in osservazione: li trovi in Temi › In osservazione. <button class="linkbtn" data-goto-rd="rd-weak">Apri →</button></p>`:""}`):""}
@@ -2828,7 +2832,7 @@ function setSub(k,scroll){
   if(scroll)window.scrollTo({top:Math.max(0,subTop()),behavior:"smooth"});
 }
 function openStory(id){
-  if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;const ok=b0&&mi>=0&&mi<3;if(!ok){showLock({what:"storie"});return}}
+  if(S.guest&&!guestStoryOk(id)){showLock({what:"storie"});return}
   const b=S.briefings.find(x=>(x.storie_mondo||[]).concat(x.storie_italia||[]).includes(id));
   {const L=S.briefings[0],cur=S.briefId||(L&&L.id);if(b&&L&&b.id!==L.id&&b.id!==cur){if(agsStory(id,b))return}}
   if(b){S.briefId=b.id;S.sub=(b.storie_italia||[]).includes(id)?"italia":"mondo";renderBriefing();show("briefing");requestAnimationFrame(()=>{const el=document.getElementById("st-"+id);if(!el)return;
@@ -3892,14 +3896,15 @@ function pingSeen(){
 }
 function earlyBar(){
   const bar=document.getElementById("pubBar"),tx=document.getElementById("pubBarTxt");
-  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · stai vedendo le prime 3 storie · <a href="#" data-lock="storie">Sblocca tutto con l\'email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";if(S.guest)delete bar.dataset.plain;else bar.dataset.plain="1";bar.hidden=false}
+  if(bar&&tx){tx.innerHTML=S.guest?'<strong>ANTEPRIMA</strong> · 2 storie aperte e un assaggio di ogni sezione · <a href="#" data-lock="tutto">Sblocca tutto con l\'email</a>':"<strong>EARLY ACCESS</strong> · gratuito nella fase iniziale";if(S.guest)delete bar.dataset.plain;else bar.dataset.plain="1";bar.hidden=false}
 }
 function gateLock(on){document.body.classList.toggle("gated",on);document.querySelectorAll("header.top,main,.foot").forEach(e=>{e.inert=on})}
 function earlyAccess(P){
   earlyBar();
   if(gStore("rg-uid")){pingSeen();nlPrompt();return}
   if(sGet("rg-guest")){setGuest(true);if(LOCK_VIEWS[S.view])show("briefing",false);schedule();return}
-  showGate(P);
+  /* v-anteprima: chi arriva senza email entra subito in anteprima; la pagina d'ingresso resta raggiungibile con ?gate=1 */
+  sSet("rg-guest","1");setGuest(true);trackSure("anteprima-entra");if(LOCK_VIEWS[S.view])show("briefing",false);schedule();
 }
 function gateForm(inModal){return `<form class="lp-form" data-gf novalidate>
 <div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta">Entra gratis →</button></div>
@@ -4066,6 +4071,15 @@ const LOCK_TXT={
   archivio:["Archivio","Tutti i briefing passati, per data, e la ricerca per paese, tema o persona."],
   protagonisti:["Protagonisti","Chi muove le notizie: cosa ha detto o fatto, quando e secondo quale fonte."],
   dossier:["Dossier","Un tema a 360 gradi in un posto solo: da dove nasce, le posizioni a confronto, dove va."],
+  tutto:["Tutto Read Geopolitics","Tutte le storie di oggi, la mappa, i temi, il calendario e l'archivio. Gratis, senza password."],
+  mappa:["Tutti i paesi della mappa","In anteprima si aprono due paesi. Con l'email li apri tutti, con i legami tra un paese e l'altro."],
+  collegamenti:["I collegamenti","Da una storia al paese, al tema, alle persone e alla storia precedente: è così che si capisce come si tengono insieme."],
+  tema:["Tutti i temi","In anteprima si apre un tema. Con l'email li segui tutti, dall'inizio a oggi."],
+  brevi:["Tutte le brevi","Le notizie minori del giorno, in poche righe ciascuna, con la fonte."],
+  riquadri:["Il resto di oggi","Cosa è cambiato da ieri, com'è finita, i numeri, le lenti, accadde oggi: in anteprima se ne aprono due."],
+  calendario:["Tutto il calendario","Elezioni, vertici, banche centrali e scadenze, con il conto alla rovescia. In anteprima vedi i primi due."],
+  esplora:["Esplora","Gli incroci tra aree e ambiti, i legami tra i paesi e tutte le schede di persone e organizzazioni."],
+  spiegati:["Tutti gli Spiegati","In anteprima leggi l'ultimo. Con l'email li hai tutti."],
   chiedi:["Chiedi a Claude","Parti da una domanda già pronta, con dentro i fatti, le posizioni e le fonti della storia che stai leggendo."]
 };
 function showLock(o){
@@ -4084,8 +4098,32 @@ function showLock(o){
 document.addEventListener("click",e=>{
   if(!S.guest)return;
   const l=e.target.closest("[data-lock]");if(l){e.preventDefault();e.stopImmediatePropagation();showLock({what:l.dataset.lock});return}
-  if(e.target.closest("[data-ask-story],[data-ask-country],[data-ask-term],[data-ask-ind],[data-open-approf],#selBtn")){e.preventDefault();e.stopImmediatePropagation();showLock({what:"chiedi"});return}
-  if(e.target.closest("[data-thread],[data-open-dos],[data-brief],[data-goto-rd]")){e.preventDefault();e.stopImmediatePropagation();showLock({what:"timeline"});return}
+  const T=e.target,lk=w=>{e.preventDefault();e.stopImmediatePropagation();showLock({what:w})};let x;
+  if(T.closest("#lock,#gate"))return;
+  /* Chiedi a Claude: solo sulle storie aperte */
+  if(T.closest("[data-ask-country],[data-ask-term],[data-ask-ind],[data-open-approf],#selBtn")){lk("chiedi");return}
+  if(T.closest("[data-open-dos],[data-tla-dos]")){lk("dossier");return}
+  if(T.closest("[data-brief],[data-goto-rd]")){lk("timeline");return}
+  /* dentro una storia, una scheda paese o un tema aperto: i collegamenti verso altro sono chiusi (le fonti restano aperte) */
+  if(T.closest(".ags-p,#panel,article.story")&&T.closest("[data-country],[data-story],[data-thread],[data-tl-theme],[data-actor],[data-exe]")){lk("collegamenti");return}
+  if(T.closest("[data-thread]")){lk("tema");return}
+  /* Oggi: 2 brevi, 2 riquadri a scelta */
+  if(T.closest("[data-rl-all]")){lk("brevi");return}
+  if((x=T.closest("[data-rl-br]"))){if(+x.dataset.rlBr>=2)lk("brevi");return}
+  if((x=T.closest('[data-rl-t="since:numeri"]'))){lk("radar");return}
+  if((x=T.closest("[data-rl-a],[data-rl-t]"))){if(!antUse("b",x.dataset.rlA?"a:"+x.dataset.rlA:"t:"+x.dataset.rlT,2))lk("riquadri");return}
+  /* Temi: 1 tema a scelta */
+  if((x=T.closest("[data-tl-theme]"))){if(!antUse("t",x.dataset.tlTheme,1))lk("tema");return}
+  /* Mappa: 2 paesi a scelta (elenco e mappa); altrove i paesi sono collegamenti */
+  if((x=T.closest("[data-country]"))){if(!x.closest("#v-mappa"))lk("collegamenti");else if(!antUse("c",x.dataset.country,2))lk("mappa");return}
+  if((x=T.closest("#mapBox path.country"))){const iso=x.__data__&&x.__data__.id;if(iso&&!antUse("c",iso,2))lk("mappa");return}
+  if((x=T.closest("[data-story]"))){if(!guestStoryOk(x.dataset.story))lk("storie");return}
+  /* Calendario: i primi 2 appuntamenti */
+  if((x=T.closest("#v-calendario details.cr>summary"))){const L=[...document.querySelectorAll("#v-calendario details.cr")].filter(d=>d.getClientRects().length);if(L.indexOf(x.parentNode)>=2)lk("calendario");return}
+  /* Esplora: 2 schede di «Chi e cosa», l'ultimo Spiegato; incroci e legami chiusi */
+  if(T.closest("[data-exl]")||T.closest('[data-exlens="rete"]')){lk("esplora");return}
+  if((x=T.closest("[data-exe]"))){if(!antUse("a",x.dataset.exe,2))lk("protagonisti");return}
+  if((x=T.closest("a.exspc"))){const L=[...document.querySelectorAll("#v-esplora a.exspc")];if(L.indexOf(x)>0)lk("spiegati");return}
 },true);
 function closedScreen(P){
   document.body.classList.add("closed");
@@ -5208,7 +5246,7 @@ document.addEventListener("click",e=>{
     if(k==="temachip"){const [t,a]=splitX(id);go({k:"tema",id:t});X.fa=[a];renderEx();return}
     go({k,id});return}
   const xs=e.target.closest("[data-xs]");if(xs){const id=xs.dataset.xs;
-    if(S.guest&&X.open!==id){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){if(typeof showLock==="function")showLock({what:"storie"});return}}
+    if(S.guest&&X.open!==id){if(!guestStoryOk(id)){if(typeof showLock==="function")showLock({what:"storie"});return}}
     X.open=X.open===id?null:id;renderEx();
     const it=document.getElementById("xpi-"+id);if(it){const off=document.querySelector("header.top").offsetHeight+8;window.scrollTo({top:it.getBoundingClientRect().top+window.scrollY-off,behavior:"smooth"})}
     return}
@@ -5482,7 +5520,7 @@ function updNav(){
   try{scrollify(row)}catch(_){}
   if(row){row.scrollLeft=keep;if(on){const r=row.getBoundingClientRect(),o=on.getBoundingClientRect();if(o.left<r.left+8)row.scrollLeft-=r.left+8-o.left;else if(o.right>r.right-8)row.scrollLeft+=o.right-(r.right-8)}}
 }
-{const _sh=show;show=function(v,push){if((v==="calendario"||v==="osservazione")&&S.guest&&typeof showLock==="function"){showLock({view:"timeline"});return}
+{const _sh=show;show=function(v,push){if(v==="osservazione"&&S.guest&&typeof showLock==="function"){showLock({view:"timeline"});return}
   if(v==="calendario"||v==="osservazione"){const r=_sh(v,push);try{if(v==="calendario"){S.tlMode="cal";if(typeof renderCal==="function")renderCal();const c=document.getElementById("tlCal");if(c)c.hidden=false;S.tlMode="temi";scrollifyAll()}}catch(e){console.warn(v,e)}try{updNav()}catch(_){}return r}
   if(v==="timeline")S.tlMode="temi";
   if(v==="radar"){if(S.guest&&typeof showLock==="function"){showLock({view:"radar"});return}const r=_sh("briefing",push);try{setSub("numeri",true);if(push!==false)history.replaceState(null,"","#briefing")}catch(_){}try{updNav()}catch(_){}return r}const r=_sh(v,push);try{updNav()}catch(e){console.warn("nav",e)}return r}}
@@ -5740,11 +5778,11 @@ function rlBuild(){const el=document.getElementById("briefing");const b=typeof c
   const nl=RL.ids.filter(id=>lette.has(id)).length;
   const min=Math.max(5,Math.round(RL.ids.length*1.3));
   const T=rlTiles(el);
-  const LI=mon.map((id,i)=>item(id,i+1,G&&i>=3)).join(""),LT=ita.map((id,i)=>item(id,mon.length+i+1,G)).join("");
+  const LI=mon.map((id,i)=>item(id,i+1,G&&!guestStoryOk(id))).join(""),LT=ita.map((id,i)=>item(id,mon.length+i+1,G&&!guestStoryOk(id))).join("");
   /* v92: «Per te» è un interruttore sopra la lista: prima le storie di aree, paesi e temi che segui, le altre sotto, chiuse in una riga */
   let hasF=false;try{hasF=anyF()}catch(_){}
   const mine=hasF?RL.ids.filter(id=>{try{return matchF(S.stories[id])}catch(_){return false}}):[];
-  const pt=hasF&&RL.pt;const num=id=>RL.ids.indexOf(id)+1;const lockOf=id=>G&&!(mon.indexOf(id)>=0&&mon.indexOf(id)<3);
+  const pt=hasF&&RL.pt;const num=id=>RL.ids.indexOf(id)+1;const lockOf=id=>G&&!guestStoryOk(id);
   const sw=hasF?`<div class="rl-sw" role="tablist" aria-label="Quali storie"><button type="button" role="tab" aria-selected="${!pt}" data-rl-pt="0">Tutte · ${RL.ids.length}</button><button type="button" role="tab" aria-selected="${pt}" data-rl-pt="1">★ Per te · ${mine.length}</button><button type="button" class="rl-swe" data-ptlock="1">modifica</button></div>`
     :`<button type="button" class="rl-ptc" data-ptlock="1"><b>★ Per te</b><span>Scegli aree, paesi o temi: ogni mattina le tue storie vengono prima.</span><i aria-hidden="true">›</i></button>`;
   const others=RL.ids.filter(id=>!mine.includes(id));
@@ -5863,7 +5901,7 @@ document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.classList||!d.
 document.addEventListener("click",e=>{const g=e.target.closest("[data-rla-go]");if(!g)return;e.preventDefault();const box=g.closest(".rls");const d=box&&box.querySelector(`details.rla[data-rla="${g.dataset.rlaGo}"]`);if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}});
 /* da qualunque punto del sito, una storia del briefing che si sta leggendo si apre nel pannello */
 {const _os=openStory;openStory=function(id){
-  if(S.guest){const b0=S.briefings[0];const mi=b0?(b0.storie_mondo||[]).indexOf(id):-1;if(!(b0&&mi>=0&&mi<3)){showLock({what:"storie"});return}}
+  if(S.guest){if(!guestStoryOk(id)){showLock({what:"storie"});return}}
   const cur=typeof currentBrief==="function"?currentBrief():null;
   if(cur&&(cur.storie_mondo||[]).concat(cur.storie_italia||[]).includes(id)){if(!document.querySelector("#briefing>.rl"))rlBuild();if(rlOpen(id))return}
   return _os.apply(this,arguments)}}
@@ -6199,7 +6237,7 @@ setTimeout(()=>{try{rlBuild()}catch(_){}},0);
   const go=()=>{const q=norm(inp.value);if(!q)return;const L=ids().map(i=>[i,norm(cname(i))]);
     const hit=(L.find(([i,n])=>n===q||i.toLowerCase()===q)||L.find(([,n])=>n.startsWith(q))||L.find(([,n])=>n.includes(q))||[])[0];
     if(!hit){msg.hidden=false;msg.textContent="Nessun paese con questo nome.";return}
-    msg.hidden=true;inp.value=cname(hit);inp.blur();S.selCountry=hit;try{renderPanel();highlightSel();focusPanel()}catch(e){console.warn("cerca paese",e)}};
+    msg.hidden=true;if(S.guest&&!antUse("c",hit,2)){inp.blur();showLock({what:"mappa"});return}inp.value=cname(hit);inp.blur();S.selCountry=hit;try{renderPanel();highlightSel();focusPanel()}catch(e){console.warn("cerca paese",e)}};
   inp.addEventListener("change",go);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});
 })();
 /* ---------- telefono: le cinque voci in basso, dove arriva il pollice ---------- */
