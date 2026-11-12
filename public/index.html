@@ -5952,7 +5952,7 @@ function thPanTitle(t){return ((t.bandiere||[]).map(p=>flag(p)).filter(Boolean).
 function thPanHTML(t){const ST={attivo:"in corso",dormiente:"fermo",chiuso:"concluso"};
   let body="";try{body=themeArc(t,()=>true,0)}catch(e){body=`<p class="muted">Non riesco a mostrare questo tema.</p>`}
   return `<div class="thp" data-thp="${esc(t.id)}"><div class="thp-top">${exFolBtn("filoni",t.id,t.titolo)}<span class="thp-st">${esc(ST[t.stato]||t.stato||"")}</span></div>${body}</div>`}
-function thOpen(id,lay,sec){const t=S.threads[id];if(!t)return false;if(lay)S.tlLayer[id]=lay;
+function thOpen(id,lay,sec){const t=S.threads[id];if(!t)return false;if(S.guest&&!antUse("t",id,1)){showLock({what:"tema"});return false}if(lay)S.tlLayer[id]=lay;
   rlOpenBox(thPanTitle(t),"Tema",thPanHTML(t));
   const w=AGS.el;if(w){const l=w.querySelector(".ags-l");if(sec){requestAnimationFrame(()=>{const el=l&&l.querySelector("#dsec-"+CSS.escape(sec));if(el){if(el.tagName==="DETAILS")el.open=true;l.scrollTop=Math.max(0,el.offsetTop-12)}})}else if(l)l.scrollTop=0}
   try{track("tema-pannello")}catch(_){}return true}
@@ -6021,7 +6021,7 @@ window.RG_popGuard=function(){
 /* apertura dai link: #tema=…, #paese=…, #voce=g|… o a|… */
 (function(){let n=0;const go=()=>{const h=decodeURIComponent((location.hash||"").slice(1));const m=/^(tema|paese|voce)=(.+)$/.exec(h);if(!m)return;
   if(!S.threads||!Object.keys(S.threads).length){if(++n<60)setTimeout(go,250);return}
-  try{if(m[1]==="tema")thOpen(m[2]);else if(m[1]==="paese"){S.selCountry=m[2];try{renderPanel();highlightSel()}catch(_){}mapOpen()}else{const i=m[2].indexOf("|"),k=m[2].slice(0,i),id=m[2].slice(i+1);if(k==="a")openActor(id);else exGloss(id)}}catch(_){}};
+  try{if(m[1]==="tema")thOpen(m[2]);else if(m[1]==="paese"){if(S.guest&&!antUse("c",m[2],2)){showLock({what:"mappa"});return}S.selCountry=m[2];try{renderPanel();highlightSel()}catch(_){}mapOpen()}else{const i=m[2].indexOf("|"),k=m[2].slice(0,i),id=m[2].slice(i+1);if(k==="a")openActor(id);else exGloss(id)}}catch(_){}};
   setTimeout(go,600)})();
 document.addEventListener("keydown",e=>{if(e.key!=="Escape"||AGS.open)return;const f=document.getElementById("exFoc");if(f&&!f.hidden&&EX.unfocus)EX.unfocus()});
 function rlSwipeGo(dir){const w=AGS.el;if(!w)return false;
@@ -6185,7 +6185,7 @@ document.addEventListener("click",e=>{const root=e.target.closest("#esplora,#agg
   const l=e.target.closest("[data-exl]");if(l){e.preventDefault();const p=l.dataset.exl.split("|");
     if(p[0]==="area")exList({area:p[1]});else if(p[0]==="amb")exList({amb:p[1]});else if(p[0]==="paese")exList({paese:p[1]});else if(p[0]==="tema")exList({tema:p[1]});
     else if(p[0]==="inc"){if(p.length===3)exList({area:p[1],amb:p[2]});else{const [g,t]=splitX(p[1]);if(isISO(g))exList({paese:g,amb:t});else exList({area:g,amb:t})}}
-    else if(p[0]==="scheda"){S.selCountry=p[1];renderPanel();highlightSel();focusPanel()}return}},true);
+    else if(p[0]==="scheda"){if(S.guest&&!antUse("c",p[1],2)){showLock({what:"mappa"});return}S.selCountry=p[1];renderPanel();highlightSel();focusPanel()}return}},true);
 /* il bottone «Segui» nel pannello si aggiorna da sé (gestore [data-fol] già esistente); la riga «★ Per te» si ridisegna */
 document.addEventListener("click",e=>{if(!e.target.closest("[data-fol]"))return;setTimeout(()=>{if(S.view==="esplora"){const st=document.querySelector("#esplora .expt");if(st)st.outerHTML=exFolStrip()}},0)});
 {const st=document.createElement("style");st.textContent=`
