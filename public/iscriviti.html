@@ -60,10 +60,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:13px;color
 .err{color:#F4A39B;font-size:14.5px;margin:10px 2px 0}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .cta:disabled{opacity:.6;cursor:default}
-.cta.pv{display:flex;align-items:center;justify-content:center;width:100%;text-decoration:none;box-sizing:border-box}
-.cta.alt{background:transparent;color:var(--ink);border:1px solid #3A4A57;box-shadow:none}
+.pvw{max-width:480px;margin:0 auto}
+.pv{display:flex;align-items:center;justify-content:center;width:100%;height:52px;box-sizing:border-box;border:1.5px solid var(--amb);border-radius:12px;color:var(--amb);background:rgba(240,174,69,.06);font:600 16px "IBM Plex Sans",sans-serif;text-decoration:none}
+.pv:hover{background:rgba(240,174,69,.14)}
 .pvn{font-size:13.5px;color:var(--mut);margin:10px 2px 0;text-align:center}
-.opp{display:flex;align-items:center;gap:12px;margin:22px 0 14px;color:var(--faint);font-size:13px}
+.opp{display:flex;align-items:center;gap:12px;margin:16px 0 12px;color:var(--faint);font-size:13px}
 .opp:before,.opp:after{content:"";flex:1;height:1px;background:#24323D}
 .em:focus{outline:2px solid var(--amb);outline-offset:1px}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
@@ -111,7 +112,7 @@ function attrib(){
   try{return JSON.parse(gStore("rg-attr"))||a}catch(e){return a}
 }
 const ATTR=attrib();
-function formHTML(id){return '<a class="cta pv" href="/?utm_source=landing" data-pv>Entra in anteprima →</a><p class="pvn">Senza email: guardi com\'è fatto, poi decidi.</p><div class="opp"><span>oppure sblocca tutto con la tua email</span></div><form data-f novalidate><div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta alt">Entra con l\'email</button></div><input class="hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="nl"><input type="checkbox" name="nl"><span>'+NL_TXT+'</span></label><p class="err" role="alert" hidden></p><p class="fine">Nessuna password, nessuna carta. L\'email serve a farti entrare. <a href="/privacy.html">Informativa privacy</a></p></form>'}
+function formHTML(id){return '<form data-f novalidate><div class="row"><input class="em" type="email" name="email" placeholder="La tua email" autocomplete="email" inputmode="email" aria-label="Email" required><button type="submit" class="cta">Entra con l\'email</button></div><input class="hp" type="text" name="sito" tabindex="-1" autocomplete="off" aria-hidden="true"><label class="nl"><input type="checkbox" name="nl"><span>'+NL_TXT+'</span></label><p class="err" role="alert" hidden></p></form><div class="pvw"><div class="opp"><span>oppure</span></div><a class="pv" href="/?utm_source=landing" data-pv>Entra in anteprima, senza email →</a><p class="pvn">Guardi com\'è fatto, poi decidi.</p><p class="fine" style="text-align:center">Nessuna password, nessuna carta. L\'email serve a farti entrare. <a href="/privacy.html">Informativa privacy</a></p></div>'}
 function okHTML(nl){return '<div class="ok"><h2 class="ser">Sei dentro.</h2><p>'+(nl?"Da domani mattina ti arriva l'anteprima del briefing via email. ":"")+'Il briefing di oggi è pronto, ti bastano 15 minuti.</p><a class="cta" href="/?utm_source=landing">Apri il briefing di oggi →</a></div>'}
 function wire(host){
   host.innerHTML=formHTML();
