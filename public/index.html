@@ -2441,7 +2441,7 @@ function ppGlItem(g,ini){return `<button type="button" class="pp-i gl" data-gl="
 function glPeopleOf(s,ids){const txt=[s.titolo,s.fatti,s.perche_conta,s.sintesi,s.pro&&JSON.stringify(s.pro),s.contro&&JSON.stringify(s.contro)].filter(Boolean).join(" \n ");if(!txt||!S.glossario)return[];
   const ac=ids.map(id=>S.attori[id]).filter(Boolean),gid=new Set(ac.map(a=>a.glossario).filter(Boolean)),nm=new Set(ac.map(a=>String(a.nome||"").toLowerCase()));
   return Object.values(S.glossario).filter(g=>g&&g.tipo==="persona"&&!gid.has(g.id)&&!nm.has(String(g.termine||"").toLowerCase())&&[g.termine,...(g.alias||[])].filter(t=>t&&t.length>3).some(t=>new RegExp("(^|[^\\p{L}\\p{N}])"+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?=$|[^\\p{L}\\p{N}])","u").test(txt)))
-    .map(g=>({id:g.id,_gl:1,nome:g.termine,ruolo:g.spiegazione}))}
+    .map(g=>({id:g.id,_gl:1,nome:g.nome_completo||g.termine,ruolo:g.spiegazione}))}
 function actorsOfStory(s){if(!s)return[];if(ACT_ST.has(s.id)&&ACT_ST.get(s.id).n===Object.keys(S.attori).length)return ACT_ST.get(s.id).v;const ids=new Set((s.attori||[]).filter(id=>S.attori[id]));Object.values(S.attori).forEach(a=>{if((a.storie||[]).includes(s.id))ids.add(a.id)});
   const txt=[s.titolo,s.fatti,s.perche_conta,s.sintesi,s.pro&&JSON.stringify(s.pro),s.contro&&JSON.stringify(s.contro)].filter(Boolean).join(" \n ");
   if(txt)Object.values(S.attori).forEach(a=>{if(ids.has(a.id))return;const r=actRx(a);if(r&&r.test(txt))ids.add(a.id)});
