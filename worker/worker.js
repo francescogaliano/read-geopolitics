@@ -2330,7 +2330,7 @@ function stRender(s){const el=document.getElementById("sts");const E=s.events||{
  h+='<div class="kpis"><div class="kpi"><div class="l">Visite</div><div class="v">'+stN(s.visits)+'</div><div class="d">'+(ch===null?'nessun confronto':'<span class="'+(ch>=0?'up':'dw')+'">'+(ch>=0?'▲ ':'▼ ')+Math.abs(ch)+'%</span> sui '+s.days+' giorni prima')+'</div></div>';
  h+='<div class="kpi"><div class="l">Storie aperte</div><div class="v">'+stN(ev("storia-aperta"))+'</div><div class="d">'+stN(ev("fonte-aperta"))+' fonti aperte</div></div>';
  h+='<div class="kpi"><div class="l">Ascolti podcast</div><div class="v">'+stN(ev("podcast-play")+ev("podcast-play-ascolta"))+'</div><div class="d">'+stN(ev("podcast-finito"))+' fino in fondo</div></div>';
- h+='<div class="kpi"><div class="l">Nuovi iscritti</div><div class="v">'+stN(s.joined)+'</div><div class="d">'+(s.seen?'su '+stN(s.seen)+' che hanno visto l&#39;invito':'iscritti nel periodo')+'</div></div></div></div>';
+ h+='<div class="kpi"><div class="l">Nuovi iscritti</div><div class="v">'+stN(s.joined)+'</div><div class="d">'+(s.seen?'su '+stN(s.seen)+' arrivati senza email':'iscritti nel periodo')+'</div></div></div></div>';
  h+=ppHtml(s,"sito");h+='<div class="card"><h3>Visite al giorno</h3><p class="note">In giallo i giorni con un post pubblicato: così vedi quale contenuto ha portato gente sul sito. C = carosello, R = reel.</p><div class="chart'+(many?' many':'')+'" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
  s.day_list.forEach(d=>{const t=dn[new Date(d.day+"T12:00:00Z").getUTCDay()]+' '+(+d.day.slice(8))+': '+d.n+' visite'+(d.post?' · '+d.post:'');h+='<div class="col" title="'+esc(t)+'">'+(!many||d.n===mx?'<span class="bv">'+d.n+'</span>':'')+'<div class="bar'+(d.post?' pb':'')+'" style="height:'+Math.max(1,Math.round(d.n/mx*100))+'%"></div></div>'});
  h+='</div><div class="xl" style="grid-template-columns:repeat('+s.day_list.length+',minmax(0,1fr))">';
@@ -2341,8 +2341,8 @@ function stRender(s){const el=document.getElementById("sts");const E=s.events||{
  const views=Object.keys(E).filter(k=>k.indexOf("vista-")===0).sort((a,b)=>E[b]-E[a]);
  h+='<div class="card"><h3>Cosa fanno sul sito</h3><p class="note">Ogni azione è contata una volta per visitatore.</p><div class="two"><div class="grp"><b>Lettura</b>'+stLi("Storie aperte",ev("storia-aperta"))+stLi("Fonti aperte",ev("fonte-aperta"))+stLi("Schede paese",ev("paese"))+stLi("Domande fatte",ev("fai-domanda"))+views.slice(0,4).map(k=>stLi("Scheda "+(ST_LAB[k]||k.slice(6)),E[k])).join("")+'</div>';
  h+='<div class="grp"><b>Podcast e social</b>'+stLi("Podcast avviato sul sito",ev("podcast-play")+ev("podcast-play-ascolta"))+stLi("Podcast finito",ev("podcast-finito"))+stLi("Click su Spotify",ev("podcast-spotify")+ev("podcast-spotify-briefing")+ev("podcast-spotify-ascolta"))+stLi("Click su Apple Podcasts",ev("podcast-apple")+ev("podcast-apple-ascolta"))+stLi("Click su Instagram",ev("social-instagram"))+stLi("Click su TikTok",ev("social-tiktok"))+'</div><div class="grp"><b>Dalla pagina Ascolta</b><div class="sub" style="margin-bottom:4px">Ci arriva chi tocca lo sticker della storia del podcast.</div>'+stLi("Player della pagina",ev("podcast-play-ascolta"))+stLi("Spotify",ev("podcast-spotify-ascolta"))+stLi("Apple Podcasts",ev("podcast-apple-ascolta"))+stLi("Amazon Music",ev("podcast-amazon-ascolta"))+stLi("Telegram",ev("podcast-telegram-ascolta"))+'</div></div>';
- const fm=Math.max(1,s.seen,s.joined);
- h+='<div class="grp fun" style="margin-top:14px"><b>Iscrizione</b><div class="step"><span>Hanno visto l&#39;invito</span><span>'+stN(s.seen)+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.seen,fm)+'%"></div></div><div class="step"><span>Hanno lasciato l&#39;email</span><span>'+stN(s.joined)+(s.seen?' · '+stPct(s.joined,s.seen)+'%':'')+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.joined,fm)+'%"></div></div><div class="step"><span>Newsletter attivata</span><span>'+stN(s.nl)+(s.seen?' · '+stPct(s.nl,s.seen)+'%':'')+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.nl,fm)+'%"></div></div></div>';
+ const A=s.ant||{},fm=Math.max(1,s.seen,s.joined);const LKN={storie:'Storie chiuse',collegamenti:'Collegamenti dalle schede',mappa:'Paesi della mappa',tema:'Temi',brevi:'Brevi',riquadri:'Riquadri di Oggi',calendario:'Calendario',esplora:'Esplora',spiegati:'Spiegati',chiedi:'Chiedi a Claude',dossier:'Dossier',timeline:'Temi e filoni',radar:'Numeri',archivio:'Archivio',protagonisti:'Protagonisti',interessi:'Per te',tutto:'«Sblocca tutto»'};
+ h+='<div class="grp fun" style="margin-top:14px"><b>Iscrizione</b><div class="step"><span>Arrivati senza email</span><span>'+stN(s.seen)+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.seen,fm)+'%"></div></div>'+(A.entrati||A.blocchi?'<div class="step"><span>Entrati in anteprima'+(A.da_iscriviti?' (di cui '+stN(A.da_iscriviti)+' dalla pagina Iscriviti)':'')+'</span><span>'+stN(A.entrati)+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(A.entrati,fm)+'%"></div></div><div class="step"><span>Blocchi mostrati (tocchi su cose chiuse)</span><span>'+stN(A.blocchi)+'</span></div>':'')+'<div class="step"><span>Hanno lasciato l&#39;email</span><span>'+stN(s.joined)+(s.seen?' · '+stPct(s.joined,s.seen)+'%':'')+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.joined,fm)+'%"></div></div><div class="step"><span>Newsletter attivata</span><span>'+stN(s.nl)+(s.seen?' · '+stPct(s.nl,s.seen)+'%':'')+'</span></div><div class="tr"><div class="fl" style="width:'+stPct(s.nl,fm)+'%"></div></div></div>'+((A.per||[]).length?'<div class="grp" style="margin-top:14px"><b>Cosa hanno provato ad aprire</b><p class="note">Tocchi su cose chiuse in anteprima: dicono cosa interessa di più.</p>'+A.per.map(x=>'<div class="step"><span>'+esc(LKN[x.k]||x.k)+'</span><span>'+stN(x.n)+'</span></div>').join("")+'</div>':'');
  const all=Object.keys(E).sort((a,b)=>E[b]-E[a]);
  if(all.length)h+='<details style="margin-top:10px"><summary class="sub">Tutti gli eventi ('+all.length+')</summary><div class="grp" style="margin-top:8px">'+all.map(k=>stLi(ST_LAB[k]||k,E[k])).join("")+'</div></details>';
  h+='</div>';
@@ -2540,7 +2540,7 @@ async function ssPan(){const el=document.getElementById("stp");el.innerHTML='<di
  const W=[];
  if(G.length)W.push({c:p7>=5&&n7<p7*.6?SC.a:n7>p7*1.4&&n7>=3?SC.v:null,t:"Iscritti nuovi: <b>"+n7+"</b> negli ultimi 7 giorni, <b>"+p7+"</b> nei 7 prima."});
  if(S&&S.prev_visits>=10){const c=Math.round((S.visits-S.prev_visits)/S.prev_visits*100);W.push({c:c<=-15?SC.a:c>=15?SC.v:null,t:"Visite al sito: <b>"+(c>0?"+":"")+c+"%</b> rispetto ai 7 giorni prima."})}
- if(S&&S.seen>=5)W.push({c:null,t:"Lascia l&#39;email il <b>"+Math.round(S.joined/S.seen*100)+"%</b> di chi vede l&#39;invito sul sito."});
+ if(S&&S.seen>=5)W.push({c:null,t:"Lascia l&#39;email il <b>"+Math.round(S.joined/S.seen*100)+"%</b> di chi arriva sul sito senza email."});
  if(W.length)h+='<div class="dga"><i>DA GUARDARE ADESSO</i>'+W.map(w=>'<div'+(w.c?' style="border-left:3px solid '+w.c+';padding-left:10px"':'')+'>'+w.t+'</div>').join("")+'</div>';
  el.innerHTML=h;el.querySelectorAll("[data-go]").forEach(b=>{if(b.dataset.go)b.onclick=()=>ssOpen(b.dataset.go)})}
 async function ssIsc(){const el=document.getElementById("stu");el.innerHTML='<div class="card sub">Carico…</div>';
@@ -5245,18 +5245,23 @@ async function siteStatsLive(env, days, force) {
     const top = (o) => Object.entries(o).map(([name, n]) => ({ name, n })).sort((a, z) => z.n - a.n);
     fonti.cur = top(wk[5].src); fonti.prev = top(wk[4].src);
   } catch (e) {}
-  const seen = Object.entries(events).filter(([k]) => k === "gate-vista" || k.startsWith("lock-")).reduce((a, [, n]) => a + n, 0);
+  // v145 (anteprima senza email): l'imbuto parte da chi arriva senza email (entrato in anteprima, o pagina d'ingresso vista);
+  // i blocchi sono tocchi su cose chiuse, non persone, e non entrano più nel conto di partenza.
+  const evN = (k) => +events[k] || 0;
+  const lockList = Object.entries(events).filter(([k]) => k.startsWith("lock-")).map(([k, n]) => ({ k: k.slice(5), n: +n || 0 })).sort((a, b) => b.n - a.n);
+  const ant = { entrati: evN("anteprima-entra"), invito: evN("gate-vista"), da_iscriviti: evN("iscriviti-anteprima"), blocchi: lockList.reduce((a, x) => a + x.n, 0), per: lockList.slice(0, 8), email_dal_sito: evN("gate-invio") };
+  const seen = ant.entrati + ant.invito;
   // osservazioni automatiche (regole fisse)
   const ins = [];
   const known = refList.filter((r) => r.name !== "Diretto");
   if (visits && known.length) { const r = known[0]; const p = Math.round((r.n / visits) * 100); if (p >= 5) ins.push(r.name + " porta il " + p + "% delle visite" + (p >= 40 ? ", quasi metà del totale." : ".")); }
   const pd = dayList.filter((d) => d.post), np = dayList.filter((d) => !d.post);
   if (pd.length && np.length) { const a = pd.reduce((s, d) => s + d.n, 0) / pd.length, b = np.reduce((s, d) => s + d.n, 0) / np.length; if (b > 0) { const r = a / b; ins.push(r >= 1.3 ? "Nei giorni con un post le visite sono " + (r >= 1.9 ? "circa il doppio" : "il " + Math.round((r - 1) * 100) + "% in più") + " rispetto agli altri giorni." : r <= 0.8 ? "Nei giorni con un post le visite non salgono: i post portano poca gente al sito." : "Nei giorni con un post le visite cambiano poco rispetto agli altri giorni."); } }
-  if (seen >= 5) ins.push("Il " + Math.round((joined / seen) * 100) + "% di chi vede l'invito lascia l'email.");
+  if (seen >= 5) ins.push("Il " + Math.round((joined / seen) * 100) + "% di chi arriva senza email la lascia.");
   if ((events["podcast-play"] || 0) >= 5) ins.push("Il " + Math.round(((events["podcast-finito"] || 0) / events["podcast-play"]) * 100) + "% di chi avvia il podcast sul sito lo ascolta fino in fondo.");
   if (prevVisits >= 10) { const c = Math.round(((visits - prevVisits) / prevVisits) * 100); if (Math.abs(c) >= 15) ins.push("Le visite sono " + (c > 0 ? "salite" : "scese") + " del " + Math.abs(c) + "% rispetto ai " + days + " giorni prima."); }
   const data = { days, start, end, at: new Date().toISOString(), visits, prev_visits: prevVisits, day_list: dayList, refs: top, events, sizes: sz,
-    locations: (locs.stats || []).map((s) => ({ id: s.id || "", name: s.name || s.id || "?", n: +s.count || 0 })), joined, nl, seen, persone, iscritti, settimane, fonti, insights: ins.slice(0, 3) };
+    locations: (locs.stats || []).map((s) => ({ id: s.id || "", name: s.name || s.id || "?", n: +s.count || 0 })), joined, nl, seen, ant, persone, iscritti, settimane, fonti, insights: ins.slice(0, 3) };
   await kvSet(env, ck, { at: Date.now(), data });
   return data;
 }
