@@ -1,0 +1,531 @@
+{
+ "id": "hormuz-due-blocchi",
+ "spiegato": "hormuz-doppio-blocco",
+ "kicker": "SPIEGATO DA ZERO",
+ "etichetta": "HORMUZ · IN BREVE",
+ "nota_fatti": "FATTI AL 1° NOVEMBRE · ROTTE E LINEE INDICATIVE",
+ "apertura": {
+  "titolo": "Lo stretto di Hormuz:",
+  "oro": "perché non riapre?",
+  "centro": [
+   56.3,
+   26.6
+  ],
+  "punto": [
+   56.3,
+   26.6
+  ],
+  "evidenzia": [
+   "IRN",
+   "OMN"
+  ],
+  "zoom": 2000,
+  "etichetta": "HORMUZ"
+ },
+ "mappa": {
+  "centro": [
+   56.4,
+   26.2
+  ],
+  "scala": 5000,
+  "bbox": [
+   44,
+   17,
+   68,
+   35
+  ],
+  "accesi": [
+   "IRN",
+   "OMN"
+  ],
+  "scura": 0.25
+ },
+ "frasi": [
+  [
+   "Lo stretto di *Hormuz*",
+   "Lo stretto di Hormuz:"
+  ],
+  [
+   "perché *non riapre?*",
+   "perché non riapre?"
+  ],
+  [
+   "Tra *Iran* e *Oman*",
+   "È il canale tra l'Iran e l'Oman,"
+  ],
+  [
+   "largo circa *33 km*",
+   "largo, nel punto più stretto, circa trentatré chilometri."
+  ],
+  [
+   "Prima della guerra",
+   "Prima della guerra da qui passavano"
+  ],
+  [
+   "*20 milioni* di barili al giorno",
+   "venti milioni di barili di petrolio al giorno:"
+  ],
+  [
+   "*un quinto* del consumo mondiale",
+   "un quinto del consumo mondiale."
+  ],
+  [
+   "Lo scontro nasce dal *nucleare*",
+   "Lo scontro nasce dal programma nucleare iraniano."
+  ],
+  [
+   "Il *28 febbraio* diventa guerra",
+   "Il ventotto febbraio diventa guerra, tra Stati Uniti, Israele e Iran."
+  ],
+  [
+   "L'Iran *ferma* il traffico",
+   "L'Iran ferma di fatto il traffico nello stretto."
+  ],
+  [
+   "Il *13 aprile*",
+   "Il tredici aprile"
+  ],
+  [
+   "Washington *blocca* i porti iraniani",
+   "Washington avvia un blocco navale dei porti iraniani."
+  ],
+  [
+   "Chiuso *da due parti*",
+   "Così lo stretto è chiuso da due parti."
+  ],
+  [
+   "Chi deve muoversi *per primo?*",
+   "Chi deve muoversi per primo?"
+  ],
+  [
+   "Tu cosa *ne pensi?*",
+   "Tu cosa ne pensi?"
+  ]
+ ],
+ "chiavi": [
+  [
+   "km",
+   3,
+   "trentatré"
+  ],
+  [
+   "venti",
+   5,
+   "venti"
+  ],
+  [
+   "quinto",
+   6,
+   "quinto"
+  ],
+  [
+   "ferma",
+   9,
+   "ferma"
+  ],
+  [
+   "blocco",
+   11,
+   "blocco"
+  ],
+  [
+   "due",
+   12,
+   "due"
+  ],
+  [
+   "primo",
+   13,
+   "primo"
+  ],
+  [
+   "guerra",
+   8,
+   "guerra"
+  ]
+ ],
+ "scene": [
+  {
+   "da": 2,
+   "titolo": "Dove *passa*",
+   "fonte": "Gulf News",
+   "camera": {
+    "centro": [
+     56.45,
+     26.55
+    ],
+    "zoom": 3.0,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "nomi",
+     "quando": "s",
+     "voci": [
+      {
+       "dove": [
+        55.7,
+        27.25
+       ],
+       "testo": "IRAN"
+      },
+      {
+       "dove": [
+        56.25,
+        25.75
+       ],
+       "testo": "OMAN"
+      }
+     ]
+    },
+    {
+     "tipo": "rotta",
+     "quando": "g2+0.3",
+     "durata": 1.6,
+     "colore": "azz",
+     "spessore": 6,
+     "punti": [
+      [
+       54.6,
+       26.35
+      ],
+      [
+       55.6,
+       26.45
+      ],
+      [
+       56.15,
+       26.55
+      ],
+      [
+       56.5,
+       26.45
+      ],
+      [
+       56.85,
+       26.1
+      ],
+      [
+       57.4,
+       25.6
+      ]
+     ]
+    },
+    {
+     "tipo": "misura",
+     "quando": "k:km-0.2",
+     "da": [
+      56.36,
+      26.4
+     ],
+     "a": [
+      56.36,
+      26.83
+     ],
+     "testo": "≈ 33 KM",
+     "dx": 26
+    }
+   ]
+  },
+  {
+   "da": 4,
+   "titolo": "Perché *conta*",
+   "fonte": "Gulf News, Al Jazeera",
+   "camera": {
+    "centro": [
+     56.6,
+     26.1
+    ],
+    "zoom": 1.6,
+    "durata": 1.2
+   },
+   "blocchi": [
+    {
+     "tipo": "navi",
+     "quando": "s",
+     "n": 5,
+     "durata": 9,
+     "dimensione": 56,
+     "punti": [
+      [
+       52.8,
+       26.6
+      ],
+      [
+       54.6,
+       26.35
+      ],
+      [
+       55.6,
+       26.45
+      ],
+      [
+       56.15,
+       26.55
+      ],
+      [
+       56.5,
+       26.45
+      ],
+      [
+       56.85,
+       26.1
+      ],
+      [
+       57.4,
+       25.6
+      ],
+      [
+       58.6,
+       24.9
+      ],
+      [
+       60.0,
+       24.2
+      ]
+     ]
+    },
+    {
+     "tipo": "numero",
+     "quando": "k:venti",
+     "valore": "20",
+     "dopo": " mln",
+     "etichetta": "barili di petrolio al giorno",
+     "nota": "PRIMA DELLA GUERRA",
+     "y": 740,
+     "esce": "k:quinto-0.5"
+    },
+    {
+     "tipo": "fila",
+     "quando": "k:quinto-0.4",
+     "icona": "barrel",
+     "n": 5,
+     "accese": 1,
+     "etichetta": "*un quinto* del mondo",
+     "y": 900
+    }
+   ]
+  },
+  {
+   "da": 7,
+   "titolo": "Primo blocco: *l'Iran*",
+   "fonte": "Al Jazeera, CFR",
+   "camera": {
+    "centro": [
+     56.45,
+     26.45
+    ],
+    "zoom": 2.4,
+    "durata": 1.2
+   },
+   "blocchi": [
+    {
+     "tipo": "nomi",
+     "quando": "k:guerra",
+     "voci": [
+      {
+       "dove": [
+        55.7,
+        27.25
+       ],
+       "testo": "IRAN"
+      },
+      {
+       "dove": [
+        56.25,
+        25.75
+       ],
+       "testo": "OMAN"
+      }
+     ]
+    },
+    {
+     "tipo": "navi",
+     "quando": "s",
+     "n": 5,
+     "durata": 9,
+     "dimensione": 52,
+     "ferma": {
+      "quando": "k:ferma",
+      "colore": "rosso"
+     },
+     "punti": [
+      [
+       53.8,
+       26.5
+      ],
+      [
+       54.6,
+       26.35
+      ],
+      [
+       55.6,
+       26.45
+      ],
+      [
+       56.15,
+       26.55
+      ],
+      [
+       56.5,
+       26.45
+      ],
+      [
+       56.85,
+       26.1
+      ],
+      [
+       57.4,
+       25.6
+      ],
+      [
+       58.2,
+       25.1
+      ]
+     ]
+    },
+    {
+     "tipo": "sbarramento",
+     "quando": "k:ferma",
+     "colore": "rosso",
+     "punti": [
+      [
+       56.33,
+       26.3
+      ],
+      [
+       56.36,
+       26.92
+      ]
+     ],
+     "etichetta": "CHIUSO DALL'IRAN",
+     "dx": -150,
+     "dy": -30
+    }
+   ]
+  },
+  {
+   "da": 10,
+   "titolo": "Secondo blocco: *gli USA*",
+   "fonte": "Al Jazeera",
+   "camera": {
+    "centro": [
+     57.7,
+     25.0
+    ],
+    "zoom": 1.25,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "sbarramento",
+     "quando": "s",
+     "colore": "rosso",
+     "x": false,
+     "punti": [
+      [
+       56.33,
+       26.3
+      ],
+      [
+       56.36,
+       26.92
+      ]
+     ]
+    },
+    {
+     "tipo": "navi",
+     "quando": "s",
+     "n": 3,
+     "durata": 6,
+     "dimensione": 52,
+     "torna": {
+      "quando": "k:blocco+0.4"
+     },
+     "punti": [
+      [
+       61.8,
+       22.6
+      ],
+      [
+       60.4,
+       23.6
+      ],
+      [
+       59.4,
+       24.5
+      ],
+      [
+       58.4,
+       25.2
+      ]
+     ]
+    },
+    {
+     "tipo": "sbarramento",
+     "quando": "k:blocco",
+     "colore": "azz",
+     "tratteggio": true,
+     "x": false,
+     "punti": [
+      [
+       58.75,
+       23.75
+      ],
+      [
+       59.35,
+       25.35
+      ]
+     ],
+     "etichetta": "BLOCCO USA",
+     "dx": 20,
+     "dy": 10
+    },
+    {
+     "tipo": "timbro",
+     "quando": "k:due-0.1",
+     "testo": "CHIUSO DA DUE PARTI",
+     "x": 150,
+     "y": 860,
+     "ruota": -6
+    }
+   ]
+  },
+  {
+   "da": 13,
+   "titolo": "Chi si muove *per primo?*",
+   "fonte": "Al Jazeera",
+   "scura": 0.75,
+   "camera": {
+    "centro": [
+     56.6,
+     26.0
+    ],
+    "zoom": 1.0,
+    "durata": 1.2
+   },
+   "blocchi": [
+    {
+     "tipo": "scelta",
+     "y": 470,
+     "opzioni": [
+      {
+       "t": "Prima la fine del blocco",
+       "chi": "LA POSIZIONE DI TEHERAN",
+       "quando": "k:primo"
+      },
+      {
+       "t": "Prima il nucleare",
+       "chi": "LA POSIZIONE DI WASHINGTON",
+       "quando": "k:primo+0.6"
+      }
+     ]
+    },
+    {
+     "tipo": "firma",
+     "y": 830
+    }
+   ]
+  }
+ ]
+}

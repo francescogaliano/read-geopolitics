@@ -1,0 +1,372 @@
+{
+ "id": "due-letture-2026-11-12-muto",
+ "storia": "s-20261112-01",
+ "muto": true,
+ "kicker": "DUE LETTURE",
+ "etichetta": "DUE LETTURE · UCRAINA",
+ "nota_fatti": "FATTI AL 12 NOVEMBRE",
+ "apertura": {
+  "titolo": "Scambio di prigionieri:",
+  "oro": "primo passo o gesto isolato?",
+  "centro": [
+   44,
+   38
+  ],
+  "punto": [
+   54.37,
+   24.45
+  ],
+  "evidenzia": [
+   "RUS",
+   "UKR"
+  ],
+  "zoom": 850,
+  "etichetta": "ABU DHABI"
+ },
+ "mappa": {
+  "globo": true,
+  "centro": [
+   44,
+   38
+  ],
+  "accesi": [
+   "RUS",
+   "UKR"
+  ],
+  "scura": 0.0
+ },
+ "frasi": [
+  [
+   "Scambio di prigionieri:",
+   "",
+   1.8
+  ],
+  [
+   "primo passo o gesto isolato?",
+   "",
+   1.9
+  ],
+  [
+   "Ad *Abu Dhabi* si chiudono i colloqui tra Russia, Ucraina e USA",
+   ""
+  ],
+  [
+   "C'è un'intesa di principio: un grande *scambio di prigionieri*",
+   ""
+  ],
+  [
+   "Circa *1.000 per parte*: i numeri sono ancora da definire",
+   ""
+  ],
+  [
+   "Su *territori* e *tregua*, invece, nessuna intesa",
+   "",
+   3.4
+  ],
+  [
+   "Intanto: droni ucraini su un porto e una raffineria in Russia",
+   ""
+  ],
+  [
+   "E raid russi su *sei sottostazioni* in Ucraina",
+   ""
+  ],
+  [
+   "Gli inviati americani sono *a Mosca*, da Putin",
+   ""
+  ],
+  [
+   "Kiev propone una tregua su *energia* e *Mar Nero*",
+   ""
+  ],
+  [
+   "Ora si attende *la risposta russa*",
+   "",
+   3.2
+  ],
+  [
+   "Le due tesi complete, con le fonti, su *Read Geopolitics*",
+   "",
+   4.0
+  ]
+ ],
+ "chiavi": [],
+ "scene": [
+  {
+   "da": 2,
+   "titolo": "Il *fatto*",
+   "fonte": "Reuters, Kyiv Independent, TASS (Stato)",
+   "camera": {
+    "centro": [
+     46,
+     31
+    ],
+    "zoom": 2.0,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "nomi",
+     "quando": "s+0.6",
+     "voci": [
+      {
+       "dove": [
+        44,
+        53.5
+       ],
+       "testo": "RUSSIA"
+      },
+      {
+       "dove": [
+        31.5,
+        48.8
+       ],
+       "testo": "UCRAINA"
+      }
+     ]
+    },
+    {
+     "tipo": "etichetta",
+     "quando": "s+0.5",
+     "fino": "g4",
+     "dove": [
+      54.37,
+      24.45
+     ],
+     "testo": "ABU DHABI",
+     "colore": "oro"
+    },
+    {
+     "tipo": "numero",
+     "quando": "g4+0.2",
+     "prima": "≈ ",
+     "valore": "1.000",
+     "etichetta": "prigionieri *per parte*",
+     "nota": "NUMERI ANCORA DA DEFINIRE",
+     "y": 800
+    }
+   ]
+  },
+  {
+   "da": 5,
+   "titolo": "Cosa *manca*",
+   "fonte": "Reuters",
+   "camera": {
+    "centro": [
+     33,
+     47.5
+    ],
+    "zoom": 4.0,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "nomi",
+     "quando": "s+0.8",
+     "voci": [
+      {
+       "dove": [
+        31.5,
+        49
+       ],
+       "testo": "UCRAINA"
+      }
+     ]
+    },
+    {
+     "tipo": "timbro",
+     "quando": "g5+1.0",
+     "testo": "NESSUNA INTESA",
+     "colore": "azz",
+     "x": 230,
+     "y": 900,
+     "ruota": -6
+    }
+   ]
+  },
+  {
+   "da": 6,
+   "titolo": "Intanto, *sul campo*",
+   "fonte": "Kyiv Independent",
+   "camera": {
+    "centro": [
+     55,
+     51
+    ],
+    "zoom": 1.9,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "etichetta",
+     "quando": "g6+0.8",
+     "dove": [
+      28.4,
+      59.7
+     ],
+     "testo": "UST-LUGA · PORTO",
+     "colore": "oro"
+    },
+    {
+     "tipo": "etichetta",
+     "quando": "g6+1.4",
+     "dove": [
+      73.4,
+      55.0
+     ],
+     "testo": "OMSK · RAFFINERIA",
+     "colore": "oro"
+    },
+    {
+     "tipo": "etichetta",
+     "quando": "g7+0.3",
+     "dove": [
+      31,
+      49
+     ],
+     "testo": "6 SOTTOSTAZIONI",
+     "colore": "oro",
+     "dx": 28,
+     "dy": 10
+    }
+   ]
+  },
+  {
+   "da": 8,
+   "titolo": "Cosa *deciderà*",
+   "fonte": "Anadolu, APA",
+   "camera": {
+    "centro": [
+     45,
+     37
+    ],
+    "zoom": 1.7,
+    "durata": 1.4
+   },
+   "blocchi": [
+    {
+     "tipo": "rotta",
+     "quando": "s+0.8",
+     "durata": 2.4,
+     "tratteggio": true,
+     "colore": "azz",
+     "spessore": 5,
+     "punti": [
+      [
+       54.37,
+       24.45
+      ],
+      [
+       50,
+       32
+      ],
+      [
+       46,
+       40
+      ],
+      [
+       41.5,
+       49
+      ],
+      [
+       37.6,
+       55.75
+      ]
+     ]
+    },
+    {
+     "tipo": "navi",
+     "quando": "s+0.8",
+     "icona": "plane",
+     "n": 1,
+     "durata": 3.0,
+     "dimensione": 70,
+     "ferma": {
+      "quando": "s+3.7"
+     },
+     "punti": [
+      [
+       54.37,
+       24.45
+      ],
+      [
+       50,
+       32
+      ],
+      [
+       46,
+       40
+      ],
+      [
+       41.5,
+       49
+      ],
+      [
+       37.6,
+       55.75
+      ]
+     ]
+    },
+    {
+     "tipo": "etichetta",
+     "quando": "s+2.6",
+     "dove": [
+      37.6,
+      55.75
+     ],
+     "testo": "MOSCA",
+     "colore": "bianco",
+     "dx": 50,
+     "dy": 34
+    },
+    {
+     "tipo": "timbro",
+     "quando": "g10+0.6",
+     "testo": "RISPOSTA ATTESA",
+     "colore": "oro",
+     "x": 220,
+     "y": 900,
+     "ruota": -5
+    }
+   ]
+  },
+  {
+   "da": 11,
+   "titolo": "Tu *come la leggi?*",
+   "fonte": "",
+   "scura": 0.8,
+   "camera": {
+    "centro": [
+     44,
+     42
+    ],
+    "zoom": 1.3,
+    "durata": 1.2
+   },
+   "blocchi": [
+    {
+     "tipo": "scelta",
+     "y": 470,
+     "opzioni": [
+      {
+       "t": "Il canale a tre funziona",
+       "chi": "KUSHNER · IL CREMLINO",
+       "quando": "g11+0.3"
+      },
+      {
+       "t": "Senza tregua conta poco",
+       "chi": "ZELENSKY · I NEGOZIATORI UCRAINI",
+       "quando": "g11+0.9"
+      }
+     ]
+    },
+    {
+     "tipo": "firma",
+     "y": 830,
+     "quando": "g11+1.5",
+     "testo": "Gratis, link nel profilo"
+    }
+   ]
+  }
+ ]
+}
