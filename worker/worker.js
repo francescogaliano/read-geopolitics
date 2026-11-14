@@ -1357,6 +1357,7 @@ async function panelApi(env, origin, b, ctx) {
   if (typeof act === "string" && act.startsWith("mail_")) return await mailPanel(env, b);
   if (act === "dec_get" || act === "dec_set") return await decPanel(env, b);
   if (act === "fb_get" || act === "fb_set" || act === "fb_img" || act === "fb_reply") return await fbPanel(env, b);
+  if (act === "dp_get" || act === "dp_set") return await dpPanel(env, b);
   if (act === "draft_reset") {
     const d = await kvGet(env, "draft:" + String(b.id));
     if (!d) throw { status: 404, code: "draft_not_found" };
@@ -2657,7 +2658,7 @@ let DC=null,DCMORE={},DCT=null;
 const DCAZ={dossier:[["prepara","Prepara","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],idea:[["interessante","Interessante","y"],["tardi","Più tardi",""],["pausa","Pausa",""],["no","No","n"]],tema:[["seguilo","Seguilo","y"],["tardi","Più tardi",""],["no","No","n"]],lav:[["annulla","Annulla","n"]]};
 const DCSEC=[["dossier","🧭 Dossier proposti"],["idea","💡 Idee"],["tema","🙋 Temi chiesti dai lettori"]];
 const DCFATTO={prepara:"Preparalo",no:"No",interessante:"Interessante",annulla:"Annulla",seguilo:"Seguilo"};
-async function dcLoad(){const [r,f]=await Promise.all([api({action:"dec_get"}),api({action:"fb_get"})]);if(r&&r.ok){DC=r;DC.fb=f&&f.ok?f.items:[];dcRender()}else{const el=document.getElementById("dc");if(el&&!DC)el.innerHTML='<div class="card"><div class="sub">Non riesco a caricare le proposte: '+esc((r&&r.error)||"")+'</div></div>'}}
+async function dcLoad(){const [r,f,q]=await Promise.all([api({action:"dec_get"}),api({action:"fb_get"}),api({action:"dp_get"}).catch(()=>null)]);if(r&&r.ok){DC=r;DC.fb=f&&f.ok?f.items:[];DC.dp=q&&q.ok?q.items:[];dcRender()}else{const el=document.getElementById("dc");if(el&&!DC)el.innerHTML='<div class="card"><div class="sub">Non riesco a caricare le proposte: '+esc((r&&r.error)||"")+'</div></div>'}}
 function dcAge(d){if(!d)return "";const n=Math.round((Date.parse(DC.today+"T12:00:00Z")-Date.parse(d+"T12:00:00Z"))/864e5);return n<=0?"oggi":n===1?"da ieri":"in attesa da "+n+" giorni"}
 function dcRow(x,grp){const az=DCAZ[grp]||[];const d=(DC.dec||{})[x.id];const age=x.data?dcAge(x.data):"";const old=x.data&&grp!=="lav"&&age.indexOf("giorni")>0&&parseInt((age.match(/[0-9]+/)||["0"])[0],10)>=14;
   let h='<div class="dc-r" data-dc="'+esc(x.id)+'"><div class="dc-t">'+esc(x.titolo||x.id)+'</div><div class="dc-m">'+esc(x.meta||"")+(x.meta&&age?" · ":"")+(age?'<span class="'+(old?"old":"")+'">'+esc(age)+'</span>':"")+'</div>'+(x.testo?'<div class="dc-d">'+esc(x.testo)+'</div>':"");
@@ -2671,7 +2672,7 @@ function dcRender(){const el=document.getElementById("dc");if(!el||!DC)return;co
   const open=it.filter(x=>x.tipo!=="lav"&&["aperta","fatto"].includes(st(x)));const n=open.filter(x=>st(x)==="aperta").length;
   const FB=DC.fb||[],fbN=FB.filter(x=>x.stato==="nuova").length;if(DC.fb)fbBanner(FB.filter(x=>x.stato==="nuova"));else if(D&&D.fb)fbN=D.fb.length;
   const b=document.getElementById("dcb");if(b){b.hidden=!(n+fbN);b.textContent=n+fbN}
-  let h=fbHTML(FB)+'<div class="card"><div class="dc-h"><b>Da decidere</b><span class="sub">'+n+(DC.at?' · aggiornate il '+esc(itDate(DC.at.slice(0,10)))+' alle '+esc(new Date(DC.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})):' · non ancora arrivate')+'</span></div><div class="sub" style="margin-top:4px">Le proposte degli agenti e le richieste. La routine del sito (7:52 e 16:52) le aggiorna e porta le tue scelte nell&#39;artifact.</div>';
+  let h=fbHTML(FB)+dpHTML(DC.dp||[])+'<div class="card"><div class="dc-h"><b>Da decidere</b><span class="sub">'+n+(DC.at?' · aggiornate il '+esc(itDate(DC.at.slice(0,10)))+' alle '+esc(new Date(DC.at).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})):' · non ancora arrivate')+'</span></div><div class="sub" style="margin-top:4px">Le proposte degli agenti e le richieste. La routine del sito (7:52 e 16:52) le aggiorna e porta le tue scelte nell&#39;artifact.</div>';
   for(const [g,lab] of DCSEC){const L=open.filter(x=>x.tipo===g).sort((a,z)=>String(a.data||"").localeCompare(String(z.data||"")));if(!L.length)continue;const lim=DCMORE[g]?L.length:3;
     h+='<div class="dc-sec"><span>'+lab+' · '+L.length+'</span><span>'+(g==="dossier"?"dal più vecchio":"")+'</span></div>'+L.slice(0,lim).map(x=>dcRow(x,g)).join("")+(L.length>lim?'<button class="dc-more" data-dc-more="'+g+'">Altri '+(L.length-lim)+' ▾</button>':"")}
   if(!open.length)h+='<div class="sub" style="margin-top:12px">Niente da decidere.</div>';
@@ -2685,6 +2686,14 @@ function fbHTML(FB){const on=FB.filter(x=>x.stato!=="archiviata");if(!FB.length)
   const ar=FB.filter(x=>x.stato==="archiviata");
   return '<div class="card"><div class="dc-h"><b>Segnalazioni dal sito</b><span class="sub">'+N+(N===1?' nuova':' nuove')+'</span></div><div class="sub" style="margin-top:4px">Arrivano da «💬 Scrivici», in alto sul sito.</div>'+(on.length?on.slice(0,FBMORE?on.length:5).map(row).join(""):'<div class="sub" style="margin-top:10px">Nessuna segnalazione aperta.</div>')+(on.length>5&&!FBMORE?'<button class="dc-more" data-fb-more="1">Altre '+(on.length-5)+' ▾</button>':'')+(ar.length?'<div class="dc-f"><details><summary>Archiviate · '+ar.length+'</summary>'+ar.slice(0,30).map(row).join("")+'</details></div>':'')+'</div>'}
 let FBMORE=false,FBIMG={},FBREP={};
+/* «Segnala dal posto»: le notizie locali dei lettori. L'esito lo scrive l'agente del mattino (ripresa, da seguire, inedita, scartata) */
+const DPST={nuova:["nuova","#E8A33D"],ripresa:["ripresa nel briefing","#3FB27F"],da_seguire:["la seguiamo","#E8A33D"],inedita:["ancora inedita","#86B4EA"],scartata:["scartata","#7E8AA3"],archiviata:["archiviata","#7E8AA3"]};
+const DPCOME={vivo:"ci vive",lavoro:"ci lavora o ci va spesso",media:"l'ha letto su un media locale",altro:"altro"};
+function dpHTML(L){if(!L.length)return "";const on=L.filter(x=>x.stato!=="archiviata"),N=on.filter(x=>x.stato==="nuova").length;
+  const row=x=>{const s=DPST[x.stato]||[x.stato,"#7E8AA3"];return '<div class="dc-r"><div class="dc-t"><span class="fbn-ref">'+esc(x.ref||"")+'</span>📍 '+esc(x.paese||"")+' · <span style="color:'+s[1]+'">'+esc(s[0])+'</span></div><div class="dc-d" style="white-space:pre-wrap">'+esc(x.testo||"")+'</div>'+(x.link?'<div class="dc-m"><a href="'+esc(x.link)+'" target="_blank" rel="noopener">'+esc(x.link.length>70?x.link.slice(0,70)+"…":x.link)+'</a></div>':'')+'<div class="dc-m">'+esc(DPCOME[x.come]||x.come||"")+' · '+esc(new Date(x.ricevuta).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+(x.cita?' · si può citare':'')+(x.email?' · '+esc(x.email):'')+(x.uguale_a?' · uguale a '+esc(x.uguale_a):'')+'</div>'+(x.esito||x.nota?'<div class="dc-m"><b>Agente:</b> '+esc([x.esito,x.nota].filter(Boolean).join(" · "))+'</div>':'')+'<div class="dc-a">'+(x.stato==="archiviata"?'<button class="dc-g" data-dp="'+esc(x.id)+'" data-dp-s="nuova">Riapri</button>':'<button class="dc-g" data-dp="'+esc(x.id)+'" data-dp-s="archiviata">Archivia</button>')+'</div></div>'};
+  const ar=L.filter(x=>x.stato==="archiviata");
+  return '<div class="card"><div class="dc-h"><b>Dal posto</b><span class="sub">'+N+(N===1?' nuova':' nuove')+'</span></div><div class="sub" style="margin-top:4px">Notizie locali dei lettori, da «Segnala dal posto». L’agente del mattino le confronta con altre fonti e scrive qui l’esito.</div>'+(on.length?on.slice(0,10).map(row).join(""):'<div class="sub" style="margin-top:10px">Nessuna segnalazione aperta.</div>')+(ar.length?'<div class="dc-f"><details><summary>Archiviate · '+ar.length+'</summary>'+ar.slice(0,30).map(row).join("")+'</details></div>':'')+'</div>'}
+document.getElementById("dc").addEventListener("click",async e=>{const b=e.target.closest("[data-dp]");if(!b)return;e.stopPropagation();b.disabled=true;const r=await api({action:"dp_set",id:b.dataset.dp,stato:b.dataset.dpS});if(r&&r.ok){DC.dp=r.items;dcRender()}else{b.disabled=false;alert("Non salvato: "+((r&&r.error)||""))}});
 /* le segnalazioni nuove si vedono in cima al pannello, in ogni scheda */
 function fbBanner(L){const el=document.getElementById("fbn");if(!el)return;el.hidden=!L.length;if(!L.length){el.innerHTML="";return}
   el.innerHTML='<div class="fbn-h"><b>💬 '+(L.length===1?'1 segnalazione nuova':L.length+' segnalazioni nuove')+' dal sito</b><button type="button" data-fbn-go="1">Apri ›</button></div>'+L.slice(0,3).map(x=>'<div class="fbn-r" data-fbn-go="1"><span class="fbn-ref">'+esc(x.ref||"")+'</span>'+(x.tipo==="idea"?"💡 ":"⚠️ ")+esc(clip(x.testo,90))+'</div>').join("")+(L.length>3?'<div class="sub">e altre '+(L.length-3)+'</div>':'');
@@ -5597,6 +5606,7 @@ async function route(request, env, ctx) {
   if (method === "POST" && (p === "/api/me" || p === "/api/newsletter")) return await nlApi(request, env, p);
   if (method === "POST" && p === "/api/segui") return await seguiApi(request, env);
   if (method === "POST" && p === "/api/segnala") return await segnalaApi(request, env);
+  if (method === "POST" && p === "/api/dalposto") return await dpApi(request, env); // «Segnala dal posto»
   if (method === "GET" && p === "/api/newsletter/esempio") {
     const src = await mailBriefing(env, null);
     if (!src) return htmlPage("Esempio", "Nessun esempio disponibile.", 404);
@@ -6271,6 +6281,58 @@ async function segnalaApi(request, env) {
   return json({ ok: true, ref: it.ref });
 }
 function fbRef(n) { return "S-" + String(n).padStart(3, "0"); }
+/* «Segnala dal posto»: notizie locali da chi vive nei paesi. Restano private (collezione segnalazioni, fuori dal sito):
+   l'agente del mattino le legge e le confronta con altre fonti; se le riprende, entrano come testimonianza attribuita, mai come fatto.
+   L'email, se c'è, sta a parte (kv dpmail:<id>) e la vede solo il pannello. */
+const DP_COME = ["vivo", "lavoro", "media", "altro"];
+const DP_STATI = ["nuova", "ripresa", "da_seguire", "inedita", "scartata", "archiviata"];
+async function dpApi(request, env) {
+  const raw = await request.text(); if (raw.length > 20000) return fail(413, "too_large");
+  let b = null; try { b = JSON.parse(raw); } catch (e) {}
+  if (!b || typeof b !== "object") return fail(400, "invalid_json");
+  if (b.sito) return json({ ok: true, ref: "P-000" }); // campo trappola per i bot
+  const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
+  const testo = String(b.testo || "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 1200);
+  if (testo.length < 15) return fail(422, "too_short");
+  const paese = t(b.paese, 80); if (paese.length < 2) return fail(422, "no_paese");
+  const iso = typeof b.iso === "string" && /^[A-Z]{3}$/.test(b.iso) ? b.iso : "";
+  let link = t(b.link, 500);
+  if (link) { try { const u = new URL(/^[a-z]+:\/\//i.test(link) ? link : "https://" + link); if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) throw 0; link = u.href.slice(0, 500); } catch (e) { return fail(422, "bad_link"); } }
+  const come = DP_COME.includes(b.come) ? b.come : "altro";
+  const email = t(b.email, 120).toLowerCase(); if (email && !EMAIL_RE.test(email)) return fail(422, "bad_email");
+  const day = romeToday(); const ip = request.headers.get("CF-Connecting-IP") || "x";
+  const h = (await sha256("dp|" + ip + "|" + day)).slice(0, 16); // non si conserva l'IP: solo un'impronta che cambia ogni giorno
+  const rl = (await kvGet(env, "dp_rl")) || {}; if (rl.day !== day) { rl.day = day; rl.n = {}; }
+  if ((rl.n[h] || 0) >= 5) return fail(429, "too_many"); rl.n[h] = (rl.n[h] || 0) + 1; await kvSet(env, "dp_rl", rl);
+  await rdocsTable(env);
+  // messaggi uguali o quasi uguali contano come uno: stessa impronta del testo semplificato
+  const impronta = (await sha256(testo.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, " ").trim())).slice(0, 16);
+  const dup = await env.DB.prepare("SELECT key FROM rdocs WHERE type='segnalazioni' AND json_extract(data,'$.impronta')=?1 LIMIT 1").bind(impronta).first();
+  const seq = ((await kvGet(env, "dp_seq")) || 0) + 1; await kvSet(env, "dp_seq", seq);
+  const ref = "P-" + String(seq).padStart(3, "0"), id = "dp-" + day.replace(/-/g, "") + "-" + String(seq).padStart(3, "0");
+  const data = { id, ref, ricevuta: new Date().toISOString(), paese, iso, testo, link, come, cita: b.cita === true, da: b.da === "sito" ? "sito" : "diretto", storia: t(b.storia, 80), impronta, uguale_a: dup ? dup.key : "", stato: "nuova", esito: "", nota: "", con_email: !!email };
+  const W = await dbApply(env, [{ op: "create", collection: "segnalazioni", doc_id: id, data }]);
+  if (!W || !W[0] || W[0].status !== "created") return fail(503, "db_error");
+  if (email) await kvSet(env, "dpmail:" + id, email);
+  try { await tgPriv(env, "📍 <b>Dal posto</b> · " + ref + " · " + esc(paese) + "\n" + esc(testo.slice(0, 900)) + (link ? "\n" + esc(link) : "") + "\n<i>" + esc(come) + (dup ? " · uguale a " + esc(dup.key) : "") + (email ? " · con email" : "") + "</i>"); } catch (e) {}
+  return json({ ok: true, ref });
+}
+async function dpPanel(env, b) {
+  await rdocsTable(env);
+  if (b.action === "dp_set") {
+    const id = String(b.id || "").slice(0, 60), st = String(b.stato || "");
+    if (!/^dp-[0-9]{8}-[0-9]{3,}$/.test(id) || !DP_STATI.includes(st)) return { ok: false, error: "voce non valida" };
+    await dbApply(env, [{ op: "update", collection: "segnalazioni", doc_id: id, data: { stato: st, cambiato: new Date().toISOString() } }]);
+  }
+  // conservazione promessa nell'informativa: segnalazioni al massimo 24 mesi, email al massimo 12
+  const d24 = new Date(Date.now() - 730 * 864e5).toISOString(), d12 = Date.now() - 365 * 864e5;
+  const old = await env.DB.prepare("SELECT key FROM rdocs WHERE type='segnalazioni' AND json_extract(data,'$.ricevuta')<?1").bind(d24).all();
+  for (const r of old.results || []) { await kvDel(env, "dpmail:" + r.key); await env.DB.batch([env.DB.prepare("DELETE FROM rdocs WHERE type='segnalazioni' AND key=?1").bind(r.key), env.DB.prepare("DELETE FROM rrevisions WHERE type='segnalazioni' AND key=?1").bind(r.key)]); }
+  const { results } = await env.DB.prepare("SELECT data FROM rdocs WHERE type='segnalazioni' ORDER BY json_extract(data,'$.ricevuta') DESC LIMIT 200").all();
+  const items = (results || []).map((r) => JSON.parse(r.data));
+  for (const x of items) if (x.con_email) { if (Date.parse(x.ricevuta) < d12) { await kvDel(env, "dpmail:" + x.id); x.email = ""; } else x.email = (await kvGet(env, "dpmail:" + x.id)) || ""; }
+  return { ok: true, items };
+}
 /* le segnalazioni senza riferimento (arrivate prima della v69b) lo ricevono in ordine di arrivo */
 async function fbList(env) {
   const L = (await kvGet(env, "fb_items")) || []; const miss = L.filter((x) => !x.ref);

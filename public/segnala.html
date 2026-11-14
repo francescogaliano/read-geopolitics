@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="it">
+<head>
+<link rel="preload" href="/fonts/ibm-plex-serif-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Segnala dal posto · Read Geopolitics</title>
+<meta name="description" content="Vivi in un paese di cui parliamo? Segnalaci le notizie locali che da qui non raggiungiamo: le leggiamo con attenzione e le confrontiamo con altre fonti.">
+<meta property="og:title" content="Le notizie che da qui non raggiungiamo · Read Geopolitics">
+<meta property="og:description" content="Vivi in un paese di cui parliamo? Segnalaci le notizie locali: le leggiamo e le confrontiamo con altre fonti.">
+<meta property="og:image" content="https://www.readgeopolitics.com/img/og.png">
+<meta name="theme-color" content="#0a0f1c">
+<style>
+@font-face{font-family:"IBM Plex Serif";font-weight:600;font-display:swap;src:url(/fonts/ibm-plex-serif-latin-600-normal.woff2)}
+@font-face{font-family:"IBM Plex Sans";font-weight:400;font-display:swap;src:url(/fonts/ibm-plex-sans-latin-400-normal.woff2)}
+@font-face{font-family:"IBM Plex Sans";font-weight:600;font-display:swap;src:url(/fonts/ibm-plex-sans-latin-600-normal.woff2)}
+@font-face{font-family:"IBM Plex Mono";font-weight:500;font-display:swap;src:url(/fonts/ibm-plex-mono-latin-500-normal.woff2)}
+:root{--bg:#0a0f1c;--ink:#EEF2F8;--mut:#A9B4C8;--faint:#7E8AA3;--amb:#F0AE45;--line:rgba(150,175,225,.18);--ok:#3FB27F;--blu:#8CB9EE;--err:#F4A39B;--field:rgba(8,13,26,.8)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(900px 560px at 50% 120px,#16254a 0%,rgba(10,15,28,0) 70%) no-repeat,var(--bg);color:var(--ink);font:17px/1.55 "IBM Plex Sans",system-ui,sans-serif;min-height:100vh}
+.ser{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600}
+.mono{font:500 12.5px/1.4 "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--amb)}
+a{color:var(--amb)}
+.wrap{max-width:680px;margin:0 auto;padding:0 20px}
+header{padding:20px 0 0;display:flex;align-items:center;gap:12px}
+header a{display:flex;align-items:center;gap:12px;text-decoration:none}
+header svg{width:40px;height:40px}header .rule{width:2px;height:32px;background:var(--blu)}header .nm{font-size:17px;line-height:1.05;color:#F2EDE4}
+.hero{padding:40px 0 8px}
+h1{font-size:clamp(34px,9vw,52px);line-height:1.08;margin:10px 0 14px}
+h1 em{font-style:normal;color:var(--amb)}
+.lead{color:var(--mut);font-size:18.5px;max-width:58ch}
+.lead b{color:var(--ink);font-weight:600}
+.rules{list-style:none;margin:28px 0 0}
+.rules li{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:14px 0 14px 14px;border-top:1px solid var(--line);box-shadow:inset 3px 0 0 var(--c)}
+.rules li:last-child{border-bottom:1px solid var(--line)}
+.rules .n{font:500 13px "IBM Plex Mono",monospace;color:var(--c);padding-top:3px}
+.rules b{display:block;font-weight:600}.rules span{color:var(--mut);font-size:15.5px}
+form{margin:40px 0 0}
+.fld{padding:18px 0;border-top:1px solid var(--line)}
+form .fld:first-child{border-top:0}
+.fld:last-of-type{border-bottom:1px solid var(--line)}
+.l{display:block;font-weight:600;margin-bottom:4px}
+.h{display:block;color:var(--faint);font-size:14px;margin-bottom:10px}
+.opt{color:var(--faint);font:500 11px "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;margin-left:6px}
+input[type=text],input[type=url],input[type=email],textarea{width:100%;min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--ink);padding:13px 15px;font:inherit;font-size:16px}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+input:focus,textarea:focus{outline:2px solid var(--amb);outline-offset:1px}
+.cnt{text-align:right;color:var(--faint);font:500 11.5px "IBM Plex Mono",monospace;margin-top:6px}
+.ch{list-style:none;border-top:1px solid var(--line)}
+.ch label{display:flex;align-items:center;gap:14px;min-height:52px;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.ch input{width:20px;height:20px;accent-color:var(--amb);flex:none}
+.ch .t{flex:1}.ch .s{display:block;color:var(--faint);font-size:14px}
+.ch label:has(input:checked){box-shadow:inset 3px 0 0 var(--amb);padding-left:12px}
+.cons{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:14.5px;line-height:1.45;color:var(--mut);cursor:pointer}
+.cons input{margin-top:3px;width:18px;height:18px;accent-color:var(--amb);flex:none}
+.cta{width:100%;height:56px;margin-top:26px;border:0;border-radius:12px;background:#F0AE45;color:#1A1204;font:600 17px "IBM Plex Sans",sans-serif;cursor:pointer;box-shadow:0 0 28px rgba(240,174,69,.25)}
+.cta:disabled{opacity:.6;cursor:default}
+.err{color:var(--err);font-size:14.5px;margin:12px 0 0}
+.fine{font-size:13.5px;color:var(--faint);margin-top:12px;text-align:center}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.gest{margin-top:56px}.gest h2{font-size:clamp(24px,6vw,30px);line-height:1.2;margin:8px 0 0}.gest .rules{margin-top:18px}
+.ok{margin:40px 0 0;padding:24px 0 24px 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);box-shadow:inset 3px 0 0 var(--ok)}
+.ok .mono{color:var(--ok)}
+.ok h2{font-size:26px;margin:8px 0 8px}.ok p{color:var(--mut);font-size:16px}
+.ok .ref{font:500 14px "IBM Plex Mono",monospace;color:var(--ink)}
+.stati{list-style:none;margin-top:14px}
+.stati li{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line);font-size:15px;color:var(--mut)}
+.stati i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c);transform:translateY(1px)}
+.stati b{color:var(--ink);font-weight:600}
+.again{display:inline-block;margin-top:16px;font-size:15px;background:none;border:0;color:var(--amb);cursor:pointer;font-family:inherit;text-decoration:underline;min-height:44px}
+footer{border-top:1px solid var(--line);margin-top:56px;padding:22px 0 40px;font-size:13px;color:var(--faint);text-align:center}
+/* dentro il sito (pannello): niente testata né piè di pagina, titolo più piccolo */
+body.emb{background:transparent}
+body.emb.chiaro{--ink:#15202B;--mut:#4F5B66;--faint:#6B7682;--amb:#9A5B0C;--line:#D8DEE2;--ok:#24804F;--blu:#2F62A0;--err:#B3261E;--field:#FFFFFF}
+body.emb.chiaro .cta{box-shadow:none}
+body.emb header,body.emb footer{display:none}
+body.emb .hero{padding:4px 0 0}
+body.emb .hero .mono{display:none}
+body.emb h1{font-size:28px;margin:6px 0 10px}
+body.emb .lead{font-size:16px}
+body.emb .wrap{padding:0 2px 24px}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<script data-goatcounter="https://read-geopolitics.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" href="/img/apple-touch-icon.png?v=2"></head>
+<body>
+<script>try{const q=new URLSearchParams(location.search);if(q.get("embed")==="1"){document.body.classList.add("emb");if(q.get("tema")==="chiaro")document.body.classList.add("chiaro");document.documentElement.style.colorScheme=q.get("tema")==="chiaro"?"light":"dark";const sf=q.get("sf");if(/^[0-9a-f]{6}$/i.test(sf||""))document.body.style.background="#"+sf}}catch(e){}</script>
+<div class="wrap">
+<header><a href="/" aria-label="Read Geopolitics"><svg viewBox="65 73 380 380" aria-hidden="true"><defs><clipPath id="cS"><path d="M127 160 L383 124 V440 H127 Z"/></clipPath></defs><g clip-path="url(#cS)"><path d="M140 304 Q 250 208 384 198 L384 250 Q 262 252 140 304 Z" fill="#E8B050"/><path d="M126 352 Q 250 268 384 266 L384 322 Q 246 322 126 352 Z" fill="#4D7DB0"/><path d="M150 440 Q 262 346 384 338 L384 440 Z" fill="#2D4C70"/></g><path d="M110 440 V146 L400 106 V440" fill="none" stroke="#8CB9EE" stroke-width="34"/></svg><span class="rule"></span><span class="nm ser">Read<br>Geopolitics</span></a></header>
+
+<div class="hero">
+ <div class="mono">Segnala dal posto</div>
+ <h1 class="ser">Le notizie che da qui <em>non raggiungiamo.</em></h1>
+ <p class="lead">Chi vive in un paese vede e legge cose che i grandi media non raccontano. Se ne trovi una che manca nel briefing, mandacela: <b>la leggiamo con attenzione</b> e la confrontiamo con altre fonti.</p>
+</div>
+
+<ul class="rules">
+ <li style="--c:var(--amb)"><span class="n">01</span><div><b>Diventa una testimonianza, non un fatto.</b><span>Se la riportiamo, compare come posizione attribuita, separata dai fatti, come ogni posizione nel briefing.</span></div></li>
+ <li style="--c:var(--blu)"><span class="n">02</span><div><b>La confrontiamo con altre fonti.</b><span>Ci dice cosa cercare e dove guardare. Tra i fatti entra solo ciò che fonti indipendenti confermano, con i loro link.</span></div></li>
+ <li style="--c:var(--ok)"><span class="n">03</span><div><b>Il tuo nome non compare.</b><span>Scriviamo «un lettore che vive a…» solo se ce lo permetti, altrimenti «una segnalazione dal posto».</span></div></li>
+</ul>
+
+<div id="box">
+<form id="f" novalidate>
+ <div class="fld">
+  <label class="l" for="paese">Paese o città</label>
+  <span class="h">Dove succede quello che ci segnali.</span>
+  <input id="paese" name="paese" type="text" maxlength="80" autocomplete="off" placeholder="Ad esempio: Arabia Saudita, Riad">
+ </div>
+ <div class="fld">
+  <label class="l" for="testo">Cosa hai visto o letto</label>
+  <span class="h">Bastano poche righe. Scrivi i fatti, anche se non sei sicuro.</span>
+  <textarea id="testo" name="testo" maxlength="1200"></textarea>
+  <div class="cnt" id="cnt">0 / 1200</div>
+ </div>
+ <div class="fld">
+  <label class="l" for="link">Link alla fonte locale <span class="opt">consigliato</span></label>
+  <span class="h">Anche in arabo, cinese o altre lingue: lo traduciamo noi.</span>
+  <input id="link" name="link" type="url" inputmode="url" maxlength="500" placeholder="https://…">
+ </div>
+ <div class="fld">
+  <span class="l" id="comeL">Come lo sai</span>
+  <span class="h">Ci aiuta a capire quanto pesare la segnalazione.</span>
+  <ul class="ch" role="radiogroup" aria-labelledby="comeL">
+   <li><label><input type="radio" name="come" value="vivo"><span class="t">Ci vivo<span class="s">Lo vedo o lo leggo sul posto</span></span></label></li>
+   <li><label><input type="radio" name="come" value="lavoro"><span class="t">Ci lavoro o ci vado spesso</span></label></li>
+   <li><label><input type="radio" name="come" value="media"><span class="t">L'ho letto su un media locale<span class="s">Senza essere sul posto</span></span></label></li>
+   <li><label><input type="radio" name="come" value="altro"><span class="t">Altro</span></label></li>
+  </ul>
+ </div>
+ <div class="fld">
+  <label class="l" for="em">La tua email <span class="opt">facoltativa</span></label>
+  <span class="h">Solo se vuoi sapere com'è andata o se possiamo farti una domanda. Non la pubblichiamo.</span>
+  <input id="em" name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="nome@esempio.it">
+  <label class="cons"><input type="checkbox" id="cita"><span>Potete citarmi come «un lettore che vive a…» se la mia segnalazione viene ripresa.</span></label>
+ </div>
+ <input class="hp" type="text" name="sito" id="sito" tabindex="-1" autocomplete="off" aria-hidden="true">
+ <button class="cta" id="go" type="submit">Invia la segnalazione</button>
+ <p class="err" id="err" role="alert" hidden></p>
+ <p class="fine">Non pubblichiamo nulla in automatico. <a href="/privacy.html" target="_blank" rel="noopener">Informativa privacy</a></p>
+</form>
+</div>
+
+<section class="gest">
+ <div class="mono" style="color:var(--faint)">Come gestiamo questo spazio</div>
+ <h2 class="ser">Uno spazio aperto, con alcune regole.</h2>
+ <ul class="rules">
+  <li style="--c:var(--blu)"><span class="n">·</span><div><b>Niente esce in automatico.</b><span>Ogni segnalazione la legge una persona prima di qualsiasi uso.</span></div></li>
+  <li style="--c:var(--amb)"><span class="n">·</span><div><b>Propaganda e campagne organizzate.</b><span>Chi vuole spingere una versione dei fatti può usare anche questo modulo. Per questo nessuna segnalazione pesa da sola, e messaggi uguali o molto simili contano come uno.</span></div></li>
+  <li style="--c:var(--amb)"><span class="n">·</span><div><b>Posizioni ufficiali.</b><span>Comunicati di governi o media statali li riportiamo solo come posizione ufficiale, sempre indicata come tale.</span></div></li>
+  <li style="--c:#7E8AA3"><span class="n">·</span><div><b>Cosa non teniamo.</b><span>Insulti, incitamento all'odio o alla violenza, dati personali di altre persone, pubblicità.</span></div></li>
+  <li style="--c:var(--ok)"><span class="n">·</span><div><b>Leggiamo tutto.</b><span>Non sempre riusciamo a rispondere, ma ogni segnalazione viene letta e conservata.</span></div></li>
+ </ul>
+</section>
+
+<footer>© Read Geopolitics · <a href="/">Il briefing di oggi</a> · <a href="/metodo.html">Fonti e metodo</a> · <a href="/privacy.html">Informativa privacy</a></footer>
+</div>
+<script>
+const RG_API="https://rg-api.briefinghub.workers.dev";
+const Q=new URLSearchParams(location.search),EMB=Q.get("embed")==="1";
+const $=id=>document.getElementById(id);
+const okHTML=ref=>`<div class="ok"><div class="mono">Segnalazione ricevuta${ref?" · <span class=\"ref\">"+ref+"</span>":""}</div><h2 class="ser">Grazie, la leggiamo con attenzione.</h2><p>Entro il prossimo briefing la confrontiamo con altre fonti. Può andare in uno di questi modi:</p><ul class="stati"><li style="--c:var(--ok)"><i></i><span><b>Ripresa nel briefing</b> · come testimonianza dal posto, accanto alle fonti che ne parlano</span></li><li style="--c:var(--amb)"><i></i><span><b>La seguiamo</b> · qualcuno ne parla ma serve ancora qualche riscontro</span></li><li style="--c:var(--blu)"><i></i><span><b>Ancora inedita</b> · nessuno ne ha scritto, e forse è proprio la notizia che manca. La conserviamo e la seguiamo nel tempo</span></li></ul><button type="button" class="again" id="again">Invia un'altra segnalazione</button></div>`;
+function fit(){if(!EMB||parent===window)return;try{parent.postMessage({rgDp:"h",h:Math.ceil(document.documentElement.scrollHeight)},location.origin)}catch(e){}}
+const paese=Q.get("paese");if(paese)$("paese").value=paese.slice(0,80);
+const msg=t=>{const e=$("err");e.textContent=t||"";e.hidden=!t;fit()};
+const formHTML=$("box").innerHTML;
+function wire(){
+ const f=$("f");if(!f)return;
+ f.addEventListener("submit",async ev=>{
+  ev.preventDefault();msg("");
+  const testo=$("testo").value.trim(),pa=$("paese").value.trim(),link=$("link").value.trim(),email=$("em").value.trim();
+  const come=(f.querySelector("input[name=come]:checked")||{}).value||"";
+  if(pa.length<2){msg("Scrivi il paese o la città.");$("paese").focus();return}
+  if(testo.length<15){msg("Scrivi almeno una frase su cosa hai visto o letto.");$("testo").focus();return}
+  if(link&&!/^(https?:\/\/)?[^\s.]+\.[^\s]+$/i.test(link)){msg("Il link non sembra valido.");$("link").focus();return}
+  if(!come){msg("Dicci come lo sai.");return}
+  if(email&&!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)){msg("Controlla l'indirizzo email.");$("em").focus();return}
+  const bt=$("go");bt.disabled=true;bt.textContent="Invio…";
+  try{
+   const r=await fetch(RG_API+"/api/dalposto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({paese:pa,iso:Q.get("iso")||"",testo,link,come,email,cita:$("cita").checked,sito:$("sito").value,da:EMB?"sito":"diretto",storia:Q.get("storia")||""})});
+   const j=await r.json().catch(()=>({}));
+   if(!r.ok||!j.ok){msg(j.error==="too_many"?"Hai già inviato diverse segnalazioni oggi: riprova domani.":j.error==="bad_link"?"Il link non sembra valido.":j.error==="bad_email"?"Controlla l'indirizzo email.":j.error==="too_short"?"Scrivi almeno una frase su cosa hai visto o letto.":"Non riesco a inviare in questo momento. Riprova tra poco.");bt.disabled=false;bt.textContent="Invia la segnalazione";return}
+   try{window.goatcounter&&window.goatcounter.count&&window.goatcounter.count({path:"evento/segnala-dal-posto",title:"segnala-dal-posto",event:true})}catch(e){}
+   $("box").innerHTML=okHTML(j.ref||"");$("box").scrollIntoView({behavior:"smooth",block:"start"});
+   $("again").addEventListener("click",()=>{$("box").innerHTML=formHTML;wire();if(paese)$("paese").value=paese.slice(0,80);fit()});fit();
+  }catch(e){msg("Non riesco a inviare in questo momento. Riprova tra poco.");bt.disabled=false;bt.textContent="Invia la segnalazione"}
+ });
+ const t2=$("testo"),c2=$("cnt");if(t2)t2.addEventListener("input",()=>{c2.textContent=t2.value.length+" / 1200"});
+}
+wire();
+if(EMB){addEventListener("load",fit);new ResizeObserver(fit).observe(document.body);fit()}
+</script>
+</body>
+</html>
