@@ -819,6 +819,11 @@ select,input[type=search]{font:inherit;font-size:14px;background:var(--surface);
 .sx-list>summary{cursor:pointer;font-size:13px;color:var(--accent);margin-top:6px;list-style:none}
 .sx-list>summary::-webkit-details-marker{display:none}
 .sx-act{display:flex;gap:8px;padding:12px 14px 10px}
+/* «Segnala dal posto»: una riga sola, discreta */
+.dpr{display:flex;gap:8px;align-items:center;min-height:44px;margin:4px 0 0;padding:0;border-top:1px solid var(--line);font-size:14px;line-height:1.3;color:var(--muted);text-decoration:none}
+.dpr u{text-decoration:none;color:var(--mid);font-weight:600;white-space:nowrap}.dpr:hover u{text-decoration:underline}
+.sto .dpr{margin:0 14px 6px}#panel .dpr{border-top:0;border-bottom:1px solid var(--line);margin:2px 0 8px}
+.ags[data-mode="dp"] .ags-l{padding:4px 14px 0}.dp-fr{display:block;width:100%;height:900px;border:0;background:transparent}
 .sx-act .askbtn{flex:1;padding:8px 0;font-size:14px}
 @media (max-width:560px){.sto-h{grid-template-columns:22px minmax(0,1fr);padding:11px 12px}.sto-h h3{font-size:17px}.sto-b,.sx-b{padding-left:12px;padding-right:12px}}
 @media (max-width:560px){.sto .sx>summary .sx-vote+.sx-f{font-size:0;gap:4px}.sto .sx>summary .sx-vote+.sx-f::after{font-size:15px}.sx-b>.sx-idx{margin-left:-12px;margin-right:-12px}.sx-b>.sxs{margin-left:0;margin-right:0}}
@@ -1643,7 +1648,7 @@ nav.tabs button .ic{margin-right:.3em}
     </div>
   </section>
 </main>
-<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · <a class="igl-foot" href="https://www.youtube.com/@ReadGeopolitics" target="_blank" rel="noopener">YouTube</a> · <a class="igl-foot" href="https://www.tiktok.com/@readgeopolitics" target="_blank" rel="noopener">TikTok</a> · <a class="igl-foot" href="https://t.me/readgeopolitics" target="_blank" rel="noopener">Telegram</a> · <a class="igl-foot" href="#" data-nl>Newsletter</a> · <a class="igl-foot" href="/metodo.html" target="_blank" rel="noopener">Fonti e metodo</a> · <a class="igl-foot" href="/privacy.html" target="_blank" rel="noopener">Privacy</a> · Early Access gratuito · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
+<p class="foot"><a class="igl-foot" href="https://www.instagram.com/read.geopolitics/" target="_blank" rel="noopener">Seguici su Instagram @read.geopolitics</a> · <a class="igl-foot" href="https://www.youtube.com/@ReadGeopolitics" target="_blank" rel="noopener">YouTube</a> · <a class="igl-foot" href="https://www.tiktok.com/@readgeopolitics" target="_blank" rel="noopener">TikTok</a> · <a class="igl-foot" href="https://t.me/readgeopolitics" target="_blank" rel="noopener">Telegram</a> · <a class="igl-foot" href="#" data-nl>Newsletter</a> · <a class="igl-foot" href="/segnala" data-dp-open="">Segnala dal posto</a> · <a class="igl-foot" href="/metodo.html" target="_blank" rel="noopener">Fonti e metodo</a> · <a class="igl-foot" href="/privacy.html" target="_blank" rel="noopener">Privacy</a> · Early Access gratuito · scritto ogni mattina da un'intelligenza artificiale (Claude) con fonti linkate · può contenere errori: per le cose importanti apri la fonte</p>
 <div id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
   <div class="prefs-box">
     <div class="ab-head"><h2 id="prefsTitle">⚙️ Preferenze</h2><button class="deep-x" id="prefsX" type="button" aria-label="Chiudi">×</button></div>
@@ -1899,7 +1904,7 @@ function sxBody(s,th,hasSc,conf,prev){
   ${sec("oss","🔭","Da osservare","",`<div class="sx-ck">${segs||'<p class="muted">—</p>'}</div>`)}
   ${ids.length?sec("ppl","👤","Persone coinvolte","",ppHTML(ids.map(x=>S.attori[x]).filter(Boolean))):""}
   ${sec("src","🔗",`Fonti · ${d.n} da ${d.paesi} ${plur(d.paesi,"paese","paesi")}`,"",`<p class="sx-src">${divHTML(s.fonti)}<span class="muted">Confidenza ${esc(confF(conf.livello))}: ${esc(conf.motivo||"")}</span></p><details class="sx-list"><summary>▸ Elenco delle fonti</summary>${srcList(s.fonti)}</details>`)}
-  <div class="sx-act"><button class="askbtn ghost" data-ask-story="${esc(id)}">💬 Fai una domanda</button><button class="askbtn" data-sx-close="${esc(id)}">▲ Chiudi</button></div>`}
+  <div class="sx-act"><button class="askbtn ghost" data-ask-story="${esc(id)}">💬 Fai una domanda</button><button class="askbtn" data-sx-close="${esc(id)}">▲ Chiudi</button></div>${dpRow(s)}`}
 function corrHTML(s){const c=(s&&s.correzioni)||[];if(!c.length)return"";return `<div class="corr"><span class="label"><span class="ic" aria-hidden="true">✎</span>Corretta dopo l’uscita</span>${c.map(x=>`<p><b>${esc(x.ora||"")}</b> ${esc(x.testo||"")}</p>`).join("")}<p class="corr-n">Il podcast e l’email del mattino possono riportare la versione precedente.</p></div>`}
 /* v51: aggiornamenti dopo il briefing (routine delle 11:52, 15:52, 19:52). A: fascia «Dalle ultime ore» in cima all'ultimo briefing; B: riquadro «Dopo il briefing» nella storia collegata. */
 function aggDopo(b){const L=S.briefings[0];if(!b||!L||L.id!==b.id)return[];return(S.agg||[]).filter(x=>x&&x.data>=b.data&&x.testo).sort((a,z)=>String(z.data+z.ora).localeCompare(String(a.data+a.ora)))}
@@ -3011,15 +3016,21 @@ function spark(hist){
   <circle cx="${x(pts.length-1)}" cy="${y(last.l)}" r="3.5" fill="var(--accent)"/></svg>
   <div class="muted" style="font-family:var(--mono);font-size:11px;display:flex;justify-content:space-between"><span>${fmtDate(pts[0].d)}</span><span>${fmtDate(last.d)}</span></div>`;
 }
+/* «Segnala dal posto»: la riga che apre il modulo (in fondo alle storie e nella scheda del paese) */
+function dpRow(s,iso){const q=new URLSearchParams();let t="";
+  if(iso){const c=S.countries[iso];q.set("iso",iso);q.set("paese",(c&&c.nome)||cname(iso));t=`Vivi in ${esc((c&&c.nome)||cname(iso))}?`}
+  else if(s){const P=(s.paesi||[]).filter(Boolean);if(P.length===1){q.set("iso",P[0]);q.set("paese",cname(P[0]))}q.set("storia",s.id);t=P.length===1?`Vivi in ${esc(cname(P[0]))}?`:"Vivi in uno di questi paesi?"}
+  const qs=q.toString();return `<a class="dpr" href="/segnala${qs?"?"+esc(qs):""}" data-dp-open="${esc(qs)}"><span aria-hidden="true">📍</span><span>${t?t+" ":""}<u>Segnala dal posto ›</u></span></a>`}
 function renderPanel(){
   const p=$("#panel");const iso=S.selCountry;if(!iso){return}
   const c=S.countries[iso];
-  if(!c){p.innerHTML=`<h2>${esc(cname(iso))}</h2>${dosMiniHTML(iso)}${requestBlock(iso)}`;bindRequest(iso);return}
+  if(!c){p.innerHTML=`<h2>${esc(cname(iso))}</h2>${dpRow(null,iso)}${dosMiniHTML(iso)}${requestBlock(iso)}`;bindRequest(iso);return}
   const stories=Object.values(S.stories).filter(s=>(s.paesi||[]).includes(iso)).sort((a,b)=>b.data.localeCompare(a.data)).slice(0,6);
   const tmB=S.mapDate?(()=>{const l=levelAt(iso);const bb=S.briefings.find(x=>x.data===S.mapDate);return `<div class="tm-panel"><span class="label">Il ${esc(fmtDate(S.mapDate,true))}</span><div>${l?`Livello <b>${l}</b> di 5`:"Nessun dato quel giorno"}${bb?` · <button class="linkbtn" data-brief="${esc(bb.id)}">apri il briefing di quel giorno</button>`:""}</div><p>Qui sotto la situazione di oggi.</p></div>`})():"";
   const mainOf=t=>{const b=t.bandiere||[];if(b.length)return b.includes(iso);const st=(t.storie||[]).map(x=>S.stories[x&&x.id||x]).filter(Boolean);return st.length>0&&st.filter(x=>(x.paesi||[])[0]===iso).length*2>=st.length};const roots=threadsForCountry(iso).filter(t=>t.radici&&!dosForThread(t.id)&&mainOf(t));
   p.innerHTML=`${tmB}<h2>${esc(c.nome||cname(iso))}</h2>
   <div class="lvl"><i style="background:var(--l${c.livello})"></i>Livello ${c.livello} di 5${c.esempio?' · <span class="chip sample">esempio</span>':""}</div>
+  ${dpRow(null,iso)}
   <h4>Situazione attuale</h4><p style="margin:0;font-size:14.5px">${esc(c.sintesi)}</p>
   ${dosMiniHTML(iso)}
   ${roots.length?`<div class="roots-links"><span class="label"><span class="ic" aria-hidden="true">🏛️</span>Da dove nasce</span> ${roots.map(t=>`<button class="linkbtn" data-roots="${esc(t.id)}">${esc(t.titolo)}</button>`).join(" · ")}</div>`:""}
@@ -5942,6 +5953,7 @@ function rlStoryHTML(s,rank){if(!s)return"";const conf=s.confidenza||{},th=S.thr
    ${acc("src",`Le fonti · ${d.n} da ${d.paesi} ${plur(d.paesi,"paese","paesi")}`,`<p class="sx-src">${divHTML(s.fonti)}<span class="muted">Confidenza ${esc(confF(conf.livello))}: ${esc(conf.motivo||"")}</span></p>${srcList(s.fonti)}`)}
    </div>
    <div class="rls-act"><button class="askbtn ghost" data-ask-story="${esc(s.id)}">💬 Fai una domanda</button></div>
+   ${dpRow(s)}
   </article>`}
 document.addEventListener("toggle",e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains("rla")||!d.open)return;try{if(d.dataset.rla==="pos"||d.dataset.rla==="oss"){vtLoad();vtFill()}if(d.dataset.rla==="ppl")ppFit()}catch(_){}},true);
 document.addEventListener("click",e=>{const g=e.target.closest("[data-rla-go]");if(!g)return;e.preventDefault();const box=g.closest(".rls");const d=box&&box.querySelector(`details.rla[data-rla="${g.dataset.rlaGo}"]`);if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}});
@@ -5993,6 +6005,18 @@ function rlBackBtn(){const w=AGS.el;if(!w)return;let b=w.querySelector(".ags-bac
 {const f=rlOpenB;rlOpenB=function(...a){return rlNavGo(f,a,rlOpenB)}}
 {const f=rlOpenBox;rlOpenBox=function(...a){return rlNavGo(f,a,rlOpenBox)}}
 {const f=mapOpen;mapOpen=function(...a){return rlNavGo(f,a,mapOpen)}}
+/* «Segnala dal posto»: dal sito il modulo si apre nel pannello (la pagina /segnala, incorporata); da fuori resta la pagina a sé */
+function dpOpen(qs){const w=agsEl();rlTools(w);w.dataset.mode="dp";w.dataset.kind="box";RL.sel=null;
+  const q=new URLSearchParams(qs||"");q.set("embed","1");
+  const bg=getComputedStyle(document.body).backgroundColor.match(/[0-9.]+/g)||[0,0,0];if((+bg[0]*299+ +bg[1]*587+ +bg[2]*114)/1000>140)q.set("tema","chiaro");const pb=(getComputedStyle(w.querySelector(".ags-p")).backgroundColor.match(/[0-9.]+/g)||[]).slice(0,3);if(pb.length===3)q.set("sf",pb.map(x=>(+x|0).toString(16).padStart(2,"0")).join(""));
+  w.querySelector(".ags-cal").innerHTML="";w.querySelector(".ags-t").textContent="📍 Segnala dal posto";w.querySelector(".ags-d").textContent=q.get("paese")?q.get("paese"):"Le notizie che da qui non raggiungiamo";
+  const L=w.querySelector(".ags-l");L.innerHTML=`<iframe class="dp-fr" title="Segnala dal posto" src="/segnala?${esc(q.toString())}" loading="eager"></iframe>`;w.querySelector(".ags-tg").innerHTML="";
+  try{window.goatcounter&&window.goatcounter.count&&window.goatcounter.count({path:"evento/segnala-apri",title:"segnala-apri",event:true})}catch(e){}
+  if(AGS.open&&w.classList.contains("on")){L.scrollTop=0;return}rlShow(w)}
+{const f=dpOpen;dpOpen=function(...a){return rlNavGo(f,a,dpOpen)}}
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-dp-open]");if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;e.preventDefault();dpOpen(a.dataset.dpOpen||"")});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-rl-new]")||!AGS.el||AGS.el.dataset.mode!=="dp")return;e.preventDefault();e.stopImmediatePropagation();const f=AGS.el.querySelector(".dp-fr");const u=new URL(f?f.src:"/segnala",location.href);u.searchParams.delete("embed");u.searchParams.delete("tema");window.open(u.pathname+u.search,"_blank","noopener")},true);
+addEventListener("message",e=>{if(e.origin!==location.origin||!e.data||e.data.rgDp!=="h")return;const f=AGS.el&&AGS.el.querySelector(".dp-fr");if(f&&e.source===f.contentWindow)f.style.height=Math.max(300,Math.min(6000,+e.data.h||0))+"px"});
 /* v-temi-pannello: un tema si apre nel pannello di lato (dal basso sul telefono), uguale da ovunque: lista di Temi, Esplora, storie, dossier. Dentro c'è lo stesso contenuto che prima si apriva nella lista. */
 function thPanTitle(t){return ((t.bandiere||[]).map(p=>flag(p)).filter(Boolean).join("")+" "+(t.titolo||thShort(t))).trim()}
 function thPanHTML(t){const ST={attivo:"in corso",dormiente:"fermo",chiuso:"concluso"};
