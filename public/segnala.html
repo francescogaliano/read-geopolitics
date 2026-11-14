@@ -70,7 +70,7 @@ input:focus,textarea:focus{outline:2px solid var(--amb);outline-offset:1px}
 .again{display:inline-block;margin-top:16px;font-size:15px;background:none;border:0;color:var(--amb);cursor:pointer;font-family:inherit;text-decoration:underline;min-height:44px}
 footer{border-top:1px solid var(--line);margin-top:56px;padding:22px 0 40px;font-size:13px;color:var(--faint);text-align:center}
 /* dentro il sito (pannello): niente testata né piè di pagina, titolo più piccolo */
-body.emb{background:transparent}
+body.emb{background:transparent;min-height:0}
 body.emb.chiaro{--ink:#15202B;--mut:#4F5B66;--faint:#6B7682;--amb:#9A5B0C;--line:#D8DEE2;--ok:#24804F;--blu:#2F62A0;--err:#B3261E;--field:#FFFFFF}
 body.emb.chiaro .cta{box-shadow:none}
 body.emb header,body.emb footer{display:none}
@@ -160,7 +160,7 @@ const RG_API="https://rg-api.briefinghub.workers.dev";
 const Q=new URLSearchParams(location.search),EMB=Q.get("embed")==="1";
 const $=id=>document.getElementById(id);
 const okHTML=ref=>`<div class="ok"><div class="mono">Segnalazione ricevuta${ref?" · <span class=\"ref\">"+ref+"</span>":""}</div><h2 class="ser">Grazie, la leggiamo con attenzione.</h2><p>Entro il prossimo briefing la confrontiamo con altre fonti. Può andare in uno di questi modi:</p><ul class="stati"><li style="--c:var(--ok)"><i></i><span><b>Ripresa nel briefing</b> · come testimonianza dal posto, accanto alle fonti che ne parlano</span></li><li style="--c:var(--amb)"><i></i><span><b>La seguiamo</b> · qualcuno ne parla ma serve ancora qualche riscontro</span></li><li style="--c:var(--blu)"><i></i><span><b>Ancora inedita</b> · nessuno ne ha scritto, e forse è proprio la notizia che manca. La conserviamo e la seguiamo nel tempo</span></li></ul><button type="button" class="again" id="again">Invia un'altra segnalazione</button></div>`;
-function fit(){if(!EMB||parent===window)return;try{parent.postMessage({rgDp:"h",h:Math.ceil(document.documentElement.scrollHeight)},location.origin)}catch(e){}}
+function fit(){if(!EMB||parent===window)return;try{const w=document.querySelector(".wrap");parent.postMessage({rgDp:"h",h:Math.ceil(w.offsetTop+w.offsetHeight)},location.origin)}catch(e){}}
 const paese=Q.get("paese");if(paese)$("paese").value=paese.slice(0,80);
 const msg=t=>{const e=$("err");e.textContent=t||"";e.hidden=!t;fit()};
 const formHTML=$("box").innerHTML;
@@ -188,7 +188,7 @@ function wire(){
  const t2=$("testo"),c2=$("cnt");if(t2)t2.addEventListener("input",()=>{c2.textContent=t2.value.length+" / 1200"});
 }
 wire();
-if(EMB){addEventListener("load",fit);new ResizeObserver(fit).observe(document.body);fit()}
+if(EMB){addEventListener("load",fit);new ResizeObserver(fit).observe(document.querySelector(".wrap"));fit()}
 </script>
 </body>
 </html>
