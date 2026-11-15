@@ -4896,6 +4896,8 @@ header.top nav.tabs > button[aria-selected="true"] .ic{transform:scale(1.12)}
 .ip-seg button{font:inherit;font-size:14px;background:none;border:0;color:var(--muted);padding:0 11px;min-height:44px;cursor:pointer}
 .ip-seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg);font-weight:600}
 .ip-segw{display:flex;margin:0 0 10px}.ip-segw button{flex:1;padding:0 6px}
+.ip-dots{display:flex;gap:6px;align-items:center}.ip-dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}.ip-dots i.on{background:var(--accent);width:16px;border-radius:3px}
+#intPanel .ip-box{touch-action:pan-y}
 .ip-back{background:none;border:0;color:var(--accent);font:inherit;font-size:15px;min-height:44px;padding:0;cursor:pointer}
 .ip-h2{font-family:var(--serif);font-size:24px;margin:2px 0 6px}
 .ip-box h3 .ip-n{font-family:inherit;font-size:13px;color:var(--muted);font-weight:400;margin-left:6px}
@@ -5388,7 +5390,7 @@ function otherTab(t){
 document.addEventListener("click",async e=>{
   if(!e.target.closest("#intPanel"))return;
   const pv=e.target.closest("[data-ip-pv]");if(pv){const box=pv.nextElementSibling,w=box&&box.querySelector(".nl-pvi");if(!box)return;if(box.hidden){box.hidden=false;if(!w.firstChild){const sc=Math.min(1,(box.clientWidth||320)/620),f=document.createElement("iframe");f.src=RG_API+"/api/newsletter/esempio";f.title="Esempio dell'email del mattino";f.setAttribute("sandbox","");f.tabIndex=-1;f.style.transform="scale("+sc+")";w.style.height=Math.round(1700*sc)+"px";w.appendChild(f)}pv.textContent="Nascondi anteprima";try{track("nl-anteprima-mioread")}catch(_){}}else{box.hidden=true;pv.textContent="Mostra anteprima dell'email"}return}
-  const tb=e.target.closest("[data-ptab]");if(tb){PE.tab=tb.dataset.ptab;renderPanel2();const b=panel.querySelector(".ip-box");if(b)b.scrollTop=0;if(PE.tab==="nl"&&ACC.newsletter===null)pullF();return}
+  const tb=e.target.closest("[data-ptab]");if(tb){const O=ipOrder(),a=O.indexOf(PE.tab),z=O.indexOf(tb.dataset.ptab);ipGo(tb.dataset.ptab,z>a?1:-1);return}
   const th=e.target.closest("[data-theme-set]");if(th){if(window.RG_theme)window.RG_theme.set(th.dataset.themeSet);renderPanel2();return}
   const ap=e.target.closest("[data-app]");if(ap){closePanel();if(window.rgAppInstall)window.rgAppInstall("menu");return}
   const hp=e.target.closest("[data-help]");if(hp){const k=hp.dataset.help;closePanel();if(k==="giro"&&window.RG_giro)window.RG_giro();else if(k==="guida"&&typeof openGuide==="function")openGuide();else if(k==="novita"&&typeof openNovita==="function"){if(!openNovita(VERSIONE-1))openGuide()}else if(k==="red"&&typeof openPrefs==="function")openPrefs();return}
@@ -5437,7 +5439,7 @@ function ipHome(){
   if(hasRed())h+=ipRow(RG_IC.pref,"Redazione","Solo per te: le scelte che cambiano il briefing per tutti",'data-ptab="red"');
   return `<div class="ip-top"><h2 id="intPTitle">Il mio Read</h2><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div>${acctLine()}<div class="ip-list">${h}</div>`;
 }
-function ipSub(t,body){return `<div class="ip-top"><button type="button" class="ip-back" data-ptab="home">‹ Il mio Read</button><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div><h2 class="ip-h2" id="intPTitle">${t}</h2>${body}`}
+function ipSub(t,body){const O=ipOrder();return `<div class="ip-top"><button type="button" class="ip-back" data-ptab="home">‹ Il mio Read</button><span class="ip-dots" aria-hidden="true">${O.map(k=>`<i${k===PE.tab?' class="on"':''}></i>`).join("")}</span><button type="button" class="xp-follow" data-pclose="1" aria-pressed="true">Fatto</button></div><h2 class="ip-h2" id="intPTitle">${t}</h2>${body}`}
 function ipInt(){
   const {st,br}=todayMatches();
   const ids=(F.filoni||[]).filter(id=>S.threads[id]),on=ids.filter(id=>S.threads[id].stato!=="chiuso"),off=ids.filter(id=>S.threads[id].stato==="chiuso");
@@ -5462,6 +5464,26 @@ function ipInt(){
 }
 function ipHelp(){
   return ipSub("Guida e aiuto",`<div class="ip-list">${ipRow(RG_IC.guida,"Giro guidato","Dove toccare, in un minuto",'data-help="giro"')}${ipRow(RG_IC.oggi,"Guida","Come funziona Read Geopolitics",'data-help="guida"')}${ipRow(RG_IC.esplora,"Cosa c’è di nuovo","Le ultime novità del sito",'data-help="novita"')}<a class="ip-r" href="/metodo.html">${RG_IC.cerca}<span class="tx"><b>Fonti e metodo</b><small>Come scegliamo e controlliamo le fonti</small></span><span class="ch" aria-hidden="true">›</span></a>${ipRow(RG_IC.chat,"Scrivici","Un’idea, un errore, un problema",'data-ip-fbk="1"')}<a class="ip-r" href="/segnala" data-ip-dp="1">${RG_IC.mappa}<span class="tx"><b>Segnala dal posto</b><small>Le notizie che da qui non raggiungiamo</small></span><span class="ch" aria-hidden="true">›</span></a></div>`)}
+/* v-mioread: si passa da una pagina all'altra anche scorrendo di lato (o con le frecce), nell'ordine dell'indice */
+function ipOrder(){return ["home","int"].concat(window.RG_push&&window.RG_push.show()?["push"]:[],hasNL()?["nl"]:[],["help"],hasRed()?["red"]:[])}
+function ipGo(tab,dir){PE.tab=tab;renderPanel2();const b=panel.querySelector(".ip-box");if(!b)return;b.scrollTop=0;if(tab==="nl"&&ACC.newsletter===null)pullF();
+  let rm=false;try{rm=matchMedia("(prefers-reduced-motion: reduce)").matches}catch(_){}if(!dir||rm)return;
+  b.style.transition="none";b.style.transform=`translateX(${dir*24}%)`;b.style.opacity="0";requestAnimationFrame(()=>requestAnimationFrame(()=>{b.style.transition="transform .2s ease,opacity .2s ease";b.style.transform="";b.style.opacity=""}))}
+function ipStep(dir){const O=ipOrder(),i=O.indexOf(PE.tab)+dir;if(i<0||i>=O.length)return false;ipGo(O[i],dir);return true}
+(function(){let b=null,x0=0,y0=0,t0=0,dx=0,hz=null,ok=false;
+  const skip=t=>{if(!t||!t.closest)return true;if(t.closest("input,textarea,select,iframe,.ip-seg,.ip-jump,[data-noswipe]"))return true;
+    for(let n=t;n&&n!==b;n=n.parentElement){const cs=getComputedStyle(n);if(n.scrollWidth>n.clientWidth+2&&/(auto|scroll)/.test(cs.overflowX))return true}return false};
+  panel.addEventListener("touchstart",e=>{ok=false;b=panel.querySelector(".ip-box");if(!b||!b.contains(e.target)||e.touches.length>1||skip(e.target))return;x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();dx=0;hz=null;ok=true;b.style.transition="none"},{passive:true});
+  panel.addEventListener("touchmove",e=>{if(!ok)return;dx=e.touches[0].clientX-x0;const dy=e.touches[0].clientY-y0;
+    if(hz===null&&(Math.abs(dx)>10||Math.abs(dy)>10))hz=Math.abs(dx)>Math.abs(dy)*1.4;if(!hz)return;
+    const O=ipOrder(),i=O.indexOf(PE.tab),can=dx>0?i>0:i<O.length-1,k=can?1:.25;b.style.transform=`translateX(${dx*k}px)`;b.style.opacity=String(1-Math.min(.4,Math.abs(dx*k)/600))},{passive:true});
+  panel.addEventListener("touchend",()=>{if(!ok)return;ok=false;const fast=Date.now()-t0<450,go=hz&&(Math.abs(dx)>innerWidth*.25||(fast&&Math.abs(dx)>60)),dir=dx>0?-1:1;
+    const O=ipOrder(),i=O.indexOf(PE.tab),can=dir<0?i>0:i<O.length-1;b.style.transition="transform .16s ease,opacity .16s ease";
+    if(!go||!can){b.style.transform="";b.style.opacity="";return}
+    b.style.transform=`translateX(${dir<0?"":"-"}40%)`;b.style.opacity="0";setTimeout(()=>ipStep(dir),140)},{passive:true});
+  panel.addEventListener("touchcancel",()=>{if(!ok)return;ok=false;b.style.transform="";b.style.opacity=""},{passive:true});
+  document.addEventListener("keydown",e=>{if(panel.hidden||e.altKey||e.ctrlKey||e.metaKey)return;const t=e.target;if(t&&t.closest&&t.closest("input,textarea,select"))return;if(e.key==="ArrowRight"){if(ipStep(1))e.preventDefault()}else if(e.key==="ArrowLeft"){if(ipStep(-1))e.preventDefault()}});
+})();
 function renderPanel2_(){
   const T={home:1,int:1,help:1,push:window.RG_push&&window.RG_push.show(),nl:hasNL(),red:hasRed()};
   if(!T[PE.tab])PE.tab="home";
