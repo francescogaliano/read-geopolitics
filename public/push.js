@@ -168,5 +168,13 @@
       try { await enable(); rerender(); } catch (err) { on.disabled = false; on.textContent = "Attiva le notifiche"; const er = P.querySelector(".pu-err"); if (er) { er.textContent = errTxt(err); er.hidden = false; } }
     }
   });
-  window.RG_push = { panelHTML, show: () => (can || iosGuide), invite: () => sheet("manuale") };
+  const status = () => { // v-mioread: una riga di stato per l'indice di «Il mio Read»
+    if (iosGuide) return { on: false, txt: "Su iPhone serve l’app nella schermata Home" };
+    if (!can) return { on: false, txt: "Questo browser non riceve notifiche" };
+    if (perm() === "denied") return { on: false, txt: "Bloccate nelle impostazioni del browser" };
+    if (!isOn()) return { on: false, txt: "Non attive su questo dispositivo" };
+    const n = ROWS.filter(([k]) => draft[k]).length;
+    return { on: true, txt: "Attive su questo dispositivo · " + n + " su " + ROWS.length };
+  };
+  window.RG_push = { panelHTML, status, show: () => (can || iosGuide), invite: () => sheet("manuale") };
 })();
