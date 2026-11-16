@@ -21,7 +21,10 @@
 #                                                           con --solo-nuovi crea solo i documenti che mancano (op create)
 #   python3 rgdb.py inv-contesto                            sezione Investimenti (privata): strumenti, ultimi prezzi, ipotesi aperte
 #   python3 rgdb.py inv-radar FILE                          giro del radar: {opportunita, osservati, rimossi, richieste_fatte, ipotesi}
-#   python3 rgdb.py inv-prezzi SIMBOLO                      scarica e salva i prezzi di un titolo (Stooq) prima di usarlo
+#   python3 rgdb.py inv-prezzi SIMBOLO [FILE]               il Worker scarica e salva i prezzi di un titolo prima di usarlo;
+#                                                            con FILE li carichi tu: risposta JSON di Yahoo «chart»
+#                                                            (query1.finance.yahoo.com/v8/finance/chart/SIMBOLO?range=2y&interval=1d)
+#                                                            oppure [["AAAA-MM-GG", chiusura], …]
 #   python3 rgdb.py inv-ipotesi FILE                        registra ipotesi {"ipotesi":[{strumento,direzione,orizzonte,fiducia,meccanismo,origine}]}
 #                                                           (non si modificano dopo: il Worker mette data, ora e prezzo di partenza)
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
@@ -238,9 +241,12 @@ def main():
             die("uso: inv-radar FILE   (FILE = {opportunita, osservati, rimossi, richieste_fatte, ipotesi})")
         out(call("POST", "/v1/inv/radar", loadjson(open(a[0], encoding="utf-8").read(), a[0])))
     elif cmd == "inv-prezzi":
-        if len(a) != 1:
-            die("uso: inv-prezzi SIMBOLO   (es. NVDA, RHM.DE, LDO.MI)")
-        out(call("POST", "/v1/inv/prezzi", {"ticker": a[0]}))
+        if len(a) not in (1, 2):
+            die("uso: inv-prezzi SIMBOLO [FILE]   (es. NVDA, RHM.DE, LDO.MI; FILE = JSON di Yahoo chart o [[data, chiusura], ...])")
+        body = {"ticker": a[0]}
+        if len(a) == 2:
+            body["p"] = loadjson(open(a[1], encoding="utf-8").read(), a[1])
+        out(call("POST", "/v1/inv/prezzi", body))
     elif cmd == "inv-ipotesi":
         if len(a) != 1:
             die("uso: inv-ipotesi FILE   (FILE = {\"ipotesi\": [...]})")
