@@ -6,7 +6,7 @@ import KIT_RGDB from "./kit/rgdb.py";
 import SALA_HTML from "./sala.html";
 import SPIEGATI_HTML from "./spiegati.html";
 import INV_HTML from "./inv.html";
-import { invRoute, invPanelApi } from "./inv.js";
+import { invRoute, invPanelApi, invCron } from "./inv.js";
 import { pushEncrypt, vapidNew, vapidHeader, pushHostOK, pushMatch, clip as pClip } from "./push.js";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
@@ -7099,6 +7099,7 @@ async function salaRoute(request, env, p, method, url) {
 export default {
   async scheduled(event, env, ctx) {
     if (event && event.cron === "*/5 * * * *") { try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} try { await canaliRecupero(env); } catch (e) {} return; } // v83: solo le uscite programmate
+    try { await invCron(env, { kvGet, kvSet }); } catch (e) {} // investimenti: prezzi di azioni ed ETF osservati (Stooq)
     // rinnovo del token Instagram: se mancano meno di 30 giorni
     try {
       const t = await kvGet(env, "ig_token");
