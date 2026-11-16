@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<link rel="icon" href="/ig/panel.svg?v=2" type="image/svg+xml">
+<title>Investimenti · Pannello</title>
+<style>
+:root{color-scheme:dark;--bg:#0B1118;--fg:#E8EDF2;--mut:#7F909E;--line:#1F2B35;--acc:#86B4EA;--up:#5FCB8C;--dn:#EF6F62;--amb:#E8A33D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+a{color:var(--acc)}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 48px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h1{margin:0;font:600 24px/1.2 "Source Serif 4",Georgia,serif}
+.back{font-size:14px;text-decoration:none;color:var(--mut);display:inline-block;padding:6px 0}
+.mono{font:11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--line);margin:12px 0 0;overflow-x:auto;scrollbar-width:none}
+.tabs button{all:unset;cursor:pointer;padding:12px 0 10px;color:var(--mut);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--fg);border-color:var(--acc)}
+.v{display:none}.v.on{display:block}
+.sec{margin:18px 0 6px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.br{display:grid;grid-template-columns:96px 1fr 86px 70px;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer;min-height:48px}
+.br:last-child{border-bottom:1px solid var(--line)}
+.br.sel{background:linear-gradient(90deg,rgba(134,180,234,.09),transparent)}
+.br .n{font-weight:600;font-size:14px}
+.br .p{text-align:right;font-size:14px}.br .c{text-align:right;font-size:12.5px}
+.up{color:var(--up)}.dn{color:var(--dn)}.mu{color:var(--mut)}.am{color:var(--amb)}
+.press{position:relative;height:18px}
+.press .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.press .bar{position:absolute;top:4px;height:10px;border-radius:2px}
+.press .dot{position:absolute;top:5px;width:8px;height:8px;border-radius:50%}
+.legend{display:flex;justify-content:space-between;margin-top:6px}
+.det{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.det h2{margin:0;font:600 20px/1.2 "Source Serif 4",Georgia,serif;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.det h2 .p{font:600 20px Inter,system-ui}
+.hy{display:grid;grid-template-columns:30px 1fr auto;gap:8px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.hy .k{font:700 12px/1 ui-monospace,Menlo,monospace;width:22px;height:22px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.hy .m{margin:2px 0 0}.hy .meta{color:var(--mut);font-size:12.5px}
+.hy .r{text-align:right;font-size:13px;white-space:nowrap}
+.tag{font:600 12px/1 ui-monospace,Menlo,monospace}
+.empty{color:var(--mut);padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:6px}
+.big{display:flex;flex-wrap:wrap;gap:6px 28px;margin:10px 0 4px}
+.big div{font-size:13.5px;color:var(--mut)}
+.big b{display:block;font:600 24px/1.2 "Source Serif 4",Georgia,serif;color:var(--fg)}
+.note{color:var(--mut);font-size:12.5px;margin-top:8px}
+textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px;font:15px/1.4 Inter,system-ui,sans-serif}
+.btn{display:block;width:100%;margin-top:10px;min-height:44px;background:var(--acc);color:#0B1830;border:0;border-radius:6px;font-weight:600;font-size:15px;cursor:pointer}
+.dr{border-top:1px solid var(--line);padding:10px 0}.dr:last-child{border-bottom:1px solid var(--line)}
+.prose p{margin:0 0 12px;max-width:68ch}
+.prose h3{font:600 16px/1.3 Inter,system-ui;margin:18px 0 6px}
+</style></head><body><div class="wrap">
+<a class="back" href="/ig/panel">‹ Pannello</a>
+<div class="top"><h1>Investimenti</h1><span class="mono" id="st">solo tu</span></div>
+<div class="tabs" role="tablist">
+<button role="tab" aria-selected="true" data-v="oggi">Oggi</button>
+<button role="tab" aria-selected="false" data-v="bil">Bilancio</button>
+<button role="tab" aria-selected="false" data-v="dia">Diario</button>
+<button role="tab" aria-selected="false" data-v="met">Metodo</button>
+</div>
+
+<section class="v on" id="oggi">
+<div class="sec"><span class="mono" id="oggiT">Dove spinge la geopolitica</span></div>
+<div id="baro"></div>
+<div class="legend"><span class="mono dn">◀ giù</span><span class="mono">pallino = fiducia</span><span class="mono up">su ▶</span></div>
+<div class="det" id="det"></div>
+</section>
+
+<section class="v" id="bil"><div id="bilC"></div></section>
+
+<section class="v" id="dia">
+<div class="sec"><span class="mono">Nuova nota</span></div>
+<textarea id="nota" placeholder="Cosa hai deciso e perché. Es.: non compro nulla sul Brent, il movimento è già avvenuto ieri."></textarea>
+<button class="btn" id="salva" type="button">Salva nel diario</button>
+<div class="sec"><span class="mono">Note</span></div>
+<div id="diaL"></div>
+</section>
+
+<section class="v prose" id="met">
+<p>Lo strumento risponde a una domanda: quello che Read Geopolitics vede ogni mattina si ritrova poi nei prezzi? Non compra e non vende nulla, e non è un consiglio d'investimento.</p>
+<h3>Le ipotesi</h3>
+<p>Ogni mattina una routine trasforma segnali, appuntamenti del calendario e scenari in ipotesi: strumento, direzione (su, giù, nessun effetto), orizzonte (7 o 30 giorni), meccanismo e fiducia. Il Worker aggiunge data, ora e prezzo di partenza. Da quel momento l'ipotesi non si modifica.</p>
+<h3>La valutazione</h3>
+<p>Si calcola dai prezzi di chiusura del database, non li stima Claude. «Su» o «giù» è giusta se il movimento supera una banda fissa nel verso atteso, sbagliata se la supera nel verso opposto, piatta altrimenti (non conta). «Nessun effetto» è giusta se il movimento resta dentro la banda. Per lo spread la misura è in punti base.</p>
+<p>Il bilancio confronta i segnali con il caso: percentuale di giuste contro il 50%, guadagno cumulato contro lo stesso movimento con segno casuale, e taratura della fiducia.</p>
+<h3>Limiti</h3>
+<p>Per ora i prezzi sono solo quelli già raccolti: Brent, gas, noli, oro, grano, spread, euro/dollaro. Il confronto con un indice di riferimento arriverà con indici e settori. Servono qualche centinaio di ipotesi chiuse prima che le percentuali dicano qualcosa.</p>
+<p><a href="https://claude.ai/artifact/HA4EXMCcQnUXhTw3wRBLwv" target="_blank" rel="noopener">Pagina completa del metodo</a></p>
+</section>
+</div>
+<script>
+let D=null,sel=null;
+const MESI=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+const dd=d=>+d.slice(8,10)+" "+MESI[+d.slice(5,7)-1];
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=(v,k)=>{if(v==null)return"–";if(k==="spread")return Math.round(v)+"";if(k==="eurusd")return v.toFixed(4).replace(".",",");return v>=1000?Math.round(v).toLocaleString("it-IT"):v.toFixed(2).replace(".",",")};
+const pct=(v,abs)=>v==null?"–":(v>=0?"+":"")+(abs?Math.round(v)+" pb":v.toFixed(1).replace(".",",")+"%");
+const FW={bassa:.5,media:1,alta:1.5},FC={alta:"#fff",media:"#cfd8df",bassa:"#5c6b78"};
+const ESC={giusta:"var(--up)",sbagliata:"var(--dn)",piatta:"var(--mut)",aperta:"var(--amb)"};
+function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href="/ig/panel";throw new Error("401")}return r.json()})}
+function giorno(){const g=[...new Set(D.ipotesi.map(h=>h.data))].sort();return g.length?g[g.length-1]:null}
+function spark(p,w,h){if(p.length<2)return"";const v=p.map(x=>x[1]),mn=Math.min(...v),mx=Math.max(...v);const pts=v.map((y,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-2-(y-mn)/(mx-mn||1)*(h-4)).toFixed(1)}`).join(" ");return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${v.at(-1)>=v[0]?"var(--up)":"var(--dn)"}" stroke-width="1.4"/></svg>`}
+function baro(){
+  const g=giorno(),K=Object.keys(D.strumenti);
+  document.getElementById("oggiT").textContent=g?("Dove spinge · "+dd(g)+(g!==D.oggi?" (ultime ipotesi)":"")+" · prezzo 30 g"):"Nessuna ipotesi registrata finora";
+  document.getElementById("baro").innerHTML=K.map(k=>{const s=D.strumenti[k],p=s.p.slice(-22),v=p.map(x=>x[1]);
+    const H=D.ipotesi.filter(h=>h.strumento===k&&h.data===g);let net=0,fmax=null;H.forEach(h=>{const w=FW[h.fiducia]||1;net+=h.direzione==="su"?w:h.direzione==="giu"?-w:0;if(!fmax||FW[h.fiducia]>FW[fmax])fmax=h.fiducia});
+    const L=Math.min(50,Math.abs(net)*26),col=FC[fmax]||"#5c6b78";
+    const bar=!H.length?"":net>0?`<div class="bar" style="left:50%;width:${L}%;background:var(--up)"></div><div class="dot" style="left:calc(50% + ${L}% - 4px);background:${col}"></div>`:net<0?`<div class="bar" style="left:${50-L}%;width:${L}%;background:var(--dn)"></div><div class="dot" style="left:calc(${50-L}% - 4px);background:${col}"></div>`:`<div class="dot" style="left:calc(50% - 4px);border:1.5px solid ${col}"></div>`;
+    const ch=v.length>1?(s.abs?v.at(-1)-v[0]:(v.at(-1)/v[0]-1)*100):null;
+    return `<div class="br ${k===sel?"sel":""}" data-k="${k}" role="button" tabindex="0"><span class="n">${esc(s.n)}</span><div class="press"><div class="mid"></div>${bar}</div><span>${spark(p,86,24)}</span><span><div class="p">${num(v.at(-1),k)}</div><div class="c ${ch>=0?"up":"dn"}">${pct(ch,s.abs)}</div></span></div>`}).join("");
+  document.querySelectorAll(".br").forEach(r=>r.onclick=()=>{sel=r.dataset.k;baro();det()});
+}
+function det(){
+  const s=D.strumenti[sel],p=s.p.slice(-60);if(p.length<2){document.getElementById("det").innerHTML="";return}
+  const H=D.ipotesi.filter(h=>h.strumento===sel).sort((a,b)=>a.registrata_il.localeCompare(b.registrata_il)).slice(-12);
+  const W=480,Hh=250,pl=8,pr=52,pt=16,pb=24,v=p.map(x=>x[1]),mn=Math.min(...v)*.985,mx=Math.max(...v)*1.015,n=p.length;
+  const X=i=>pl+i/(n-1)*(W-pl-pr-40),Y=y=>pt+(1-(y-mn)/(mx-mn||1))*(Hh-pt-pb);
+  const idx=d=>{let r=-1;p.forEach((q,i)=>{if(q[0]<=d)r=i});return r};
+  const line=p.map((q,i)=>`${X(i).toFixed(1)},${Y(q[1]).toFixed(1)}`).join(" ");
+  const mk=H.map((h,j)=>{const i=idx(h.data0);if(i<0)return"";const c=ESC[h.v.stato==="aperta"?"aperta":h.v.esito]||"var(--mut)";return `<g><line x1="${X(i)}" x2="${X(i)}" y1="${pt}" y2="${Hh-pb}" stroke="#2b3a46" stroke-dasharray="2 3"/><circle cx="${X(i)}" cy="${Y(p[i][1])}" r="10" fill="var(--bg)" stroke="${c}" stroke-width="1.5"/><text x="${X(i)}" y="${Y(p[i][1])+4}" text-anchor="middle" font-size="12" font-weight="700" fill="${c}">${j+1}</text></g>`}).join("");
+  const ticks=[mn,(mn+mx)/2,mx].map(t=>`<text x="${W-4}" y="${Y(t)+4}" text-anchor="end" font-size="13" fill="var(--mut)">${num(t,sel)}</text>`).join("");
+  const months=p.map((q,i)=>[q[0],i]).filter((q,i,a)=>i===0||q[0].slice(5,7)!==a[i-1][0].slice(5,7)).map(([d,i])=>`<text x="${X(i)}" y="${Hh-6}" font-size="13" fill="var(--mut)">${MESI[+d.slice(5,7)-1]}</text>`).join("");
+  const dir=h=>h.direzione==="su"?'<span class="tag up">▲ su</span>':h.direzione==="giu"?'<span class="tag dn">▼ giù</span>':'<span class="tag mu">= nessun effetto</span>';
+  const res=h=>h.v.stato==="aperta"?`<span class="am">giorno ${h.v.giorni||0} di ${h.orizzonte}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`:h.v.stato==="chiusa"?`<span style="color:${ESC[h.v.esito]}">${h.v.esito}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`:'<span class="mu">senza prezzi</span>';
+  document.getElementById("det").innerHTML=`<h2>${esc(s.n)} <span class="p">${num(v.at(-1),sel)} ${esc(s.u)}</span></h2>
+  <svg viewBox="0 0 ${W} ${Hh}" width="100%" style="display:block;margin-top:8px">${ticks}<polyline points="${line}" fill="none" stroke="var(--fg)" stroke-width="1.6"/>${mk}${months}</svg>
+  ${H.length?H.map((h,j)=>{const c=ESC[h.v.stato==="aperta"?"aperta":h.v.esito]||"var(--mut)";return `<div class="hy"><span class="k" style="color:${c};border-color:${c}">${j+1}</span><div>${dir(h)} <span class="meta">· ${h.orizzonte} g · fiducia ${esc(h.fiducia)} · ${dd(h.data)}</span><div class="m">${esc(h.meccanismo)}</div>${h.origine&&h.origine.testo?`<div class="meta">${esc(h.origine.tipo)}: ${esc(h.origine.testo)}</div>`:""}</div><div class="r">${res(h)}</div></div>`}).join(""):`<div class="empty">Nessuna ipotesi su questo strumento.</div>`}`;
+}
+function bil(){
+  const B=D.bilancio,el=document.getElementById("bilC");
+  const aperte=D.ipotesi.filter(h=>h.v.stato==="aperta").length;
+  if(!B.decise){el.innerHTML=`<div class="sec"><span class="mono">I segnali valgono?</span></div><div class="empty">Ancora nessuna ipotesi chiusa. ${aperte?aperte+" in corso: la prima si chiude dopo 7 giorni.":"Le prime arriveranno con la routine del mattino."}</div>`;return}
+  const W=420,H=200,C=B.cumulata,all=C.flatMap(c=>[c.segnali,c.caso]).concat([0]),mn=Math.min(...all),mx=Math.max(...all);
+  const X=i=>10+i/Math.max(1,C.length-1)*(W-80),Y=y=>12+(1-(y-mn)/((mx-mn)||1))*(H-36),pl=k=>C.map((c,i)=>`${X(i).toFixed(1)},${Y(c[k]).toFixed(1)}`).join(" ");
+  const cum=C.length>1?`<svg viewBox="0 0 ${W} ${H}" width="100%"><line x1="10" x2="${W-70}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/><polyline points="${pl("caso")}" fill="none" stroke="var(--mut)" stroke-width="1.3" stroke-dasharray="4 3"/><polyline points="${pl("segnali")}" fill="none" stroke="var(--acc)" stroke-width="2"/><text x="${W-64}" y="${Y(C.at(-1).segnali)+4}" font-size="13" fill="var(--acc)">segnali</text><text x="${W-64}" y="${Y(C.at(-1).caso)+4}" font-size="13" fill="var(--mut)">a caso</text><text x="10" y="${H-4}" font-size="12" fill="var(--mut)">guadagno cumulato (punti %)</text></svg>`:"";
+  const Xc=v=>96+(v-30)/(85-30)*(W-110);
+  const cal=`<svg viewBox="0 0 ${W} 170" width="100%"><line x1="${Xc(50)}" x2="${Xc(50)}" y1="6" y2="146" stroke="var(--mut)" stroke-dasharray="3 3"/><text x="${Xc(50)}" y="164" text-anchor="middle" font-size="12" fill="var(--mut)">50% = caso</text>${B.per_fiducia.map((r,i)=>{const y=26+i*44,q=r.n?Math.round(r.giuste/r.n*100):null,qq=q==null?50:Math.max(30,Math.min(85,q)),c=q!=null&&q>50?"var(--up)":"var(--mut)";return `<text x="0" y="${y+5}" font-size="14" fill="var(--fg)">${r.fiducia[0].toUpperCase()+r.fiducia.slice(1)}</text><line x1="${Xc(30)}" x2="${Xc(85)}" y1="${y}" y2="${y}" stroke="var(--line)"/>${q==null?`<text x="${Xc(50)+8}" y="${y+4}" font-size="13" fill="var(--mut)">nessuna</text>`:`<line x1="${Xc(50)}" x2="${Xc(qq)}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="3"/><circle cx="${Xc(qq)}" cy="${y}" r="6" fill="${c}"/><text x="${Xc(qq)}" y="${y-11}" text-anchor="middle" font-size="13" fill="var(--fg)">${q}% · ${r.n}</text>`}`}).join("")}</svg>`;
+  el.innerHTML=`<div class="big"><div><b>${Math.round(B.giuste/B.decise*100)}%</b>giuste su ${B.decise}</div><div><b>${B.guadagno_medio==null?"–":(B.guadagno_medio>=0?"+":"")+String(B.guadagno_medio).replace(".",",")}</b>punti medi</div><div><b>${aperte}</b>in corso</div></div>
+  <div class="sec"><span class="mono">I segnali valgono?</span></div>${cum||'<div class="empty">Serve almeno un paio di ipotesi chiuse per la linea.</div>'}
+  <div class="sec"><span class="mono">La fiducia è affidabile?</span></div>${cal}
+  <p class="note">${B.piatte} ipotesi chiuse senza un movimento oltre la banda non contano. Lo spread (in punti base) non entra nel guadagno medio.</p>`;
+}
+function dia(){document.getElementById("diaL").innerHTML=D.diario.length?D.diario.map(n=>`<div class="dr"><div class="mono">${dd(n.at.slice(0,10))}</div><div>${esc(n.testo)}</div></div>`).join(""):'<div class="empty">Ancora nessuna nota.</div>'}
+function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel){const g=giorno(),f=D.ipotesi.find(h=>h.data===g);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia()}).catch(e=>{if(e.message!=="401")document.getElementById("baro").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));document.querySelectorAll(".v").forEach(v=>v.classList.toggle("on",v.id===b.dataset.v))});
+document.getElementById("salva").onclick=()=>{const t=document.getElementById("nota").value.trim();if(t.length<2)return;api({action:"inv_nota",testo:t}).then(j=>{if(j.ok){document.getElementById("nota").value="";load()}})};
+load();
+</script></body></html>

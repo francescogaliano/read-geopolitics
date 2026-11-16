@@ -19,6 +19,9 @@
 #                                                           fino a 50 scritture, tutte o nessuna
 #   python3 rgdb.py push DIR [--solo-nuovi]                 scrive (set) ogni DIR/<coll>/<id>.json, a gruppi di 50;
 #                                                           con --solo-nuovi crea solo i documenti che mancano (op create)
+#   python3 rgdb.py inv-contesto                            sezione Investimenti (privata): strumenti, ultimi prezzi, ipotesi aperte
+#   python3 rgdb.py inv-ipotesi FILE                        registra ipotesi {"ipotesi":[{strumento,direzione,orizzonte,fiducia,meccanismo,origine}]}
+#                                                           (non si modificano dopo: il Worker mette data, ora e prezzo di partenza)
 # Variabili d'ambiente: RG_API, RG_TOKEN (mai stampate).
 import json, os, sys, time, urllib.request, urllib.error, urllib.parse
 
@@ -226,6 +229,13 @@ def main():
         if grp:
             send(grp)
         out({"ok": True, "documenti": len(W), "esiti": tot})
+    elif cmd == "inv-contesto":
+        out(call("GET", "/v1/inv/contesto"))
+    elif cmd == "inv-ipotesi":
+        if len(a) != 1:
+            die("uso: inv-ipotesi FILE   (FILE = {\"ipotesi\": [...]})")
+        x = loadjson(open(a[0], encoding="utf-8").read(), a[0])
+        out(call("POST", "/v1/inv/ipotesi", x if isinstance(x, dict) else {"ipotesi": x}))
     else:
         die("comando sconosciuto: " + cmd)
 
