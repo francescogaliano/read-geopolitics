@@ -78,7 +78,7 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 <h3>Le ipotesi</h3>
 <p>Ogni mattina una routine trasforma segnali, appuntamenti del calendario e scenari in ipotesi: strumento, direzione (su, giù, nessun effetto), orizzonte (7 o 30 giorni), meccanismo e fiducia. Il Worker aggiunge data, ora e prezzo di partenza. Da quel momento l'ipotesi non si modifica.</p>
 <h3>La valutazione</h3>
-<p>Si calcola dai prezzi di chiusura del database, non li stima Claude. «Su» o «giù» è giusta se il movimento supera una banda fissa nel verso atteso, sbagliata se la supera nel verso opposto, piatta altrimenti (non conta). «Nessun effetto» è giusta se il movimento resta dentro la banda. Per lo spread la misura è in punti base.</p>
+<p>Si calcola dai prezzi di chiusura del database, non li stima Claude. Il prezzo d'ingresso è quello noto al momento della registrazione; se era di un giorno precedente, si parte dal primo prezzo dal giorno della registrazione in poi, così il movimento avvenuto prima non conta. «Su» o «giù» è giusta se il movimento supera una banda fissa nel verso atteso, sbagliata se la supera nel verso opposto, piatta altrimenti (non conta). «Nessun effetto» è giusta se il movimento resta dentro la banda. Per lo spread la misura è in punti base.</p>
 <p>Il bilancio confronta i segnali con il caso: percentuale di giuste contro il 50%, guadagno cumulato contro lo stesso movimento con segno casuale, e taratura della fiducia.</p>
 <h3>Limiti</h3>
 <p>Per ora i prezzi sono solo quelli già raccolti: Brent, gas, noli, oro, grano, spread, euro/dollaro. Il confronto con un indice di riferimento arriverà con indici e settori. Servono qualche centinaio di ipotesi chiuse prima che le percentuali dicano qualcosa.</p>
@@ -92,6 +92,7 @@ const dd=d=>+d.slice(8,10)+" "+MESI[+d.slice(5,7)-1];
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=(v,k)=>{if(v==null)return"–";if(k==="spread")return Math.round(v)+"";if(k==="eurusd")return v.toFixed(4).replace(".",",");return v>=1000?Math.round(v).toLocaleString("it-IT"):v.toFixed(2).replace(".",",")};
 const pct=(v,abs)=>v==null?"–":(v>=0?"+":"")+(abs?Math.round(v)+" pb":v.toFixed(1).replace(".",",")+"%");
+const fil=k=>k==="senza filone"?k:(k.replace(/^t-/,"").replace(/-/g," ").replace(/^./,c=>c.toUpperCase()));
 const FW={bassa:.5,media:1,alta:1.5},FC={alta:"#fff",media:"#cfd8df",bassa:"#5c6b78"};
 const ESC={giusta:"var(--up)",sbagliata:"var(--dn)",piatta:"var(--mut)",aperta:"var(--amb)"};
 function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href="/ig/panel";throw new Error("401")}return r.json()})}
@@ -119,7 +120,7 @@ function det(){
   const ticks=[mn,(mn+mx)/2,mx].map(t=>`<text x="${W-4}" y="${Y(t)+4}" text-anchor="end" font-size="13" fill="var(--mut)">${num(t,sel)}</text>`).join("");
   const months=p.map((q,i)=>[q[0],i]).filter((q,i,a)=>i===0||q[0].slice(5,7)!==a[i-1][0].slice(5,7)).map(([d,i])=>`<text x="${X(i)}" y="${Hh-6}" font-size="13" fill="var(--mut)">${MESI[+d.slice(5,7)-1]}</text>`).join("");
   const dir=h=>h.direzione==="su"?'<span class="tag up">▲ su</span>':h.direzione==="giu"?'<span class="tag dn">▼ giù</span>':'<span class="tag mu">= nessun effetto</span>';
-  const res=h=>h.v.stato==="aperta"?`<span class="am">giorno ${h.v.giorni||0} di ${h.orizzonte}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`:h.v.stato==="chiusa"?`<span style="color:${ESC[h.v.esito]}">${h.v.esito}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`:'<span class="mu">senza prezzi</span>';
+  const res=h=>h.v.stato==="aperta"?(h.v.attesa_ingresso?`<span class="am">in attesa</span><br><span class="mu">del prezzo d'ingresso</span>`:`<span class="am">giorno ${h.v.giorni||0} di ${h.orizzonte}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`):h.v.stato==="chiusa"?`<span style="color:${ESC[h.v.esito]}">${h.v.esito}</span><br><span class="mu">${pct(h.v.ret,s.abs)}</span>`:'<span class="mu">senza prezzi</span>';
   document.getElementById("det").innerHTML=`<h2>${esc(s.n)} <span class="p">${num(v.at(-1),sel)} ${esc(s.u)}</span></h2>
   <svg viewBox="0 0 ${W} ${Hh}" width="100%" style="display:block;margin-top:8px">${ticks}<polyline points="${line}" fill="none" stroke="var(--fg)" stroke-width="1.6"/>${mk}${months}</svg>
   ${H.length?H.map((h,j)=>{const c=ESC[h.v.stato==="aperta"?"aperta":h.v.esito]||"var(--mut)";return `<div class="hy"><span class="k" style="color:${c};border-color:${c}">${j+1}</span><div>${dir(h)} <span class="meta">· ${h.orizzonte} g · fiducia ${esc(h.fiducia)} · ${dd(h.data)}</span><div class="m">${esc(h.meccanismo)}</div>${h.origine&&h.origine.testo?`<div class="meta">${esc(h.origine.tipo)}: ${esc(h.origine.testo)}</div>`:""}</div><div class="r">${res(h)}</div></div>`}).join(""):`<div class="empty">Nessuna ipotesi su questo strumento.</div>`}`;
@@ -136,7 +137,8 @@ function bil(){
   el.innerHTML=`<div class="big"><div><b>${Math.round(B.giuste/B.decise*100)}%</b>giuste su ${B.decise}</div><div><b>${B.guadagno_medio==null?"–":(B.guadagno_medio>=0?"+":"")+String(B.guadagno_medio).replace(".",",")}</b>punti medi</div><div><b>${aperte}</b>in corso</div></div>
   <div class="sec"><span class="mono">I segnali valgono?</span></div>${cum||'<div class="empty">Serve almeno un paio di ipotesi chiuse per la linea.</div>'}
   <div class="sec"><span class="mono">La fiducia è affidabile?</span></div>${cal}
-  <p class="note">${B.piatte} ipotesi chiuse senza un movimento oltre la banda non contano. Lo spread (in punti base) non entra nel guadagno medio.</p>`;
+  <div class="sec"><span class="mono">Per filone</span><span class="mono">giuste / chiuse</span></div>${(B.per_filone||[]).map(f=>{const q=Math.round(f.giuste/f.n*100);return `<div class="dr" style="display:flex;justify-content:space-between;gap:10px"><span>${esc(fil(f.filone))}</span><span class="${q>50?"up":q<50?"dn":"mu"}">${f.giuste} / ${f.n} · ${q}%</span></div>`}).join("")}
+  <p class="note">Se un solo filone fa quasi tutte le ipotesi, il risultato dice molto su quella crisi e poco sui segnali in generale. ${B.piatte} ipotesi chiuse senza un movimento oltre la banda non contano. Lo spread (in punti base) non entra nel guadagno medio.</p>`;
 }
 function dia(){document.getElementById("diaL").innerHTML=D.diario.length?D.diario.map(n=>`<div class="dr"><div class="mono">${dd(n.at.slice(0,10))}</div><div>${esc(n.testo)}</div></div>`).join(""):'<div class="empty">Ancora nessuna nota.</div>'}
 function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel){const g=giorno(),f=D.ipotesi.find(h=>h.data===g);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia()}).catch(e=>{if(e.message!=="401")document.getElementById("baro").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}

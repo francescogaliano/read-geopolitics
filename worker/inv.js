@@ -36,9 +36,14 @@ const firstOnOrAfter = (p, d) => p.find((x) => x[0] >= d) || null;
 /* valuta un'ipotesi: ret = variazione % (o in punti per gli strumenti «abs»); esito giusta / sbagliata / piatta / aperta */
 export function invValuta(h, p) {
   const cfg = INV_STR[h.strumento]; if (!cfg || !p || !p.length || !Number.isFinite(h.prezzo0)) return { stato: "senza_prezzi" };
-  const target = addDays(h.data, h.orizzonte), fine = firstOnOrAfter(p, target), now = fine || p[p.length - 1];
-  if (!now || now[0] <= h.data) return { stato: "aperta", giorni: 0, ret: null }; // contano solo i prezzi dei giorni dopo la registrazione
-  const ret = cfg.abs ? now[1] - h.prezzo0 : (now[1] / h.prezzo0 - 1) * 100;
+  /* prezzo d'ingresso: quello noto alla registrazione se è dello stesso giorno; se era più vecchio (es. venerdì per
+     un'ipotesi del lunedì), il primo prezzo dal giorno della registrazione in poi, così il movimento precedente non conta */
+  const base = h.data0 >= h.data ? [h.data0, h.prezzo0] : firstOnOrAfter(p, h.data);
+  if (!base) return { stato: "aperta", giorni: 0, ret: null, attesa_ingresso: true };
+  const target = addDays(h.data, h.orizzonte), fine = p.find((x) => x[0] >= target && x[0] > base[0]) || null;
+  const dopo = p.filter((x) => x[0] > base[0]), now = fine || dopo[dopo.length - 1];
+  if (!now) return { stato: "aperta", giorni: 0, ret: null, ingresso: { data: base[0], valore: base[1] } };
+  const ret = cfg.abs ? now[1] - base[1] : (now[1] / base[1] - 1) * 100;
   const b = cfg.banda[h.orizzonte >= 30 ? 1 : 0];
   let esito = null;
   if (fine) {
@@ -46,7 +51,7 @@ export function invValuta(h, p) {
     else { const s = h.direzione === "su" ? ret : -ret; esito = s > b ? "giusta" : s < -b ? "sbagliata" : "piatta"; }
   }
   const giorni = Math.round((Date.parse(now[0]) - Date.parse(h.data)) / 86400000);
-  return { stato: fine ? "chiusa" : "aperta", ret: +ret.toFixed(3), al: now[0], prezzo1: now[1], esito, giorni: Math.min(giorni, h.orizzonte), banda: b };
+  return { stato: fine ? "chiusa" : "aperta", ret: +ret.toFixed(3), al: now[0], prezzo1: now[1], ingresso: { data: base[0], valore: base[1] }, esito, giorni: Math.max(0, Math.min(giorni, h.orizzonte)), banda: b };
 }
 
 /* bilancio: solo ipotesi chiuse in tempo reale (non retroattive) */
@@ -61,7 +66,10 @@ export function invBilancio(L) {
   const ord = conGuad.slice().sort((a, b) => String(a.v.al).localeCompare(String(b.v.al)));
   let c = 0, r = 0; const cum = [];
   for (const h of ord) { c += guad(h); let hs = 2166136261; for (const ch2 of h.id) hs = Math.imul(hs ^ ch2.charCodeAt(0), 16777619) >>> 0; r += ((hs >>> 16) & 1 ? 1 : -1) * h.v.ret; cum.push({ al: h.v.al, segnali: +c.toFixed(2), caso: +r.toFixed(2) }); }
-  return { chiuse: ch.length, decise: dec.length, giuste, piatte: ch.filter((h) => h.v.esito === "piatta").length, guadagno_medio: conGuad.length ? +(conGuad.reduce((s, h) => s + guad(h), 0) / conGuad.length).toFixed(2) : null, per_fiducia: perFid, cumulata: cum };
+  // per filone: le ipotesi nate dalla stessa crisi vanno insieme, così si vede se un tema pesa troppo
+  const fil = {}; for (const h of dec) { const k = (h.origine && h.origine.filone_id) || "senza filone"; const r = (fil[k] ||= { filone: k, n: 0, giuste: 0 }); r.n++; if (h.v.esito === "giusta") r.giuste++; }
+  const per_filone = Object.values(fil).sort((a, b) => b.n - a.n);
+  return { per_filone, chiuse: ch.length, decise: dec.length, giuste, piatte: ch.filter((h) => h.v.esito === "piatta").length, guadagno_medio: conGuad.length ? +(conGuad.reduce((s, h) => s + guad(h), 0) / conGuad.length).toFixed(2) : null, per_fiducia: perFid, cumulata: cum };
 }
 
 function invPulisci(x, serie, oggi, ora) {
