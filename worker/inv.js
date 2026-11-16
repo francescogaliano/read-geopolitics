@@ -8,6 +8,8 @@
      bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
+import { RETRO_VERSIONE, RETRO_FILONI, retroIpotesi, retroValuta, retroRiepilogo } from "./inv-retro.js";
+
 export const INV_STR = {
   brent: { n: "Brent", u: "$/barile", banda: [1.5, 3] },
   ttf: { n: "Gas TTF", u: "€/MWh", banda: [2, 4] },
@@ -309,6 +311,18 @@ export async function invRoute(request, env, p, method, h) {
   return h.fail(404, "not_found");
 }
 
+/* retroattivo: segnali passati → ipotesi con la regola congelata in inv-retro.js, valutate sui prezzi in archivio */
+async function invRetro(env, serie, oggi) {
+  try {
+    const F = Object.keys(RETRO_FILONI);
+    const { results } = await env.DB.prepare("SELECT key, data FROM docs WHERE type='segnali' AND status='published' AND json_extract(data,'$.filone_id') IN (" + F.map((_, i) => "?" + (i + 1)).join(",") + ")").bind(...F).all();
+    const S = [];
+    for (const r of results || []) { let d; try { d = JSON.parse(r.data); } catch (e) { continue; } S.push({ key: r.key, filone_id: d.filone_id, attesa: d.attesa, stato: d.stato, data: d.data, chiuso: d.chiuso, evento: d.evento }); }
+    const ip = retroIpotesi(S), val = retroValuta(ip, serie, INV_STR, oggi);
+    return { versione: RETRO_VERSIONE, filoni: Object.fromEntries(Object.entries(RETRO_FILONI).map(([k, v]) => [k, v.n])), segnali: S.length, segnali_usati: new Set(ip.map((x) => x.segnale)).size, ipotesi: val.length, riepilogo: retroRiepilogo(val),
+      lista: val.slice(-400).map((v) => ({ p: v.prova, k: v.strumento, d: v.direzione, t: v.data, f: v.filone, c: v.classe, e: String(v.evento || "").slice(0, 140), g7: v.g7 || null, g30: v.g30 || null })) };
+  } catch (e) { return { errore: String((e && e.message) || e).slice(0, 120) }; }
+}
 async function eventiQuota(env) { // «Com'è finita»: probabili avvenuti + improbabili non avvenuti, sul totale di probabili e improbabili chiusi
   try {
     const r = await env.DB.prepare("SELECT json_extract(data,'$.attesa') a, json_extract(data,'$.stato') s, count(*) n FROM docs WHERE type='segnali' AND status='published' AND json_extract(data,'$.stato') IN ('avvenuto','smentito','scaduto') GROUP BY a, s").all();
@@ -330,7 +344,7 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
   }
   if (b.action === "inv_nota") {
     const t = cut(b.testo, 2000); if (t.length < 2) return { ok: false, error: "testo vuoto" };
