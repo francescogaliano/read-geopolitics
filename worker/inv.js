@@ -3,8 +3,9 @@
      prezzo di partenza e da lì non si toccano più. Valutate a ogni lettura dai prezzi (1 g informativo, 7 e 30 g).
    - Radar: opportunità scelte dal modello (routine «radar»), aziende e fondi osservati con la loro scheda.
      Le aziende si aggiungono anche a mano dal pannello con il simbolo di borsa; le classifica e le studia la routine.
-   - Prezzi: materie prime e cambi dal database (docs «mercati»); azioni ed ETF da Stooq (secret STOOQ_KEY, uso
-     personale), aggiornati dal cron e salvati in kv.
+   - Prezzi: materie prime e cambi dal database (docs «mercati»); azioni ed ETF da Yahoo Finance (servizio non ufficiale,
+     uso personale; Stooq prima se c'è il secret STOOQ_KEY), aggiornati dal cron e salvati in kv. Se il Worker viene
+     bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
 export const INV_STR = {
@@ -27,11 +28,12 @@ const cut = (s, n) => String(s == null ? "" : s).replace(/\s+/g, " ").trim().sli
 const num = (x) => (x !== null && x !== "" && Number.isFinite(+x) ? +x : null);
 const fonti = (a) => (Array.isArray(a) ? a : []).slice(0, 10).map((f) => ({ nome: cut(f && f.nome, 60), url: /^https?:\/\//.test((f && f.url) || "") ? cut(f.url, 400) : "" })).filter((f) => f.nome);
 
-/* simbolo Stooq dal simbolo di borsa: «NVDA» → nvda.us, «RHM.DE» → rhm.de, «LDO.MI» → ldo.it */
+/* simbolo interno (formato Stooq) dal simbolo di borsa: «NVDA» → nvda.us, «RHM.DE» → rhm.de, «LDO.MI» → ldo.it */
 export function invSim(t) {
   let s = String(t || "").trim().toLowerCase().replace(/\s+/g, "").replace(/^az:/, "");
   if (!s) return "";
-  s = s.replace(/\.mi$/, ".it").replace(/\.pa$/, ".fr").replace(/\.as$/, ".nl").replace(/\.l$/, ".uk").replace(/\.(f|xetra|de)$/, ".de");
+  s = s.replace(/\.mi$/, ".it").replace(/\.pa$/, ".fr").replace(/\.as$/, ".nl").replace(/\.l$/, ".uk").replace(/\.(f|xetra|de)$/, ".de")
+    .replace(/\.mc$/, ".es").replace(/\.sw$/, ".ch").replace(/\.st$/, ".se").replace(/\.ol$/, ".no").replace(/\.he$/, ".fi").replace(/\.br$/, ".be").replace(/\.ls$/, ".pt").replace(/\.vi$/, ".at").replace(/\.t$/, ".jp");
   if (!s.includes(".") && !s.startsWith("^")) s += ".us";
   return SIM_RE.test(s) ? s : "";
 }
@@ -71,13 +73,57 @@ export async function invStooq(env, sim) {
   if (!p.length) return { ok: false, errore: "simbolo senza dati" };
   return { ok: true, p: p.sort((a, b) => a[0].localeCompare(b[0])).slice(-300) };
 }
-async function pxAggiorna(h, env, sim) {
-  const r = await invStooq(env, sim);
+/* Yahoo Finance (endpoint «chart» del sito, non ufficiale, senza chiave): dal simbolo interno al simbolo Yahoo */
+const YSUF = { us: "", de: ".DE", it: ".MI", fr: ".PA", nl: ".AS", uk: ".L", es: ".MC", ch: ".SW", se: ".ST", no: ".OL", dk: ".CO", fi: ".HE", be: ".BR", pt: ".LS", at: ".VI", jp: ".T", hk: ".HK", pl: ".WA" };
+export function invYsym(sim) {
+  const s = String(sim || ""); if (s.startsWith("^")) return s.toUpperCase();
+  const i = s.lastIndexOf("."); if (i < 1) return s.toUpperCase();
+  const suf = YSUF[s.slice(i + 1)]; return suf == null ? s.toUpperCase() : s.slice(0, i).toUpperCase() + suf;
+}
+/* dalla risposta JSON di /v8/finance/chart a [[data, chiusura]] (data nel fuso della borsa) */
+export function invYparse(j) {
+  const r = j && j.chart && Array.isArray(j.chart.result) ? j.chart.result[0] : null;
+  if (!r) return { ok: false, errore: (j && j.chart && j.chart.error && cut(j.chart.error.description || j.chart.error.code, 80)) || "risposta inattesa da Yahoo" };
+  const ts = r.timestamp || [], q = ((r.indicators || {}).quote || [])[0] || {}, c = q.close || [], off = ((r.meta || {}).gmtoffset || 0) * 1000;
+  const m = new Map();
+  ts.forEach((t, i) => { const v = c[i]; if (Number.isFinite(v) && v > 0) m.set(new Date(t * 1000 + off).toISOString().slice(0, 10), +(+v).toFixed(4)); });
+  const p = [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-300);
+  return p.length ? { ok: true, p } : { ok: false, errore: "simbolo senza dati" };
+}
+export async function invYahoo(env, sim) {
+  const y = encodeURIComponent(invYsym(sim)); let ultimo = "Yahoo: nessuna risposta";
+  for (const host of ["query1", "query2"]) {
+    try {
+      const r = await fetch("https://" + host + ".finance.yahoo.com/v8/finance/chart/" + y + "?range=2y&interval=1d", { headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", accept: "application/json" }, signal: AbortSignal.timeout(10000) });
+      const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) {}
+      if (j) { const x = invYparse(j); if (x.ok || r.status === 404) return r.status === 404 ? { ok: false, errore: "simbolo non trovato su Yahoo (" + invYsym(sim) + ")" } : x; ultimo = "Yahoo: " + x.errore; }
+      else ultimo = "Yahoo " + r.status + (r.status === 429 ? " (troppe richieste: il Worker è bloccato)" : "");
+    } catch (e) { ultimo = "rete: " + String((e && e.message) || e).slice(0, 80); }
+  }
+  return { ok: false, errore: ultimo };
+}
+/* catena: Stooq se c'è la chiave, poi Yahoo */
+async function invScarica(env, sim) {
+  let e1 = null;
+  if (env.STOOQ_KEY) { const r = await invStooq(env, sim); if (r.ok) return { ...r, fonte: "stooq" }; e1 = r.errore; }
+  const r = await invYahoo(env, sim); if (r.ok) return { ...r, fonte: "yahoo" };
+  return { ok: false, errore: (e1 ? "Stooq: " + e1 + " · " : "") + r.errore };
+}
+async function pxSalva(h, env, sim, r) {
   const prev = (await h.kvGet(env, "inv:px:" + sim)) || {};
   const now = new Date().toISOString();
-  const rec = r.ok ? { p: r.p, at: now, tentato: now, errore: null } : { p: prev.p || [], at: prev.at || null, tentato: now, errore: r.errore };
+  const rec = r.ok ? { p: r.p, at: now, tentato: now, errore: null, fonte: r.fonte } : { p: prev.p || [], at: prev.at || null, tentato: now, errore: r.errore, fonte: prev.fonte || null };
   await h.kvSet(env, "inv:px:" + sim, rec);
   return rec;
+}
+async function pxAggiorna(h, env, sim) { return pxSalva(h, env, sim, await invScarica(env, sim)); }
+/* prezzi caricati dalla routine: [[AAAA-MM-GG, chiusura], …] oppure la risposta JSON grezza di Yahoo «chart» */
+function pxDaRoutine(b) {
+  if (b && b.chart) return { ...invYparse(b), fonte: "routine" };
+  const a = Array.isArray(b) ? b : null; if (!a) return { ok: false, errore: "prezzi: atteso [[data, chiusura], …]" };
+  const m = new Map(); for (const x of a) if (Array.isArray(x) && /^\d{4}-\d{2}-\d{2}$/.test(x[0]) && Number.isFinite(+x[1]) && +x[1] > 0) m.set(x[0], +x[1]);
+  const p = [...m.entries()].sort((x, y) => x[0].localeCompare(y[0])).slice(-300);
+  return p.length >= 5 ? { ok: true, p, fonte: "routine" } : { ok: false, errore: "prezzi: troppo pochi giorni validi" };
 }
 /* cron (ogni 15 minuti): al massimo 4 simboli per giro, quelli tentati più di 18 ore fa */
 export async function invCron(env, h) {
@@ -222,7 +268,7 @@ export async function invRoute(request, env, p, method, h) {
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
     return h.json({ ok: true, oggi, strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte,
-      regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo stooq>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30; fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
+      regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30; fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
   if (p === "/v1/inv/ipotesi" && method === "POST") {
     const b = await request.json().catch(() => null); const arr = b && Array.isArray(b.ipotesi) ? b.ipotesi : null;
@@ -230,11 +276,13 @@ export async function invRoute(request, env, p, method, h) {
     const out = await registraIpotesi(h, env, arr, await serieTutte(h, env, O.map((o) => o.sim)), oggi);
     return h.json({ ok: true, registrate: out.filter((x) => x.ok).length, esiti: out });
   }
-  if (p === "/v1/inv/prezzi" && method === "POST") { // la routine scarica i prezzi di un simbolo prima di usarlo
+  if (p === "/v1/inv/prezzi" && method === "POST") { // la routine fa scaricare i prezzi al Worker, oppure li carica lei ({ ticker, p })
     const b = await request.json().catch(() => null); const sim = invSim(b && (b.sim || b.ticker));
     if (!sim) return h.fail(400, "simbolo");
-    const r = await pxAggiorna(h, env, sim);
-    return h.json({ ok: !r.errore, sim, giorni: (r.p || []).length, ultimo: (r.p || []).slice(-1)[0] || null, errore: r.errore || null });
+    let r;
+    if (b.p != null) { const x = pxDaRoutine(b.p); if (!x.ok) return h.fail(400, "prezzi", x.errore); r = await pxSalva(h, env, sim, x); }
+    else r = await pxAggiorna(h, env, sim);
+    return h.json({ ok: !r.errore, sim, simbolo_yahoo: invYsym(sim), fonte: r.fonte || null, giorni: (r.p || []).length, ultimo: (r.p || []).slice(-1)[0] || null, errore: r.errore || null });
   }
   if (p === "/v1/inv/radar" && method === "POST") {
     const b = await request.json().catch(() => null); if (!b) return h.fail(400, "json");
@@ -282,7 +330,7 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
   }
   if (b.action === "inv_nota") {
     const t = cut(b.testo, 2000); if (t.length < 2) return { ok: false, error: "testo vuoto" };
