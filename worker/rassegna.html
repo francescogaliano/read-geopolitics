@@ -55,13 +55,28 @@ h1{margin:0;font:600 24px/1.2 "Source Serif 4",Georgia,serif}
 .ita{display:grid;grid-template-columns:repeat(2,1fr);gap:0 18px}.ita div{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}.ita small{color:var(--mut);font-size:12px;display:block}.ita .z{color:var(--ko)}
 .sr .q{padding:10px 0;border-top:1px solid var(--line)}.sr .q .t{font-weight:600;font-size:14.5px}.sr .q .m{color:var(--mut);font-size:12.5px;margin-top:2px}.sr .q a{color:var(--fg);text-decoration:none}
 .spark{display:inline-block;vertical-align:middle;margin-left:6px}
+.ck{display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;align-items:baseline}.ck .i{font:700 13px ui-monospace,monospace}.ck small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px}.ck .v2{font:600 14px ui-monospace,monospace;text-align:right}
+.ok-c{color:var(--ok)}.ko-c{color:var(--ko)}.am-c{color:#E8A33D}
+.sel{display:grid;grid-template-columns:1fr 132px 34px 64px;gap:10px;align-items:center;padding:8px 0 8px 10px;border-top:1px solid var(--line);border-left:3px solid transparent;font-size:13.5px}
+.sel.storia{border-left-color:#E8B050}.sel.breve{border-left-color:var(--acc)}.sel.esclusa{border-left-color:#3A4A58}
+.sel .t small{display:block;color:var(--mut);font-size:12px;margin-top:2px}.sel .t small.am-c{color:#E8A33D}
+.dots{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.dots span{display:flex;gap:2px}.dots i{width:8px;height:8px;background:#1C2833;display:block}.dots i.on{background:var(--acc)}
+.sel .tot{font:600 17px "Source Serif 4",Georgia,serif;text-align:right}.sel .es2{font:500 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);text-align:right}
+.hd{display:grid;grid-template-columns:1fr 132px 34px 64px;gap:10px;padding:0 0 6px 13px}
+.bst{padding:11px 0 11px 10px;border-top:1px solid var(--line);border-left:3px solid #E8B050}.bst.it{border-left-color:#E8EDF2}
+.bst .t{font-weight:600;font-size:14.5px;line-height:1.3}.bst .n{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:5px;font-size:12.5px;color:var(--mut)}.bst .n b{color:var(--fg);font-weight:600}
+.bst .f{margin-top:5px;font-size:12.5px;color:var(--mut)}.bst .f a{color:var(--mut)}.bst .w{margin-top:4px;font-size:12.5px;color:#E8A33D}
+.cap .row{display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.cap .track{height:8px;background:#141E27;position:relative}.cap .fill{position:absolute;left:0;top:0;bottom:0;background:var(--acc)}.cap .lim{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--ko)}.cap .n{text-align:right;color:var(--mut);font-size:12.5px}
+.nav{display:flex;justify-content:space-between;margin-top:14px}.nav button{all:unset;cursor:pointer;color:var(--acc);padding:10px 0;min-height:24px}.nav button[disabled]{color:var(--mut);cursor:default}
 .tip{position:fixed;pointer-events:none;background:#101A23;border:1px solid #2A3A48;padding:8px 10px;max-width:260px;font-size:13px;display:none;z-index:9}
 </style></head><body><div class="wrap">
 <div class="top"><span class="mono">Pannello · Rassegna</span><a class="back" href="/ig/panel">‹ Pannello</a></div>
 <h1 id="h1">La giornata vista dalle fonti</h1>
 <div class="sum" id="sum">Carico…</div>
-<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-v="oggi">Oggi</button><button role="tab" aria-selected="false" data-v="fonti">Fonti</button></div>
+<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-v="oggi">Oggi</button><button role="tab" aria-selected="false" data-v="brief">Il briefing ai raggi X</button><button role="tab" aria-selected="false" data-v="fonti">Fonti</button></div>
 <div class="v on" id="v-oggi"></div>
+<div class="v" id="v-brief"><div class="empty">Carico il briefing…</div></div>
 <div class="v" id="v-fonti"><p class="lead">I feed che il Worker legge ogni ora: solo titoli e link.</p><button class="act" id="ver">Verifica adesso tutti i feed ›</button>
 <button class="act" id="cop" style="margin-top:0;border-top:0">Copia l'esito di tutte le fonti ›</button><div id="fl"></div><p class="note">Verde: il feed risponde con titoli. Rosso: non risponde (il motivo è nel dettaglio). «via Google»: la testata non ha un feed leggibile e si usa la ricerca di Google News limitata al suo sito (solo titoli). Media di Stato: solo per riportare la posizione ufficiale.</p></div>
 <div class="tip" id="tip"></div>
@@ -73,7 +88,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href="/ig/panel";throw new Error("401")}return r.json()})}
 const quando=d=>{if(!d)return"";const m=(Date.now()-Date.parse(d))/6e4;return m<60?Math.max(1,Math.round(m))+" min fa":m<1440?Math.round(m/60)+" h fa":Math.round(m/1440)+" g fa"};
 const TIPO={agenzia:"agenzia",testata:"testata",analisi:"analisi",ufficiale:"fonte ufficiale",statale:"media di Stato"};
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));document.querySelectorAll(".v").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v))});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));document.querySelectorAll(".v").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v));if(b.dataset.v==="brief"&&!BR)brief()});
 function fonti(){let h="";for(const [a,nome] of Object.entries(D.aree)){const L=D.fonti.filter(f=>f.area===a);if(!L.length)continue;const ok=L.filter(f=>f.ok===true).length;
   h+=`<div class="sec"><span class="mono">${esc(nome)}</span><span class="mono">${ok} su ${L.length}</span></div><div>`+L.map(f=>{const c=f.ok===true?"ok":f.ok===false?(f.fermo?"fe":"ko"):"mai";
    const s=f.ok===true?`<span class="ok-t">${f.fresche} ${f.fresche===1?"titolo":"titoli"}</span><small>${f.via==="google"?"via Google · ":f.via==="bing"?"via Bing · ":""}${f.ultima?"ultimo "+esc(quando(f.ultima)):f.senza_data?"il feed non indica la data":""}</small>`:f.ok===false&&f.fermo?`<span class="fe-t">fermo</span><small>${esc(((f.errori||[]).slice(-1)[0]||"").replace(/^[^:]+: /,""))}</small>`:f.ok===false?`<span class="ko-t">non risponde</span><small>${esc(((f.errori||[]).slice(-1)[0]||"").replace(/^[^:]+: /,""))}</small>`:`<span class="mu">da verificare</span>`;
@@ -105,6 +120,36 @@ function oggi(){const E=D.equilibrio||{aree:{},italia:[]},EQ=Object.entries(E.ar
  <div class="sx"><h2>In crescita</h2><span class="mono">fonti per ora, ultime 12</span></div>
  <div class="sr">${(D.crescita||[]).map(s=>`<div class="q" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><div class="t">${esc(s.titolo)}</div><div class="m">${s.serie.slice(9).reduce((a,b)=>a+b,0)} fonti nelle ultime 3 ore</div></div>${spark(s.serie,90,26,"#E8B050")}</div>`).join("")||'<div class="empty">Nessuna storia in forte crescita.</div>'}</div>
  </div></div>`;mappa()}
+let BR=null,BRD=null;
+function brief(d){BRD=d||BRD;$("#v-brief").innerHTML='<div class="empty">Carico il briefing…</div>';api({action:"rs_brief",data:BRD}).then(j=>{if(!j.ok){$("#v-brief").innerHTML=`<div class="empty">${esc(j.error||"errore")}</div>`;return}BR=j;BRD=j.data;briefRender()})}
+function briefRender(){const B=BR,dl=s=>new Date(s+"T12:00:00Z").toLocaleDateString("it-IT",{day:"numeric",month:"long"});
+ const ES={storia:"storia",breve:"breve",esclusa:"esclusa"},sez=r=>r==="Italia";
+ const selH=[false,true].map(it=>{const L=B.selezione.filter(x=>sez(x.regione)===it).sort((a,b)=>b.totale-a.totale);if(!L.length)return"";return `<div class="mono" style="margin:12px 0 4px">${it?"Italia":"Mondo"}</div>`+L.map(x=>`<div class="sel ${ES[x.esito]||"esclusa"}"><div class="t">${esc(x.titolo)}${x.motivo?`<small>${esc(x.motivo)}</small>`:""}${x.avvisi.map(a=>`<small class="am-c">${esc(a)}</small>`).join("")}</div><div class="dots">${[0,1,2,3].map(k=>`<span>${[0,1,2].map(z=>`<i class="${z<(x.punti[k]||0)?"on":""}"></i>`).join("")}</span>`).join("")}</div><div class="tot ${x.avvisi.length?"am-c":""}">${x.totale}</div><div class="es2">${esc(x.esito||"")}</div></div>`).join("")}).join("");
+ const mx=Math.max(40,...B.testate.map(t=>t.quota));
+ $("#v-brief").innerHTML=`<div class="nav"><button id="bp" ${B.prima?"":"disabled"}>‹ ${B.prima?dl(B.prima):""}</button><span class="mono" style="align-self:center">briefing del ${dl(B.data)}</span><button id="bn" ${B.dopo?"":"disabled"}>${B.dopo?dl(B.dopo):""} ›</button></div>
+ <p class="sum"><b>${B.n_storie}</b> storie (${B.n_mondo} mondo, ${B.n_italia} Italia) scelte tra <b>${B.candidate}</b> candidate · <b>${B.citazioni}</b> citazioni da <b>${B.testate_n}</b> testate ed enti</p>
+ <div class="grid"><div>
+ <div class="sx"><h2>Dove</h2><span class="mono">cerchio = fonti della storia</span></div><svg id="bmap"></svg>
+ <div class="sx"><h2>Come sono state scelte</h2><span class="mono">punti del briefing, 0-3 per criterio</span></div>
+ <div class="hd"><span class="mono">candidata</span><div class="dots mono" style="font-size:10px"><span>pers.</span><span>oltre</span><span>nuovo</span><span>posta</span></div><span class="mono" style="text-align:right">tot</span><span></span></div>${selH||'<div class="empty">Il briefing non ha salvato la selezione.</div>'}
+ <p class="note">Criteri del briefing: persone toccate, effetti oltre i confini, novità delle ultime 24 ore, posta in gioco imminente. Entrano le più alte (5-7 mondo, 3-4 Italia); un filone già seguito non ha vantaggi. In ambra: escluse con un punteggio da storia e punteggi che non tornano con il motivo.</p>
+ </div><div>
+ <div class="sx"><h2>Le regole, controllate</h2><span class="mono">${dl(B.data)}</span></div>
+ ${B.regole.map(r=>`<div class="ck"><span class="i ${r.esito}-c">${r.esito==="ok"?"✓":r.esito==="ko"?"✗":"!"}</span><span>${esc(r.testo)}<small>${esc(r.dettaglio)}</small></span><span class="v2 ${r.esito}-c">${esc(r.valore)}</span></div>`).join("")}
+ <div class="sx"><h2>Testate più citate</h2><span class="mono">linea rossa = tetto 20%</span></div>
+ <div class="cap">${B.testate.map(t=>`<div class="row"><span>${esc(t.nome)}</span><span class="track"><span class="fill" style="width:${t.quota/mx*100}%"></span><span class="lim" style="left:${20/mx*100}%"></span></span><span class="n">${Math.round(t.quota)}%</span></div>`).join("")}</div>
+ <div class="sx"><h2>La rassegna diceva</h2><span class="mono">24 ore prima del briefing</span></div>
+ <div class="sr">${B.rassegna.length?B.rassegna.map(g=>`<div class="q"><div class="t">${esc(g.titolo)}</div><div class="m">${g.n_fonti} fonti · ${g.italia?"Italia":g.aree+" aree"} · indice ${g.indice} · nel briefing: <span class="${g.esito==="storia"?"ok-c":g.esito==="non valutata"?"am-c":""}">${esc(g.esito)}</span>${g.motivo?" · "+esc(g.motivo):""}</div></div>`).join(""):'<div class="empty">Nessun dato della rassegna per le 24 ore prima di questo briefing (la rassegna è attiva dal 17 novembre pomeriggio).</div>'}</div>
+ <p class="note">«non valutata»: una storia ripresa da molte fonti che non compare nemmeno tra le candidate del briefing. È il segnale da guardare.</p>
+ </div></div>
+ <div class="sx"><h2>Le fonti di ogni storia</h2><span class="mono">«via» = letta tramite un'altra testata</span></div>
+ ${B.storie.map(s=>`<div class="bst ${s.italia?"it":""}"><div class="t">${esc(s.titolo)}</div><div class="n"><span><b>${s.n}</b> fonti</span><span><b>${s.testate}</b> testate o enti</span>${s.italia?"":`<span><b>${s.nonocc}</b> non occidentali</span>`}<span><b>${s.primarie}</b> primarie</span>${s.statali?`<span><b>${s.statali}</b> statali</span>`:""}<span><b>${s.seconda}</b> di seconda mano</span>${s.confidenza?`<span>confidenza ${esc(s.confidenza)}</span>`:""}</div><div class="f">${s.fonti.map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome)}</a>`).join(" · ")}</div>${s.avvisi.map(a=>`<div class="w">${esc(a)}</div>`).join("")}</div>`).join("")}`;
+ $("#bp").onclick=()=>B.prima&&brief(B.prima);$("#bn").onclick=()=>B.dopo&&brief(B.dopo);bmappa()}
+function bmappa(){const el=document.getElementById("bmap");if(!el||!window.d3||!window.topojson)return;(GEO?Promise.resolve(GEO):fetch("/ig/geo.json").then(r=>r.json()).then(t=>GEO=t)).then(t=>{const svg=d3.select(el),W=el.clientWidth||600,H=Math.round(W*.52);svg.attr("viewBox",`0 0 ${W} ${H}`).selectAll("*").remove();
+ const pr=d3.geoNaturalEarth1().fitExtent([[4,4],[W-4,H-4]],{type:"Sphere"}),pa=d3.geoPath(pr),F=topojson.feature(t,t.objects.countries).features,FC=Object.fromEntries(F.map(f=>[f.id,f]));
+ svg.append("path").attr("d",pa({type:"Sphere"})).attr("fill","#0E1720");svg.append("g").selectAll("path").data(F).join("path").attr("d",pa).attr("fill",f=>BR.storie.some(s=>s.paesi.includes(f.id))?"#22313E":"#18242F").attr("stroke","#0B1118").attr("stroke-width",.5);
+ const r=d3.scaleSqrt().domain([1,8]).range([3,W/40]),tip=document.getElementById("tip");BR.storie.forEach(s=>{const f=FC[s.paesi[0]];if(!f)return;const[x,y]=pr(d3.geoCentroid(f));svg.append("circle").attr("cx",x).attr("cy",y).attr("r",r(s.n)).attr("fill",s.italia?"#E8EDF2":"#E8B050").attr("fill-opacity",.85).attr("stroke","#0B1118")
+  .on("mousemove click",ev=>{tip.style.display="block";tip.style.left=Math.min(innerWidth-270,ev.clientX+12)+"px";tip.style.top=(ev.clientY+12)+"px";tip.innerHTML=`<b>${esc(s.titolo)}</b><br><span class="mono">${s.n} fonti</span>`}).on("mouseleave",()=>tip.style.display="none")})})}
 let GEO=null;function mappa(){const el=document.getElementById("map");if(!el||!window.d3||!window.topojson)return;
  (GEO?Promise.resolve(GEO):fetch("/ig/geo.json").then(r=>r.json()).then(t=>GEO=t)).then(t=>{const svg=d3.select(el),W=el.clientWidth||600,H=Math.round(W*.52);svg.attr("viewBox",`0 0 ${W} ${H}`).selectAll("*").remove();
   const pr=d3.geoNaturalEarth1().fitExtent([[4,4],[W-4,H-4]],{type:"Sphere"}),pa=d3.geoPath(pr),F=topojson.feature(t,t.objects.countries).features,FC=Object.fromEntries(F.map(f=>[f.id,f]));

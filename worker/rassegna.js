@@ -101,6 +101,11 @@ async function indice(env, h) {
   return { I, filoni };
 }
 
+export async function rsVociTra(env, da, a) {
+  await tabella(env);
+  const r = await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 AND data < ?2 ORDER BY data ASC LIMIT 4000").bind(da, a).all();
+  return r.results || [];
+}
 export async function rsVoci(env, ore) {
   await tabella(env);
   const da = new Date(Date.now() - Math.max(1, Math.min(72, ore || 24)) * 3600e3).toISOString();
@@ -109,9 +114,10 @@ export async function rsVoci(env, ore) {
 }
 
 /* ---------- storie e indice per il briefing (regole fisse, 0-100) ----------
-   Mondo: fonti diverse (max 25), aree diverse (20), almeno una non occidentale (10), fonte primaria (10), filone attivo (15),
-   crescita nelle ultime 6 ore rispetto alle 6 prima (10), novità (10 se nuova, 5 se aggiorna un filone).
-   Italia: le aree sono sostituite dagli orientamenti diversi (30) e non conta il non occidentale.
+   Mondo: fonti diverse (max 35), aree diverse (30), almeno una non occidentale (10), fonte primaria (10),
+   crescita nelle ultime 6 ore rispetto alle 6 prima (15).
+   Italia: le aree sono sostituite dalle testate italiane diverse (40) e non conta il non occidentale.
+   Il filone attivo è solo un'etichetta: per le regole del briefing un filone già seguito non ha vantaggi (corretto il 17/11/2026).
    ≥ 60 candidata, 40-59 da valutare, sotto 40 sotto soglia. L'indice ordina, non decide: il briefing sceglie per impatto. */
 const PESO = { ufficiale: 4, agenzia: 3, analisi: 2, testata: 1, statale: 0 };
 export function rsStorie(voci, ctx) {
@@ -132,8 +138,8 @@ export function rsStorie(voci, ctx) {
     let filone = null, fb = 0;
     for (const t of ctx.filoni) { let e = 0, enc = 0; for (const k of t.E) if (core.has(k)) { e++; if (k[0] !== "p") enc++; } let kw = 0; for (const w of t.K) if (g.K.has(w)) kw++; const sc = e + enc + kw * 0.5; if ((enc >= 1 || e >= 2 || kw >= 2) && sc >= 2 && sc > fb) { fb = sc; filone = { id: t.id, titolo: t.titolo }; } }
     const n = fonti.length, p = isIta
-      ? { f: Math.min(n, 10) / 10 * 25, a: Math.min(Math.max(ita.length - 1, 0), 4) / 4 * 30, pr: primarie ? 10 : 0, fi: filone ? 15 : 0, cr: Math.max(0, Math.min(10, (last - prev) * 1.5)), nv: filone ? 5 : 10 }
-      : { f: Math.min(n, 10) / 10 * 25, a: Math.min(aree.length - 1, 3) / 3 * 20, no: nonocc ? 10 : 0, pr: primarie ? 10 : 0, fi: filone ? 15 : 0, cr: Math.max(0, Math.min(10, (last - prev) * 1.5)), nv: filone ? 5 : 10 };
+      ? { f: Math.min(n, 10) / 10 * 35, a: Math.min(Math.max(ita.length - 1, 0), 4) / 4 * 40, pr: primarie ? 10 : 0, cr: Math.max(0, Math.min(15, (last - prev) * 2)) }
+      : { f: Math.min(n, 10) / 10 * 35, a: Math.min(aree.length - 1, 3) / 3 * 30, no: nonocc ? 10 : 0, pr: primarie ? 10 : 0, cr: Math.max(0, Math.min(15, (last - prev) * 2)) };
     const indice = Math.round(Object.values(p).reduce((a, b) => a + b, 0));
     const capo = (uniche.filter((x) => x.f.lingua === "it").sort((a, b) => PESO[b.f.tipo] - PESO[a.f.tipo])[0]) || uniche.slice().sort((a, b) => (PESO[b.f.tipo] - PESO[a.f.tipo]) || String(b.data).localeCompare(String(a.data)))[0];
     return { titolo: capo.titolo, n_fonti: n, aree, non_occidentali: nonocc, primarie, statali, italia: isIta, orientamenti: ita.length, iso: L.iso, ll: L.ll, paesi: L.paesi || [], filone, serie, cresce: last >= 4 && last > prev * 1.5, indice, parti: p, stato: indice >= 60 ? "candidata" : indice >= 40 ? "da valutare" : "sotto soglia",
@@ -162,6 +168,76 @@ export async function rsRoute(request, env, url, h) {
     storie: S.map((g) => ({ titolo: g.titolo, indice: g.indice, stato: g.stato, italia: g.italia, n_fonti: g.n_fonti, aree: g.aree, non_occidentali: g.non_occidentali, orientamenti_italiani: g.orientamenti, primarie: g.primarie, statali: g.statali, paese: g.iso, filone: g.filone, in_crescita: g.cresce, prima: g.prima, ultima: g.ultima, voci: g.voci.map((v) => ({ fonte: v.nome, tipo: v.tipo, orient: v.orient, paese: v.paese, titolo: v.titolo, link: v.link, data: v.data })) })) });
 }
 
+/* ---------- il briefing ai raggi X: le regole del progetto controllate sul briefing salvato ---------- */
+const OCC = new Set("IT FR DE ES PT NL BE LU IE AT DK SE FI PL CZ SK HU SI HR RO BG GR CY MT EE LV LT GB US CA AU NZ NO CH IS UA MD EU".split(" "));
+const ITA_PROG = { corriere: "Corriere della Sera", repubblica: "la Repubblica", sole24ore: "Il Sole 24 Ore", lastampa: "La Stampa", fattoquotidiano: "Il Fatto Quotidiano", ilgiornale: "il Giornale", avvenire: "Avvenire" };
+const ITA_HOST = { "corriere.it": "corriere", "repubblica.it": "repubblica", "ilsole24ore.com": "sole24ore", "lastampa.it": "lastampa", "ilfattoquotidiano.it": "fattoquotidiano", "ilgiornale.it": "ilgiornale", "avvenire.it": "avvenire" };
+const jp = (v, d) => { try { return JSON.parse(v); } catch (e) { return d; } };
+export async function rsBrief(env, h, data) {
+  const B = data ? await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='briefings' AND key=?1").bind(data).first() : await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='briefings' ORDER BY key DESC LIMIT 1").first();
+  if (!B) return { ok: false, error: "nessun briefing" };
+  const b = jp(B.data, {}), ids = [...(b.storie_mondo || []), ...(b.storie_italia || [])], ita = new Set(b.storie_italia || []);
+  const prev = await env.DB.prepare("SELECT key FROM rdocs WHERE type='briefings' AND key < ?1 ORDER BY key DESC LIMIT 1").bind(B.key).first(), next = await env.DB.prepare("SELECT key FROM rdocs WHERE type='briefings' AND key > ?1 ORDER BY key ASC LIMIT 1").bind(B.key).first();
+  const S = ids.length ? (await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='stories' AND key IN (" + ids.map((_, i) => "?" + (i + 1)).join(",") + ")").bind(...ids).all()).results || [] : [];
+  const st = ids.map((id) => { const r = S.find((x) => x.key === id); return r ? { id, ...jp(r.data, {}) } : null; }).filter(Boolean);
+  const fid = new Set(); for (const s of st) for (const f of s.fonti || []) { if (f.id) fid.add(f.id); if (f.origine) fid.add(f.origine); }
+  const SR = {}; const L = [...fid]; for (let i = 0; i < L.length; i += 80) { const part = L.slice(i, i + 80); const r = await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='sources' AND key IN (" + part.map((_, k) => "?" + (k + 1)).join(",") + ")").bind(...part).all(); for (const x of r.results || []) SR[x.key] = jp(x.data, {}); }
+  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+  const cit = {}; let tot = 0, via = 0;
+  const storie = st.map((s) => {
+    const F = (s.fonti || []).map((f) => {
+      const chi = f.origine || f.id || host(f.url), src = SR[f.origine] || SR[f.id] || {}, carrier = SR[f.id] || {};
+      const seconda = !!f.origine || /\(via |\bvia\b|\(da /i.test(f.nome || "");
+      const paese = String(src.paese || carrier.paese || "").toUpperCase(), primaria = src.politica === "P" || carrier.politica === "P";
+      const statale = !primaria && /statal|di stato|state/i.test((src.orientamento || "") + " " + (f.nome || ""));
+      return { nome: f.nome, url: f.url, chi, paese, primaria, statale, seconda, nonocc: !!paese && !OCC.has(paese), itaprog: ITA_PROG[f.id] ? f.id : ITA_HOST[host(f.url)] || null };
+    });
+    for (const f of F) { cit[f.chi] = cit[f.chi] || { n: 0, nome: (SR[f.chi] || {}).nome || f.nome.replace(/\s*\(.*$/, "").replace(/\s+via\s+.*$/i, "") }; cit[f.chi].n++; tot++; if (f.seconda) via++; }
+    const testate = new Set(F.map((f) => f.chi)).size, isIta = ita.has(s.id);
+    const perPaese = {}; for (const f of F) if (f.paese) perPaese[f.paese] = (perPaese[f.paese] || 0) + 1;
+    const top = Object.entries(perPaese).sort((a, b) => b[1] - a[1])[0];
+    const perChi = {}; for (const f of F) perChi[f.chi] = (perChi[f.chi] || 0) + 1; const topChi = Object.entries(perChi).sort((a, b) => b[1] - a[1])[0];
+    const avvisi = [];
+    if (F.length < 3) avvisi.push("meno di 3 fonti");
+    if (testate < 2) avvisi.push("una sola testata o ente");
+    if (!isIta && !F.some((f) => f.nonocc)) avvisi.push("nessuna fonte non occidentale (ammesso se il tema non lo consente)");
+    if (!isIta && top && F.length >= 4 && top[1] / F.length >= 0.75) avvisi.push(top[1] + " fonti su " + F.length + " dallo stesso paese (" + top[0] + ")" + (F.filter((f) => f.statale).length ? ", di cui " + F.filter((f) => f.statale).length + " statali" : ""));
+    if (topChi && F.length >= 4 && topChi[1] / F.length >= 0.5) avvisi.push((cit[topChi[0]] || {}).nome + " fa metà o più delle citazioni della storia");
+    if (isIta && !F.some((f) => f.itaprog)) avvisi.push("nessuna delle 7 testate italiane del progetto");
+    return { id: s.id, titolo: s.titolo, italia: isIta, paesi: s.paesi || [], filone: s.filone_id || null, confidenza: (s.confidenza || {}).livello || null, n: F.length, testate, nonocc: F.filter((f) => f.nonocc).length, primarie: F.filter((f) => f.primaria).length, statali: F.filter((f) => f.statale).length, seconda: F.filter((f) => f.seconda).length, fonti: F.map((f) => ({ nome: f.nome, url: f.url, seconda: f.seconda, statale: f.statale, primaria: f.primaria })), avvisi };
+  });
+  const testate = Object.entries(cit).map(([k, v]) => ({ id: k, nome: v.nome, n: v.n, quota: tot ? +(v.n / tot * 100).toFixed(1) : 0 })).sort((a, b) => b.n - a.n);
+  const sel = (b.selezione || []).map((x) => ({ titolo: x.titolo, regione: x.regione, punti: x.punti || [], totale: x.totale ?? (x.punti || []).reduce((a, c) => a + c, 0), esito: x.esito, motivo: x.motivo || "" }));
+  const minM = Math.min(...sel.filter((x) => x.esito === "storia" && x.regione !== "Italia").map((x) => x.totale)), minI = Math.min(...sel.filter((x) => x.esito === "storia" && x.regione === "Italia").map((x) => x.totale));
+  for (const x of sel) {
+    const min = x.regione === "Italia" ? minI : minM; x.avvisi = [];
+    if (x.esito !== "storia" && x.totale >= min) x.avvisi.push(x.motivo ? "esclusa con un punteggio da storia" : "esclusa con un punteggio da storia, senza motivo scritto");
+    if ((x.punti[2] || 0) >= 2 && /nessun fatto nuovo|niente di nuovo|già raccontat|nessuna novit/i.test(x.motivo)) x.avvisi.push("novità " + x.punti[2] + " su 3, ma il motivo dice che non c'è un fatto nuovo");
+  }
+  const itaUsate = new Set(); for (const s of storie) if (s.italia) for (const f of s.fonti) { const k = ITA_HOST[host(f.url)]; if (k) itaUsate.add(k); }
+  const aj = testate.find((t) => t.id === "aljazeera"), mx = testate[0] || { quota: 0, nome: "" };
+  const mondo = storie.filter((s) => !s.italia);
+  const regole = [
+    { esito: storie.every((s) => s.n >= 3) ? "ok" : "ko", testo: "Ogni storia ha almeno 3 fonti", dettaglio: "il minimo è " + Math.min(...storie.map((s) => s.n)), valore: storie.filter((s) => s.n >= 3).length + " su " + storie.length },
+    { esito: mondo.every((s) => s.nonocc) ? "ok" : "am", testo: "Fonte non occidentale nelle storie dal mondo", dettaglio: mondo.filter((s) => !s.nonocc).map((s) => s.titolo.slice(0, 40) + "…").join("; ") || "in tutte", valore: mondo.filter((s) => s.nonocc).length + " su " + mondo.length },
+    { esito: mx.quota <= 20 ? "ok" : "ko", testo: "Nessuna testata oltre il 20%", dettaglio: "la più citata: " + testate.filter((t) => t.n === mx.n).map((t) => t.nome).join(", ") + " al " + Math.round(mx.quota) + "%", valore: Math.round(mx.quota) + "%" },
+    { esito: !aj || aj.quota <= 10 ? "ok" : "ko", testo: "Al Jazeera sotto il 10%", dettaglio: aj ? aj.n + " citazioni" : "non citata", valore: (aj ? Math.round(aj.quota) : 0) + "%" },
+    { esito: itaUsate.size >= 2 ? "ok" : itaUsate.size ? "am" : "ko", testo: "Testate italiane dell'elenco del progetto", dettaglio: itaUsate.size ? "usate: " + [...itaUsate].map((k) => ITA_PROG[k]).join(", ") : "nessuna tra Corriere, Repubblica, Sole, Stampa, Fatto, Giornale, Avvenire", valore: itaUsate.size + " su 7" },
+    { esito: via / Math.max(tot, 1) <= 0.15 ? "ok" : "am", testo: "Fonti di seconda mano («via»)", dettaglio: "articoli di un'agenzia o testata letti tramite un'altra", valore: via + " su " + tot },
+    { esito: sel.some((x) => x.avvisi.some((a) => a.startsWith("esclusa"))) ? "am" : "ok", testo: "Escluse con punteggio da storia", dettaglio: sel.filter((x) => x.avvisi.some((a) => a.startsWith("esclusa"))).map((x) => (x.titolo.length > 34 ? x.titolo.slice(0, 32) + "…" : x.titolo) + " (" + x.totale + ")").join("; ") || "nessuna", valore: String(sel.filter((x) => x.avvisi.some((a) => a.startsWith("esclusa"))).length) },
+    { esito: sel.some((x) => x.avvisi.some((a) => a.startsWith("novità"))) ? "am" : "ok", testo: "Punteggi coerenti con il motivo", dettaglio: sel.filter((x) => x.avvisi.some((a) => a.startsWith("novità"))).map((x) => x.titolo.length > 34 ? x.titolo.slice(0, 32) + "…" : x.titolo).join("; ") || "tutti coerenti", valore: String(sel.filter((x) => x.avvisi.some((a) => a.startsWith("novità"))).length) },
+  ];
+  // la rassegna delle 24 ore prima del briefing (fino alle 7 del giorno, ora di Roma)
+  let rassegna = [];
+  try {
+    const a = new Date(Date.parse(B.key + "T06:00:00Z")), da = new Date(a.getTime() - 24 * 3600e3), ctx = await indice(env, h);
+    const RS = rsStorie(await rsVociTra(env, da.toISOString(), a.toISOString()), ctx).filter((g) => g.n_fonti >= 4).slice(0, 12);
+    const E = (t) => new Set(rsEntita(t, ctx.I).map((e) => e.k)), dove = [...st.map((s) => ({ t: s.titolo, esito: "storia", motivo: "" })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, esito: x.esito, motivo: x.motivo }))].map((x) => ({ ...x, E: E(x.t) }));
+    rassegna = RS.map((g) => { const ge = E(g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 4).join(" ")); let best = null, bs = 0; for (const x of dove) { let e = 0, enc = 0; for (const k of x.E) if (ge.has(k)) { e++; if (k[0] !== "p") enc++; } const sc = e + enc; if ((enc >= 1 || e >= 2) && sc > bs) { bs = sc; best = x; } } return { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? best.esito : "non valutata", motivo: best ? best.motivo : "" }; });
+  } catch (e) { rassegna = []; }
+  return { ok: true, data: B.key, prima: prev ? prev.key : null, dopo: next ? next.key : null, n_storie: storie.length, n_mondo: mondo.length, n_italia: storie.length - mondo.length, candidate: sel.length, citazioni: tot, testate_n: testate.length, regole, storie, selezione: sel, testate: testate.slice(0, 10), rassegna };
+}
+
 /* pannello: rs_get (stato, storie con indice, equilibrio), rs_giro (verifica un gruppo di feed adesso) */
 export async function rsPanelApi(env, b, h) {
   if (b.action === "rs_get") {
@@ -174,6 +250,7 @@ export async function rsPanelApi(env, b, h) {
       mappa: multi.filter((g) => g.iso).slice(0, 40).map((g) => ({ titolo: g.titolo, iso: g.iso, ll: g.ll, n: g.n_fonti, stato: g.stato, cresce: g.cresce })),
       equilibrio: equilibrio(voci) };
   }
+  if (b.action === "rs_brief") return await rsBrief(env, h, /^\d{4}-\d{2}-\d{2}$/.test(b.data || "") ? b.data : null);
   if (b.action === "rs_giro") return { ok: true, ...(await rsGiro(env, h, Math.max(1, Math.min(15, +b.n || 12)))) };
   return null;
 }
