@@ -10,7 +10,7 @@
      bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
-import { pfCalcola, pfValuta, PF_RIF, PF_FX, PF_MAX_PESO } from "./inv-pf.js";
+import { pfCalcola, pfValuta, pfChiusura, PF_RIF, PF_FX, PF_MAX_PESO } from "./inv-pf.js";
 import { RETRO_VERSIONE, RETRO_FILONI, retroIpotesi, retroValuta, retroRiepilogo } from "./inv-retro.js";
 
 export const INV_STR = {
@@ -141,7 +141,11 @@ export async function invCron(env, h) {
   for (const s of [...new Set(pf.concat(P, O.map((o) => o.sim), Lp))]) {
     if (n >= 6) break;
     const r = await h.kvGet(env, "inv:px:" + s);
-    if (r && r.tentato && Date.now() - Date.parse(r.tentato) < 18 * 3600000) continue;
+    if (r && r.tentato) {
+      const now = Date.now(), v = pfValuta(s) || "EUR", ch = pfChiusura(new Date(now + 3600000).toISOString().slice(0, 10), v) + 30 * 60000;
+      const dopoChiusura = pf.length && (P.includes(s) || pf.includes(s)) && now > ch && Date.parse(r.tentato) < ch;
+      if (!dopoChiusura && now - Date.parse(r.tentato) < (P.includes(s) ? 6 : 18) * 3600000) continue;
+    }
     await pxAggiorna(h, env, s); n++;
   }
   return n;
@@ -303,8 +307,9 @@ async function pfDati(h, env, oggi, scarica) {
   const L = (await h.kvGet(env, K_PF)) || { ops: [] }, ops = L.ops || [];
   const sims = [...new Set([PF_FX, PF_RIF.sim].concat(ops.map((o) => o.sim).filter(Boolean)))], S = {};
   let k = 0;
-  for (const s of sims) { let r = await pxGet(h, env, s); if ((!r || !r.p.length) && scarica && k < 6) { r = await pxAggiorna(h, env, s); k++; } S[s] = r && r.p ? r.p : []; }
-  const R = pfCalcola(ops, (s) => S[s] || [], S[PF_FX], oggi);
+  const A = {};
+  for (const s of sims) { let r = await pxGet(h, env, s); if ((!r || !r.p.length) && scarica && k < 6) { r = await pxAggiorna(h, env, s); k++; } S[s] = r && r.p ? r.p : []; A[s] = r && r.at; }
+  const R = pfCalcola(ops, (s) => S[s] || [], S[PF_FX], oggi, (s) => A[s]);
   return { ...R, ops: ops.map((o) => ({ ...o, esito: R.esiti[o.id] || { stato: "in_attesa" } })), prezzi: S };
 }
 /* ordini: dal radar (conto «modello») o dal pannello (conto «mio»); si eseguono alla prima chiusura successiva */

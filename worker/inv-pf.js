@@ -5,7 +5,10 @@
    Tutto si ricalcola dal registro delle operazioni (kv inv:pf), in modo deterministico:
    - versamento: entra in cassa il giorno stesso e compra quote al valore della quota di quel giorno (partenza 100),
      così le ricariche non cambiano il rendimento (come un fondo);
-   - compra / vendi: eseguiti alla prima chiusura successiva al giorno della decisione (niente senno di poi),
+   - compra / vendi: se la decisione (campo «at») arriva prima della chiusura di quella Borsa, si esegue alla chiusura
+     dello stesso giorno; se arriva dopo (o in un giorno senza Borsa), alla chiusura del giorno di Borsa successivo.
+     Il prezzo di una chiusura si usa solo se è stato scaricato almeno 30 minuti dopo l'orario di chiusura, così non
+     si esegue mai su un prezzo di metà giornata (niente senno di poi, niente prezzi provvisori);
      con costi PF_COSTO su ogni operazione; nello stesso giorno prima i versamenti, poi le vendite, poi gli acquisti;
    - valute: euro e dollari (convertiti con il cambio EUR/USD del giorno); le altre per ora non sono ammesse;
    - solo acquisti: niente vendite allo scoperto. */
@@ -22,11 +25,20 @@ export function pfValuta(sim) {
 }
 const lastOn = (p, d) => { let r = null; for (const x of p || []) { if (x[0] <= d) r = x; else break; } return r; };
 const firstAfter = (p, d) => (p || []).find((x) => x[0] > d) || null;
+/* orari di chiusura in UTC: Europa 17:30 ora di Roma, Stati Uniti 16:00 ora di New York (con le rispettive ore legali) */
+const ultimaDom = (y, m) => { const d = new Date(Date.UTC(y, m + 1, 0)); d.setUTCDate(d.getUTCDate() - d.getUTCDay()); return d; };
+const nDom = (y, m, n) => { const d = new Date(Date.UTC(y, m, 1)); d.setUTCDate(1 + ((7 - d.getUTCDay()) % 7) + 7 * (n - 1)); return d; };
+export function pfChiusura(d, valuta) {
+  const t = Date.parse(d + "T12:00:00Z"), y = +d.slice(0, 4);
+  if (valuta === "USD") { const leg = t >= nDom(y, 2, 2).getTime() && t < nDom(y, 10, 1).getTime(); return Date.parse(d + "T" + (leg ? "20" : "21") + ":00:00Z"); }
+  const leg = t >= ultimaDom(y, 2).getTime() && t < ultimaDom(y, 9).getTime(); return Date.parse(d + "T" + (leg ? "15" : "16") + ":30:00Z");
+}
+const MARGINE = 30 * 60000;
 const addDays = (d, n) => new Date(Date.parse(d + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
 
 /* ops: [{id, conto, tipo: versa|compra|vendi, data, sim, eur, quota, motivo, origine}]
    serie(sim) → [[data, chiusura]]; fx = serie EUR/USD (dollari per un euro); oggi = AAAA-MM-GG */
-export function pfCalcola(ops, serie, fx, oggi) {
+export function pfCalcola(ops, serie, fx, oggi, aggiornato) {
   const conti = {}, esiti = {};
   const prezzoEur = (sim, d) => {
     const v = pfValuta(sim), x = lastOn(serie(sim), d); if (!x || !v) return null;
@@ -39,8 +51,10 @@ export function pfCalcola(ops, serie, fx, oggi) {
     if (o.tipo === "versa") { E.push({ o, d: o.data, k: 0 }); continue; }
     const v = pfValuta(o.sim);
     if (!v) { esiti[o.id] = { stato: "rifiutata", nota: "valuta non supportata (per ora euro e dollari)" }; continue; }
-    const x = firstAfter(serie(o.sim), o.data);
-    if (!x || x[0] > oggi) { esiti[o.id] = { stato: "in_attesa", nota: "si esegue alla prima chiusura dopo il " + o.data }; continue; }
+    const P = serie(o.sim), primaChiusura = o.at && Date.parse(o.at) < pfChiusura(o.data, v) - 5 * 60000;
+    const x = (primaChiusura && P.find((y) => y[0] === o.data)) || firstAfter(P, o.data);
+    const agg = aggiornato ? Date.parse(aggiornato(o.sim) || 0) : Infinity;
+    if (!x || x[0] > oggi || agg < pfChiusura(x[0], v) + MARGINE) { esiti[o.id] = { stato: "in_attesa", giorno: primaChiusura ? o.data : null, nota: primaChiusura ? "si esegue alla chiusura di oggi" : "si esegue alla chiusura del prossimo giorno di Borsa" }; continue; }
     if (v === "USD" && !lastOn(fx, x[0])) { esiti[o.id] = { stato: "in_attesa", nota: "manca il cambio euro/dollaro" }; continue; }
     E.push({ o, d: x[0], k: o.tipo === "vendi" ? 1 : 2 });
   }
