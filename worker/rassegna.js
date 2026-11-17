@@ -37,19 +37,28 @@ export function rsParse(xml, google) {
   }
   return out;
 }
+/* Google News rifiuta le richieste dai server di Cloudflare (503/429, verificato il 17/11): dopo ogni indirizzo
+   Google si prova la stessa ricerca su Bing News (solo titoli; il link vero è nel parametro url). */
+function bing(gurl) { try { const q = new URL(gurl).searchParams.get("q").replace(/\s*when:\d+d/, ""), it = /hl=it/.test(gurl); return "https://www.bing.com/news/search?format=rss&q=" + encodeURIComponent(q) + (it ? "&setlang=it&cc=IT" : "&setlang=en&cc=US"); } catch (e) { return null; } }
+const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
+const GIORNI_FERMO = 14;
 async function leggi(f) {
-  const errori = [];
-  for (const url of f.urls) {
-    const google = url.includes("news.google.com");
+  const tentativi = [], prova = [];
+  for (const u of f.urls) { prova.push(u); if (u.includes("news.google.com")) { const b = bing(u); if (b) prova.push(b); } }
+  for (const url of prova) {
+    const google = url.includes("news.google.com"), viaBing = url.includes("bing.com/news");
     try {
       const r = await fetch(url, { headers: { "user-agent": UA, accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.5" }, redirect: "follow", signal: AbortSignal.timeout(9000), cf: { cacheTtl: 240 } });
-      if (!r.ok) { errori.push("HTTP " + r.status); continue; }
-      const voci = rsParse((await r.text()).slice(0, 2e6), google);
-      if (!voci.length) { errori.push("feed vuoto o non leggibile"); continue; }
-      return { ok: true, url, via: google ? "google" : "diretto", voci, errori };
-    } catch (e) { errori.push(String((e && e.name === "TimeoutError") ? "tempo scaduto" : (e && e.message) || e).slice(0, 80)); }
+      if (!r.ok) { tentativi.push(host(url) + ": HTTP " + r.status); continue; }
+      let voci = rsParse((await r.text()).slice(0, 2e6), google);
+      if (viaBing) voci = voci.map((v) => { try { const real = new URL(v.link).searchParams.get("url"); return real ? { ...v, link: real, sito: host(real) } : v; } catch (e) { return v; } });
+      if (!voci.length) { tentativi.push(host(url) + ": feed vuoto o non leggibile"); continue; }
+      const ultima = voci.reduce((m, v) => (v.data && v.data > m ? v.data : m), "");
+      if (ultima && Date.now() - Date.parse(ultima) > GIORNI_FERMO * 864e5) { tentativi.push(host(url) + ": fermo da " + Math.round((Date.now() - Date.parse(ultima)) / 864e5) + " giorni"); continue; }
+      return { ok: true, url, via: google ? "google" : viaBing ? "bing" : "diretto", voci, tentativi };
+    } catch (e) { tentativi.push(host(url) + ": " + String((e && e.name === "TimeoutError") ? "tempo scaduto" : (e && e.message) || e).slice(0, 80)); }
   }
-  return { ok: false, voci: [], errori };
+  return { ok: false, voci: [], tentativi, fermo: tentativi.length > 0 && tentativi.every((t) => /fermo da/.test(t)) };
 }
 
 /* un giro: i prossimi PER_GIRO feed dell'elenco */
@@ -63,7 +72,7 @@ export async function rsGiro(env, h, n) {
   for (const [f, r] of esiti) {
     const fresche = r.voci.filter((v) => !v.data || v.data >= lim);
     const ultima = r.voci.reduce((m, v) => (v.data && v.data > m ? v.data : m), "");
-    stato[f.id] = { ok: r.ok, url: r.url || null, via: r.via || null, n: r.voci.length, fresche: fresche.length, ultima: ultima || null, errori: r.errori, at: ora, campione: r.voci.slice(0, 3).map((v) => v.titolo) };
+    stato[f.id] = { ok: r.ok, fermo: !!r.fermo, url: r.url || null, via: r.via || null, n: r.voci.length, fresche: fresche.length, ultima: ultima || null, errori: r.tentativi, at: ora, campione: r.voci.slice(0, 3).map((v) => v.titolo) };
     for (const v of fresche) ins.push(env.DB.prepare("INSERT OR IGNORE INTO rs_voci (link, fonte, titolo, sito, data, visto) VALUES (?1, ?2, ?3, ?4, ?5, ?6)").bind(v.link, f.id, v.titolo, v.sito || null, v.data || ora, ora));
   }
   for (let i = 0; i < ins.length; i += 50) await env.DB.batch(ins.slice(i, i + 50));
@@ -93,7 +102,7 @@ export function rsStorie(voci) {
     const f = M[v.fonte]; if (!f) continue; const P = parole(v.titolo); if (P.size < 3) continue;
     let best = null, bj = 0;
     for (const g of G) { if (g.lingua !== f.lingua) continue; const j = jac(P, g.P); if (j > bj) { bj = j; best = g; } }
-    const voce = { fonte: f.id, nome: f.nome, area: f.area, tipo: f.tipo, orient: f.orient, paese: f.paese, titolo: v.titolo, link: v.link, data: v.data, google: v.link.includes("news.google.com") };
+    const voce = { fonte: f.id, nome: f.nome, area: f.area, tipo: f.tipo, orient: f.orient, paese: f.paese, titolo: v.titolo, link: v.link, data: v.data, google: v.link.includes("news.google.com") || v.link.includes("bing.com") };
     if (best && bj >= 0.45) { best.voci.push(voce); for (const w of P) best.P.add(w); }
     else G.push({ lingua: f.lingua, P, voci: [voce] });
   }
@@ -104,8 +113,8 @@ export function rsStorie(voci) {
   }).sort((a, b) => b.n_fonti - a.n_fonti || String(b.ultima).localeCompare(String(a.ultima)));
 }
 function riepilogo(stato) {
-  const fonti = RS_FONTI.map((f) => { const s = stato[f.id] || {}; return { id: f.id, nome: f.nome, area: f.area, tipo: f.tipo, classe: f.classe, orient: f.orient, paese: f.paese, lingua: f.lingua, ok: s.ok ?? null, via: s.via || null, url: s.url || null, n: s.n || 0, fresche: s.fresche || 0, ultima: s.ultima || null, errori: s.errori || [], at: s.at || null, campione: s.campione || [], urls: f.urls }; });
-  return { fonti, aree: RS_AREE, totale: fonti.length, ok: fonti.filter((f) => f.ok === true).length, ko: fonti.filter((f) => f.ok === false).length, mai: fonti.filter((f) => f.ok === null).length };
+  const fonti = RS_FONTI.map((f) => { const s = stato[f.id] || {}; return { id: f.id, nome: f.nome, area: f.area, tipo: f.tipo, classe: f.classe, orient: f.orient, paese: f.paese, lingua: f.lingua, ok: s.ok ?? null, fermo: !!s.fermo, via: s.via || null, url: s.url || null, n: s.n || 0, fresche: s.fresche || 0, ultima: s.ultima || null, errori: s.errori || [], at: s.at || null, campione: s.campione || [], urls: f.urls }; });
+  return { fonti, aree: RS_AREE, totale: fonti.length, ok: fonti.filter((f) => f.ok === true).length, ko: fonti.filter((f) => f.ok === false).length, fermi: fonti.filter((f) => f.ok === false && f.fermo).length, mai: fonti.filter((f) => f.ok === null).length };
 }
 
 /* rotta della routine: GET /v1/rassegna?ore=24&min=2 */
