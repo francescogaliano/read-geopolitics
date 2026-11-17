@@ -205,9 +205,20 @@ export function invTecnica(p) {
   let giro = null; for (let i = n - 1; i > 0; i--) if (Math.sign(hist[i]) !== Math.sign(hist[i - 1])) { giro = n - 1 - i; break; }
   let g = 0, l = 0; for (let i = Math.max(1, n - 14); i < n; i++) { const d = v[i] - v[i - 1]; if (d > 0) g += d; else l -= d; }
   const m50 = ma(50), m200 = ma(200);
-  return { ultimo: last, data: p[n - 1][0], m50, m200, sopra50: m50 == null ? null : last > m50, sopra200: m200 == null ? null : last > m200, macd: hist[n - 1] >= 0 ? "su" : "giu", macd_giro: giro, rsi: Math.round(100 - 100 / (1 + g / (l || 1e-9))), hist: hist.slice(-260).map((x) => +x.toFixed(4)) };
+  return { ultimo: last, data: p[n - 1][0], m50, m200, sopra50: m50 == null ? null : last > m50, sopra200: m200 == null ? null : last > m200, macd: hist[n - 1] >= 0 ? "su" : "giu", macd_giro: giro, rsi: Math.round(100 - 100 / (1 + g / (l || 1e-9))), var1m: n > 21 ? +((last / v[n - 22] - 1) * 100).toFixed(1) : null, hist: hist.slice(-260).map((x) => +x.toFixed(4)) };
 }
 
+/* REGOLA E1 (eccesso, dal 17/11/2026): dopo uno scatto troppo forte non si scommette che continui.
+   Al rialzo: RSI14 sopra 75 oppure più del 25% in un mese (21 sedute). Al ribasso, simmetrica: RSI sotto 25 o meno del 25%.
+   Eccezione solo con un fatto nuovo che ha una data entro 14 giorni: campo eccezione {data: AAAA-MM-GG, testo}. */
+export function invEccesso(p, direzione, eccezione, oggi) {
+  const t = invTecnica(p); if (!t || !["su", "giu"].includes(direzione)) return null;
+  const su = direzione === "su", troppo = su ? t.rsi > 75 || (t.var1m != null && t.var1m > 25) : t.rsi < 25 || (t.var1m != null && t.var1m < -25);
+  if (!troppo) return null;
+  const e = eccezione || {}, g = /^\d{4}-\d{2}-\d{2}$/.test(e.data || "") ? Math.round((Date.parse(e.data) - Date.parse(oggi)) / 864e5) : null;
+  if (g != null && g >= 0 && g <= 14 && cut(e.testo, 200).length >= 10) return null;
+  return "regola E1 (eccesso): " + (su ? "il titolo è già salito troppo" : "il titolo è già sceso troppo") + " (RSI " + t.rsi + (t.var1m != null ? ", " + (t.var1m >= 0 ? "+" : "") + t.var1m + "% in un mese" : "") + "); si può solo con un fatto nuovo con data entro 14 giorni: eccezione {data, testo}";
+}
 function ipPulisci(x, serie, oggi, ora) {
   if (!x || typeof x !== "object") return { err: "ipotesi non valida" };
   let strumento = String(x.strumento || "").trim();
@@ -222,8 +233,10 @@ function ipPulisci(x, serie, oggi, ora) {
   const origine = { tipo, id: cut(o.id, 80), testo: cut(o.testo, 300), filone_id: cut(o.filone_id, 80) };
   const p0 = lastOnOrBefore(serie[strumento], oggi); // ultimo prezzo noto al momento della registrazione
   if (!p0) return { err: "nessun prezzo per " + strumento };
+  if (isAz(strumento)) { const e1 = invEccesso(serie[strumento], direzione, x.eccezione, oggi); if (e1) return { err: strumento.slice(3) + ": " + e1 }; }
   const id = "h-" + oggi.replace(/-/g, "") + "-" + strumento.replace(/[^a-z0-9]+/gi, "") + "-" + orizzonte + "-" + (origine.id || cut(meccanismo, 24)).replace(/[^a-z0-9]+/gi, "").slice(0, 28).toLowerCase();
-  return { h: { id, strumento, direzione, orizzonte, fiducia, meccanismo, origine, data: oggi, registrata_il: ora, data0: p0[0], prezzo0: p0[1] } };
+  const ecc = x.eccezione && x.eccezione.data ? { data: cut(x.eccezione.data, 10), testo: cut(x.eccezione.testo, 200) } : undefined;
+  return { h: { id, strumento, direzione, orizzonte, fiducia, meccanismo, origine, data: oggi, registrata_il: ora, data0: p0[0], prezzo0: p0[1], eccezione: ecc } };
 }
 async function registraIpotesi(h, env, arr, serie, oggi) {
   const L = (await h.kvGet(env, K_IP)) || [];
@@ -327,11 +340,14 @@ async function pfOrdini(h, env, arr, conto, oggi) {
     if (!pfValuta(sim)) { out.push({ ok: false, errore: "valuta non supportata per " + sim + " (per ora euro e dollari)" }); continue; }
     const motivo = cut(x.motivo, 300); if (conto === "modello" && motivo.length < 10) { out.push({ ok: false, errore: "motivo mancante per " + sim }); continue; }
     if (L.ops.some((o) => o.conto === conto && o.sim === sim && !(D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa") && o.tipo === tipo)) { out.push({ ok: false, errore: "c'è già un ordine in attesa su " + sim }); continue; }
+    const regola = cut(x.regola, 6).toUpperCase();
+    if (conto === "modello" && !/^(A[1-4]|V[1-5])$/.test(regola)) { out.push({ ok: false, errore: "regola mancante per " + sim + ": A1-A4 per comprare, V1-V5 per vendere (vedi istruzioni)" }); continue; }
+    if (conto === "modello" && tipo === "compra") { const px = await pxGet(h, env, sim); const e1 = px && invEccesso(px.p, "su", x.eccezione, oggi); if (e1) { out.push({ ok: false, errore: sim + ": " + e1 }); continue; } }
     let eur = null, quota = null;
     if (tipo === "compra") { eur = x.peso != null ? V * Math.min(PF_MAX_PESO, Math.max(0, +x.peso)) / 100 : +x.eur; if (!(eur >= 1)) { out.push({ ok: false, errore: "importo (eur) o peso (%) mancante per " + sim }); continue; } eur = +eur.toFixed(2); }
     else { quota = x.quota == null ? 1 : Math.max(0.05, Math.min(1, +x.quota)); if (!((D.conti[conto] || {}).posizioni || []).some((p) => p.sim === sim) && !L.ops.some((o) => o.conto === conto && o.sim === sim && o.tipo === "compra")) { out.push({ ok: false, errore: sim + " non è in portafoglio" }); continue; } }
     if (!(await pxGet(h, env, sim))) await pxAggiorna(h, env, sim);
-    const o = { id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conto, tipo, data: oggi, sim, eur, quota, motivo, origine: x.origine && typeof x.origine === "object" ? { tipo: cut(x.origine.tipo, 20), id: cut(x.origine.id, 80) } : null, at: new Date().toISOString() };
+    const o = { id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conto, tipo, data: oggi, sim, eur, quota, motivo, regola: regola || undefined, origine: x.origine && typeof x.origine === "object" ? { tipo: cut(x.origine.tipo, 20), id: cut(x.origine.id, 80) } : null, at: new Date().toISOString() };
     L.ops.push(o); out.push({ ok: true, id: o.id, sim, tipo, eur, quota });
   }
   await h.kvSet(env, K_PF, L);

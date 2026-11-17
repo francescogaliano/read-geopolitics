@@ -35,12 +35,23 @@ SE IL MESSAGGIO DI AVVIO DICE «Nuova azienda dal pannello»: fai solo i passi 1
    - guardare: [{quando, testo}] le prossime tappe; quando = data AAAA-MM-GG se nota, altrimenti «presto», «settimane», «mesi»;
    - glossario: [{termine, def}] le parole tecniche usate (OPA, golden power, TTF, guida, ecc.), una frase ciascuna;
    - riferimento (solo se esiste un prezzo di riferimento chiaro, es. il prezzo di un'offerta): {valore, testo, ticker}.
-   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, fiducia, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
+   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, fiducia, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}. Rispetta la regola E1 (passo 5-bis): prima guarda rsi e var1m del titolo. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
 
-5-bis. PORTAFOGLIO DEL MODELLO (soldi virtuali, regole fisse). In inv-contesto, «portafoglio» ha valore, liquidità, posizioni (peso, resa, da quando, origine) e ordini in attesa. Se «avviato» è false, Francesco non l'ha ancora avviato: niente ordini. Altrimenti decidi gli ordini di oggi così, senza eccezioni:
-   - COMPRA (tipo «compra», ticker, peso in % del portafoglio, motivo in una frase, origine {tipo: "radar"|"chiave", id}) solo se: hai registrato oggi un'ipotesi «su» su quel titolo con fiducia media (peso 5) o alta (peso 8), oppure c'è una chiave «in prova» con quel titolo tra gli strumenti e i fatti a favore crescono (peso 5), oppure una situazione con un prezzo di riferimento chiaro (es. un'offerta di acquisto) e uno sconto di almeno il 3% (peso 6). Mai oltre il 10% su un titolo (somma con quanto già in portafoglio), mai più di 15 titoli, mai se c'è già un ordine in attesa sullo stesso titolo. Fiducia bassa: niente acquisto.
-   - VENDI (tipo «vendi», ticker, quota 1 = tutto oppure 0,5 = metà, motivo) quando: la tesi è smentita (è successo ciò che era scritto in «smentita»); l'azienda esce dagli osservati; registri un'ipotesi «giù» su un titolo in portafoglio; l'orizzonte dell'ipotesi che ha motivato l'acquisto è passato e non c'è una nuova ipotesi «su» aperta; lo stato diventa «in_bilico» (vendi metà).
-   - Solo titoli in euro o in dollari. Nessun ordine «per fare qualcosa»: se oggi nessuna regola scatta, nessun ordine. Il motivo cita sempre la situazione, la chiave o l'ipotesi.
+5-bis. PORTAFOGLIO DEL MODELLO (soldi virtuali, regole fisse e numerate: ogni ordine dice quale regola applica, così il Bilancio potrà misurare quali regole funzionano). In inv-contesto, «portafoglio» ha valore, liquidità, posizioni (peso, resa, da quando, origine) e ordini in attesa. Se «avviato» è false, Francesco non l'ha ancora avviato: niente ordini.
+   ACQUISTI (tipo «compra», ticker, peso in % del portafoglio, regola, motivo in una frase, origine {tipo: "radar"|"chiave", id}):
+   - A1: hai registrato oggi un'ipotesi «su» su quel titolo con fiducia media → peso 5.
+   - A2: come A1 ma fiducia alta → peso 8.
+   - A3: chiave «in prova» con quel titolo tra gli strumenti e fatti a favore in crescita → peso 5.
+   - A4: situazione con un prezzo di riferimento chiaro (es. un'offerta di acquisto) e sconto di almeno il 3% sull'ultimo prezzo → peso 6.
+   Fiducia bassa: niente acquisto. Mai oltre il 10% su un titolo (somma con quanto già in portafoglio), mai più di 15 titoli, mai se c'è già un ordine in attesa sullo stesso titolo.
+   VENDITE (tipo «vendi», ticker, quota 1 = tutto oppure 0,5 = metà, regola, motivo):
+   - V1: la tesi è smentita (è successo ciò che era scritto in «smentita»).
+   - V2: l'azienda esce dagli osservati.
+   - V3: registri un'ipotesi «giù» su un titolo in portafoglio.
+   - V4: l'orizzonte dell'ipotesi che ha motivato l'acquisto è passato e non c'è una nuova ipotesi «su» aperta.
+   - V5: lo stato diventa «in_bilico» → quota 0,5.
+   - Solo titoli in euro o in dollari. Nessun ordine «per fare qualcosa»: se oggi nessuna regola scatta, nessun ordine.
+   E1 (ECCESSO, la applica anche il Worker, che rifiuta l'ordine o l'ipotesi): niente ipotesi «su» e niente acquisti su un titolo con RSI sopra 75 o salito più del 25% in un mese; niente ipotesi «giù» con RSI sotto 25 o sceso più del 25%. Unica eccezione: un fatto nuovo con una data entro 14 giorni, da indicare nel campo eccezione {data: AAAA-MM-GG, testo}. RSI e variazione a un mese sono in inv-contesto (osservati → tecnica: rsi, var1m). Se un'ipotesi o un ordine viene rifiutato per E1, non insistere: scrivilo nel resoconto.
 
 6. SALVA in un solo invio: scrivi /tmp/radar.json come
    {"opportunita":[{id, titolo, settore, tesi, punteggio, impatto, direzione, catalizzatore, strumenti, smentita, fonti, cosa, meccanismo, coinvolte, rischi, guardare, glossario, riferimento}], "osservati":[{ticker, nome, borsa, tipo, settore, stato, perche, smentita, opportunita_id, scheda:{sintesi, esposizione:[["area",percentuale],…], numeri:{…}, periodo, catalizzatori:[{data, testo}], fonti:[{nome,url}]}}], "rimossi":[simboli], "richieste_fatte":[id delle richieste trattate], "ipotesi":[…], "portafoglio":[ordini di oggi]}
