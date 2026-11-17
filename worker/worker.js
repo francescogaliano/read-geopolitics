@@ -6738,6 +6738,18 @@ function spCheck(s) {
     else (v.voci || []).forEach((x) => nums.push(x.v, x.prima, x.dopo));
     nums.filter((n) => typeof n === "number").forEach((n) => { const f = n.toLocaleString("it-IT", { maximumFractionDigits: 2 }).replace(/\./g, ""); if (!txt.includes(f)) avv.push("passo " + (i + 1) + ": il numero " + f + " del grafico non è nel testo"); });
   });
+  /* regia (dal 17/11/2026): controlli leggeri; la pagina ignora ciò che non capisce */
+  const PT = new Set(Object.keys((s.map && s.map.points) || {})), luogo = (x) => Array.isArray(x) ? x.length === 2 && x.every((n) => typeof n === "number") : PT.has(x);
+  (s.steps || []).forEach((st, i) => {
+    const r = st && st.map && st.map.regia; if (!r) return; const P = "passo " + (i + 1) + ", regia: ";
+    if (!(st.map.v)) avv.push(P + "senza inquadratura (map.v)");
+    const fr = Array.isArray(r.frecce) ? r.frecce : [], at = Array.isArray(r.attori) ? r.attori : [];
+    if (fr.length + at.length + (r.luce ? 1 : 0) + (r.anello ? 1 : 0) + (r.caselle ? 1 : 0) > 6) avv.push(P + "più di 6 elementi: troppi per un passo");
+    fr.forEach((x, j) => { if (!luogo(x.da) || !luogo(x.a)) avv.push(P + "freccia " + (j + 1) + " con da/a non validi"); if (!x.etichetta) avv.push(P + "freccia " + (j + 1) + " senza etichetta"); });
+    at.forEach((x, j) => { if (!luogo(x.a || x.dove) || (x.verbo === "entra" && !luogo(x.da))) avv.push(P + "attore " + (j + 1) + " con posizione non valida"); if (!x.etichetta) avv.push(P + "attore " + (j + 1) + " senza etichetta"); });
+    [["luce", r.luce], ["anello", r.anello]].forEach(([k, x]) => { if (x && !luogo(x.at || x.p)) avv.push(P + k + " con luogo non valido"); });
+    if (r.caselle && !(r.caselle.n > 0 && r.caselle.n <= 12 && r.caselle.accese >= 0 && r.caselle.accese <= r.caselle.n && r.caselle.etichetta)) avv.push(P + "caselle: n da 1 a 12, accese ≤ n, etichetta obbligatoria");
+  });
   return { err, avv: [...new Set(avv)] };
 }
 function spCard(r) {

@@ -288,7 +288,82 @@ function setStep(s){DV=-1;if(s===S)return;var st=SP.steps[s],sm=st.map||{},from=
 }
 function loop(now){if(cur)draw(now);requestAnimationFrame(loop)}
 function size(){var r=svg.getBoundingClientRect();W=r.width;H=r.height;svg.setAttribute("viewBox","0 0 "+W+" "+H);if(cur){fit(cur);draw()}}
-function mapStart(){svg=document.getElementById("map");M=SP.map||{};
+function regiaAvvia(){
+/* ---------- regia: gli strumenti dell'iconografica nella mappa (dal 17/11/2026) ----------
+   Ogni passo può avere in "map" un campo "regia"; gli elementi si animano quando il passo entra nello schermo:
+     luce    {at: punto | p:[lon,lat], raggio}                     il luogo si accende, il resto si abbassa
+     anello  {at | p, colore, dt}                                   un anello si chiude intorno al luogo
+     frecce  [{da, a, etichetta, colore, curva, dt, icona, n, verbo: percorre|si_ferma, ferma: 0-1}]
+                                                                    la freccia si disegna; le icone la percorrono o si fermano contro una barriera
+     attori  [{icona, etichetta, da, a | dove, verbo: entra|appare, colore, dt, lato: destra|sinistra}]
+     caselle {n, accese, icona, etichetta, colore}                  contatore a caselle che si accende una alla volta
+   da / a / dove: [lon,lat] oppure il nome di un punto della mappa. dt: secondi dopo l'arrivo del passo.
+   Icone: nomi Tabler (le stesse delle iconografiche), caricate da /spiegato/icone.js solo se lo Spiegato ha una regia.
+   Le etichette cercano il primo posto libero (niente sovrapposizioni con le scritte della mappa). */
+(function () {
+  var G = null, OV = null, R = null, T0 = 0, K = -1;
+  function E(t, a, p) { var x = document.createElementNS(NS, t); for (var k in a) x.setAttribute(k, a[k]); (p || G).appendChild(x); return x }
+  function C(c) { return COL[c] || c || COL.gold }
+  function ll(v) { if (Array.isArray(v)) return v; var o = (M.points || {})[v]; return o ? (o.p || o.pts[0]) : [0, 0] }
+  function ico(name, col, p) { var g = E("g", { fill: "none", stroke: col, "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round" }, p); var I = window.RG_ICO || {}; if (I[name]) I[name].forEach(function (d) { E("path", { d: d }, g) }); else E("circle", { cx: 12, cy: 12, r: 5 }, g); return g }
+  function place(g, x, y, s, a) { g.setAttribute("transform", "translate(" + (x - s / 2).toFixed(1) + "," + (y - s / 2).toFixed(1) + ") scale(" + (s / 24).toFixed(3) + ")"); g.setAttribute("opacity", a) }
+  function ease(u) { u = Math.max(0, Math.min(1, u)); return u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2 }
+  function lab(s, col, size) { var x = E("text", { "font-family": "IBM Plex Mono, monospace", "font-size": size || "11.5", "font-weight": "500", "letter-spacing": "1.2", fill: col, "paint-order": "stroke", stroke: "#0B1830", "stroke-width": "4", opacity: "0" }); x.textContent = s; return x }
+  /* curva in coordinate dello schermo: quadratica con il controllo spostato di lato */
+  function curva(a, b, k) { var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1]; return [mx - dy * (k == null ? .22 : k), my + dx * (k == null ? .22 : k)] }
+  function qpt(a, c, b, u) { var v = 1 - u; return [v * v * a[0] + 2 * v * u * c[0] + u * u * b[0], v * v * a[1] + 2 * v * u * c[1] + u * u * b[1]] }
+  /* etichette: si sceglie una volta (e a ogni cambio di inquadratura) il primo posto libero tra quelli candidati */
+  var PVr = -1, BOX = [], RID = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function occupati() { BOX = []; var add = function (x) { if (!x || x.getAttribute("opacity") === "0" || x.style.visibility === "hidden") return; var o = parseFloat(x.style.opacity === "" ? "1" : x.style.opacity); if (o === 0) return; try { var b = x.getBBox(); if (b.width) BOX.push({ x0: b.x - 4, y0: b.y - 3, x1: b.x + b.width + 4, y1: b.y + b.height + 3 }) } catch (e) {} };
+    Object.keys(lay).forEach(function (k) { var o = lay[k]; if (o && o.type === "label") add(o.e); if (o && o.type === "point") o.pts.forEach(function (p) { var q = proj(p); BOX.push({ x0: q[0] - 9, y0: q[1] - 9, x1: q[0] + 9, y1: q[1] + 9 }) }) });
+    for (var n in lay.names) add(lay.names[n]) }
+  function libero(t, cand) { var w = t.getComputedTextLength(), h = 13; for (var i = 0; i < cand.length; i++) { var x = cand[i][0] - (cand[i][2] === "c" ? w / 2 : cand[i][2] === "r" ? w : 0), y = cand[i][1], r = { x0: x - 3, y0: y - h, x1: x + w + 3, y1: y + 4 };
+      if (r.x0 < 6 || r.x1 > W - 6 || r.y0 < 34 || r.y1 > H - 6) continue; if (BOX.some(function (b) { return !(r.x1 < b.x0 || r.x0 > b.x1 || r.y1 < b.y0 || r.y0 > b.y1) })) continue; BOX.push(r); t.setAttribute("x", x); t.setAttribute("y", y); return true }
+    var best = null, bo = 1e9; cand.forEach(function (c) { var x = Math.max(8, Math.min(W - w - 8, c[0] - (c[2] === "c" ? w / 2 : c[2] === "r" ? w : 0))), y = Math.max(34 + h, Math.min(H - 8, c[1])), r = { x0: x, y0: y - h, x1: x + w, y1: y + 4 }, ov = 0;
+      BOX.forEach(function (b) { var dx = Math.min(r.x1, b.x1) - Math.max(r.x0, b.x0), dy = Math.min(r.y1, b.y1) - Math.max(r.y0, b.y0); if (dx > 0 && dy > 0) ov += dx * dy }); if (ov < bo) { bo = ov; best = [x, y, r] } });
+    BOX.push(best[2]); t.setAttribute("x", best[0]); t.setAttribute("y", best[1]); return false }
+  function etichette() { if (!R) return; occupati(); var r = R.r;
+    R.at.forEach(function (o) { var P = proj(ll(o.a.a || o.a.dove)); BOX.push({ x0: P[0] - 15, y0: P[1] - 15, x1: P[0] + 15, y1: P[1] + 15 }) });
+    R.fr.forEach(function (o) { var f = o.f, A = proj(ll(f.da)), B = proj(ll(f.a)), Cc = curva(A, B, f.curva); for (var i = 1; i < 10; i++) { var p = qpt(A, Cc, B, i / 10); BOX.push({ x0: p[0] - 4, y0: p[1] - 4, x1: p[0] + 4, y1: p[1] + 4 }) } });
+    R.at.forEach(function (o) { if (!o.lab) return; var P = proj(ll(o.a.a || o.a.dove)), sx = o.a.lato === "sinistra"; var c = [[P[0] + 20, P[1] + 4, "l"], [P[0] - 20, P[1] + 4, "r"], [P[0], P[1] + 32, "c"], [P[0], P[1] - 22, "c"], [P[0] + 20, P[1] + 30, "l"], [P[0] - 20, P[1] + 30, "r"], [P[0] + 20, P[1] - 20, "l"], [P[0] - 20, P[1] - 20, "r"]]; if (sx) c = [c[1], c[0], c[2], c[3]]; libero(o.lab, c) });
+    R.fr.forEach(function (o) { if (!o.lab) return; var f = o.f, A = proj(ll(f.da)), B = proj(ll(f.a)), Cc = curva(A, B, f.curva), c = []; [.5, .4, .6, .3, .7, .2].forEach(function (u) { var p = qpt(A, Cc, B, u); c.push([p[0], p[1] - 14, "c"], [p[0], p[1] + 24, "c"]) }); libero(o.lab, c) });
+    if (R.cas) { var n = R.cas.c.n; BOX.push({ x0: 14, y0: H - 58, x1: 18 + n * 28, y1: H - 26 }) } }
+  function nuovo() {
+    if (!G) return; G.innerHTML = ""; R = null; var st = (SP.steps[S] || {}).map || {}, r = st.regia; OV.setAttribute("opacity", "0"); if (!r) return;
+    R = { r: r, fr: [], at: [], cas: null }; PVr = -1;
+    (r.frecce || []).forEach(function (f) { var o = { f: f, path: E("path", { fill: "none", stroke: C(f.colore), "stroke-width": "3", "stroke-linecap": "round", "stroke-dasharray": "1 0" }), head: E("path", { fill: C(f.colore), opacity: "0" }), ic: [], lab: f.etichetta ? lab(f.etichetta, C(f.colore)) : null, ban: null };
+      for (var i = 0; i < (f.n || 0); i++) o.ic.push(ico(f.icona || "package", C(f.colore)));
+      if (f.verbo === "si_ferma") o.ban = ico("barrier-block", COL.red);
+      R.fr.push(o) });
+    (r.attori || []).forEach(function (a) { R.at.push({ a: a, g: ico(a.icona || "user", C(a.colore)), lab: a.etichetta ? lab(a.etichetta, C(a.colore)) : null }) });
+    if (r.anello) R.an = E("circle", { fill: "none", stroke: C(r.anello.colore || "gold"), "stroke-width": "3", transform: "" });
+    if (r.caselle) { var c = r.caselle; R.cas = { c: c, g: [], lab: lab(c.etichetta || "", C(c.colore || "gold"), "11") }; for (var j = 0; j < c.n; j++) R.cas.g.push(ico(c.icona || "user", "#2C4670")) }
+  }
+  function frame(t) {
+    if (!R) return; var u0 = RID ? 99 : t - ts, r = R.r; if (PVr !== PV && u0 > .95) { PVr = PV; etichette() }
+    if (r.luce) { var q = proj(ll(r.luce.at || r.luce.p)), a = ease(u0 / .8); OV.setAttribute("opacity", (a * .72).toFixed(2)); var hole = document.getElementById("rgHole"); hole.setAttribute("cx", q[0]); hole.setAttribute("cy", q[1]); hole.setAttribute("r", (r.luce.raggio || 70) * (1.6 - .6 * a)) }
+    if (R.an) { var q2 = proj(ll(r.anello.at || r.anello.p)), rr = 22, L = 2 * Math.PI * rr, u = ease((u0 - (r.anello.dt || .3)) / 1); R.an.setAttribute("cx", q2[0]); R.an.setAttribute("cy", q2[1]); R.an.setAttribute("r", rr); R.an.setAttribute("stroke-dasharray", L); R.an.setAttribute("stroke-dashoffset", L * (1 - u)); R.an.setAttribute("transform", "rotate(-90 " + q2[0] + " " + q2[1] + ")") }
+    R.fr.forEach(function (o) { var f = o.f, A = proj(ll(f.da)), B = proj(ll(f.a)), Cc = curva(A, B, f.curva), u = ease((u0 - (f.dt || 0)) / 1.4), end = f.verbo === "si_ferma" ? (f.ferma || .62) : Math.max(.5, 1 - 16 / (Math.hypot(B[0] - A[0], B[1] - A[1]) + 1)), du = Math.min(u, end);
+      var pts = []; for (var i = 0; i <= 40; i++) pts.push(qpt(A, Cc, B, du * i / 40)); o.path.setAttribute("d", "M" + pts.map(function (p) { return p[0].toFixed(1) + "," + p[1].toFixed(1) }).join("L"));
+      var e2 = pts[pts.length - 1], e1 = pts[pts.length - 2] || A, an = Math.atan2(e2[1] - e1[1], e2[0] - e1[0]);
+      if (f.verbo !== "si_ferma" && u > .05) { o.head.setAttribute("d", "M" + (e2[0] + Math.cos(an) * 9) + "," + (e2[1] + Math.sin(an) * 9) + "L" + (e2[0] + Math.cos(an + 2.5) * 9) + "," + (e2[1] + Math.sin(an + 2.5) * 9) + "L" + (e2[0] + Math.cos(an - 2.5) * 9) + "," + (e2[1] + Math.sin(an - 2.5) * 9) + "Z"); o.head.setAttribute("opacity", "1") }
+      o.ic.forEach(function (g, k) { var v; if (f.verbo === "si_ferma") v = Math.min(end - .04 - k * .07, Math.max(0, (u0 - (f.dt || 0) - .4 - k * .35) / 2.2)); else v = ((u0 - (f.dt || 0) - 1 - k * (2.4 / Math.max(1, o.ic.length))) / 2.4) % 1; var vis = u0 - (f.dt || 0) - 1 - (f.verbo === "si_ferma" ? 0 : k * (2.4 / o.ic.length)) > 0 && v >= 0; var p = qpt(A, Cc, B, Math.max(0, v)); place(g, p[0], p[1], 22, vis ? (f.verbo === "si_ferma" ? 1 : Math.min(1, Math.min(v, 1 - v) * 8)) : 0) });
+      if (o.ban) { var pb = qpt(A, Cc, B, end + .03); place(o.ban, pb[0], pb[1], 26, ease((u0 - (f.dt || 0) - 1.6) / .5)) }
+      if (o.lab) o.lab.setAttribute("opacity", ease((u0 - (f.dt || 0) - 1.2) / .5)) });
+    R.at.forEach(function (o) { var a = o.a, P = proj(ll(a.a || a.dove)), Q = a.verbo === "entra" ? proj(ll(a.da)) : P, u = ease((u0 - (a.dt || 0)) / (a.verbo === "entra" ? 1.6 : .6)), x = Q[0] + (P[0] - Q[0]) * u, y = Q[1] + (P[1] - Q[1]) * u, s = a.verbo === "appare" ? 26 * (.6 + .4 * u) : 26;
+      place(o.g, x, y, s, Math.min(1, u * 3)); if (o.lab) o.lab.setAttribute("opacity", ease((u - .55) / .45)) });
+    if (R.cas) { var c = R.cas.c, n = c.n, sz = 22, gap = 6, x0 = 18, y0 = H - 30 - sz; R.cas.g.forEach(function (g, i) { var on = u0 > .5 + i * .18 && i < c.accese; place(g, x0 + i * (sz + gap) + sz / 2, y0 + sz / 2, sz, 1); g.setAttribute("stroke", on ? C(c.colore || "gold") : "#2C4670") });
+      R.cas.lab.setAttribute("x", x0); R.cas.lab.setAttribute("y", y0 - 8); R.cas.lab.setAttribute("opacity", ease((u0 - .5 - c.accese * .18) / .5)) }
+  }
+  var _build = build; build = function () { _build();
+    var defs = el("defs", {}); defs.innerHTML = '<mask id="rgMask"><rect x="-10" y="-10" width="5000" height="5000" fill="white"/><circle id="rgHole" r="70" fill="black"/></mask>';
+    var gp = svg.childNodes[3]; OV = document.createElementNS(NS, "rect"); OV.setAttribute("x", 0); OV.setAttribute("y", 0); OV.setAttribute("width", 5000); OV.setAttribute("height", 5000); OV.setAttribute("fill", "#0B1830"); OV.setAttribute("mask", "url(#rgMask)"); OV.setAttribute("opacity", "0"); svg.insertBefore(OV, gp || null);
+    G = document.createElementNS(NS, "g"); svg.insertBefore(G, lay.gLab); K = -1 };
+  if (SP && (SP.steps || []).some(function (x) { return x.map && x.map.regia })) { var sc = document.createElement("script"); sc.src = "/spiegato/icone.js"; sc.onload = function () { K = -1 }; document.head.appendChild(sc) }
+  var _draw = draw; draw = function (now) { _draw(now); if (S !== K) { K = S; nuovo() } frame(((now || performance.now()) - t0) / 1000) };
+})();
+}
+function mapStart(){regiaAvvia();svg=document.getElementById("map");M=SP.map||{};
  var first=SP.steps.filter(function(x){return x.map&&x.map.v})[0];
  build();size();cur=first?first.map.v:[[-20,30],[60,60]];fit(cur);setStep(0);requestAnimationFrame(loop);
  window.addEventListener("resize",size);
@@ -331,7 +406,16 @@ FORMATO di /spiegato/<id>.json (lo scrive la routine; i fatti vengono dalle stor
                "src":"fonti", "why":"Perché conta: …",
                "map": { "v":[[lon,lat],[lon,lat]] (inquadratura), "on":[id visibili, "names"], "relabel":{idLabel:"nuovo testo"},
                         "cnt":{"v":"<2.000","s":"rimasti","from":24000,"to":2000}, "note":"Percorso indicativo",
-                        "move":"id linea (mezzi)", "walk":"id linea (persone)", "draw":"id linea disegnata poco a poco" } } ],
+                        "move":"id linea (mezzi)", "walk":"id linea (persone)", "draw":"id linea disegnata poco a poco",
+                        "regia": { (facoltativa, dal 17/11/2026: gli strumenti dell'iconografica; si anima quando il passo arriva)
+                          "luce":{"at":"id punto"|"p":[lon,lat],"raggio":60}  il luogo si accende, il resto si abbassa
+                          "anello":{"at"|"p","colore","dt"}                     un anello si chiude intorno al luogo
+                          "frecce":[{"da","a","etichetta","colore","curva":-0.3..0.3,"icona","n":1-4,"verbo":"percorre"|"si_ferma","ferma":0.6,"dt"}]
+                          "attori":[{"icona","etichetta","verbo":"entra"|"appare","da","a"|"dove","colore","lato":"destra"|"sinistra","dt"}]
+                          "caselle":{"n":10,"accese":9,"icona","etichetta","colore"} }
+                        da/a/dove/at: [lon,lat] o id di un punto; dt: secondi dopo l'arrivo del passo; colore: gold|blue|red|green|grey|white;
+                        icona: nome Tabler delle iconografiche (user, users, container, package, cpu, ship, truck, wheat, gavel, calendar-due,
+                        shield, tank, drone, plane, barrier-block, heart-handshake, building-factory, file-certificate, …; elenco in /spiegato/icone.js) } } ],
   "numeri": [{"v","s","unk":true}], "divergenze":[{"t","voci":[…]}], "divergenze_titolo",
   "letture": {"pro":{"k","t","chi"},"con":{"k","t","chi"},"analisi"}, "osservare":[{"t","q"}],
   "altri": [{"t","k","href"}], "fonti":[{"nome","url","nota"}],
