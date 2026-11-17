@@ -127,3 +127,22 @@ export function rendimenti(s, oggi) {
   r.tutto = +((ult[1] / s[0][1] - 1) * 100).toFixed(2);
   return r;
 }
+
+/* Bilancio per regola: ogni acquisto eseguito del modello, dal prezzo d'ingresso alla vendita (o a oggi se è ancora aperto).
+   Le vendite si contano per regola con la resa della parte venduta. */
+export const PF_REGOLE = { A1: "Ipotesi al rialzo, fiducia media", A2: "Ipotesi al rialzo, fiducia alta", A3: "Chiave in prova", A4: "Prezzo di riferimento (es. offerta di acquisto)", V1: "Tesi smentita", V2: "Azienda uscita dagli osservati", V3: "Ipotesi al ribasso", V4: "Orizzonte passato", V5: "Tesi in bilico (metà)" };
+export function pfPerRegola(ops, prezzi, oggi) {
+  const M = (ops || []).filter((o) => o.conto === "modello" && o.esito && o.esito.stato === "eseguita" && o.tipo !== "versa");
+  const G = {};
+  for (const o of M) {
+    const k = o.regola || "senza regola", g = (G[k] ||= { regola: k, nome: PF_REGOLE[k] || "Ordini senza codice (prima delle regole numerate)", n: 0, chiuse: 0, aperte: 0, rese: [] });
+    g.n++;
+    if (o.tipo === "compra") {
+      const out = M.find((y) => y.tipo === "vendi" && y.sim === o.sim && y.esito.data > o.esito.data);
+      const last = (prezzi[o.sim] || []).filter((x) => x[0] <= oggi).pop();
+      const px = out ? out.esito.prezzo : last && last[1];
+      if (px && o.esito.prezzo) { g.rese.push((px / o.esito.prezzo - 1) * 100); out ? g.chiuse++ : g.aperte++; }
+    } else if (o.esito.resa != null) { g.rese.push(o.esito.resa); g.chiuse++; }
+  }
+  return Object.values(G).map((g) => ({ regola: g.regola, nome: g.nome, n: g.n, chiuse: g.chiuse, aperte: g.aperte, resa_media: g.rese.length ? +(g.rese.reduce((a, b) => a + b, 0) / g.rese.length).toFixed(2) : null, positive: g.rese.filter((r) => r > 0).length, misurate: g.rese.length })).sort((a, b) => a.regola.localeCompare(b.regola));
+}

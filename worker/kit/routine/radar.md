@@ -35,12 +35,17 @@ SE IL MESSAGGIO DI AVVIO DICE «Nuova azienda dal pannello»: fai solo i passi 1
    - guardare: [{quando, testo}] le prossime tappe; quando = data AAAA-MM-GG se nota, altrimenti «presto», «settimane», «mesi»;
    - glossario: [{termine, def}] le parole tecniche usate (OPA, golden power, TTF, guida, ecc.), una frase ciascuna;
    - riferimento (solo se esiste un prezzo di riferimento chiaro, es. il prezzo di un'offerta): {valore, testo, ticker}.
-   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, fiducia, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}. Rispetta la regola E1 (passo 5-bis): prima guarda rsi e var1m del titolo. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
+   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}, e SEMPRE:
+   - fonti: [{nome, url}] le fonti lette oggi che sostengono il fatto (testate diverse, non la stessa notizia ripresa);
+   - evento: {data: AAAA-MM-GG, testo} il prossimo fatto datato che deciderà la tesi, se c'è;
+   - voce: true se il fatto è solo un'indiscrezione non confermata da fonte primaria.
+   REGOLA C1 (confidenza calcolata, la applica il Worker): la fiducia non la decidi tu. Il Worker la calcola dai punti: fonti indipendenti 3+ = 2 punti, 2 = 1; evento datato entro l'orizzonte = 1; tecnica concorde = 1, discorde = -1; voce = -2. 3+ punti = alta, 1-2 = media, 0 o meno = bassa. Puoi scrivere la tua fiducia nel campo fiducia: resta come confronto. La risposta del Worker ti dice la fiducia calcolata: usala per il portafoglio (A1 = media, peso 5; A2 = alta, peso 8; bassa = niente acquisto; il Worker corregge da solo regola e peso).
+   Rispetta la regola E1 (passo 5-bis): prima guarda rsi e var1m del titolo. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
 
 5-bis. PORTAFOGLIO DEL MODELLO (soldi virtuali, regole fisse e numerate: ogni ordine dice quale regola applica, così il Bilancio potrà misurare quali regole funzionano). In inv-contesto, «portafoglio» ha valore, liquidità, posizioni (peso, resa, da quando, origine) e ordini in attesa. Se «avviato» è false, Francesco non l'ha ancora avviato: niente ordini.
    ACQUISTI (tipo «compra», ticker, peso in % del portafoglio, regola, motivo in una frase, origine {tipo: "radar"|"chiave", id}):
-   - A1: hai registrato oggi un'ipotesi «su» su quel titolo con fiducia media → peso 5.
-   - A2: come A1 ma fiducia alta → peso 8.
+   - A1: hai registrato oggi un'ipotesi «su» su quel titolo e la fiducia calcolata dal Worker è media → peso 5.
+   - A2: come A1 ma fiducia calcolata alta → peso 8.
    - A3: chiave «in prova» con quel titolo tra gli strumenti e fatti a favore in crescita → peso 5.
    - A4: situazione con un prezzo di riferimento chiaro (es. un'offerta di acquisto) e sconto di almeno il 3% sull'ultimo prezzo → peso 6.
    Fiducia bassa: niente acquisto. Mai oltre il 10% su un titolo (somma con quanto già in portafoglio), mai più di 15 titoli, mai se c'è già un ordine in attesa sullo stesso titolo.
@@ -52,9 +57,12 @@ SE IL MESSAGGIO DI AVVIO DICE «Nuova azienda dal pannello»: fai solo i passi 1
    - V5: lo stato diventa «in_bilico» → quota 0,5.
    - Solo titoli in euro o in dollari. Nessun ordine «per fare qualcosa»: se oggi nessuna regola scatta, nessun ordine.
    E1 (ECCESSO, la applica anche il Worker, che rifiuta l'ordine o l'ipotesi): niente ipotesi «su» e niente acquisti su un titolo con RSI sopra 75 o salito più del 25% in un mese; niente ipotesi «giù» con RSI sotto 25 o sceso più del 25%. Unica eccezione: un fatto nuovo con una data entro 14 giorni, da indicare nel campo eccezione {data: AAAA-MM-GG, testo}. RSI e variazione a un mese sono in inv-contesto (osservati → tecnica: rsi, var1m). Se un'ipotesi o un ordine viene rifiutato per E1, non insistere: scrivilo nel resoconto.
+   E2 (CONTI TRIMESTRALI, la applica il Worker): niente ipotesi «su» o «giù» e niente acquisti su un'azienda che presenta i conti entro 5 giorni (oggi compreso). Nessuna eccezione. Per questo ogni azienda osservata deve avere la data dei prossimi conti nel campo conti (AAAA-MM-GG): cercala sul sito investor relations dell'azienda o in un calendario dei risultati affidabile; se manca o è passata, aggiornala. Se non la trovi, lascia il campo vuoto e scrivilo nel resoconto.
+   E3 (VOCI, la applica il Worker): un'indiscrezione non confermata (voce: true) può diventare un'ipotesi, ma non fa mai comprare, con nessuna regola. Se la voce viene confermata da una fonte primaria, registra una nuova ipotesi senza voce.
+   Se un'ipotesi o un ordine viene rifiutato per E2 o E3, non insistere: scrivilo nel resoconto.
 
 6. SALVA in un solo invio: scrivi /tmp/radar.json come
-   {"opportunita":[{id, titolo, settore, tesi, punteggio, impatto, direzione, catalizzatore, strumenti, smentita, fonti, cosa, meccanismo, coinvolte, rischi, guardare, glossario, riferimento}], "osservati":[{ticker, nome, borsa, tipo, settore, stato, perche, smentita, opportunita_id, scheda:{sintesi, esposizione:[["area",percentuale],…], numeri:{…}, periodo, catalizzatori:[{data, testo}], fonti:[{nome,url}]}}], "rimossi":[simboli], "richieste_fatte":[id delle richieste trattate], "ipotesi":[…], "portafoglio":[ordini di oggi]}
+   {"opportunita":[{id, titolo, settore, tesi, punteggio, impatto, direzione, catalizzatore, strumenti, smentita, fonti, cosa, meccanismo, coinvolte, rischi, guardare, glossario, riferimento}], "osservati":[{ticker, nome, borsa, tipo, settore, stato, perche, smentita, opportunita_id, conti, scheda:{sintesi, esposizione:[["area",percentuale],…], numeri:{…}, periodo, catalizzatori:[{data, testo}], fonti:[{nome,url}]}}], "rimossi":[simboli], "richieste_fatte":[id delle richieste trattate], "ipotesi":[…], "portafoglio":[ordini di oggi]}
    e lancia `python3 /tmp/rgdb.py inv-radar /tmp/radar.json`. Se qualche ipotesi è rifiutata, correggi e rilancia solo quelle.
 
 7. RESOCONTO breve: opportunità del giorno in una riga ciascuna; ordini del portafoglio con il motivo (o «nessun ordine: nessuna regola scattata»); aziende entrate, uscite, cambiate di stato; schede aggiornate; ipotesi registrate; fonti non raggiungibili; dubbi.
