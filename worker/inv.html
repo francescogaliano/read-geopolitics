@@ -95,6 +95,49 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 .op{border-top:1px solid var(--line);padding:9px 0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;font-size:14px}.op .d{font:12px ui-monospace,monospace;color:var(--mut)}.op small{display:block;color:var(--mut);font-size:12.5px;line-height:1.4}.tag{font:11px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em}
 .mie{margin-top:34px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.mie summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:52px;cursor:pointer;font-weight:600}.mie summary::-webkit-details-marker{display:none}.mie summary .mu{font-weight:400;font-size:13px}
 .btn2{display:flex;gap:8px;margin-top:10px}.btn2 button{flex:1;min-height:44px;border-radius:6px;border:0;background:var(--acc);color:#0B1118;font:600 14.5px Inter,system-ui}.btn2 button.g{background:transparent;color:var(--fg);border:1px solid var(--line)}
+/* portafoglio v3 (17/11/2026): profondità, anello, binario, grafici con scala e zoom */
+.pzhero{position:relative;margin:10px 0 0;padding:4px 0 64px;overflow:hidden}
+.pzhero svg.bg{position:absolute;left:0;right:0;bottom:0;width:100%;height:58px;opacity:.6;pointer-events:none}
+.pzhero .pfv{font-size:44px!important;letter-spacing:-.01em;position:relative}
+.pzhero>span{position:relative}
+.pzal{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:center;margin:8px 0 4px}
+.pzring{position:relative;width:120px;height:120px}
+.pzring b{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 24px/1 "Source Serif 4",Georgia,serif}
+.pzring b small{font:10.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--mut);margin-top:6px;text-transform:uppercase}
+.pzring circle.a{transition:stroke-dashoffset 1.2s cubic-bezier(.2,.7,.2,1)}
+.pzr{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:baseline;border-top:1px solid var(--line);padding:10px 0;min-height:44px}
+.pzr:first-child{border-top:0}.pzr .sw{width:10px;height:10px;border-radius:2px;align-self:center}
+.pzr b{font-weight:600}.pzr small{display:block;color:var(--mut);font-size:13px}.pzr .v{text-align:right}
+.pzsc{display:flex;border-bottom:1px solid var(--line);margin:8px 0 0}
+.pzsc button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);font:12px ui-monospace,monospace;letter-spacing:.06em;min-height:40px;cursor:pointer;padding:0}
+.pzsc button.on{color:var(--fg);border-bottom-color:var(--acc)}
+.pzch{touch-action:none;user-select:none;-webkit-user-select:none}.pzch svg{display:block;width:100%;height:auto}
+.pztip{font:12px ui-monospace,monospace;min-height:36px;margin:4px 0 0}.pztip span{display:block}
+.pzleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--mut);margin:4px 0}.pzleg span{display:inline-flex;align-items:center;gap:6px}.pzleg i{width:14px;height:2px;display:inline-block}
+.pzzh{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;align-items:center}.pzzh a{color:var(--acc);text-decoration:none;min-height:36px;display:inline-flex;align-items:center}
+.pzdot{animation:pzpl 2s ease-in-out infinite}@keyframes pzpl{0%,100%{r:4}50%{r:7}}
+details.pzp{border-top:1px solid var(--line)}
+details.pzp>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) 60px 66px 56px 12px;gap:2px 8px;align-items:center;padding:12px 0;min-height:56px;cursor:pointer}
+details.pzp>summary::-webkit-details-marker{display:none}
+details.pzp>summary small{display:block;color:var(--mut);font-size:13px}
+details.pzp>summary .w{text-align:right;font-size:14px}details.pzp>summary .r{text-align:right}
+details.pzp>summary .car{color:var(--mut);transition:transform .2s}details.pzp[open]>summary .car{transform:rotate(90deg)}
+.pzsp{width:60px;height:26px;display:block}
+.pzdet{padding:0 0 14px}
+.pztesi{border-left:3px solid var(--acc);background:linear-gradient(90deg,rgba(134,180,234,.10),transparent 70%);padding:6px 10px;margin:6px 0 10px;font-size:14px}
+.pzbin{margin:12px 0 4px}
+.pzbin .tr{position:relative;height:8px;border-radius:4px;background:#2A3742}
+.pzbin .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--up));width:0;transition:width 1.2s cubic-bezier(.2,.7,.2,1)}
+.pzbin .pin{position:absolute;top:-6px;width:3px;height:20px;background:var(--fg);border-radius:2px;transform:translateX(-1px)}
+.pzbin .lab{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:10px;font-size:13px;color:var(--mut)}
+.pzbin .lab b{display:block;color:var(--fg);font-size:16px}.pzbin .lab span:nth-child(2){text-align:center}.pzbin .lab span:last-child{text-align:right}.pzbin .lab span:last-child b{color:var(--up)}
+.pzg{margin:16px 0 2px}
+.pzkv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;border-top:1px solid var(--line);padding:9px 0;align-items:baseline}
+.pzkv>span{color:var(--mut);font-size:14px}.pzkv>b{font:600 18px/1.2 "Source Serif 4",Georgia,serif;text-align:right}
+.pzkv small{grid-column:1/-1;color:var(--mut);font-size:12.5px}
+.pzgau{grid-column:1/-1;position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,#3b6d8f 0 30%,#2A3742 30% 70%,#8a5a2a 70%);margin:4px 0 2px}
+.pzgau i{position:absolute;top:-4px;width:3px;height:14px;background:var(--fg);border-radius:2px}
+@media (prefers-reduced-motion:reduce){.pzdot{animation:none}.pzring circle.a,.pzbin .fill{transition:none}}
 </style></head><body><div class="wrap">
 <a class="back" href="/ig/panel">‹ Pannello</a>
 <div class="top"><h1>Investimenti</h1><span class="mono" id="st">solo tu</span></div>
@@ -404,16 +447,80 @@ function chiave(id){const k=(D.chiavi||[]).find(x=>x.id===id);if(!k)return;const
 function fatto(inp,msg,id){const el=document.getElementById(inp),m=document.getElementById(msg),t=el.value.trim();if(t.length<8){m.textContent="Scrivi il fatto o incolla un link.";return}m.textContent="Salvo…";api({action:"inv_fatto",testo:t,chiave_id:id||""}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}el.value="";m.textContent="Ricevuto: lo verifica la routine «chiavi» al prossimo giro.";if(!id)load()}).catch(e=>m.textContent=e.message)}
 document.getElementById("faB").onclick=()=>fatto("fa","faM","");
 /* simulatore con soldi virtuali */
-const eur=v=>v==null?"–":(Math.round(v)).toLocaleString("it-IT")+" €",pc=v=>{if(v==null)return"–";const r=Math.round(v*10)/10;return(r>0?"+":r<0?"−":"")+Math.abs(r).toFixed(1).replace(".",",")+"%"},cls=v=>v==null||Math.round(v*10)===0?"mu":v>0?"up":"dn";
+const eur=v=>v==null?"–":(v<0?"−":"")+String(Math.abs(Math.round(v))).replace(/\B(?=(\d{3})+(?!\d))/g,".")+" €",pc=v=>{if(v==null)return"–";const r=Math.round(v*10)/10;return(r>0?"+":r<0?"−":"")+Math.abs(r).toFixed(1).replace(".",",")+"%"},cls=v=>v==null||Math.round(v*10)===0?"mu":v>0?"up":"dn";
 const nomeSim=sim=>{const o=D.osservati.find(x=>x.sim===sim);return o?o.nome:sim.replace(/\.[a-z]+$/,"").toUpperCase()},tickSim=sim=>{const o=D.osservati.find(x=>x.sim===sim);if(o)return o.ticker;const Y={us:"",de:".DE",it:".MI",fr:".PA",nl:".AS",es:".MC",be:".BR",pt:".LS",at:".VI",fi:".HE",ie:".IR"},i=sim.lastIndexOf("."),k=sim.slice(i+1);return i>0&&k in Y?sim.slice(0,i).toUpperCase()+Y[k]:sim.toUpperCase()};
 let pfMio=false;
-function pfGraf(L){const all=L.flatMap(l=>l.s.map(x=>x[1]));if(!all.length||L[0].s.length<2)return'<p class="note">Il grafico compare dal secondo giorno di Borsa: per ora c\'è un solo punto, il giorno di partenza (100).</p>';const mn=Math.min(...all,100),mx=Math.max(...all,100),d0=L[0].s[0][0],d1=L[0].s.at(-1)[0],t0=Date.parse(d0),t1=Math.max(Date.parse(d1),t0+864e5),W=420,H=180,x0=36,x1=W-8,y0=10,y1=H-24,X=d=>x0+(Date.parse(d)-t0)/(t1-t0)*(x1-x0),Y=v=>y1-(v-mn)/((mx-mn)||1)*(y1-y0);
- let g=`<line x1="${x0}" x2="${x1}" y1="${Y(100)}" y2="${Y(100)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${x0-6}" y="${Y(100)+4}" text-anchor="end" font-size="11.5" fill="var(--mut)">100</text>`;
- [mn,mx].forEach(v=>{if(Math.abs(v-100)>(mx-mn)*.12)g+=`<text x="${x0-6}" y="${Y(v)+4}" text-anchor="end" font-size="11.5" fill="var(--mut)">${Math.round(v)}</text>`});
- L.forEach(l=>{if(l.s.length>1)g+=`<polyline points="${l.s.map(x=>X(x[0]).toFixed(1)+","+Y(x[1]).toFixed(1)).join(" ")}" fill="none" stroke="${l.c}" stroke-width="${l.w}"/>`;else g+=`<circle cx="${X(l.s[0][0])}" cy="${Y(l.s[0][1])}" r="3" fill="${l.c}"/>`});
- g+=`<text x="${x0}" y="${H-6}" font-size="11.5" fill="var(--mut)">${dd(d0)}</text><text x="${x1}" y="${H-6}" text-anchor="end" font-size="11.5" fill="var(--mut)">${dd(d1)}</text>`;
- return `<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg><div class="leg">${L.map(l=>`<span><i style="background:${l.c}"></i>${l.n}</span>`).join("")}</div>`}
-function pfPos(c,mio){if(!c)return"";return c.posizioni.map(p=>{const o=D.pf.ops.find(x=>x.id===p.ops[p.ops.length-1])||{};return `<div class="pos" data-sim="${esc(p.sim)}"><div><b>${esc(nomeSim(p.sim))}</b> <span class="mono">${esc(tickSim(p.sim))}</span><small>${esc(o.motivo||"")}${o.motivo?" · ":""}dal ${dd(p.dal)}${p.valuta==="USD"?" · in dollari":""}</small></div><span class="w">${p.peso.toFixed(1).replace(".",",")}%<br><span class="mu">${eur(p.valore)}</span></span><span class="r ${cls(p.resa)}">${pc(p.resa)}</span></div>`}).join("")+`<div class="pos"><div><b>Liquidità</b><small>${mio?"Soldi non investiti":"Si investe solo quando c'è una tesi; il resto resta qui"}</small></div><span class="w">${c.peso_cassa.toFixed(1).replace(".",",")}%<br><span class="mu">${eur(c.cassa)}</span></span><span class="r mu">—</span></div><div style="border-top:1px solid var(--line)"></div>`}
+/* grafici con scala e zoom (17/11/2026): scala 1S…Tutto, due dita o rotella per ingrandire, un dito per spostarsi, tocco per il valore */
+const PZ_SC=[["1S",7],["1M",31],["3M",92],["6M",183],["1A",366],["Tutto",0]];let PZ_Q=[];
+const pzD=t=>new Date(t).toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"2-digit"});
+const pzN=(v,u)=>u==="€"||u==="$"?v.toFixed(2).replace(".",",")+" "+u:v.toFixed(1).replace(".",",");
+function pzChart(id,L,o){PZ_Q.push(()=>{const el=document.getElementById(id);if(!el)return;
+ L=L.map(l=>({...l,s:(l.s||[]).map(x=>[Date.parse(x[0]+"T12:00:00Z"),+x[1]]).filter(x=>isFinite(x[1]))})).filter(l=>l.s.length);
+ if(!L.length||L[0].s.length<2){el.innerHTML='<p class="note">Il grafico compare dal secondo giorno di Borsa: per ora c\'è un solo punto.</p>';return}
+ const W=420,H=o.h||200,x0=44,x1=W-8,y0=10,y1=H-24,T0=Math.min(...L.map(l=>l.s[0][0])),T1=Math.max(...L.map(l=>l.s.at(-1)[0]));let a=T0,b=T1,cur=null,done=0;
+ el.innerHTML=`<div class="pzsc">${PZ_SC.map(([n])=>`<button type="button" data-k="${n}">${n}</button>`).join("")}</div><div class="pzch"><svg viewBox="0 0 ${W} ${H}"></svg></div><div class="pztip"><span></span><span></span></div><div class="pzleg">${L.map(l=>`<span><i style="background:${l.c}"></i>${esc(l.n)}</span>`).join("")}${(o.ref||[]).map(r=>`<span><i style="height:0;border-top:1.5px dashed ${r.c}"></i>${esc(r.n)}</span>`).join("")}</div><div class="pzzh"><span>Due dita per ingrandire, un dito per spostarti</span><a href="#" class="rs">Tutto</a></div>`;
+ const svg=el.querySelector("svg"),tip=el.querySelectorAll(".pztip span"),btn=el.querySelectorAll(".pzsc button");
+ const sel=n=>btn.forEach(x=>x.classList.toggle("on",x.dataset.k===n));
+ const scala=n=>{const d=(PZ_SC.find(x=>x[0]===n)||[])[1];b=T1;a=d?Math.max(T0,T1-d*864e5):T0;if(b-a<3*864e5)a=Math.max(T0,b-3*864e5);cur=null;sel(n);draw()};
+ btn.forEach(x=>x.onclick=()=>scala(x.dataset.k));el.querySelector(".rs").onclick=e=>{e.preventDefault();scala("Tutto")};
+ function draw(){const vis=L.map(l=>l.s.filter(p=>p[0]>=a&&p[0]<=b));let all=vis.flat().map(p=>p[1]);(o.ref||[]).forEach(r=>all.push(r.v));(o.mark||[]).forEach(m=>all.push(m.v));if(!all.length)all=[0];
+  let mn=Math.min(...all),mx=Math.max(...all);const pad=(mx-mn)*.08||1;mn-=pad;mx+=pad;const X=t=>x0+(t-a)/((b-a)||1)*(x1-x0),Y=v=>y1-(v-mn)/(mx-mn)*(y1-y0);
+  const gid="pzg"+id;let g=`<defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${o.area||"#86B4EA"}" stop-opacity="${o.area?".16":".32"}"/><stop offset="1" stop-color="${o.area||"#86B4EA"}" stop-opacity="0"/></linearGradient></defs>`;
+  for(let i=0;i<=3;i++){const v=mn+(mx-mn)*i/3;g+=`<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${x0-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${o.u?v.toFixed(v<100?1:0).replace(".",","):Math.round(v)}</text>`}
+  (o.ref||[]).forEach(r=>g+=`<line x1="${x0}" x2="${x1}" y1="${Y(r.v)}" y2="${Y(r.v)}" stroke="${r.c}" stroke-dasharray="5 4" stroke-width="1.5"/>`);
+  vis.forEach((s,i)=>{if(s.length<2)return;const pts=s.map(p=>X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1));
+   if(i===0)g+=`<path d="M${pts.join(" L")} L${X(s.at(-1)[0]).toFixed(1)},${y1} L${X(s[0][0]).toFixed(1)},${y1} Z" fill="url(#${gid})"/>`;
+   g+=`<polyline class="ln" points="${pts.join(" ")}" fill="none" stroke="${L[i].c}" stroke-width="${L[i].w||2}" stroke-linejoin="round" stroke-linecap="round"/>`;
+   if(i===0&&s.at(-1)[0]===T1)g+=`<circle class="pzdot" cx="${X(T1)}" cy="${Y(s.at(-1)[1])}" r="4" fill="${L[i].c}"/>`});
+  (o.mark||[]).forEach(m=>{if(m.t>=a&&m.t<=b)g+=`<circle cx="${X(m.t)}" cy="${Y(m.v)}" r="5" fill="var(--bg)" stroke="${m.c}" stroke-width="2"/><text x="${X(m.t)<x0+80?X(m.t)+8:X(m.t)-8}" y="${Y(m.v)-10}" text-anchor="${X(m.t)<x0+80?"start":"end"}" font-size="11" fill="${m.c}">${esc(m.n)}</text>`});
+  if(cur!=null&&cur>=a&&cur<=b){const pts=L.map(l=>l.s.reduce((p,q)=>Math.abs(q[0]-cur)<Math.abs(p[0]-cur)?q:p));g+=`<line x1="${X(pts[0][0])}" x2="${X(pts[0][0])}" y1="${y0}" y2="${y1}" stroke="var(--mut)"/>`;pts.forEach((p,i)=>g+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.5" fill="${L[i].c}"/>`);
+   const bx=Math.min(Math.max(X(pts[0][0]),x0+48),x1-48);g+=`<rect x="${bx-48}" y="${y0}" width="96" height="22" rx="4" fill="#1b2835" stroke="var(--line)"/><text x="${bx}" y="${y0+15}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--fg)">${pzN(pts[0][1],o.u)}</text>`;
+   tip[0].textContent=pzD(pts[0][0]);tip[1].innerHTML=pts.map((p,i)=>`<span style="display:inline;color:${L[i].c}">${esc(L[i].n)} ${pzN(p[1],o.u)}</span>`).join(" · ")}
+  else{tip[0].textContent=pzD(a)+" → "+pzD(b);tip[1].textContent="tocca il grafico per i valori"}
+  g+=`<text x="${x0}" y="${H-6}" font-size="11" fill="var(--mut)">${pzD(a)}</text><text x="${x1}" y="${H-6}" text-anchor="end" font-size="11" fill="var(--mut)">${pzD(b)}</text>`;
+  svg.innerHTML=g;if(!done){done=1;if(!matchMedia("(prefers-reduced-motion:reduce)").matches)svg.querySelectorAll(".ln").forEach(l=>{const n=l.getTotalLength();l.style.strokeDasharray=n;l.style.strokeDashoffset=n;l.getBoundingClientRect();l.style.transition="stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1)";l.style.strokeDashoffset=0})}}
+ const P=new Map();let st={a,b,P:new Map(),moved:true};const fx=e=>{const r=svg.getBoundingClientRect();return (e.clientX-r.left)/r.width*W};
+ const clamp=()=>{if(b-a>=T1-T0){a=T0;b=T1;return}if(b-a<3*864e5){const m=(a+b)/2;a=m-1.5*864e5;b=m+1.5*864e5}if(a<T0){b+=T0-a;a=T0}if(b>T1){a-=b-T1;b=T1}};
+ svg.addEventListener("pointerdown",e=>{svg.setPointerCapture(e.pointerId);P.set(e.pointerId,fx(e));st={a,b,P:new Map(P),moved:false}});
+ svg.addEventListener("pointermove",e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,fx(e));const k=[...P.keys()];
+  if(k.length===2&&st.P.size===2){const [p1,p2]=k.map(i=>st.P.get(i)),[q1,q2]=k.map(i=>P.get(i));if(p1==null||p2==null||Math.abs(q2-q1)<8)return;const ta=st.a+(p1-x0)/(x1-x0)*(st.b-st.a),tb=st.a+(p2-x0)/(x1-x0)*(st.b-st.a),sp=(tb-ta)/((q2-q1)/(x1-x0));if(!(sp>0))return;a=ta-(q1-x0)/(x1-x0)*sp;b=a+sp;clamp();st.moved=true;cur=null;sel("");draw()}
+  else if(k.length===1){const d=P.get(k[0])-st.P.get(k[0]);if(Math.abs(d)>6||st.moved){st.moved=true;const dt=-d/(x1-x0)*(st.b-st.a);a=st.a+dt;b=st.b+dt;clamp();cur=null;if(b-a<T1-T0)sel("");draw()}}});
+ const up=e=>{if(!P.has(e.pointerId))return;if(!st.moved&&P.size===1){cur=a+(fx(e)-x0)/(x1-x0)*(b-a);draw()}P.delete(e.pointerId);st={a,b,P:new Map(P),moved:true}};
+ svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up);
+ svg.addEventListener("wheel",e=>{e.preventDefault();const t=a+(fx(e)-x0)/(x1-x0)*(b-a),f=e.deltaY>0?1.2:1/1.2;a=t-(t-a)*f;b=t+(b-t)*f;clamp();cur=null;sel("");draw()},{passive:false});
+ scala(o.def&&PZ_SC.some(x=>x[0]===o.def)?o.def:"Tutto")})}
+function pzMini(s,w,h,c,op,id){if(!s||s.length<2)return"";const v=s.map(x=>+x[1]),mn=Math.min(...v),mx=Math.max(...v),X=i=>(i/(v.length-1)*w).toFixed(1),Y=x=>(h-2-(x-mn)/((mx-mn)||1)*(h-4)).toFixed(1),pts=v.map((x,i)=>X(i)+","+Y(x));
+ return `<defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity="${op}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs><path d="M0,${h} L${pts.join(" L")} L${w},${h} Z" fill="url(#${id})"/><polyline points="${pts.join(" ")}" fill="none" stroke="${c}" stroke-width="1.6"/>`}
+function pzAvvia(){const q=PZ_Q;PZ_Q=[];q.forEach(f=>f());requestAnimationFrame(()=>setTimeout(()=>{document.querySelectorAll("[data-pzo]").forEach(c=>c.style.strokeDashoffset=c.dataset.pzo);document.querySelectorAll("[data-pzw]").forEach(c=>c.style.width=c.dataset.pzw)},120))}
+const pzE=v=>(v<0?"−":v>0?"+":"")+Math.abs(v).toFixed(2).replace(".",",")+" €";
+const pzV=(v,val)=>pzN(v,val==="USD"?"$":"€");
+/* dalla situazione del Radar che ha fatto comprare: tesi, prezzo di riferimento (es. offerta), rischio */
+function pzSit(p){const O=(D.opp&&D.opp.lista)||[],ops=D.pf.ops.filter(o=>(p.ops||[]).includes(o.id));const og=ops.map(o=>o.origine).filter(Boolean);
+ return O.find(o=>og.some(g=>g.id&&g.id===o.id))||O.find(o=>o.riferimento&&o.riferimento.sim===p.sim)||null}
+function pfPos(c,mio){if(!c)return"";const pre=mio?"m":"M";
+ const righe=c.posizioni.map((p,ix)=>{const ops=D.pf.ops.filter(o=>(p.ops||[]).includes(o.id)),buy=ops.filter(o=>o.tipo==="compra"&&o.esito&&o.esito.stato==="eseguita"),o=ops[0]||{};
+  const nb=buy.reduce((s,x)=>s+(x.esito.n||0),0),carico=nb?buy.reduce((s,x)=>s+x.esito.prezzo*(x.esito.n||0),0)/nb:null;
+  const px=(D.pf.px||{})[p.sim]||{},s=px.p||[],t=px.tecnica,S=pzSit(p),R=S&&S.riferimento&&S.riferimento.valore,id=pre+ix,last=p.prezzo,gain=p.valore-p.speso;
+  if(s.length>1)pzChart("pzc"+id,[{n:nomeSim(p.sim),c:"var(--fg)",w:2,s}],{u:p.valuta==="USD"?"$":"€",def:"6M",h:220,area:"#E8EDF2",ref:R?[{n:(S.riferimento.testo||"Prezzo di riferimento")+" "+pzV(R,p.valuta),v:R,c:"var(--up)"}]:[],mark:carico?[{n:"acquisto "+pzV(carico,p.valuta).replace(/ .$/,""),t:Date.parse((buy[0].esito.data||p.dal)+"T12:00:00Z"),v:carico,c:"var(--acc)"}]:[]});
+  let bin="";if(R&&carico&&last&&R>carico){const k=Math.max(0,Math.min(1,(last-carico)/(R-carico)));const dist=(R/last-1)*100;
+   bin=`<div class="pzbin"><div class="mono" style="margin-bottom:10px">Il binario · dall'acquisto al prezzo di riferimento</div><div class="tr"><div class="fill" data-pzw="${Math.max(1.5,k*100).toFixed(1)}%"></div><span class="pin" style="left:${(k*100).toFixed(1)}%"></span></div><div class="lab"><span>acquisto<b>${pzV(carico,p.valuta)}</b></span><span>oggi<b>${pzV(last,p.valuta)}</b></span><span>${esc(S.riferimento.testo||"riferimento")}<b>${pzV(R,p.valuta)}</b></span></div><p class="note">${k>=1?"Il prezzo ha raggiunto il riferimento.":"Mancano "+pc(dist).replace("+","")+" al riferimento: se ci arriva, circa "+pzE(p.valore*dist/100).replace(/[−+]/,"")+" in più."}</p></div>`}
+  const kv=(a,b,c,cl)=>`<div class="pzkv"><span>${a}</span><b class="${cl||""}">${b}</b>${c?`<small>${c}</small>`:""}</div>`;
+  let det=`<div class="pzdet">${S?`<div class="pztesi"><span class="mono">La tesi</span><br>${esc(S.tesi||S.titolo)}</div>`:o.motivo?`<div class="pztesi"><span class="mono">Il motivo</span><br>${esc(o.motivo)}</div>`:""}${bin}<div id="pzc${id}"></div>
+   <div class="pzg mono">La posizione</div>${carico?kv("Prezzo di acquisto"+(buy.length>1?" · medio":""),pzV(carico,p.valuta)):""}${last?kv("Ultimo prezzo",pzV(last,p.valuta),s.length?"chiusura del "+dd(s.at(-1)[0]):""):""}
+   ${kv("Azioni",p.n.toLocaleString("it-IT",{maximumFractionDigits:2}),"quote frazionarie, come nel resto del simulatore")}${kv("Valore oggi",eur(p.valore),p.valuta==="USD"?"convertito in euro al cambio del giorno":"")}
+   ${kv("Guadagno o perdita",pzE(gain)+" · "+pc(p.resa),Math.abs(p.resa)<.2?"quasi solo i costi dello 0,15%":"",cls(p.resa))}`;
+  if(R&&last){const dist=(R/last-1)*100;det+=`<div class="pzg mono">La tesi in numeri</div>${kv(esc(S.riferimento.testo||"Prezzo di riferimento"),pzV(R,p.valuta))}${kv("Distanza dal riferimento",pc(dist),"dal prezzo di oggi",cls(dist))}${kv("Se ci arriva",(dist>=0?"≈ +":"≈ −")+eur(Math.abs(p.valore*dist/100)),"prima dei costi di vendita",cls(dist))}`}
+  if(S&&((S.rischi||[])[0]||S.smentita))det+=`<div class="pzg mono">Cosa può andare storto</div>${(S.rischi||[]).slice(0,2).map(r=>kv(esc(r.titolo||"Rischio"),"",esc(r.testo))).join("")}${S.smentita?kv("Cosa smentirebbe la tesi","",esc(S.smentita)):""}`;
+  if(!mio)det+=`<div class="pzg mono">Quando si vende</div>${kv("Regole di uscita","","V1 se la tesi è smentita (per un'offerta: ritirata o bocciata) · V3 se arriva un'ipotesi al ribasso · V4 quando l'orizzonte è passato · V5 vende metà se la tesi è in bilico.")}`;
+  if(t)det+=`<div class="pzg mono">Indicatori tecnici · solo contesto</div>${t.m50!=null?kv("Media 50 giorni",pzV(t.m50,p.valuta),t.sopra50?"il prezzo è sopra: tendenza in salita":"il prezzo è sotto: tendenza in discesa"):""}${t.m200!=null?kv("Media 200 giorni",pzV(t.m200,p.valuta),t.sopra200?"sopra la media lunga":"sotto la media lunga"):""}${t.rsi!=null?`<div class="pzkv"><span>RSI 14 · da 0 a 100</span><b>${t.rsi}</b><div class="pzgau"><i style="left:${Math.max(0,Math.min(99,t.rsi))}%"></i></div><small>${t.rsi>70?"sopra 70: salito molto in poco tempo":t.rsi<30?"sotto 30: sceso molto in poco tempo":"tra 30 e 70: nessun eccesso"}</small></div>`:""}${t.var1m!=null?kv("Ultimo mese",pc(t.var1m),"",cls(t.var1m)):""}`;
+  det+="</div>";
+  return `<details class="pzp" data-pz="${esc(p.sim)}"${PZ_OPEN.has(p.sim)?" open":""}><summary><div><b>${esc(nomeSim(p.sim))}</b> <span class="mono">${esc(tickSim(p.sim))}</span><small>${esc(S?S.titolo:(o.motivo||"").slice(0,70))} · dal ${dd(p.dal)}${p.valuta==="USD"?" · in dollari":""}</small></div><svg class="pzsp" viewBox="0 0 60 26">${pzMini(s.slice(-63),60,26,"#E8EDF2",.18,"pzs"+id)}</svg><span class="w">${p.peso.toFixed(1).replace(".",",")}%<br><span class="mu">${eur(p.valore)}</span></span><span class="r ${cls(p.resa)}">${pc(p.resa)}</span><span class="car">›</span></summary>${det}</details>`}).join("");
+ return righe+`<div class="pzr" style="border-top:1px solid var(--line)"><span class="sw" style="background:#2A3742"></span><div><b>Liquidità</b><small>${mio?"soldi non investiti":"in attesa di una tesi"}</small></div><div class="v">${eur(c.cassa)}<br><span class="mu">${c.peso_cassa.toFixed(1).replace(".",",")}%</span></div></div><div style="border-top:1px solid var(--line)"></div>`}
+let PZ_OPEN=new Set();
+function pzAlloc(c){const inv=Math.max(0,100-c.peso_cassa),n=c.posizioni.length,C=2*Math.PI*48;
+ return `<div class="pzal"><div class="pzring"><svg viewBox="0 0 120 120" width="120" height="120"><defs><linearGradient id="pzrg" x1="0" x2="1"><stop offset="0" stop-color="#86B4EA"/><stop offset="1" stop-color="#5FCB8C"/></linearGradient></defs><circle cx="60" cy="60" r="48" fill="none" stroke="#22303b" stroke-width="13"/>${inv>0?`<circle class="a" cx="60" cy="60" r="48" fill="none" stroke="url(#pzrg)" stroke-width="13" stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}" data-pzo="${(C*(1-inv/100)).toFixed(1)}"/>`:""}</svg><b>${Math.round(inv)}%<small>investito</small></b></div>
+ <div><div class="pzr"><span class="sw" style="background:var(--acc)"></span><div><b>Investito</b><small>${n} ${n===1?"titolo":"titoli"} su 15 · max 10% ciascuno</small></div><div class="v">${eur(c.valore-c.cassa)}</div></div><div class="pzr"><span class="sw" style="background:#2A3742"></span><div><b>Liquidità</b><small>soldi fermi in attesa di una tesi</small></div><div class="v">${eur(c.cassa)}</div></div></div></div>
+ <p class="note">La liquidità non guadagna e non perde: il modello la usa solo quando una situazione del Radar supera le regole.</p>`}
 function pfOps(conto){const O=D.pf.ops.filter(o=>o.conto===conto);return O.length?O.slice(0,40).map(o=>{const e=o.esito||{},t=o.tipo==="versa"?`<span class="tag" style="color:var(--acc)">versa</span> ${eur(o.eur)}`:`<span class="tag ${o.tipo==="compra"?"up":"dn"}">${o.tipo==="compra"?"compra":"vende"}</span> <b>${esc(nomeSim(o.sim))}</b>${o.tipo==="compra"?" · "+eur(e.eur||o.eur):o.quota<1?" · "+Math.round(o.quota*100)+"%":""}`;
  const st=e.stato==="in_attesa"?`<span style="color:var(--amb)">in attesa</span> · ${quandoEs(o)}${conto==="mio"?` · <a href="#" class="ann" data-id="${esc(o.id)}">annulla</a>`:""}`:e.stato==="rifiutata"?`<span class="dn">non eseguita</span> · ${esc(e.nota||"")}`:o.tipo==="versa"?"":`eseguita il ${dd(e.data)} a ${num(e.prezzo,"az")}${e.resa!=null?` · resa <span class="${cls(e.resa)}">${pc(e.resa)}</span>`:""} · costi ${(e.costo||0).toFixed(2).replace(".",",")} €`;
  return `<div class="op"><span class="d">${dd(o.data)}</span><div>${t}<small>${o.regola?`<span class="mono" style="color:var(--fg)">regola ${esc(o.regola)}</span> · `:""}${esc(o.motivo||"")}${o.motivo&&st?" — ":""}${st}</small></div></div>`}).join("")+'<div style="border-top:1px solid var(--line)"></div>':'<div class="note">Nessuna operazione.</div>'}
@@ -429,9 +536,10 @@ function pf(){const el=document.getElementById("pfC"),P=D.pf||{conti:{},ops:[]},
   <div class="sec"><span class="mono">Avvia con</span></div><div class="add"><input id="pfV" inputmode="numeric" value="10000"><button id="pfVB" type="button">Avvia</button></div><div class="note" id="pfVM">Euro virtuali. Potrai ricaricare quando vuoi senza falsare il rendimento.</div>${regole}`;
   document.getElementById("pfVB").onclick=()=>pfVersa("modello","pfV","pfVM");return}
  const g=M.valore-M.versato,lines=[{n:"Modello",c:"var(--acc)",w:2.4,s:M.serie}];if(R&&R.serie.length)lines.push({n:"Riferimento",c:"var(--mut)",w:1.6,s:R.serie});if(I&&I.serie.length)lines.push({n:"Le mie prove",c:"var(--amb)",w:1.6,s:I.serie});
- el.innerHTML=`<div class="pfbig"><span class="mono">Portafoglio del modello · dal ${dd(M.inizio)}</span><b class="pfv">${eur(M.valore)}</b><span>versati ${eur(M.versato)} · <strong class="${cls(g)}" style="font-weight:600">${g>=0?"+":"−"}${eur(Math.abs(g))} (${pc(M.rend.tutto)})</strong></span></div>${regole}
+ PZ_Q=[];el.innerHTML=`<div class="pfbig pzhero"${M.serie.length>1?"":' style="padding-bottom:4px"'}><svg class="bg" viewBox="0 0 400 58" preserveAspectRatio="none">${pzMini(M.serie,400,58,"#86B4EA",.35,"pzhb")}</svg><span class="mono">Portafoglio del modello · dal ${dd(M.inizio)}</span><b class="pfv">${eur(M.valore)}</b><span>versati ${eur(M.versato)} · <strong class="${cls(g)}" style="font-weight:600">${g>=0?"+":"−"}${eur(Math.abs(g))} (${pc(M.rend.tutto)})</strong>${g<0&&g>-M.versato*.002?"<br>la differenza sono i costi delle operazioni (0,15%)":""}</span></div>
+ <div class="sec"><span class="mono">Dove sono i soldi</span><span class="mono">${eur(M.valore)}</span></div>${pzAlloc(M)}${regole}
  ${pfAttesa("modello")}
- <div class="sec"><span class="mono">Andamento · ogni 100 € investiti</span></div>${pfGraf(lines)}
+ <div class="sec"><span class="mono">Andamento · ogni 100 € investiti</span></div><div id="pzcAnd"></div>
  <div class="sec"><span class="mono">Rendimento</span><span class="mono">chi batte il riferimento?</span></div>${pfRend([{n:"Modello",c:"var(--acc)",r:M.rend},{n:"Riferim.",c:"var(--mut)",r:R&&R.rend}].concat(I?[{n:"Mie prove",c:"var(--amb)",r:I.rend}]:[]))}
  <div class="sec"><span class="mono">Posizioni aperte · ${M.posizioni.length}</span><span class="mono">peso · resa</span></div>${pfPos(M)}
  <div class="sec"><span class="mono">Registro del modello</span><span class="mono">con il motivo</span></div>${pfOps("modello")}
@@ -444,7 +552,8 @@ function pf(){const el=document.getElementById("pfC"),P=D.pf||{conti:{},ops:[]},
  document.getElementById("pfMio").ontoggle=e=>pfMio=e.target.open;
  if(I){document.getElementById("pfRB2").onclick=()=>pfVersa("mio","pfR2","pfRM2");document.getElementById("pfC1").onclick=()=>pfOrd("compra");document.getElementById("pfC2").onclick=()=>pfOrd("vendi")}else document.getElementById("pfVB2").onclick=()=>pfVersa("mio","pfV2","pfVM2");
  el.querySelectorAll(".ann").forEach(a=>a.onclick=e=>{e.preventDefault();api({action:"inv_pf_annulla",id:a.dataset.id}).then(load)});
- el.querySelectorAll(".pos[data-sim]").forEach(e=>{if(D.osservati.some(o=>o.sim===e.dataset.sim)){e.style.cursor="pointer";e.onclick=()=>scheda(e.dataset.sim)}})}
+ pzChart("pzcAnd",lines,{def:"Tutto"});pzAvvia();
+ el.querySelectorAll("details.pzp").forEach(d=>d.ontoggle=()=>{d.open?PZ_OPEN.add(d.dataset.pz):PZ_OPEN.delete(d.dataset.pz);if(d.open)setTimeout(()=>d.querySelectorAll("[data-pzw]").forEach(c=>c.style.width=c.dataset.pzw),60)})}
 function pfVersa(conto,inp,msg){const v=+String(document.getElementById(inp).value).replace(/[^\d,.]/g,"").replace(",","."),m=document.getElementById(msg);if(!(v>=100)){m.textContent="Almeno 100 €.";return}m.textContent="Salvo…";api({action:"inv_pf_versa",conto,eur:v}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}load()}).catch(e=>m.textContent=e.message)}
 function pfOrd(tipo){const t=document.getElementById("pfT").value.trim(),e=+String(document.getElementById("pfE").value).replace(",","."),q=+String(document.getElementById("pfQ").value).replace(",","."),m=document.getElementById("pfOM");if(!t){m.textContent="Scrivi il simbolo.";return}
  if(tipo==="compra"&&!(e>=1)){m.textContent="Scrivi l'importo in euro.";return}m.textContent="Invio…";
