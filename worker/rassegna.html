@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<link rel="icon" href="/ig/panel.svg?v=2" type="image/svg+xml">
+<title>Rassegna · Pannello</title>
+<style>
+:root{color-scheme:dark;--bg:#0B1118;--fg:#E8EDF2;--mut:#7F909E;--line:#1F2B35;--acc:#86B4EA;--ok:#5FCB8C;--ko:#EF6F62;--amb:#E8A33D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+a{color:var(--acc)}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 48px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h1{margin:0;font:600 24px/1.2 "Source Serif 4",Georgia,serif}
+.back{font-size:14px;text-decoration:none;color:var(--mut);display:inline-block;padding:6px 0}
+.mono{font:11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.lead{color:var(--mut);margin:8px 0 0;font-size:14px}
+.sum{margin:14px 0 0;font-size:15px}.sum b{font-weight:600}
+.act{all:unset;cursor:pointer;display:block;width:100%;text-align:left;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:12px;color:var(--acc);font-weight:500;min-height:20px}
+.act[disabled]{color:var(--mut);cursor:default}
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--line);margin:16px 0 0}
+.tabs button{all:unset;cursor:pointer;padding:12px 0 10px;color:var(--mut);font-weight:500;border-bottom:2px solid transparent}
+.tabs button[aria-selected=true]{color:var(--fg);border-color:var(--acc)}
+.v{display:none}.v.on{display:block}
+.sec{margin:22px 0 6px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.r{border-top:1px solid var(--line)}.r:last-child{border-bottom:1px solid var(--line)}
+.r>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;min-height:48px;border-left:3px solid transparent;padding-left:10px}
+.r>summary::-webkit-details-marker{display:none}
+.r.ok>summary{border-color:var(--ok)}.r.ko>summary{border-color:var(--ko)}.r.mai>summary{border-color:var(--line)}
+.r .n{font-weight:600;font-size:14.5px}.r small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px}
+.r .s{text-align:right;font-size:13px;white-space:nowrap}.ok-t{color:var(--ok)}.ko-t{color:var(--ko)}.mu{color:var(--mut)}
+.r .det{padding:2px 0 12px 13px;font-size:13.5px;color:var(--mut)}.r .det p{margin:4px 0}.r .det code{font-size:12px;word-break:break-all;color:var(--fg)}
+.st{border-top:1px solid var(--line)}.st:last-child{border-bottom:1px solid var(--line)}
+.st>summary{list-style:none;cursor:pointer;padding:12px 0;min-height:48px}.st>summary::-webkit-details-marker{display:none}
+.st .t{font-weight:600;font-size:15px}.st .m{margin-top:4px}
+.st .vv{padding:0 0 12px}.st .vv a{display:block;padding:8px 0;border-top:1px solid var(--line);text-decoration:none;color:var(--fg);font-size:14px}
+.st .vv a small{display:block;color:var(--mut);font-size:12px}
+.empty{color:var(--mut);padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:6px}
+.note{color:var(--mut);font-size:13px;margin:14px 0 0}
+</style></head><body><div class="wrap">
+<div class="top"><h1>Rassegna</h1><a class="back" href="/ig/panel">‹ Pannello</a></div>
+<p class="lead">I feed delle testate, delle agenzie, dei think tank e delle fonti ufficiali che il Worker legge ogni ora: solo titoli e link. Serve a vedere quali funzionano e, quando li approvi, a far partire le routine da qui invece che dalla ricerca.</p>
+<div class="sum" id="sum">Carico…</div>
+<button class="act" id="ver">Verifica adesso tutti i feed ›</button>
+<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-v="fonti">Fonti</button><button role="tab" aria-selected="false" data-v="storie">Storie di oggi</button></div>
+<div class="v on" id="v-fonti"></div>
+<div class="v" id="v-storie"></div>
+<p class="note">Verde: il feed risponde con titoli. Rosso: non risponde (il motivo è nel dettaglio). «via Google»: la testata non ha un feed leggibile e si usa la ricerca di Google News limitata al suo sito (solo titoli). Media di Stato: solo per riportare la posizione ufficiale.</p>
+</div>
+<script>
+const $=s=>document.querySelector(s);let D=null;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href="/ig/panel";throw new Error("401")}return r.json()})}
+const quando=d=>{if(!d)return"";const m=(Date.now()-Date.parse(d))/6e4;return m<60?Math.max(1,Math.round(m))+" min fa":m<1440?Math.round(m/60)+" h fa":Math.round(m/1440)+" g fa"};
+const TIPO={agenzia:"agenzia",testata:"testata",analisi:"analisi",ufficiale:"fonte ufficiale",statale:"media di Stato"};
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));document.querySelectorAll(".v").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v))});
+function fonti(){let h="";for(const [a,nome] of Object.entries(D.aree)){const L=D.fonti.filter(f=>f.area===a);if(!L.length)continue;const ok=L.filter(f=>f.ok===true).length;
+  h+=`<div class="sec"><span class="mono">${esc(nome)}</span><span class="mono">${ok} su ${L.length}</span></div><div>`+L.map(f=>{const c=f.ok===true?"ok":f.ok===false?"ko":"mai";
+   const s=f.ok===true?`<span class="ok-t">${f.fresche} ${f.fresche===1?"titolo":"titoli"}</span><small>${f.via==="google"?"via Google · ":""}ultimo ${esc(quando(f.ultima))}</small>`:f.ok===false?`<span class="ko-t">non risponde</span><small>${esc((f.errori||[]).slice(-1)[0]||"")}</small>`:`<span class="mu">da verificare</span>`;
+   return `<details class="r ${c}"><summary><span><span class="n">${esc(f.nome)}</span><small>${esc(TIPO[f.tipo]||f.tipo)} · ${esc(f.orient)}${f.classe==="P"?" · classe P":""}</small></span><span class="s">${s}</span></summary><div class="det">`+
+    (f.url?`<p>Feed usato: <code>${esc(f.url)}</code></p>`:"")+(f.errori&&f.errori.length?`<p>Tentativi falliti: ${esc(f.errori.join(" · "))}</p>`:"")+(f.campione&&f.campione.length?`<p>Ultimi titoli:</p>`+f.campione.map(t=>`<p>· ${esc(t)}</p>`).join(""):"")+(f.at?`<p>Controllato ${esc(quando(f.at))}</p>`:"")+`</div></details>`}).join("")+`</div>`}
+ $("#v-fonti").innerHTML=h}
+function storie(){const S=D.storie||[];$("#v-storie").innerHTML=S.length?`<p class="note">Titoli delle ultime 24 ore raggruppati per somiglianza, con almeno 2 fonti diverse. Prima le storie riportate da più fonti.</p><div style="margin-top:10px">`+S.map(g=>`<details class="st"><summary><div class="t">${esc(g.titolo)}</div><div class="m mono">${g.n_fonti} fonti · ${esc(g.aree.map(a=>(D.aree[a]||a).split(" ")[0]).join(", "))}${g.non_occidentali?" · "+g.non_occidentali+" non occidentali":""}${g.statali?" · anche media di Stato":""} · ${esc(quando(g.ultima))}</div></summary><div class="vv">`+g.voci.map(v=>`<a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.titolo)}<small>${esc(v.nome)} · ${esc(TIPO[v.tipo]||v.tipo)} · ${esc(quando(v.data))}</small></a>`).join("")+`</div></details>`).join("")+`</div>`:`<div class="empty">Ancora nessuna storia con almeno due fonti: i feed si riempiono nella prima ora.</div>`}
+function render(){$("#sum").innerHTML=`<b>${D.ok}</b> feed funzionano su <b>${D.totale}</b>${D.ko?` · <span class="ko-t">${D.ko} non rispondono</span>`:""}${D.mai?` · ${D.mai} da verificare`:""} · ${D.voci24} titoli nelle ultime 24 ore`+(D.err?`<div class="note ko-t">Ultimo errore del giro automatico: ${esc(D.err.msg)}</div>`:"");fonti();storie()}
+function load(){return api({action:"rs_get"}).then(j=>{D=j;render()}).catch(e=>{$("#sum").textContent="Errore: "+e.message})}
+$("#ver").onclick=async()=>{const b=$("#ver");b.disabled=true;let fatti=0,tot=D?D.totale:999;try{while(fatti<tot){b.textContent=`Verifico… ${fatti} su ${tot}`;const j=await api({action:"rs_giro",n:12});if(!j.ok)throw new Error(j.error||"errore");tot=j.totale;fatti+=j.fatti.length}await load();b.textContent="Verifica adesso tutti i feed ›"}catch(e){b.textContent="Errore: "+e.message}b.disabled=false};
+load();
+</script></body></html>
