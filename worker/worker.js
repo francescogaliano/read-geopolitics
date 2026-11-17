@@ -2650,6 +2650,7 @@ function fitTabs(){const bar=document.getElementById("tabs"),tm=document.getElem
   const el=k=>k==="spiegati"?bar.parentNode.querySelector('a.tab[href="/ig/spiegati"]'):document.querySelector('.tab[data-t="'+k+'"]');
   const all=ORD.map(el).filter(Boolean);all.forEach(x=>bar.insertBefore(x,tx));tx.hidden=true;
   if(bar.scrollWidth>bar.clientWidth+1){tx.hidden=false;const moved=[];for(let i=all.length-1;i>0&&bar.scrollWidth>bar.clientWidth+1;i--){moved.unshift(all[i]);tm.insertBefore(all[i],tm.firstChild)}}
+  {const inv=bar.parentNode.querySelector('a.tab[href="/ig/investimenti"]');if(inv){tm.appendChild(inv);tx.hidden=false}} /* Investimenti (privato): sempre in fondo al menu «Altro», mai tra le tab */
   const cur=document.querySelector('.tab.on[data-t]'),inM=cur&&tm.contains(cur);tx.textContent=(inM?cur.textContent.replace(/\d+$/,""):"Altro")+" ▾";tx.classList.toggle("on",!!inM)}
 {const o=document.querySelector('.tab[data-t="og"]');if(o&&window.MutationObserver)new MutationObserver(()=>{clearTimeout(window._ft);window._ft=setTimeout(fitTabs,60)}).observe(o,{childList:true,subtree:true,characterData:true})}
 window.addEventListener("resize",()=>{clearTimeout(window._ft);window._ft=setTimeout(fitTabs,120)});setTimeout(fitTabs,0);
