@@ -232,8 +232,14 @@ export async function rsBrief(env, h, data) {
   try {
     const a = new Date(Date.parse(B.key + "T06:00:00Z")), da = new Date(a.getTime() - 24 * 3600e3), ctx = await indice(env, h);
     const RS = rsStorie(await rsVociTra(env, da.toISOString(), a.toISOString()), ctx).filter((g) => g.n_fonti >= 4).slice(0, 12);
-    const E = (t) => new Set(rsEntita(t, ctx.I).map((e) => e.k)), dove = [...st.map((s) => ({ t: s.titolo, esito: "storia", motivo: "" })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, esito: x.esito, motivo: x.motivo }))].map((x) => ({ ...x, E: E(x.t) }));
-    rassegna = RS.map((g) => { const ge = E(g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 4).join(" ")); let best = null, bs = 0; for (const x of dove) { let e = 0, enc = 0; for (const k of x.E) if (ge.has(k)) { e++; if (k[0] !== "p") enc++; } const sc = e + enc; if ((enc >= 1 || e >= 2) && sc > bs) { bs = sc; best = x; } } return { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? best.esito : "non valutata", motivo: best ? best.motivo : "" }; });
+    // abbinamento prudente: servono 2 nomi propri in comune (esclusi quelli che compaiono ovunque: Stati Uniti, Ue, Trump),
+    // oppure 1 nome e 2 parole in comune. Meglio una «non valutata» in più che un falso «storia».
+    const GEN = new Set(["p:USA", "g:ue", "g:donald-trump"]);
+    const E = (t) => new Set(rsEntita(t, ctx.I).map((e) => (e.iso ? "p:" + e.iso : e.k)).filter((k) => !GEN.has(k))); // una città vale come il suo paese
+    const dove = [...st.map((s) => ({ t: s.titolo, testo: s.titolo + " " + (s.fatti || ""), esito: "storia", motivo: "" })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, testo: x.titolo, esito: x.esito, motivo: x.motivo }))].map((x) => ({ ...x, E: E(x.testo), K: parole(x.testo) }));
+    rassegna = RS.map((g) => { const testo = g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 6).join(" "), ge = E(testo), gk = parole(testo); let best = null, bs = 0;
+      for (const x of dove) { let e = 0; for (const k of x.E) if (ge.has(k)) e++; let kw = 0; for (const w of x.K) if (gk.has(w)) kw++; const sc = e * 2 + kw; if ((e >= 2 || (e >= 1 && kw >= 2)) && sc > bs) { bs = sc; best = x; } }
+      return { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? best.esito : "non valutata", motivo: best ? best.motivo : "", con: best && best.esito === "storia" ? best.t : null }; });
   } catch (e) { rassegna = []; }
   return { ok: true, data: B.key, prima: prev ? prev.key : null, dopo: next ? next.key : null, n_storie: storie.length, n_mondo: mondo.length, n_italia: storie.length - mondo.length, candidate: sel.length, citazioni: tot, testate_n: testate.length, regole, storie, selezione: sel, testate: testate.slice(0, 10), rassegna };
 }
