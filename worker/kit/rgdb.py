@@ -19,6 +19,7 @@
 #                                                           fino a 50 scritture, tutte o nessuna
 #   python3 rgdb.py push DIR [--solo-nuovi]                 scrive (set) ogni DIR/<coll>/<id>.json, a gruppi di 50;
 #                                                           con --solo-nuovi crea solo i documenti che mancano (op create)
+#   python3 rgdb.py rassegna [ORE] [MIN]                    rassegna dei feed: titoli delle ultime ORE (24) raggruppati per storia, solo storie con almeno MIN fonti (1)
 #   python3 rgdb.py inv-contesto                            sezione Investimenti (privata): strumenti, ultimi prezzi, ipotesi aperte
 #   python3 rgdb.py inv-radar FILE                          giro del radar: {opportunita, osservati, rimossi, richieste_fatte, ipotesi}
 #   python3 rgdb.py inv-chiavi FILE                         chiavi di lettura e micro-fatti: {chiavi, fatti, richieste_fatte, ipotesi}
@@ -235,6 +236,10 @@ def main():
         if grp:
             send(grp)
         out({"ok": True, "documenti": len(W), "esiti": tot})
+    elif cmd == "rassegna":
+        ore = a[0] if len(a) > 0 else "24"
+        mn = a[1] if len(a) > 1 else "1"
+        out(call("GET", "/v1/rassegna", q={"ore": ore, "min": mn}))
     elif cmd == "inv-contesto":
         out(call("GET", "/v1/inv/contesto"))
     elif cmd == "inv-radar":
