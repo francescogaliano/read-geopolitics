@@ -259,7 +259,14 @@ function oppPulisci(o, oggi) {
   if (!o || typeof o !== "object") return null;
   const t = cut(o.titolo, 90); if (!t) return null;
   const c = o.catalizzatore || {};
-  return { id: cut(o.id, 40) || "o-" + oggi.replace(/-/g, "") + "-" + t.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 16), settore: SETT.includes(o.settore) ? o.settore : "altro", titolo: t, tesi: cut(o.tesi, 400), punteggio: Math.max(0, Math.min(100, Math.round(+o.punteggio || 0))), impatto: [1, 2, 3].includes(+o.impatto) ? +o.impatto : 2, direzione: DIR.includes(o.direzione) ? o.direzione : "su", catalizzatore: { data: /^\d{4}-\d{2}-\d{2}$/.test(c.data || "") ? c.data : "", testo: cut(c.testo, 120) }, strumenti: (Array.isArray(o.strumenti) ? o.strumenti : []).slice(0, 8).map((x) => invSim(x)).filter(Boolean), smentita: cut(o.smentita, 200), tipo: cut(o.tipo, 40), fonti: fonti(o.fonti), data: oggi };
+  return { id: cut(o.id, 40) || "o-" + oggi.replace(/-/g, "") + "-" + t.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 16), settore: SETT.includes(o.settore) ? o.settore : "altro", titolo: t, tesi: cut(o.tesi, 400), punteggio: Math.max(0, Math.min(100, Math.round(+o.punteggio || 0))), impatto: [1, 2, 3].includes(+o.impatto) ? +o.impatto : 2, direzione: DIR.includes(o.direzione) ? o.direzione : "su", catalizzatore: { data: /^\d{4}-\d{2}-\d{2}$/.test(c.data || "") ? c.data : "", testo: cut(c.testo, 120) }, strumenti: (Array.isArray(o.strumenti) ? o.strumenti : []).slice(0, 8).map((x) => invSim(x)).filter(Boolean), smentita: cut(o.smentita, 200), tipo: cut(o.tipo, 40), fonti: fonti(o.fonti), data: oggi,
+    // spiegazione per chi non conosce il tema (dal 17/11/2026)
+    cosa: cut(o.cosa, 900), meccanismo: cut(o.meccanismo, 1200),
+    coinvolte: (Array.isArray(o.coinvolte) ? o.coinvolte : []).slice(0, 6).map((c) => c && { sim: invSim(c.ticker || c.sim) || "", ticker: cut(c.ticker, 20), nome: cut(c.nome, 60), ruolo: cut(c.ruolo, 300) }).filter((c) => c && c.nome),
+    rischi: (Array.isArray(o.rischi) ? o.rischi : []).slice(0, 5).map((r) => r && { titolo: cut(r.titolo, 60), testo: cut(r.testo, 300) }).filter((r) => r && r.testo),
+    guardare: (Array.isArray(o.guardare) ? o.guardare : []).slice(0, 6).map((g) => g && { quando: cut(g.quando, 20), testo: cut(g.testo, 200) }).filter((g) => g && g.testo),
+    glossario: (Array.isArray(o.glossario) ? o.glossario : []).slice(0, 6).map((g) => g && { termine: cut(g.termine, 40), def: cut(g.def, 260) }).filter((g) => g && g.termine && g.def),
+    riferimento: o.riferimento && Number.isFinite(+o.riferimento.valore) && +o.riferimento.valore > 0 ? { valore: +o.riferimento.valore, testo: cut(o.riferimento.testo, 40), sim: invSim(o.riferimento.ticker || o.riferimento.sim) || "" } : null };
 }
 
 /* chiavi di lettura e micro-fatti */

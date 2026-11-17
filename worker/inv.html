@@ -79,6 +79,15 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 .kkv{display:flex;gap:10px;border-top:1px solid var(--line);padding:9px 0;font-size:14px}.kkv span{color:var(--mut);min-width:92px}
 .kf2{display:grid;grid-template-columns:24px minmax(0,1fr);gap:0 10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.45}.kf2 i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:#0B1118;margin-top:1px}.kf2 .m{font-size:12.5px;color:var(--mut);margin-top:3px}
 .ksin p{margin:0 0 8px;font-size:15px;line-height:1.55}
+.lead{font-size:14px;color:var(--mut);margin:14px 0 4px}.lead b{color:var(--fg);font-weight:600}
+.sit{border-top:1px solid var(--line);padding:12px 0 12px 12px;border-left:3px solid;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;min-height:56px;cursor:pointer}.sit.sel{background:linear-gradient(90deg,rgba(134,180,234,.10),transparent)}.sit>b{font-size:15px;line-height:1.35}.sit small{grid-column:1;color:var(--mut);font-size:12.5px}.sit .r{grid-row:1/3;grid-column:2;text-align:right;font-size:12.5px;color:var(--mut);white-space:nowrap}.sit .r b{display:block;font-size:15px;color:var(--fg)}
+.card{border-top:2px solid;margin-top:22px;padding-top:12px}.card h2{margin:4px 0 8px;font:600 21px/1.25 "Source Serif 4",Georgia,serif}.card p{margin:0 0 8px;font-size:15px;line-height:1.55}.card .src{font-size:12.5px;color:var(--mut)}
+.h3{font:11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 6px}
+.az2{border-top:1px solid var(--line);padding:10px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px}.az2 .r{text-align:right;white-space:nowrap;font-size:13px}.az2 small{color:var(--mut);font-size:13px;grid-column:1/-1}
+.risk{border-top:1px solid var(--line);padding:9px 0;display:grid;grid-template-columns:14px minmax(0,1fr);gap:8px;font-size:14.5px}.risk i{width:8px;height:8px;border-radius:50%;background:var(--dn);margin-top:8px}
+.gl{border-top:1px solid var(--line);padding:9px 0;font-size:14px}.gl b{display:block}.gl span{color:var(--mut)}
+.wat{border-top:1px solid var(--line);padding:9px 0;display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;font-size:14px}.wat .d{font:12px ui-monospace,monospace;color:var(--amb);text-transform:uppercase}
+.seg{border-top:1px solid var(--line);border-left:3px solid;padding:10px 0 10px 10px;display:grid;grid-template-columns:minmax(0,1fr) 54px 64px;gap:2px 10px;align-items:center;min-height:56px;cursor:pointer}.seg small{display:block;color:var(--mut);font-size:12.5px;line-height:1.35;margin-top:2px}.seg .sdt{text-align:right;font-size:12.5px;color:var(--mut)}.seg .sv{text-align:right;font-size:13.5px}
 </style></head><body><div class="wrap">
 <a class="back" href="/ig/panel">‹ Pannello</a>
 <div class="top"><h1>Investimenti</h1><span class="mono" id="st">solo tu</span></div>
@@ -101,22 +110,17 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 <div id="ksc"></div>
 </section>
 <section class="v" id="rad">
-<div class="sec"><span class="mono">Quanto ci prende · aziende e fondi</span></div>
-<div id="aff"></div>
+<p class="lead">Una <b>situazione</b> è un fatto di oggi che può muovere il prezzo di un'azienda. Le aziende toccate entrano in <b>«Le aziende che seguo»</b>, in fondo, e restano lì finché la tesi regge.</p>
 <div id="valuta"></div>
-<div class="sec"><span class="mono">Mappa delle opportunità</span><span class="mono" id="oppD"></span></div>
-<div id="map"></div>
-<div class="leg"><span><i style="background:var(--en)"></i>Energia</span><span><i style="background:var(--te)"></i>Tecnologia</span><span><i style="background:var(--di)"></i>Difesa</span><span><i style="background:var(--tr)"></i>Trasporti</span><span>più grande = più impatto</span></div>
-<div class="sec"><span class="mono">Priorità</span><span class="mono">punteggio · catalizzatore</span></div>
+<div class="sec"><span class="mono" id="oppD">Oggi</span><span class="mono">forza della tesi · quando</span></div>
 <div id="rank"></div>
-<div class="det" id="odet"></div>
-<div class="sec"><span class="mono" id="ossT">Aziende e fondi osservati</span><span class="mono">stato · da quando</span></div>
+<div id="odet"></div>
+<div class="sec" style="margin-top:34px"><span class="mono" id="ossT">Le aziende che seguo</span><span class="mono">da · andamento</span></div>
+<p class="lead" style="margin-top:0">Entrano da una situazione o le aggiungi tu, restano finché la tesi regge. Tocca un'azienda per la sua scheda.</p>
 <div id="oss"></div>
 <div class="add"><input id="tk" placeholder="Simbolo: NVDA, RHM.DE, LDO.MI" autocapitalize="characters" autocomplete="off"><button id="tkB" type="button">Aggiungi</button></div>
 <label class="sub2" id="tkSub"><input type="checkbox" id="tkS"> studiala subito (avvia la routine radar)</label>
 <div class="note" id="tkM"></div>
-<div class="sec"><span class="mono">Prossimi 30 giorni</span></div>
-<div id="tl"></div>
 </section>
 <section class="v" id="oggi">
 <a class="back bk" href="#">‹ Bilancio</a>
@@ -126,7 +130,7 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 <div class="det" id="det"></div>
 </section>
 
-<section class="v" id="bil"><div id="bilC"></div>
+<section class="v" id="bil"><div class="sec"><span class="mono">Quanto ci prende · aziende e fondi</span></div><div id="aff"></div><div id="bilC"></div>
 <div class="sec"><span class="mono">Altro</span></div>
 <div class="lk" data-v="oggi"><span>Ipotesi su materie prime e cambi</span><span class="mu">›</span></div>
 <div class="lk" data-v="dia"><span>Diario</span><span class="mu">›</span></div>
@@ -237,26 +241,42 @@ function aff(){const A=D.bilancio.aziende||{},R=[["1 g",A.g1],["7 g",A.g7],["30 
  const M=D.bilancio.materie||{},mq=x=>x&&x.n?Math.round(x.giuste/x.n*100)+"%":"–",E=D.eventi;
  document.getElementById("aff").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg><div class="note" style="margin-top:2px">Ipotesi giuste sulle aziende e i fondi; il numero piccolo è quante ne sono state chiuse. 1 g è informativo.</div><div class="lv2">${[["Segnali della domenica",E],["Materie prime e cambi · 7 g",M.g7],["Aziende e fondi · 7 g",(D.bilancio.aziende||{}).g7]].map(([t,x])=>`<div><span>${t}</span><b>${x&&x.n?Math.round(x.giuste/x.n*100)+"% giuste":"–"}</b><i>${x&&x.n?"su "+x.n+" chiuse":"nessuna chiusa"}</i></div>`).join("")}</div>`;}
 function valuta(){const V=D.osservati.filter(o=>o.stato==="da_valutare");document.getElementById("valuta").innerHTML=V.map(o=>`<div class="vlt" data-sim="${esc(o.sim)}"><span class="mono" style="color:var(--up)">Da valutare oggi</span><div class="t">${esc(o.nome)} · ${esc(o.ticker)}</div><div class="w">${esc(o.perche||"")}</div></div>`).join("");document.querySelectorAll(".vlt").forEach(e=>e.onclick=()=>scheda(e.dataset.sim))}
-function opps(){const O=(D.opp&&D.opp.lista)||[];document.getElementById("oppD").textContent=D.opp&&D.opp.data?"giro del "+dd(D.opp.data):"";
- if(!O.length){["map","rank","odet"].forEach(i=>document.getElementById(i).innerHTML="");document.getElementById("map").innerHTML='<div class="empty">Ancora nessun giro del radar. Le opportunità arrivano con la routine «radar».</div>';return}
- const W=420,H=230,x0=40,x1=W-16,y0=14,y1=H-34,X=g=>g==null||g<0?x1-14:x0+Math.min(g,30)/30*(x1-x0-40),Y=s=>y1-(Math.max(40,s)-40)/60*(y1-y0);
- let g=`<line x1="${x0}" x2="${x1}" y1="${y1}" y2="${y1}" stroke="var(--line)"/><line x1="${x0}" x2="${x0}" y1="${y0}" y2="${y1}" stroke="var(--line)"/>`;
- [0,10,20,30].forEach(d=>g+=`<text x="${X(d)}" y="${y1+16}" text-anchor="middle" font-size="12" fill="var(--mut)">${d?"+"+d+" g":"oggi"}</text>`);
- g+=`<text x="${x1-14}" y="${y1+16}" text-anchor="middle" font-size="12" fill="var(--mut)">?</text><text x="${(x0+x1)/2}" y="${H-2}" text-anchor="middle" font-size="12" fill="var(--mut)">giorni al catalizzatore</text>`;
- [50,75,100].forEach(s=>g+=`<text x="${x0-6}" y="${Y(s)+4}" text-anchor="end" font-size="12" fill="var(--mut)">${s}</text><line x1="${x0}" x2="${x1}" y1="${Y(s)}" y2="${Y(s)}" stroke="var(--line)" stroke-dasharray="2 4"/>`);
- const B=O.map(o=>({r:8+o.impatto*5,x:X(ddiff(o.catalizzatore.data)),y:Y(o.punteggio)}));
- for(let k=0;k<60;k++){let mosso=false;for(let a=0;a<B.length;a++)for(let b=a+1;b<B.length;b++){const p=B[a],q=B[b],dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||.01,m=p.r+q.r+3-d;if(m>0){const ux=d<.1?1:dx/d,uy=d<.1?0:dy/d;p.x-=ux*m/2;p.y-=uy*m/2;q.x+=ux*m/2;q.y+=uy*m/2;mosso=true}}
-  B.forEach(p=>{p.x=Math.max(x0+p.r+1,Math.min(x1-p.r,p.x));p.y=Math.max(y0+p.r,Math.min(y1-p.r-1,p.y))});if(!mosso)break}
- O.forEach((o,i)=>{const {r,x,y}=B[i],c=SC[o.settore];g+=`<g style="cursor:pointer" data-i="${i}" class="mo"><circle cx="${x}" cy="${y}" r="${r}" fill="${c}" fill-opacity="${i===osel?.9:.35}" stroke="${c}" stroke-width="1.5"/><text x="${x}" y="${y+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="${i===osel?"#0B1118":"var(--fg)"}">${i+1}</text></g>`});
- document.getElementById("map").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
- document.getElementById("rank").innerHTML=O.map((o,i)=>{const gg=ddiff(o.catalizzatore.data);return `<div class="rk ${i===osel?"sel":""}" data-i="${i}"><span class="n">${i+1}</span><span class="t">${esc(o.titolo)}<small>${esc(o.strumenti.map(s=>s.toUpperCase()).join(" · ")||o.tipo||"")} ${o.direzione==="su"?'<span class="up">▲</span>':o.direzione==="giu"?'<span class="dn">▼</span>':""}</small></span><span class="sc"><b style="width:${o.punteggio}%;background:${SC[o.settore]}"></b></span><span class="cd">${gg==null||gg<0?'<span class="mu">—</span>':gg+" g"}</span></div>`}).join("");
- const o=O[osel]||O[0];document.getElementById("odet").innerHTML=`<h2 style="margin:0 0 6px;font:600 19px/1.3 'Source Serif 4',Georgia,serif"><span style="color:${SC[o.settore]}">${osel+1}</span> ${esc(o.titolo)}</h2><div style="font-size:14.5px">${esc(o.tesi)}</div><div class="pills">${o.catalizzatore.testo?`<span>Catalizzatore <b>${esc(o.catalizzatore.testo)}${o.catalizzatore.data?" · "+dd(o.catalizzatore.data):""}</b></span>`:""}${o.smentita?`<span>Smentita se <b>${esc(o.smentita)}</b></span>`:""}${o.fonti.length?`<span>Fonti <b>${o.fonti.map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome)}</a>`:esc(f.nome)).join(", ")}</b></span>`:""}</div>`;
- document.querySelectorAll(".mo,.rk").forEach(e=>e.onclick=()=>{osel=+e.dataset.i;opps()});}
-function ossL(){const L=D.osservati.filter(o=>o.stato!=="uscita").sort((a,b)=>({da_valutare:0,in_bilico:1,osservo:2,da_classificare:3}[a.stato]??4)-({da_valutare:0,in_bilico:1,osservo:2,da_classificare:3}[b.stato]??4));
- document.getElementById("ossT").textContent="Aziende e fondi osservati · "+L.length;
- document.getElementById("oss").innerHTML=L.length?L.map(o=>{const t=o.tecnica,p=o.p,da=p.find(x=>x[0]>=o.aggiunta_il)||p[0],ch=p.length&&da?(p.at(-1)[1]/da[1]-1)*100:null,s=ST[o.stato]||ST.osservo,q=o.ci_ha_preso;
-  return `<div class="az" data-sim="${esc(o.sim)}" style="border-left-color:${SC[o.settore]||"var(--al)"}"><div><div class="nm">${esc(o.nome)}<small>${esc(o.ticker)}</small></div><div class="why">${esc(o.perche||(o.stato==="da_classificare"?"aggiunta a mano: la routine la classifica al prossimo giro":""))}</div>${q&&q.n?`<div class="why">ci ha preso <b style="color:var(--fg)">${q.giuste} / ${q.n}</b></div>`:""}</div><div class="st"><span style="color:${s[1]}">${s[0]}</span><br><span class="tec">${t?(t.sopra50?"▲ trend":"▼ trend")+(t.macd_giro!=null&&t.macd_giro<=5?" · MACD "+(t.macd==="su"?"▲":"▼"):""):(o.px&&o.px.errore?"prezzi: "+esc(o.px.errore):"prezzi in arrivo")}</span></div><div class="pc ${ch==null?"mu":ch>=0?"up":"dn"}">${ch==null?"–":(ch>=0?"+":"")+ch.toFixed(1).replace(".",",")+"%"}</div></div>`}).join("")+'<div style="border-top:1px solid var(--line)"></div>':'<div class="empty">Nessuna azienda osservata. Le aggiunge il radar, oppure le aggiungi tu qui sotto.</div>';
- document.querySelectorAll(".az").forEach(e=>e.onclick=()=>scheda(e.dataset.sim));
+const SNL={en:"Energia e materie prime",te:"Tecnologia",di:"Difesa e spazio",tr:"Trasporti e turismo",altro:"Altro"};
+const prezzoA=(p,d)=>{let z=null;for(const x of p||[]){if(x[0]<=d)z=x;else break}return z};
+function opps(){const O=(D.opp&&D.opp.lista)||[];document.getElementById("oppD").textContent=(D.opp&&D.opp.data?(D.opp.data===D.oggi?"Oggi":"Giro del "+dd(D.opp.data)):"Oggi")+" · "+O.length+(O.length===1?" situazione":" situazioni");
+ const rk=document.getElementById("rank"),od=document.getElementById("odet");
+ if(!O.length){rk.innerHTML='<div class="empty">Ancora nessun giro del radar. Le situazioni arrivano con la routine «investimenti», nei giorni feriali.</div>';od.innerHTML="";return}
+ const nomeDi=sim=>{const o=D.osservati.find(x=>x.sim===sim);return o?o.nome:sim.replace(/\..*$/,"").toUpperCase()};
+ rk.innerHTML=O.map((o,i)=>{const gg=ddiff(o.catalizzatore.data),az=(o.coinvolte&&o.coinvolte.length?o.coinvolte.map(c=>c.nome):o.strumenti.map(nomeDi)).join(", ");
+  return `<div class="sit ${i===osel?"sel":""}" data-i="${i}" style="border-left-color:${SC[o.settore]||"var(--al)"}"><b>${esc(o.titolo)}</b><div class="r"><b>${o.punteggio}</b>${gg==null?"data non nota":gg<0?"passato":gg===0?"oggi":"tra "+gg+" g"}</div><small>${SNL[o.settore]||"Altro"}${az?" · "+esc(az):""}</small></div>`}).join("")+'<div style="border-top:1px solid var(--line)"></div>';
+ const o=O[osel]||O[0],c=SC[o.settore]||"var(--al)",F=o.fonti.map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome)}</a>`:esc(f.nome)).join(" · ");
+ // grafico: il prezzo reale della prima azienda con prezzi, con la linea di riferimento (es. il prezzo d'offerta) e il giorno della situazione
+ const sims=(o.riferimento&&o.riferimento.sim?[o.riferimento.sim]:[]).concat((o.coinvolte||[]).map(x=>x.sim),o.strumenti).filter(Boolean),os=sims.map(x=>D.osservati.find(y=>y.sim===x)).find(y=>y&&y.p&&y.p.length>5);
+ let gr="";if(os){const P=os.p.slice(-90),R=o.riferimento,v=P.map(x=>x[1]).concat(R?[R.valore]:[]),mn=Math.min(...v),mx=Math.max(...v),W=420,H=170,x0=8,x1=W-8,y0=24,y1=H-26,X=k=>x0+k/(P.length-1)*(x1-x0),Y=y=>y1-(y-mn)/((mx-mn)||1)*(y1-y0),k0=P.findIndex(x=>x[0]>=o.data);
+  let g=`<polyline points="${P.map((x,k)=>X(k).toFixed(1)+","+Y(x[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--fg)" stroke-width="2"/>`;
+  if(R)g+=`<line x1="${x0}" x2="${x1}" y1="${Y(R.valore)}" y2="${Y(R.valore)}" stroke="var(--up)" stroke-dasharray="5 4"/><text x="${x1}" y="${Y(R.valore)-6}" text-anchor="end" font-size="12" fill="var(--up)">${esc(R.testo||"riferimento")} ${num(R.valore,"az")}</text>`;
+  if(k0>=0)g+=`<line x1="${X(k0)}" x2="${X(k0)}" y1="${y0-10}" y2="${y1}" stroke="var(--mut)" stroke-opacity=".6"/><text x="${X(k0)-4}" y="${H-8}" text-anchor="end" font-size="11.5" fill="var(--mut)">${dd(o.data)}</text>`;
+  g+=`<text x="${x0}" y="${H-8}" font-size="11.5" fill="var(--mut)">${dd(P[0][0])}</text><text x="${x1}" y="${H-8}" text-anchor="end" font-size="11.5" fill="var(--mut)">${esc(os.nome)} · ultimo ${dd(P.at(-1)[0])}</text>`;
+  gr=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="margin:8px 0 2px">${g}</svg>`;
+  if(k0<0)gr+=`<p class="note">I prezzi in archivio si fermano al ${dd(P.at(-1)[0])}, prima di questa situazione.</p>`}
+ const azR=(o.coinvolte||[]).map(x=>{const ob=D.osservati.find(y=>(x.sim&&y.sim===x.sim)||(x.ticker&&String(y.ticker||"").toUpperCase()===String(x.ticker).toUpperCase())),last=ob&&ob.p&&ob.p.length?ob.p.at(-1):null,R=o.riferimento,sc=R&&last&&last[0]>=o.data&&(!R.sim||R.sim===(ob&&ob.sim))?(R.valore-last[1])/R.valore*100:null;
+  return `<div class="az2" ${ob?`data-sim="${esc(ob.sim)}" style="cursor:pointer"`:""}><b>${esc(x.nome)} <span class="mono">${esc(x.ticker||"")}</span></b><div class="r">${last?`<b>${num(last[1],"az")}</b> <span class="mu">${dd(last[0])}</span>`:'<span class="mu">'+(ob?"senza prezzi":"non osservata")+'</span>'}${sc!=null?`<br><span style="color:var(--amb)">${sc>=0?"sconto ":"sopra di "}${Math.abs(sc).toFixed(1).replace(".",",")}%</span>`:""}</div><small>${esc(x.ruolo)}</small></div>`}).join("");
+ const sec=(t,h)=>h?`<div class="h3" style="color:${c}">${t}</div>${h}`:"";
+ od.innerHTML=`<div class="card" style="border-top-color:${c}"><span class="mono" style="color:${c}">Situazione ${osel+1} · ${SNL[o.settore]||"Altro"} · forza della tesi ${o.punteggio}</span><h2>${esc(o.titolo)}</h2>
+ ${sec("Cosa succede",`<p>${esc(o.cosa||o.tesi)}</p>${F?`<p class="src">Fonti: ${F}</p>`:""}`)}
+ ${sec("Il meccanismo",(o.meccanismo?esc(o.meccanismo).split(/\n+/).map(x=>`<p>${x}</p>`).join(""):(o.cosa?`<p>${esc(o.tesi)}</p>`:'<p class="note">La spiegazione del meccanismo arriva dal prossimo giro del radar.</p>'))+gr)}
+ ${sec("Le aziende coinvolte",azR)}
+ ${sec("Cosa può farla saltare",(o.rischi&&o.rischi.length?o.rischi.map(r=>`<div class="risk"><i></i><div>${r.titolo?`<b>${esc(r.titolo)}.</b> `:""}${esc(r.testo)}</div></div>`).join(""):o.smentita?`<div class="risk"><i></i><div>${esc(o.smentita)}</div></div>`:"")+'<div style="border-top:1px solid var(--line)"></div>')}
+ ${sec("Cosa guardare",(o.guardare&&o.guardare.length?o.guardare.map(g=>`<div class="wat"><span class="d">${esc(/^\d{4}-\d{2}-\d{2}$/.test(g.quando)?dd(g.quando):g.quando||"—")}</span><span>${esc(g.testo)}</span></div>`).join(""):o.catalizzatore.testo?`<div class="wat"><span class="d">${o.catalizzatore.data?dd(o.catalizzatore.data):"—"}</span><span>${esc(o.catalizzatore.testo)}</span></div>`:"")+'<div style="border-top:1px solid var(--line)"></div>')}
+ ${o.glossario&&o.glossario.length?sec("Parole difficili",o.glossario.map(g=>`<div class="gl"><b>${esc(g.termine)}</b><span>${esc(g.def)}</span></div>`).join("")+'<div style="border-top:1px solid var(--line)"></div>'):""}
+ </div>`;
+ document.querySelectorAll(".sit").forEach(e=>e.onclick=()=>{osel=+e.dataset.i;opps();document.getElementById("odet").scrollIntoView({behavior:"smooth",block:"start"})});
+ document.querySelectorAll(".az2[data-sim]").forEach(e=>e.onclick=()=>scheda(e.dataset.sim))}
+function ossL(){const L=D.osservati.filter(o=>o.stato!=="uscita").sort((a,b)=>({da_valutare:0,in_bilico:1,osservo:2,da_classificare:3}[a.stato]??4)-({da_valutare:0,in_bilico:1,osservo:2,da_classificare:3}[b.stato]??4)||(b.aggiunta_il||"").localeCompare(a.aggiunta_il||""));
+ document.getElementById("ossT").textContent="Le aziende che seguo · "+L.length;
+ document.getElementById("oss").innerHTML=L.length?L.map(o=>{const p=o.p||[],da=prezzoA(p,o.aggiunta_il),ul=p.at(-1),ch=da&&ul&&ul[0]>da[0]?(ul[1]/da[1]-1)*100:null,s=ST[o.stato]||ST.osservo,q=o.ci_ha_preso;
+  return `<div class="seg" data-sim="${esc(o.sim)}" style="border-left-color:${SC[o.settore]||"var(--al)"}"><div><b>${esc(o.nome)}</b> <span class="mono">${esc(o.ticker)}</span><small>${esc(o.perche||(o.stato==="da_classificare"?"aggiunta a mano: la routine la classifica al prossimo giro":""))}</small>${o.stato!=="osservo"||(q&&q.n)?`<small><span style="color:${s[1]}">${s[0]}</span>${q&&q.n?` · ci ha preso ${q.giuste} / ${q.n}`:""}</small>`:""}</div><span class="sdt">${dd(o.aggiunta_il||D.oggi)}</span><span class="sv ${ch==null?"mu":ch>=0?"up":"dn"}">${ch==null?(p.length?"–":'<span class="mu" style="font-size:12px">senza prezzi</span>'):(ch>=0?"+":"")+ch.toFixed(1).replace(".",",")+"%"}</span></div>`}).join("")+'<div style="border-top:1px solid var(--line)"></div>':'<div class="empty">Nessuna azienda. Le aggiunge il radar, oppure le aggiungi tu qui sotto.</div>';
+ document.querySelectorAll(".seg[data-sim]").forEach(e=>e.onclick=()=>scheda(e.dataset.sim));
  document.getElementById("tkSub").style.display=D.radar_avvio?"flex":"none";
 }
 function tl(){const E=[];(D.opp.lista||[]).forEach((o,i)=>{const g=ddiff(o.catalizzatore.data);if(g!=null&&g>=0&&g<=30)E.push({g,c:SC[o.settore],t:o.catalizzatore.testo||o.titolo,k:String(i+1)})});
@@ -268,7 +288,7 @@ function tl(){const E=[];(D.opp.lista||[]).forEach((o,i)=>{const g=ddiff(o.catal
  E.forEach(e=>g+=`<line x1="${X(e.g)}" x2="${X(e.g)}" y1="${yl(e.l)}" y2="${ya}" stroke="${e.c}" stroke-opacity=".5"/><circle cx="${X(e.g)}" cy="${yl(e.l)}" r="9" fill="${e.c}"/><text x="${X(e.g)}" y="${yl(e.l)+4.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#0B1118">${e.k}</text>`);
  document.getElementById("tl").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`+(E.length?E.map(e=>`<div class="dr" style="display:flex;gap:10px"><span class="mono" style="min-width:52px">${dd(new Date(Date.parse(D.oggi)+e.g*864e5).toISOString().slice(0,10))}</span><span>${esc(e.t)}</span></div>`).join(""):'<div class="note">Nessun catalizzatore con data nei prossimi 30 giorni.</div>');}
 const etich=k=>{const t=String(k).replace(/[_-]+/g," ").replace(/\s+/g," ").trim().replace(/\b(ebitda|ebit|eps|capex|fcf|roe|roi|pe)\b/gi,m=>m.toUpperCase());return t.charAt(0).toUpperCase()+t.slice(1)};
-function scheda(sim){const o=D.osservati.find(x=>x.sim===sim);if(!o)return;const p=o.p,t=o.tecnica,K=o.scheda||{},s=ST[o.stato]||ST.osservo,da=p.find(x=>x[0]>=o.aggiunta_il)||p[0],ch=p.length&&da?(p.at(-1)[1]/da[1]-1)*100:null,q=o.ci_ha_preso;
+function scheda(sim){const o=D.osservati.find(x=>x.sim===sim);if(!o)return;const p=o.p,t=o.tecnica,K=o.scheda||{},s=ST[o.stato]||ST.osservo,da=prezzoA(p,o.aggiunta_il),ch=da&&p.length&&p.at(-1)[0]>da[0]?(p.at(-1)[1]/da[1]-1)*100:null,q=o.ci_ha_preso;
  let chart='<div class="empty">'+(o.px&&o.px.errore?"Prezzi non disponibili: "+esc(o.px.errore):"Prezzi in arrivo: il Worker li scarica entro un quarto d'ora.")+'</div>';
  if(p.length>2){const P=p.slice(-130),N=P.length,W=420,H=250,HM=70,x0=6,x1=W-48,X=i=>x0+i/(N-1)*(x1-x0),v=P.map(x=>x[1]),mn=Math.min(...v)*.98,mx=Math.max(...v)*1.02,Y=y=>10+(1-(y-mn)/(mx-mn))*(H-HM-40);
   const all=o.p.map(x=>x[1]),off=all.length-N,m50=all.map((_,i)=>i<49?null:all.slice(i-49,i+1).reduce((a,b)=>a+b)/50).slice(off);
@@ -345,7 +365,7 @@ function chiave(id){const k=(D.chiavi||[]).find(x=>x.id===id);if(!k)return;const
  document.getElementById("fa2B").onclick=()=>fatto("fa2","fa2M",k.id)}
 function fatto(inp,msg,id){const el=document.getElementById(inp),m=document.getElementById(msg),t=el.value.trim();if(t.length<8){m.textContent="Scrivi il fatto o incolla un link.";return}m.textContent="Salvo…";api({action:"inv_fatto",testo:t,chiave_id:id||""}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}el.value="";m.textContent="Ricevuto: lo verifica la routine «chiavi» al prossimo giro.";if(!id)load()}).catch(e=>m.textContent=e.message)}
 document.getElementById("faB").onclick=()=>fatto("fa","faM","");
-function radar(){aff();valuta();opps();ossL();tl()}
+function radar(){aff();valuta();opps();ossL()}
 document.getElementById("tkB").onclick=()=>{const t=document.getElementById("tk").value.trim();if(!t)return;const m=document.getElementById("tkM");m.textContent="Aggiungo…";api({action:"inv_aggiungi",ticker:t,subito:document.getElementById("tkS").checked}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}m.textContent="Aggiunta "+j.sim+" · prezzi: "+j.prezzi+(j.avvio?" · routine "+j.avvio:" · la classifica il prossimo giro del radar");document.getElementById("tk").value="";load()}).catch(e=>m.textContent=e.message)};
 function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel||!D.strumenti[sel]){const g=giorno(),f=D.ipotesi.find(h=>h.data===g&&D.strumenti[h.strumento]);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia();radar();chiavi()}).catch(e=>{if(e.message!=="401")document.getElementById("kmap").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}
 const vai=v=>{document.querySelectorAll(".v").forEach(x=>x.classList.toggle("on",x.id===v));scrollTo(0,0)};
