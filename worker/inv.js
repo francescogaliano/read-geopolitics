@@ -10,6 +10,7 @@
      bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
+import { pfCalcola, pfValuta, PF_RIF, PF_FX, PF_MAX_PESO } from "./inv-pf.js";
 import { RETRO_VERSIONE, RETRO_FILONI, retroIpotesi, retroValuta, retroRiepilogo } from "./inv-retro.js";
 
 export const INV_STR = {
@@ -24,7 +25,7 @@ export const INV_STR = {
 const BANDA_AZ = [2, 4], BANDA_1G = 0.5; // azioni ed ETF: ±2% a 7 g, ±4% a 30 g; a 1 g metà della banda
 const DIR = ["su", "giu", "zero"], FID = ["bassa", "media", "alta"], ORIG = ["segnale", "calendario", "scenario", "radar", "chiave", "altro"];
 const SETT = ["en", "te", "di", "tr", "altro"], STATI = ["da_classificare", "osservo", "da_valutare", "in_bilico", "uscita"];
-const K_IP = "inv:ipotesi", K_DI = "inv:diario", K_OPP = "inv:opp", K_OSS = "inv:oss", K_RQ = "inv:rq", K_CH = "inv:chiavi", K_FA = "inv:fatti", K_RQF = "inv:rqf";
+const K_IP = "inv:ipotesi", K_DI = "inv:diario", K_OPP = "inv:opp", K_OSS = "inv:oss", K_RQ = "inv:rq", K_CH = "inv:chiavi", K_FA = "inv:fatti", K_RQF = "inv:rqf", K_PF = "inv:pf";
 const ST_CH = ["spunto", "in_prova", "confermata", "scartata"];
 const SIM_RE = /^[a-z0-9^][a-z0-9.\-_]{0,19}$/;
 
@@ -134,9 +135,11 @@ function pxDaRoutine(b) {
 export async function invCron(env, h) {
   const O = ((await h.kvGet(env, K_OSS)) || []).filter((o) => o.stato !== "uscita");
   const Lp = ((await h.kvGet(env, K_IP)) || []).filter((x) => isAz(x.strumento)).map((x) => x.strumento.slice(3));
+  const P = (((await h.kvGet(env, K_PF)) || {}).ops || []).map((o) => o.sim).filter(Boolean);
+  const pf = P.length || (((await h.kvGet(env, K_PF)) || {}).ops || []).length ? [PF_FX, PF_RIF.sim] : [];
   let n = 0;
-  for (const s of [...new Set(O.map((o) => o.sim).concat(Lp))]) {
-    if (n >= 4) break;
+  for (const s of [...new Set(pf.concat(P, O.map((o) => o.sim), Lp))]) {
+    if (n >= 6) break;
     const r = await h.kvGet(env, "inv:px:" + s);
     if (r && r.tentato && Date.now() - Date.parse(r.tentato) < 18 * 3600000) continue;
     await pxAggiorna(h, env, s); n++;
@@ -295,6 +298,38 @@ async function chiaviVista(h, env, L) {
   return { chiavi, sciolti: F.filter((f) => !f.chiave_id).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 60), richieste_fatti: ((await h.kvGet(env, K_RQF)) || []).filter((r) => !r.fatta) };
 }
 
+/* simulatore: legge il registro, scarica i prezzi mancanti (al massimo 6) e ricalcola tutto */
+async function pfDati(h, env, oggi, scarica) {
+  const L = (await h.kvGet(env, K_PF)) || { ops: [] }, ops = L.ops || [];
+  const sims = [...new Set([PF_FX, PF_RIF.sim].concat(ops.map((o) => o.sim).filter(Boolean)))], S = {};
+  let k = 0;
+  for (const s of sims) { let r = await pxGet(h, env, s); if ((!r || !r.p.length) && scarica && k < 6) { r = await pxAggiorna(h, env, s); k++; } S[s] = r && r.p ? r.p : []; }
+  const R = pfCalcola(ops, (s) => S[s] || [], S[PF_FX], oggi);
+  return { ...R, ops: ops.map((o) => ({ ...o, esito: R.esiti[o.id] || { stato: "in_attesa" } })), prezzi: S };
+}
+/* ordini: dal radar (conto «modello») o dal pannello (conto «mio»); si eseguono alla prima chiusura successiva */
+async function pfOrdini(h, env, arr, conto, oggi) {
+  const L = (await h.kvGet(env, K_PF)) || { ops: [] }; L.ops ||= [];
+  if (!L.ops.some((o) => o.conto === conto && o.tipo === "versa")) return [{ ok: false, errore: conto === "modello" ? "simulatore non ancora avviato da Francesco: nessun ordine" : "prima versa dei soldi virtuali nel tuo conto" }];
+  const D = await pfDati(h, env, oggi, false), V = (D.conti[conto] || {}).valore || 0, out = [];
+  for (const x of (arr || []).slice(0, 12)) {
+    const tipo = x && x.tipo; if (!["compra", "vendi"].includes(tipo)) { out.push({ ok: false, errore: "tipo: compra | vendi" }); continue; }
+    const sim = invSim(x.ticker || x.sim); if (!sim) { out.push({ ok: false, errore: "simbolo non valido: " + cut(x.ticker, 20) }); continue; }
+    if (!pfValuta(sim)) { out.push({ ok: false, errore: "valuta non supportata per " + sim + " (per ora euro e dollari)" }); continue; }
+    const motivo = cut(x.motivo, 300); if (conto === "modello" && motivo.length < 10) { out.push({ ok: false, errore: "motivo mancante per " + sim }); continue; }
+    if (L.ops.some((o) => o.conto === conto && o.sim === sim && !(D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa") && o.tipo === tipo)) { out.push({ ok: false, errore: "c'è già un ordine in attesa su " + sim }); continue; }
+    let eur = null, quota = null;
+    if (tipo === "compra") { eur = x.peso != null ? V * Math.min(PF_MAX_PESO, Math.max(0, +x.peso)) / 100 : +x.eur; if (!(eur >= 1)) { out.push({ ok: false, errore: "importo (eur) o peso (%) mancante per " + sim }); continue; } eur = +eur.toFixed(2); }
+    else { quota = x.quota == null ? 1 : Math.max(0.05, Math.min(1, +x.quota)); if (!((D.conti[conto] || {}).posizioni || []).some((p) => p.sim === sim) && !L.ops.some((o) => o.conto === conto && o.sim === sim && o.tipo === "compra")) { out.push({ ok: false, errore: sim + " non è in portafoglio" }); continue; } }
+    if (!(await pxGet(h, env, sim))) await pxAggiorna(h, env, sim);
+    const o = { id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conto, tipo, data: oggi, sim, eur, quota, motivo, origine: x.origine && typeof x.origine === "object" ? { tipo: cut(x.origine.tipo, 20), id: cut(x.origine.id, 80) } : null, at: new Date().toISOString() };
+    L.ops.push(o); out.push({ ok: true, id: o.id, sim, tipo, eur, quota });
+  }
+  await h.kvSet(env, K_PF, L);
+  return out;
+}
+const pfRiassunto = (D, conto) => { const c = D.conti[conto]; if (!c) return { avviato: false }; return { avviato: true, valore: c.valore, versato: c.versato, cassa: c.cassa, peso_cassa: c.peso_cassa, rend: c.rend, posizioni: c.posizioni.map((p) => ({ sim: p.sim, peso: p.peso, resa: p.resa, dal: p.dal, origine: (D.ops.find((o) => o.id === p.ops[p.ops.length - 1]) || {}).origine || null })), in_attesa: D.ops.filter((o) => o.conto === conto && o.esito.stato === "in_attesa").map((o) => ({ id: o.id, tipo: o.tipo, sim: o.sim, data: o.data })), regole: "ordini: {tipo: compra|vendi, ticker, peso (% del portafoglio, max " + PF_MAX_PESO + ") oppure eur, quota (0-1, per vendere una parte), motivo, origine {tipo, id}}; eseguiti alla prima chiusura successiva, costi 0,15%" }; };
+
 /* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi, /v1/inv/chiavi */
 export async function invRoute(request, env, p, method, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
@@ -306,7 +341,7 @@ export async function invRoute(request, env, p, method, h) {
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo })), richieste_fatti: v.richieste_fatti }; })()),
+    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo })), richieste_fatti: v.richieste_fatti }; })()),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
   if (p === "/v1/inv/ipotesi" && method === "POST") {
@@ -342,8 +377,14 @@ export async function invRoute(request, env, p, method, h) {
       for (const o of M.values()) { if (k >= 6 || o.stato === "uscita") continue; if (await pxGet(h, env, o.sim)) continue; const r = await pxAggiorna(h, env, o.sim); res.prezzi[o.sim] = r.errore || (r.p || []).length + " giorni"; k++; }
     }
     if (Array.isArray(b.richieste_fatte)) { const R = (await h.kvGet(env, K_RQ)) || []; const f = new Set(b.richieste_fatte.map(String)); R.forEach((r) => { if (f.has(r.id)) r.fatta = oggi; }); await h.kvSet(env, K_RQ, R.slice(-200)); }
+    if (Array.isArray(b.portafoglio)) res.portafoglio = await pfOrdini(h, env, b.portafoglio, "modello", oggi);
     if (Array.isArray(b.ipotesi)) res.ipotesi = await registraIpotesi(h, env, b.ipotesi, await serieTutte(h, env, ((await h.kvGet(env, K_OSS)) || []).map((o) => o.sim)), oggi);
     return h.json({ ok: true, ...res });
+  }
+  if (p === "/v1/inv/pf" && method === "POST") { // ordini del portafoglio «modello»: { ordini: [ … ] }
+    const b = await request.json().catch(() => null); const arr = b && (b.ordini || b.portafoglio);
+    if (!Array.isArray(arr)) return h.fail(400, "json", "atteso { ordini: [ … ] }");
+    return h.json({ ok: true, esiti: await pfOrdini(h, env, arr, "modello", oggi) });
   }
   if (p === "/v1/inv/chiavi" && method === "POST") { // la routine «chiavi»: { chiavi, fatti, richieste_fatte, ipotesi }
     const b = await request.json().catch(() => null); if (!b) return h.fail(400, "json");
@@ -395,7 +436,22 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)) };
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); return { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15 }; })() };
+  }
+  if (b.action === "inv_pf_versa") { // soldi virtuali: avvio o ricarica, nel conto del modello o nel mio
+    const conto = b.conto === "mio" ? "mio" : "modello", eur = Math.round(+b.eur * 100) / 100;
+    if (!(eur >= 100 && eur <= 10000000)) return { ok: false, error: "importo tra 100 € e 10 milioni" };
+    const L = (await h.kvGet(env, K_PF)) || { ops: [] }; L.ops ||= [];
+    L.ops.push({ id: "p-" + Date.now().toString(36) + "v", conto, tipo: "versa", data: h.romeToday(), eur, at: new Date().toISOString() });
+    await h.kvSet(env, K_PF, L);
+    for (const s of [PF_FX, PF_RIF.sim]) if (!(await pxGet(h, env, s))) await pxAggiorna(h, env, s);
+    return { ok: true };
+  }
+  if (b.action === "inv_pf_ordine") { const r = (await pfOrdini(h, env, [{ tipo: b.tipo, ticker: b.ticker, eur: b.eur, quota: b.quota, motivo: b.motivo }], "mio", h.romeToday()))[0]; return r.ok ? { ok: true, ...r } : { ok: false, error: r.errore }; }
+  if (b.action === "inv_pf_annulla") { // solo ordini miei ancora in attesa
+    const L = (await h.kvGet(env, K_PF)) || { ops: [] }, D = await pfDati(h, env, h.romeToday(), false), o = (L.ops || []).find((x) => x.id === b.id);
+    if (!o || o.conto !== "mio" || o.tipo === "versa" || (D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa")) return { ok: false, error: "ordine non annullabile" };
+    L.ops = L.ops.filter((x) => x.id !== b.id); await h.kvSet(env, K_PF, L); return { ok: true };
   }
   if (b.action === "inv_fatto") { // un fatto o un link scritto a mano: lo verifica e lo colloca la routine «chiavi»
     const t = cut(b.testo, 600); if (t.length < 8) return { ok: false, error: "scrivi il fatto o incolla un link" };
