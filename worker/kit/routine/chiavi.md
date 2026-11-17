@@ -24,6 +24,7 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pag
    - se riguarda una chiave esistente, mettilo lì con verso 1 (a favore) o -1 (contro);
    - altrimenti lascialo sciolto (senza chiave_id), con il settore.
    Per ogni chiave attiva cerca APPOSTA almeno un fatto contro: una chiave con soli fatti a favore è sospetta. Non inserire due volte lo stesso fatto (controlla quelli già presenti).
+   AGGIORNAMENTI: se un fatto nuovo è il seguito della stessa vicenda di un fatto già presente (una proroga, una cifra rivista, un secondo annuncio sulla stessa decisione), non è un fatto indipendente: inseriscilo con "aggiorna": id del fatto vecchio. Il fatto vecchio resta visibile sotto il nuovo ma non conta più nel saldo. Controlla anche i fatti già presenti (sciolti o in una chiave): se due parlano della stessa vicenda, collega il più recente al più vecchio rinviando il più recente con il suo id e "aggiorna". Due fatti sulla stessa vicenda non bastano mai, da soli, per creare una chiave.
 
 5. CHIAVI.
    - Nuova chiave solo se almeno 3 fatti INDIPENDENTI (fonti e attori diversi, non la stessa notizia ripresa) vanno nella stessa direzione. Dalle: nome breve, tesi in una frase, settore (en = energia e materie prime, metalli compresi; te = tecnologia; di = difesa e industria; tr = trasporti e turismo; altro), catena di 2-3 anelli causa → effetto (massimo 40 caratteri ciascuno, frasi complete e semplici), «manca» = l'anello che ancora non c'è, massimo 40 caratteri (es. «Chi ci guadagna?»), smentita (cosa la farebbe cadere), prova_se (cosa servirebbe per metterla in prova). Poi assegna alla chiave i fatti sciolti che la sostengono, reinviandoli con lo stesso id e il chiave_id.
@@ -35,7 +36,7 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pag
 
 6. SALVA in un solo invio: scrivi /tmp/chiavi.json come
    {"chiavi":[{id, nome, tesi, sintesi, settore, stato, catena:[…], manca, smentita, prova_se, strumenti:[…], nota}],
-    "fatti":[{id (solo per aggiornare un fatto esistente), data:"AAAA-MM-GG", testo (una riga, max 200 caratteri, neutra), verso:1|-1, chiave_id, settore, fonti:[{nome,url}]}],
+    "fatti":[{id (solo per aggiornare un fatto esistente), aggiorna (id del fatto precedente sulla stessa vicenda, se c'è), data:"AAAA-MM-GG", testo (una riga, max 200 caratteri, neutra), verso:1|-1, chiave_id, settore, fonti:[{nome,url}]}],
     "richieste_fatte":[id], "ipotesi":[…]}
    e lancia `python3 /tmp/rgdb.py inv-chiavi /tmp/chiavi.json`. Leggi «errori» nella risposta: correggi e rilancia solo le voci rifiutate.
 
