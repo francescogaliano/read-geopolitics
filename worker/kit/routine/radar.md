@@ -35,12 +35,17 @@ SE IL MESSAGGIO DI AVVIO DICE «Nuova azienda dal pannello»: fai solo i passi 1
    - guardare: [{quando, testo}] le prossime tappe; quando = data AAAA-MM-GG se nota, altrimenti «presto», «settimane», «mesi»;
    - glossario: [{termine, def}] le parole tecniche usate (OPA, golden power, TTF, guida, ecc.), una frase ciascuna;
    - riferimento (solo se esiste un prezzo di riferimento chiaro, es. il prezzo di un'offerta): {valore, testo, ticker}.
-   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, fiducia, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}. Rispetta la regola E1 (passo 5-bis): prima guarda rsi e var1m del titolo. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
+   Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}, e SEMPRE:
+   - fonti: [{nome, url}] le fonti lette oggi che sostengono il fatto (testate diverse, non la stessa notizia ripresa);
+   - evento: {data: AAAA-MM-GG, testo} il prossimo fatto datato che deciderà la tesi, se c'è;
+   - voce: true se il fatto è solo un'indiscrezione non confermata da fonte primaria.
+   REGOLA C1 (confidenza calcolata, la applica il Worker): la fiducia non la decidi tu. Il Worker la calcola dai punti: fonti indipendenti 3+ = 2 punti, 2 = 1; evento datato entro l'orizzonte = 1; tecnica concorde = 1, discorde = -1; voce = -2. 3+ punti = alta, 1-2 = media, 0 o meno = bassa. Puoi scrivere la tua fiducia nel campo fiducia: resta come confronto. La risposta del Worker ti dice la fiducia calcolata: usala per il portafoglio (A1 = media, peso 5; A2 = alta, peso 8; bassa = niente acquisto; il Worker corregge da solo regola e peso).
+   Rispetta la regola E1 (passo 5-bis): prima guarda rsi e var1m del titolo. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
 
 5-bis. PORTAFOGLIO DEL MODELLO (soldi virtuali, regole fisse e numerate: ogni ordine dice quale regola applica, così il Bilancio potrà misurare quali regole funzionano). In inv-contesto, «portafoglio» ha valore, liquidità, posizioni (peso, resa, da quando, origine) e ordini in attesa. Se «avviato» è false, Francesco non l'ha ancora avviato: niente ordini.
    ACQUISTI (tipo «compra», ticker, peso in % del portafoglio, regola, motivo in una frase, origine {tipo: "radar"|"chiave", id}):
-   - A1: hai registrato oggi un'ipotesi «su» su quel titolo con fiducia media → peso 5.
-   - A2: come A1 ma fiducia alta → peso 8.
+   - A1: hai registrato oggi un'ipotesi «su» su quel titolo e la fiducia calcolata dal Worker è media → peso 5.
+   - A2: come A1 ma fiducia calcolata alta → peso 8.
    - A3: chiave «in prova» con quel titolo tra gli strumenti e fatti a favore in crescita → peso 5.
    - A4: situazione con un prezzo di riferimento chiaro (es. un'offerta di acquisto) e sconto di almeno il 3% sull'ultimo prezzo → peso 6.
    Fiducia bassa: niente acquisto. Mai oltre il 10% su un titolo (somma con quanto già in portafoglio), mai più di 15 titoli, mai se c'è già un ordine in attesa sullo stesso titolo.
