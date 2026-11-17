@@ -72,18 +72,33 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 .prose h3{font:600 16px/1.3 Inter,system-ui;margin:18px 0 6px}
 .lv2>div{display:flex;gap:10px;align-items:baseline;border-top:1px solid var(--line);padding:8px 0;font-size:14px}.lv2>div span{flex:1;color:var(--mut)}.lv2>div b{font-variant-numeric:tabular-nums;white-space:nowrap}.lv2>div i{font-style:normal;color:var(--mut);font-size:12.5px;min-width:92px;text-align:right;white-space:nowrap}
 .rr{display:grid;grid-template-columns:minmax(0,1fr) 46px 66px 98px;gap:8px;align-items:baseline;border-top:1px solid var(--line);padding:8px 0;font-size:14px}.rr span{color:var(--fg)}.rr small{display:block;color:var(--mut);font-size:12px}.rr b{text-align:right;font-variant-numeric:tabular-nums}.rr i{font-style:normal;color:var(--mut);font-size:12.5px;text-align:right;white-space:nowrap}.rr.h{border-top:0;padding:2px 0}.rr.h b,.rr.h i{font:500 10.5px/1.2 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.lk{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);min-height:48px;cursor:pointer;font-size:15px}
+.kr{border-top:1px solid var(--line);display:grid;grid-template-columns:22px minmax(0,1fr) 76px 84px;gap:10px;align-items:center;padding:10px 0;min-height:52px;cursor:pointer}.kr .n{font:600 15px 'Source Serif 4',Georgia,serif;text-align:center}.kr .nm{font-weight:600;font-size:14.5px;line-height:1.3}.kr small{display:block;color:var(--mut);font-size:12px;font-weight:400}.kr .st{text-align:right;font-size:12.5px;white-space:nowrap}.kr.off{opacity:.55}
+.kbig{display:flex;gap:18px;align-items:baseline;margin:14px 0 2px;flex-wrap:wrap}.kbig b{font:600 30px/1 'Source Serif 4',Georgia,serif}.kbig span{font-size:13px;color:var(--mut)}
+.kf{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:0 8px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;align-items:baseline}.kf i{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:#0B1118}.kf .m{font-size:12px;color:var(--mut);white-space:nowrap;text-align:right}
+.kkv{display:flex;gap:10px;border-top:1px solid var(--line);padding:9px 0;font-size:14px}.kkv span{color:var(--mut);min-width:92px}
 </style></head><body><div class="wrap">
 <a class="back" href="/ig/panel">‹ Pannello</a>
 <div class="top"><h1>Investimenti</h1><span class="mono" id="st">solo tu</span></div>
 <div class="tabs" role="tablist">
-<button role="tab" aria-selected="true" data-v="rad">Radar</button>
-<button role="tab" aria-selected="false" data-v="oggi">Ipotesi</button>
+<button role="tab" aria-selected="true" data-v="chi">Chiavi</button>
+<button role="tab" aria-selected="false" data-v="rad">Radar</button>
 <button role="tab" aria-selected="false" data-v="bil">Bilancio</button>
-<button role="tab" aria-selected="false" data-v="dia">Diario</button>
-<button role="tab" aria-selected="false" data-v="met">Metodo</button>
 </div>
 
-<section class="v on" id="rad">
+<section class="v on" id="chi">
+<div class="sec"><span class="mono">Mappa delle chiavi</span><span class="mono" id="chiN"></span></div>
+<div id="kmap"></div>
+<div class="leg" id="kleg"></div>
+<div id="klist"></div>
+<div class="sec"><span class="mono">Aggiungi un fatto</span></div>
+<div class="add"><input id="fa" placeholder="Incolla un link o scrivi un fatto" autocomplete="off"><button id="faB" type="button">Aggiungi</button></div>
+<div class="note" id="faM">La routine «chiavi» verifica la fonte, lo scrive in forma neutra e lo colloca.</div>
+<div id="krq"></div>
+<div class="sec"><span class="mono">Fatti sciolti · non ancora in una chiave</span><span class="mono" id="scN"></span></div>
+<div id="ksc"></div>
+</section>
+<section class="v" id="rad">
 <div class="sec"><span class="mono">Quanto ci prende · aziende e fondi</span></div>
 <div id="aff"></div>
 <div id="valuta"></div>
@@ -102,15 +117,22 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 <div id="tl"></div>
 </section>
 <section class="v" id="oggi">
+<a class="back bk" href="#">‹ Bilancio</a>
 <div class="sec"><span class="mono" id="oggiT">Dove spinge la geopolitica</span></div>
 <div id="baro"></div>
 <div class="legend"><span class="mono dn">◀ giù</span><span class="mono">pallino = fiducia</span><span class="mono up">su ▶</span></div>
 <div class="det" id="det"></div>
 </section>
 
-<section class="v" id="bil"><div id="bilC"></div></section>
+<section class="v" id="bil"><div id="bilC"></div>
+<div class="sec"><span class="mono">Altro</span></div>
+<div class="lk" data-v="oggi"><span>Ipotesi su materie prime e cambi</span><span class="mu">›</span></div>
+<div class="lk" data-v="dia"><span>Diario</span><span class="mu">›</span></div>
+<div class="lk" data-v="met" style="border-bottom:1px solid var(--line)"><span>Come funziona</span><span class="mu">›</span></div>
+</section>
 
 <section class="v" id="dia">
+<a class="back bk" href="#">‹ Bilancio</a>
 <div class="sec"><span class="mono">Nuova nota</span></div>
 <textarea id="nota" placeholder="Cosa hai deciso e perché. Es.: non compro nulla sul Brent, il movimento è già avvenuto ieri."></textarea>
 <button class="btn" id="salva" type="button">Salva nel diario</button>
@@ -119,6 +141,9 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 </section>
 
 <section class="v prose" id="met">
+<a class="back bk" href="#">‹ Bilancio</a>
+<h3>Le chiavi di lettura</h3>
+<p>Una chiave di lettura è uno schema che emerge da più fatti piccoli e verificati, in qualunque settore. Ogni fatto ha data e fonte ed è segnato a favore o contro; la routine cerca apposta anche quelli contro. Una chiave resta «spunto» finché manca un anello misurabile (chi ci guadagna o chi ci perde); quando c'è, passa «in prova» con ipotesi a 30 o 90 giorni giudicate dai prezzi. Il saldo dei fatti dice quanto regge, non quanto rende.</p>
 <p>Lo strumento risponde a una domanda: quello che Read Geopolitics vede ogni mattina si ritrova poi nei prezzi? Non compra e non vende nulla, e non è un consiglio d'investimento.</p>
 <h3>Il radar</h3>
 <p>Ogni mattina la routine «radar» esplora energia, tecnologia, difesa, trasporti e turismo oltre alla geopolitica: bandi e appalti, regole, acquisizioni, contratti, ristrutturazioni, calendari delle società. Sceglie da sola le opportunità con più priorità, aggiorna l'elenco di aziende e fondi osservati e ne prepara la scheda. Le aziende aggiunte a mano entrano «da classificare» e le studia al primo giro. «Da valutare oggi» compare solo quando tesi forte, catalizzatore vicino e indicatori tecnici vanno nella stessa direzione.</p>
@@ -269,10 +294,57 @@ function scheda(sim){const o=D.osservati.find(x=>x.sim===sim);if(!o)return;const
  ${cat?`<div class="sec"><span class="mono">Prossimi catalizzatori</span></div>${cat}`:""}
  ${fo?`<p class="note">Fonti: ${fo}${K.aggiornata_il?" · scheda del "+dd(K.aggiornata_il.slice(0,10)):""}</p>`:""}`;
  const sh=document.getElementById("sh");sh.classList.add("on");document.getElementById("shx").onclick=()=>sh.classList.remove("on");sh.onclick=e=>{if(e.target===sh)sh.classList.remove("on")};}
+const SN={en:"Energia",te:"Tecnologia",di:"Difesa",tr:"Trasporti",altro:"Altro"},KST={spunto:["spunto","var(--mut)"],in_prova:["in prova","var(--amb)"],confermata:["confermata","var(--up)"],scartata:["scartata","var(--mut)"]};
+const ksaldo=k=>{let s=0;return k.fatti.map(f=>s+=f.verso)};
+function chiavi(){const K=(D.chiavi||[]).slice().sort((a,b)=>(a.stato==="scartata")-(b.stato==="scartata")||(b.favore+b.contro)-(a.favore+a.contro));
+ document.getElementById("chiN").textContent=K.length?K.length+" chiavi":"";
+ const mapEl=document.getElementById("kmap"),lst=document.getElementById("klist");
+ if(!K.length){mapEl.innerHTML='<div class="empty">Ancora nessuna chiave di lettura. Nascono quando la routine «chiavi» trova tre o più fatti indipendenti che vanno nella stessa direzione; puoi anche incollare qui sotto un fatto o un link.</div>';lst.innerHTML="";document.getElementById("kleg").innerHTML=""}
+ else{const W=420,H=210,x0=34,x1=W-10,y0=10,y1=H-30,mx=Math.max(12,...K.map(k=>k.favore+k.contro)),X=n=>x0+n/mx*(x1-x0),Y=s=>y1-(s+1)/2*(y1-y0),xs=X(Math.max(5,mx*.4));
+  let g=`<rect x="${xs}" y="${y0}" width="${x1-xs}" height="${Y(.34)-y0}" fill="rgba(95,203,140,.07)"/><rect x="${xs}" y="${Y(-.34)}" width="${x1-xs}" height="${y1-Y(-.34)}" fill="rgba(239,111,98,.07)"/><text x="${x1-6}" y="${y0+16}" text-anchor="end" font-size="12" fill="var(--up)">da mettere in prova</text><text x="${x1-6}" y="${y1-8}" text-anchor="end" font-size="12" fill="var(--dn)">da scartare</text><text x="${x0+8}" y="${y0+16}" font-size="12" fill="var(--mut)">spunti</text><text x="${x0+8}" y="${y0+31}" font-size="11" fill="var(--mut)">pochi fatti o in equilibrio</text><line x1="${x0}" x2="${x1}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="3 4"/><line x1="${x0}" x2="${x1}" y1="${y1}" y2="${y1}" stroke="var(--line)"/><line x1="${x0}" x2="${x0}" y1="${y0}" y2="${y1}" stroke="var(--line)"/><text x="${x0-6}" y="${y0+10}" text-anchor="end" font-size="11" fill="var(--up)">+</text><text x="${x0-6}" y="${y1-2}" text-anchor="end" font-size="11" fill="var(--dn)">−</text><text x="${(x0+x1)/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="var(--mut)">quanti fatti raccolti →</text>`;
+  const B=K.map(k=>{const t=k.favore+k.contro;return{x:X(t),y:Y(t?(k.favore-k.contro)/t:0),r:14}});
+  for(let q=0;q<60;q++){let m=false;for(let a=0;a<B.length;a++)for(let b=a+1;b<B.length;b++){const p=B[a],o=B[b],dx=o.x-p.x,dy=o.y-p.y,d=Math.hypot(dx,dy)||.01,ov=p.r+o.r+3-d;if(ov>0){const ux=d<.1?1:dx/d,uy=d<.1?0:dy/d;p.x-=ux*ov/2;p.y-=uy*ov/2;o.x+=ux*ov/2;o.y+=uy*ov/2;m=true}}B.forEach(p=>{p.x=Math.max(x0+p.r+1,Math.min(x1-p.r,p.x));p.y=Math.max(y0+p.r,Math.min(y1-p.r-1,p.y))});if(!m)break}
+  K.forEach((k,i)=>{const c=SC[k.settore]||"var(--al)",off=k.stato==="scartata";g+=`<g class="kb" data-id="${esc(k.id)}" style="cursor:pointer" opacity="${off?.4:1}"><circle cx="${B[i].x}" cy="${B[i].y}" r="14" fill="${c}" fill-opacity=".9" stroke="${k.stato==="in_prova"?"var(--fg)":c}" stroke-width="${k.stato==="in_prova"?2:1.5}"/><text x="${B[i].x}" y="${B[i].y+5}" text-anchor="middle" font-size="13" font-weight="700" fill="#0B1118">${i+1}</text></g>`});
+  mapEl.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+  document.getElementById("kleg").innerHTML=[...new Set(K.map(k=>k.settore))].map(s=>`<span><i style="background:${SC[s]||"var(--al)"}"></i>${SN[s]||"Altro"}</span>`).join("")+"<span>bordo chiaro = in prova</span>";
+  lst.innerHTML=K.map((k,i)=>{const b=[0].concat(ksaldo(k)),mn=Math.min(...b),mxx=Math.max(...b),Xs=j=>2+j/Math.max(1,b.length-1)*72,Ys=v=>4+(1-(v-mn)/((mxx-mn)||1))*16,last=b.at(-1),st=KST[k.stato]||KST.spunto,ap=k.chiamate.filter(c=>c.v.stato==="aperta").length;
+   return `<div class="kr ${k.stato==="scartata"?"off":""}" data-id="${esc(k.id)}"><span class="n" style="color:${SC[k.settore]||"var(--al)"}">${i+1}</span><span class="nm">${esc(k.nome)}<small>${SN[k.settore]||"Altro"}${k.fatti.length?" · ultimo fatto "+dd(k.fatti.at(-1).data):""}</small></span><svg viewBox="0 0 76 24" width="76" height="24"><line x1="2" x2="74" y1="${Ys(0)}" y2="${Ys(0)}" stroke="var(--line)"/>${b.length>1?`<polyline points="${b.map((v,j)=>Xs(j)+","+Ys(v)).join(" ")}" fill="none" stroke="${last>0?"var(--up)":last<0?"var(--dn)":"var(--fg)"}" stroke-width="1.8"/>`:""}</svg><span class="st" style="color:${st[1]}">${st[0]}${ap?" · "+ap+" ip.":""}<small><b class="up" style="font-weight:500">${k.favore}</b> · <b class="dn" style="font-weight:500">${k.contro}</b></small></span></div>`}).join("")+'<div style="border-top:1px solid var(--line)"></div>';
+  document.querySelectorAll(".kb,.kr").forEach(e=>e.onclick=()=>chiave(e.dataset.id))}
+ const R=D.richieste_fatti||[];document.getElementById("krq").innerHTML=R.map(r=>`<div class="kf"><i style="background:var(--mut)">…</i><span>${esc(r.testo)}</span><span class="m">da verificare</span></div>`).join("");
+ const S=D.sciolti||[];document.getElementById("scN").textContent=S.length||"";
+ document.getElementById("ksc").innerHTML=S.length?S.map(f=>`<div class="kf"><i style="background:${SC[f.settore]||"var(--al)"}"></i><span>${esc(f.testo)}</span><span class="m">${dd(f.data)}${f.fonti[0]?` · <a href="${esc(f.fonti[0].url)}" target="_blank" rel="noopener">${esc(f.fonti[0].nome)}</a>`:""}</span></div>`).join("")+'<div style="border-top:1px solid var(--line)"></div>':'<div class="note">Nessuno. Qui finiscono i fatti verificati che non appartengono ancora a una chiave.</div>'}
+function chiave(id){const k=(D.chiavi||[]).find(x=>x.id===id);if(!k)return;const c=SC[k.settore]||"var(--al)",st=KST[k.stato]||KST.spunto,F=k.fatti,saldo=k.favore-k.contro;
+ // catena: gli anelli noti e quello che manca (tratteggiato)
+ const N=k.catena.map(t=>[t,0]).concat(k.manca?[[k.manca,1]]:[]);let chain="";
+ if(N.length>1){const W=420,xs=N.map((_,i)=>50+i*(W-100)/(N.length-1));let g="";N.forEach((n,i)=>{const m=n[1],cc=m?"var(--amb)":c,w=n[0].split(" "),h=Math.ceil(w.length/2),l1=w.slice(0,h).join(" "),l2=w.slice(h).join(" ");g+=`<circle cx="${xs[i]}" cy="26" r="20" fill="${m?"none":c}" fill-opacity=".16" stroke="${cc}" stroke-width="1.5" ${m?'stroke-dasharray="4 4"':""}/><text x="${xs[i]}" y="32" text-anchor="middle" font-size="17" font-weight="600" fill="${cc}">${m?"?":i+1}</text><text x="${xs[i]}" y="64" text-anchor="middle" font-size="12" fill="var(--fg)">${esc(l1)}</text><text x="${xs[i]}" y="79" text-anchor="middle" font-size="12" fill="var(--fg)">${esc(l2)}</text>`;if(i<N.length-1){const nm=N[i+1][1],lc=nm?"var(--amb)":c;g+=`<line x1="${xs[i]+26}" x2="${xs[i+1]-30}" y1="26" y2="26" stroke="${lc}" stroke-width="1.5" ${nm?'stroke-dasharray="4 4"':""}/><path d="M${xs[i+1]-30} 21l8 5-8 5z" fill="${lc}"/>`}});
+  chain=`<svg viewBox="0 0 ${W} 86" width="100%" style="margin-top:10px">${g}</svg>${k.manca?'<p class="note" style="margin-top:0">L\'anello tratteggiato è quello che manca.</p>':""}`}
+ // linea del tempo: sopra a favore, sotto contro, saldo in chiaro
+ let tlh='<div class="note">Ancora nessun fatto.</div>';
+ if(F.length){const W=420,H=190,x0=14,x1=W-14,ym=96,t0=Date.parse(F[0].data)-5*864e5,t1=Math.max(Date.parse(D.oggi),t0+30*864e5),X=d=>x0+(Date.parse(d)-t0)/(t1-t0)*(x1-x0),sl=Math.max(1,...ksaldo(k).map(Math.abs)),u=Math.min(14,34/sl);
+  let g=`<line x1="${x0}" x2="${x1}" y1="${ym}" y2="${ym}" stroke="var(--mut)"/>`;const d0=new Date(t0);d0.setUTCDate(1);d0.setUTCMonth(d0.getUTCMonth()+1);const nm=Math.round((t1-t0)/(30*864e5)),step=Math.max(1,Math.ceil(nm/5));
+  for(let d=d0,i=0;d.getTime()<t1;d.setUTCMonth(d.getUTCMonth()+1),i++){const iso=d.toISOString().slice(0,10);g+=`<line x1="${X(iso)}" x2="${X(iso)}" y1="${ym-4}" y2="${ym+4}" stroke="var(--mut)"/>`;if(i%step===0)g+=`<text x="${X(iso)+3}" y="${H-4}" font-size="11.5" fill="var(--mut)">${MESI[d.getUTCMonth()]}</text>`}
+  let s=0;const pts=[[x0,ym]],lv={up:[],dn:[]};
+  F.forEach((f,i)=>{s+=f.verso;const x=X(f.data),side=f.verso>0?"up":"dn",L=lv[side];let l=0;while(L[l]!=null&&x-L[l]<22)l++;L[l]=x;l=Math.min(l,2);const y=ym-f.verso*(42+l*22),cc=f.verso>0?"var(--up)":"var(--dn)";
+   g+=`<line x1="${x}" x2="${x}" y1="${ym}" y2="${y}" stroke="${cc}" stroke-opacity=".6"/><circle cx="${x}" cy="${y}" r="10" fill="${cc}"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0B1118">${i+1}</text>`;pts.push([x,ym-s*u],[F[i+1]?X(F[i+1].data):x1,ym-s*u])});
+  tlh=`<svg viewBox="0 0 ${W} ${H}" width="100%"><polyline points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="var(--fg)" stroke-opacity=".55" stroke-width="2"/>${g}</svg><p class="note" style="margin-top:0">Sopra la linea i fatti a favore, sotto quelli contro. La linea chiara è il saldo: sale se la chiave si rafforza.</p>`}
+ const fl=F.map((f,i)=>[f,i]).reverse().map(([f,i])=>`<div class="kf"><i style="background:${f.verso>0?"var(--up)":"var(--dn)"}">${i+1}</i><span>${esc(f.testo)}</span><span class="m">${dd(f.data)}${f.fonti[0]?` · <a href="${esc(f.fonti[0].url)}" target="_blank" rel="noopener">${esc(f.fonti[0].nome)}</a>`:""}</span></div>`).join("");
+ const calls=k.chiamate.length?`<div class="sec"><span class="mono">In prova · ipotesi registrate</span><span class="mono">esito</span></div>`+k.chiamate.map(h=>{const col=ESC[h.v.stato==="aperta"?"aperta":h.v.esito]||"var(--mut)";return `<div class="kf"><i style="background:${col}">${h.direzione==="su"?"▲":h.direzione==="giu"?"▼":"="}</i><span>${esc(h.strumento.replace(/^az:/,"").toUpperCase())} · ${h.orizzonte} g · ${dd(h.data)}<small style="display:block;color:var(--mut);font-size:12.5px">${esc(h.meccanismo)}</small></span><span class="m" style="color:${col}">${h.v.stato==="aperta"?"aperta":h.v.esito}${h.v.ret!=null?"<br>"+pct(h.v.ret):""}</span></div>`}).join(""):"";
+ document.getElementById("shb").innerHTML=`<div class="grab"></div><div class="shh"><div><div class="mono" style="color:${c}">${SN[k.settore]||"Altro"} · ${st[0]}</div><h2>${esc(k.nome)}</h2></div><button class="x" id="shx" type="button" aria-label="Chiudi">✕</button></div>
+ ${k.tesi?`<div style="font-size:14.5px;margin-top:6px">${esc(k.tesi)}</div>`:""}${chain}
+ <div class="kbig"><div><b class="up">${k.favore}</b> <span>a favore</span></div><div><b class="dn">${k.contro}</b> <span>contro</span></div><div><b>${saldo>0?"+":""}${saldo}</b> <span>saldo${saldo===0&&F.length?" · in equilibrio":""}</span></div></div>
+ ${tlh}${fl}${calls}
+ ${k.smentita?`<div class="kkv"><span>Smentita se</span><b style="font-weight:500">${esc(k.smentita)}</b></div>`:""}${k.prova_se?`<div class="kkv"><span>In prova se</span><b style="font-weight:500">${esc(k.prova_se)}</b></div>`:""}${k.nota?`<div class="kkv"><span>Nota</span><b style="font-weight:500">${esc(k.nota)}</b></div>`:""}
+ <div class="add" style="margin-top:12px"><input id="fa2" placeholder="Un fatto o un link per questa chiave" autocomplete="off"><button id="fa2B" type="button">Aggiungi</button></div><div class="note" id="fa2M"></div>`;
+ const sh=document.getElementById("sh");sh.classList.add("on");document.getElementById("shx").onclick=()=>sh.classList.remove("on");sh.onclick=e=>{if(e.target===sh)sh.classList.remove("on")};
+ document.getElementById("fa2B").onclick=()=>fatto("fa2","fa2M",k.id)}
+function fatto(inp,msg,id){const el=document.getElementById(inp),m=document.getElementById(msg),t=el.value.trim();if(t.length<8){m.textContent="Scrivi il fatto o incolla un link.";return}m.textContent="Salvo…";api({action:"inv_fatto",testo:t,chiave_id:id||""}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}el.value="";m.textContent="Ricevuto: lo verifica la routine «chiavi» al prossimo giro.";if(!id)load()}).catch(e=>m.textContent=e.message)}
+document.getElementById("faB").onclick=()=>fatto("fa","faM","");
 function radar(){aff();valuta();opps();ossL();tl()}
 document.getElementById("tkB").onclick=()=>{const t=document.getElementById("tk").value.trim();if(!t)return;const m=document.getElementById("tkM");m.textContent="Aggiungo…";api({action:"inv_aggiungi",ticker:t,subito:document.getElementById("tkS").checked}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}m.textContent="Aggiunta "+j.sim+" · prezzi: "+j.prezzi+(j.avvio?" · routine "+j.avvio:" · la classifica il prossimo giro del radar");document.getElementById("tk").value="";load()}).catch(e=>m.textContent=e.message)};
-function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel||!D.strumenti[sel]){const g=giorno(),f=D.ipotesi.find(h=>h.data===g&&D.strumenti[h.strumento]);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia();radar()}).catch(e=>{if(e.message!=="401")document.getElementById("baro").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));document.querySelectorAll(".v").forEach(v=>v.classList.toggle("on",v.id===b.dataset.v))});
+function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel||!D.strumenti[sel]){const g=giorno(),f=D.ipotesi.find(h=>h.data===g&&D.strumenti[h.strumento]);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia();radar();chiavi()}).catch(e=>{if(e.message!=="401")document.getElementById("kmap").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}
+const vai=v=>{document.querySelectorAll(".v").forEach(x=>x.classList.toggle("on",x.id===v));scrollTo(0,0)};
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));vai(b.dataset.v)});
+document.querySelectorAll(".lk").forEach(e=>e.onclick=()=>vai(e.dataset.v));document.querySelectorAll(".bk").forEach(e=>e.onclick=ev=>{ev.preventDefault();vai("bil")});
 document.getElementById("salva").onclick=()=>{const t=document.getElementById("nota").value.trim();if(t.length<2)return;api({action:"inv_nota",testo:t}).then(j=>{if(j.ok){document.getElementById("nota").value="";load()}})};
 load();
 </script></body></html>

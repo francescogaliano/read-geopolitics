@@ -1,6 +1,8 @@
 /* «Investimenti», sezione privata del pannello (solo Francesco).
    - Ipotesi: evento → strumento, direzione, orizzonte. Le scrive una routine con il token; il Worker mette data, ora e
      prezzo di partenza e da lì non si toccano più. Valutate a ogni lettura dai prezzi (1 g informativo, 7 e 30 g).
+   - Chiavi di lettura: schemi che emergono da micro-fatti verificati (a favore e contro), in ogni settore; restano
+     «spunti» finché non hanno un'attesa misurabile, poi vanno «in prova» con ipotesi a 30 o 90 giorni.
    - Radar: opportunità scelte dal modello (routine «radar»), aziende e fondi osservati con la loro scheda.
      Le aziende si aggiungono anche a mano dal pannello con il simbolo di borsa; le classifica e le studia la routine.
    - Prezzi: materie prime e cambi dal database (docs «mercati»); azioni ed ETF da Yahoo Finance (servizio non ufficiale,
@@ -20,9 +22,10 @@ export const INV_STR = {
   eurusd: { n: "Euro/dollaro", u: "", banda: [0.4, 0.8] },
 };
 const BANDA_AZ = [2, 4], BANDA_1G = 0.5; // azioni ed ETF: ±2% a 7 g, ±4% a 30 g; a 1 g metà della banda
-const DIR = ["su", "giu", "zero"], FID = ["bassa", "media", "alta"], ORIG = ["segnale", "calendario", "scenario", "radar", "altro"];
+const DIR = ["su", "giu", "zero"], FID = ["bassa", "media", "alta"], ORIG = ["segnale", "calendario", "scenario", "radar", "chiave", "altro"];
 const SETT = ["en", "te", "di", "tr", "altro"], STATI = ["da_classificare", "osservo", "da_valutare", "in_bilico", "uscita"];
-const K_IP = "inv:ipotesi", K_DI = "inv:diario", K_OPP = "inv:opp", K_OSS = "inv:oss", K_RQ = "inv:rq";
+const K_IP = "inv:ipotesi", K_DI = "inv:diario", K_OPP = "inv:opp", K_OSS = "inv:oss", K_RQ = "inv:rq", K_CH = "inv:chiavi", K_FA = "inv:fatti", K_RQF = "inv:rqf";
+const ST_CH = ["spunto", "in_prova", "confermata", "scartata"];
 const SIM_RE = /^[a-z0-9^][a-z0-9.\-_]{0,19}$/;
 
 const addDays = (d, n) => new Date(Date.parse(d + "T12:00:00Z") + n * 86400000).toISOString().slice(0, 10);
@@ -154,7 +157,7 @@ export function invValuta(h, p) {
   if (!base) return { stato: "aperta", giorni: 0, ret: null, attesa_ingresso: true };
   const rr = (x) => (cfg.abs ? x[1] - base[1] : (x[1] / base[1] - 1) * 100);
   const esitoDi = (ret, b) => { if (h.direzione === "zero") return Math.abs(ret) <= b ? "giusta" : "sbagliata"; const s = h.direzione === "su" ? ret : -ret; return s > b ? "giusta" : s < -b ? "sbagliata" : "piatta"; };
-  const b = cfg.banda[h.orizzonte >= 30 ? 1 : 0];
+  const b = h.orizzonte >= 90 ? cfg.banda[1] * 1.5 : cfg.banda[h.orizzonte >= 30 ? 1 : 0]; // a 90 giorni la banda dei 30 aumentata della metà
   const dopo = p.filter((x) => x[0] > base[0]);
   const v1 = dopo[0] ? { ret: +rr(dopo[0]).toFixed(3), al: dopo[0][0], esito: esitoDi(rr(dopo[0]), b * BANDA_1G) } : null;
   const target = addDays(h.data, h.orizzonte), fine = dopo.find((x) => x[0] >= target) || null, now = fine || dopo[dopo.length - 1];
@@ -181,7 +184,7 @@ export function invBilancio(L) {
   // per filone: le ipotesi nate dalla stessa crisi vanno insieme, così si vede se un tema pesa troppo
   const fil = {}; for (const h of dec) { const k = (h.origine && h.origine.filone_id) || "senza filone"; const q = (fil[k] ||= { filone: k, n: 0, giuste: 0 }); q.n++; if (h.v.esito === "giusta") q.giuste++; }
   // affidabilità per livello (aziende e fondi / materie prime e cambi) e per orizzonte
-  const liv = (pred) => { const X = live.filter(pred); return { g1: quota(X.map((h) => h.v.v1 && h.v.v1.esito)), g7: quota(X.filter((h) => h.orizzonte === 7 && h.v.stato === "chiusa").map((h) => h.v.esito)), g30: quota(X.filter((h) => h.orizzonte === 30 && h.v.stato === "chiusa").map((h) => h.v.esito)) }; };
+  const liv = (pred) => { const X = live.filter(pred); return { g1: quota(X.map((h) => h.v.v1 && h.v.v1.esito)), g7: quota(X.filter((h) => h.orizzonte === 7 && h.v.stato === "chiusa").map((h) => h.v.esito)), g30: quota(X.filter((h) => h.orizzonte === 30 && h.v.stato === "chiusa").map((h) => h.v.esito)), g90: quota(X.filter((h) => h.orizzonte === 90 && h.v.stato === "chiusa").map((h) => h.v.esito)) }; };
   return { per_filone: Object.values(fil).sort((a, b) => b.n - a.n), chiuse: ch.length, decise: dec.length, giuste, piatte: ch.filter((h) => h.v.esito === "piatta").length, guadagno_medio: conGuad.length ? +(conGuad.reduce((s, h) => s + guad(h), 0) / conGuad.length).toFixed(2) : null, per_fiducia: perFid, cumulata: cum, aziende: liv((h) => isAz(h.strumento)), materie: liv((h) => !isAz(h.strumento)) };
 }
 
@@ -204,7 +207,8 @@ function ipPulisci(x, serie, oggi, ora) {
   if (!INV_STR[strumento]) { const s = invSim(strumento); strumento = s ? "az:" + s : ""; }
   if (!strumento || !serie[strumento]) return { err: "strumento sconosciuto o senza prezzi: " + cut(x.strumento, 30) };
   const direzione = String(x.direzione || "").replace("giù", "giu"); if (!DIR.includes(direzione)) return { err: "direzione: su | giu | zero" };
-  const orizzonte = +x.orizzonte; if (![7, 30].includes(orizzonte)) return { err: "orizzonte: 7 o 30" };
+  const orizzonte = +x.orizzonte; if (![7, 30, 90].includes(orizzonte)) return { err: "orizzonte: 7, 30 o 90 (90 solo per le chiavi di lettura)" };
+  if (orizzonte === 90 && (x.origine || {}).tipo !== "chiave") return { err: "orizzonte 90 solo con origine.tipo = chiave" };
   const fiducia = String(x.fiducia || ""); if (!FID.includes(fiducia)) return { err: "fiducia: bassa | media | alta" };
   const meccanismo = cut(x.meccanismo, 240); if (meccanismo.length < 10) return { err: "meccanismo mancante" };
   const o = x.origine || {}; const tipo = ORIG.includes(o.tipo) ? o.tipo : "altro";
@@ -258,7 +262,33 @@ function oppPulisci(o, oggi) {
   return { id: cut(o.id, 40) || "o-" + oggi.replace(/-/g, "") + "-" + t.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 16), settore: SETT.includes(o.settore) ? o.settore : "altro", titolo: t, tesi: cut(o.tesi, 400), punteggio: Math.max(0, Math.min(100, Math.round(+o.punteggio || 0))), impatto: [1, 2, 3].includes(+o.impatto) ? +o.impatto : 2, direzione: DIR.includes(o.direzione) ? o.direzione : "su", catalizzatore: { data: /^\d{4}-\d{2}-\d{2}$/.test(c.data || "") ? c.data : "", testo: cut(c.testo, 120) }, strumenti: (Array.isArray(o.strumenti) ? o.strumenti : []).slice(0, 8).map((x) => invSim(x)).filter(Boolean), smentita: cut(o.smentita, 200), tipo: cut(o.tipo, 40), fonti: fonti(o.fonti), data: oggi };
 }
 
-/* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi */
+/* chiavi di lettura e micro-fatti */
+const slug = (t, n) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, n);
+function chPulisci(x, prev, oggi) {
+  if (!x || typeof x !== "object") return null;
+  const nome = cut(x.nome, 80) || (prev && prev.nome); if (!nome) return null;
+  const p = prev || {}, has = (k) => x[k] != null;
+  return { id: p.id || slug(x.id, 40) || "k-" + slug(nome, 36), nome, tesi: has("tesi") ? cut(x.tesi, 320) : p.tesi || "", settore: SETT.includes(x.settore) ? x.settore : p.settore || "altro",
+    stato: ST_CH.includes(x.stato) ? x.stato : p.stato || "spunto", catena: Array.isArray(x.catena) ? x.catena.slice(0, 4).map((c) => cut(c, 30)).filter(Boolean) : p.catena || [], manca: has("manca") ? cut(x.manca, 30) : p.manca || "",
+    smentita: has("smentita") ? cut(x.smentita, 200) : p.smentita || "", prova_se: has("prova_se") ? cut(x.prova_se, 200) : p.prova_se || "", strumenti: Array.isArray(x.strumenti) ? x.strumenti.slice(0, 8).map((t) => invSim(t)).filter(Boolean) : p.strumenti || [],
+    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello" };
+}
+function faPulisci(x, prev, oggi, ids) {
+  if (!x || typeof x !== "object") return { err: "fatto non valido" };
+  const p = prev || {}, testo = cut(x.testo, 220) || p.testo; if (!testo || testo.length < 12) return { err: "testo del fatto mancante" };
+  const data = /^\d{4}-\d{2}-\d{2}$/.test(x.data || "") ? x.data : p.data; if (!data || data > oggi) return { err: "data del fatto mancante o futura (AAAA-MM-GG): " + cut(testo, 40) };
+  const F = x.fonti ? fonti(x.fonti).filter((q) => q.url) : p.fonti || []; if (!F.length) return { err: "serve almeno una fonte con link: " + cut(testo, 40) };
+  const ch = x.chiave_id === null ? "" : x.chiave_id != null ? slug(x.chiave_id, 40) : p.chiave_id || ""; if (ch && !ids.has(ch)) return { err: "chiave sconosciuta: " + ch };
+  const v = +x.verso; const verso = ch ? ([1, -1].includes(v) ? v : [1, -1].includes(p.verso) ? p.verso : null) : 0; if (verso === null) return { err: "verso: 1 (a favore) o -1 (contro) per un fatto dentro una chiave" };
+  return { f: { id: p.id || slug(x.id, 60) || "f-" + data.replace(/-/g, "") + "-" + slug(testo, 28), data, testo, verso, chiave_id: ch, settore: SETT.includes(x.settore) ? x.settore : p.settore || "altro", fonti: F, aggiunto: p.aggiunto || oggi, origine: p.origine || (x.da_richiesta ? "manuale" : "modello") } };
+}
+async function chiaviVista(h, env, L) {
+  const K = (await h.kvGet(env, K_CH)) || [], F = (await h.kvGet(env, K_FA)) || [];
+  const chiavi = K.map((k) => { const mie = F.filter((f) => f.chiave_id === k.id).sort((a, b) => a.data.localeCompare(b.data) || a.id.localeCompare(b.id)); return { ...k, fatti: mie, favore: mie.filter((f) => f.verso > 0).length, contro: mie.filter((f) => f.verso < 0).length, chiamate: (L || []).filter((x) => x.origine && x.origine.tipo === "chiave" && x.origine.id === k.id) }; });
+  return { chiavi, sciolti: F.filter((f) => !f.chiave_id).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 60), richieste_fatti: ((await h.kvGet(env, K_RQF)) || []).filter((r) => !r.fatta) };
+}
+
+/* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi, /v1/inv/chiavi */
 export async function invRoute(request, env, p, method, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
   const oggi = h.romeToday();
@@ -269,8 +299,8 @@ export async function invRoute(request, env, p, method, h) {
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte,
-      regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30; fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
+    return h.json({ ok: true, oggi, strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo })), richieste_fatti: v.richieste_fatti }; })()),
+      regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
   if (p === "/v1/inv/ipotesi" && method === "POST") {
     const b = await request.json().catch(() => null); const arr = b && Array.isArray(b.ipotesi) ? b.ipotesi : null;
@@ -306,6 +336,20 @@ export async function invRoute(request, env, p, method, h) {
     }
     if (Array.isArray(b.richieste_fatte)) { const R = (await h.kvGet(env, K_RQ)) || []; const f = new Set(b.richieste_fatte.map(String)); R.forEach((r) => { if (f.has(r.id)) r.fatta = oggi; }); await h.kvSet(env, K_RQ, R.slice(-200)); }
     if (Array.isArray(b.ipotesi)) res.ipotesi = await registraIpotesi(h, env, b.ipotesi, await serieTutte(h, env, ((await h.kvGet(env, K_OSS)) || []).map((o) => o.sim)), oggi);
+    return h.json({ ok: true, ...res });
+  }
+  if (p === "/v1/inv/chiavi" && method === "POST") { // la routine «chiavi»: { chiavi, fatti, richieste_fatte, ipotesi }
+    const b = await request.json().catch(() => null); if (!b) return h.fail(400, "json");
+    const res = { errori: [] };
+    const K = (await h.kvGet(env, K_CH)) || [], M = new Map(K.map((k) => [k.id, k]));
+    if (Array.isArray(b.chiavi)) { let n = 0; for (const x of b.chiavi.slice(0, 30)) { const prev = M.get(slug(x && x.id, 40)); const k = chPulisci(x, prev, oggi); if (!k) { res.errori.push("chiave senza nome"); continue; } M.set(k.id, k); n++; } await h.kvSet(env, K_CH, [...M.values()].slice(-80)); res.chiavi = n; }
+    if (Array.isArray(b.fatti)) {
+      const F = (await h.kvGet(env, K_FA)) || [], FM = new Map(F.map((f) => [f.id, f])), ids = new Set(M.keys()); let n = 0;
+      for (const x of b.fatti.slice(0, 60)) { const r = faPulisci(x, FM.get(slug(x && x.id, 60)), oggi, ids); if (r.err) { res.errori.push(r.err); continue; } FM.set(r.f.id, r.f); n++; }
+      await h.kvSet(env, K_FA, [...FM.values()].slice(-1500)); res.fatti = n;
+    }
+    if (Array.isArray(b.richieste_fatte)) { const R = (await h.kvGet(env, K_RQF)) || []; const f = new Set(b.richieste_fatte.map(String)); R.forEach((r) => { if (f.has(r.id)) r.fatta = oggi; }); await h.kvSet(env, K_RQF, R.slice(-200)); }
+    if (Array.isArray(b.ipotesi)) res.ipotesi = await registraIpotesi(h, env, b.ipotesi, await serieTutte(h, env, O.map((o) => o.sim)), oggi);
     return h.json({ ok: true, ...res });
   }
   return h.fail(404, "not_found");
@@ -344,7 +388,12 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)) };
+  }
+  if (b.action === "inv_fatto") { // un fatto o un link scritto a mano: lo verifica e lo colloca la routine «chiavi»
+    const t = cut(b.testo, 600); if (t.length < 8) return { ok: false, error: "scrivi il fatto o incolla un link" };
+    const R = (await h.kvGet(env, K_RQF)) || []; R.push({ id: "q-" + Date.now().toString(36), testo: t, chiave_id: slug(b.chiave_id, 40), at: new Date().toISOString() }); await h.kvSet(env, K_RQF, R.slice(-200));
+    return { ok: true };
   }
   if (b.action === "inv_nota") {
     const t = cut(b.testo, 2000); if (t.length < 2) return { ok: false, error: "testo vuoto" };
