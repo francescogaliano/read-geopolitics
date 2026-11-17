@@ -7,6 +7,7 @@ import SALA_HTML from "./sala.html";
 import SPIEGATI_HTML from "./spiegati.html";
 import INV_HTML from "./inv.html";
 import RS_HTML from "./rassegna.html";
+import GEO_JSON from "../public/geo.json";
 import { rsRoute, rsPanelApi, rsCron } from "./rassegna.js";
 import { invRoute, invPanelApi, invCron } from "./inv.js";
 import { pushEncrypt, vapidNew, vapidHeader, pushHostOK, pushMatch, clip as pClip } from "./push.js";
@@ -5587,6 +5588,7 @@ async function route(request, env, ctx) {
     if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
     return new Response(RS_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
   }
+  if (p === "/ig/geo.json" && method === "GET") return new Response(JSON.stringify(GEO_JSON), { headers: { "content-type": "application/json", "cache-control": "public, max-age=86400" } }); // mappa della rassegna
   if (p === "/v1/rassegna" && method === "GET") return await rsRoute(request, env, url, { authorized, fail, json, kvGet });
   if (p.startsWith("/v1/inv/")) return await invRoute(request, env, p, method, { authorized, fail, json, kvGet, kvSet, romeToday });
   if (p === "/" || p === "/ping")

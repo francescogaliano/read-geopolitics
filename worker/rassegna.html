@@ -2,12 +2,13 @@
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
 <link rel="icon" href="/ig/panel.svg?v=2" type="image/svg+xml">
 <title>Rassegna · Pannello</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <style>
 :root{color-scheme:dark;--bg:#0B1118;--fg:#E8EDF2;--mut:#7F909E;--line:#1F2B35;--acc:#86B4EA;--ok:#5FCB8C;--ko:#EF6F62;--amb:#E8A33D}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 a{color:var(--acc)}
-.wrap{max-width:820px;margin:0 auto;padding:16px 16px 48px}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 16px 48px}
 .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 h1{margin:0;font:600 24px/1.2 "Source Serif 4",Georgia,serif}
 .back{font-size:14px;text-decoration:none;color:var(--mut);display:inline-block;padding:6px 0}
@@ -35,16 +36,36 @@ h1{margin:0;font:600 24px/1.2 "Source Serif 4",Georgia,serif}
 .st .vv a small{display:block;color:var(--mut);font-size:12px}
 .empty{color:var(--mut);padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:6px}
 .note{color:var(--mut);font-size:13px;margin:14px 0 0}
+.grid{display:grid;grid-template-columns:1fr;gap:0 32px}@media(min-width:980px){.grid{grid-template-columns:1.25fr 1fr}}
+.sx{margin:26px 0 8px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.sx h2{margin:0;font:600 17px/1.2 "Source Serif 4",Georgia,serif}
+#map{width:100%;display:block}#map circle{cursor:pointer}
+.leg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px}.leg span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut)}.leg i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.c{border-top:1px solid var(--line);border-left:3px solid transparent}.c.can{border-left-color:#E8B050}.c.val{border-left-color:var(--acc)}.c.sot{border-left-color:var(--line)}
+.c>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:28px 1fr 64px;gap:4px 12px;padding:12px 0 12px 10px}.c>summary::-webkit-details-marker{display:none}
+.c .rk{font:600 15px ui-monospace,monospace;color:var(--mut);padding-top:1px}.c .t{font-weight:600;font-size:15px;line-height:1.3}.c .m{color:var(--mut);font-size:12.5px;margin-top:3px}
+.c .sc{text-align:right;font:600 22px/1 "Source Serif 4",Georgia,serif}.c .sc small{display:block;font:500 10.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--mut);margin-top:4px;text-transform:uppercase}
+.bar{grid-column:2/4;display:flex;height:7px;gap:2px;margin-top:6px}.bar i{display:block;height:100%}
+.why{grid-column:2/4;font-size:12.5px;color:var(--mut);margin-top:4px}.warn{color:#E8A33D}
+.c .vv{padding:0 0 12px 50px}.c .vv a{display:block;padding:7px 0;border-top:1px solid var(--line);text-decoration:none;color:var(--fg);font-size:13.5px}.c .vv a small{display:block;color:var(--mut);font-size:12px}
+.cut{text-align:center;padding:10px 0;border-top:1px dashed #3A4A58;color:#E8B050}
+.legsc{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 2px}.legsc span{font-size:12px;color:var(--mut);display:inline-flex;gap:6px;align-items:center}.legsc i{width:14px;height:6px;display:inline-block}
+.eq .row{display:grid;grid-template-columns:150px 1fr 44px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
+.eq .track{height:8px;background:#141E27;position:relative}.eq .fill{position:absolute;left:0;top:0;bottom:0}.eq .n{text-align:right;color:var(--mut);font-size:12.5px}
+.ita{display:grid;grid-template-columns:repeat(2,1fr);gap:0 18px}.ita div{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}.ita small{color:var(--mut);font-size:12px;display:block}.ita .z{color:var(--ko)}
+.sr .q{padding:10px 0;border-top:1px solid var(--line)}.sr .q .t{font-weight:600;font-size:14.5px}.sr .q .m{color:var(--mut);font-size:12.5px;margin-top:2px}.sr .q a{color:var(--fg);text-decoration:none}
+.spark{display:inline-block;vertical-align:middle;margin-left:6px}
+.tip{position:fixed;pointer-events:none;background:#101A23;border:1px solid #2A3A48;padding:8px 10px;max-width:260px;font-size:13px;display:none;z-index:9}
 </style></head><body><div class="wrap">
-<div class="top"><h1>Rassegna</h1><a class="back" href="/ig/panel">‹ Pannello</a></div>
-<p class="lead">I feed delle testate, delle agenzie, dei think tank e delle fonti ufficiali che il Worker legge ogni ora: solo titoli e link. Serve a vedere quali funzionano e, quando li approvi, a far partire le routine da qui invece che dalla ricerca.</p>
+<div class="top"><span class="mono">Pannello · Rassegna</span><a class="back" href="/ig/panel">‹ Pannello</a></div>
+<h1 id="h1">La giornata vista dalle fonti</h1>
 <div class="sum" id="sum">Carico…</div>
-<button class="act" id="ver">Verifica adesso tutti i feed ›</button>
-<button class="act" id="cop" style="margin-top:0;border-top:0">Copia l'esito di tutte le fonti ›</button>
-<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-v="fonti">Fonti</button><button role="tab" aria-selected="false" data-v="storie">Storie di oggi</button></div>
-<div class="v on" id="v-fonti"></div>
-<div class="v" id="v-storie"></div>
-<p class="note">Verde: il feed risponde con titoli. Rosso: non risponde (il motivo è nel dettaglio). «via Google»: la testata non ha un feed leggibile e si usa la ricerca di Google News limitata al suo sito (solo titoli). Media di Stato: solo per riportare la posizione ufficiale.</p>
+<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-v="oggi">Oggi</button><button role="tab" aria-selected="false" data-v="fonti">Fonti</button></div>
+<div class="v on" id="v-oggi"></div>
+<div class="v" id="v-fonti"><p class="lead">I feed che il Worker legge ogni ora: solo titoli e link.</p><button class="act" id="ver">Verifica adesso tutti i feed ›</button>
+<button class="act" id="cop" style="margin-top:0;border-top:0">Copia l'esito di tutte le fonti ›</button><div id="fl"></div><p class="note">Verde: il feed risponde con titoli. Rosso: non risponde (il motivo è nel dettaglio). «via Google»: la testata non ha un feed leggibile e si usa la ricerca di Google News limitata al suo sito (solo titoli). Media di Stato: solo per riportare la posizione ufficiale.</p></div>
+<div class="tip" id="tip"></div>
+
 </div>
 <script>
 const $=s=>document.querySelector(s);let D=null;
@@ -58,9 +79,43 @@ function fonti(){let h="";for(const [a,nome] of Object.entries(D.aree)){const L=
    const s=f.ok===true?`<span class="ok-t">${f.fresche} ${f.fresche===1?"titolo":"titoli"}</span><small>${f.via==="google"?"via Google · ":f.via==="bing"?"via Bing · ":""}${f.ultima?"ultimo "+esc(quando(f.ultima)):f.senza_data?"il feed non indica la data":""}</small>`:f.ok===false&&f.fermo?`<span class="fe-t">fermo</span><small>${esc(((f.errori||[]).slice(-1)[0]||"").replace(/^[^:]+: /,""))}</small>`:f.ok===false?`<span class="ko-t">non risponde</span><small>${esc(((f.errori||[]).slice(-1)[0]||"").replace(/^[^:]+: /,""))}</small>`:`<span class="mu">da verificare</span>`;
    return `<details class="r ${c}"><summary><span><span class="n">${esc(f.nome)}</span><small>${esc(TIPO[f.tipo]||f.tipo)} · ${esc(f.orient)}${f.classe==="P"?" · classe P":""}</small></span><span class="s">${s}</span></summary><div class="det">`+
     (f.url?`<p>Feed usato: <code>${esc(f.url)}</code></p>`:"")+(f.errori&&f.errori.length?`<p>Tentativi falliti:</p>`+f.errori.map(t=>`<p>· ${esc(t)}</p>`).join(""):"")+(f.campione&&f.campione.length?`<p>Ultimi titoli:</p>`+f.campione.map(t=>`<p>· ${esc(t)}</p>`).join(""):"")+(f.at?`<p>Controllato ${esc(quando(f.at))}</p>`:"")+`</div></details>`}).join("")+`</div>`}
- $("#v-fonti").innerHTML=h}
-function storie(){const S=D.storie||[];$("#v-storie").innerHTML=S.length?`<p class="note">Titoli delle ultime 24 ore raggruppati per somiglianza, con almeno 2 fonti diverse. Prima le storie riportate da più fonti.</p><div style="margin-top:10px">`+S.map(g=>`<details class="st"><summary><div class="t">${esc(g.titolo)}</div><div class="m mono">${g.n_fonti} fonti · ${esc(g.aree.map(a=>(D.aree[a]||a).split(" ")[0]).join(", "))}${g.non_occidentali?" · "+g.non_occidentali+" non occidentali":""}${g.statali?" · anche media di Stato":""} · ${esc(quando(g.ultima))}</div></summary><div class="vv">`+g.voci.map(v=>`<a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.titolo)}<small>${esc(v.nome)} · ${esc(TIPO[v.tipo]||v.tipo)} · ${esc(quando(v.data))}</small></a>`).join("")+`</div></details>`).join("")+`</div>`:`<div class="empty">Ancora nessuna storia con almeno due fonti: i feed si riempiono nella prima ora.</div>`}
-function render(){$("#sum").innerHTML=`<b>${D.ok}</b> feed funzionano su <b>${D.totale}</b>${D.ko-D.fermi?` · <span class="ko-t">${D.ko-D.fermi} non rispondono</span>`:""}${D.fermi?` · <span class="fe-t">${D.fermi} fermi</span>`:""}${D.mai?` · ${D.mai} da verificare`:""} · ${D.voci24} titoli nelle ultime 24 ore`+(D.err?`<div class="note ko-t">Ultimo errore del giro automatico: ${esc(D.err.msg)}</div>`:"");fonti();storie()}
+ $("#fl").innerHTML=h}
+const AREA_C={italia:"#E8EDF2",mondo:"#86B4EA",europa:"#6FA8DC","russia-ucraina":"#EF6F62","medio-oriente":"#E8B050",africa:"#5FCB8C",asia:"#4FC3B5",americhe:"#A796F5",analisi:"#7F909E",ufficiali:"#A796F5",statali:"#5A6875"};
+const PC={f:"#E8B050",a:"#86B4EA",no:"#4FC3B5",pr:"#A796F5",fi:"#5FCB8C",cr:"#E8EDF2",nv:"#3A4A58"},CL={candidata:"can","da valutare":"val","sotto soglia":"sot"};
+function spark(a,w=70,h=16,col="#86B4EA"){const m=Math.max(...a,1),dx=w/(a.length-1);return `<svg class="spark" width="${w}" height="${h}"><polyline fill="none" stroke="${col}" stroke-width="1.6" points="${a.map((v,i)=>(i*dx).toFixed(1)+","+(h-1-v/m*(h-3)).toFixed(1)).join(" ")}"/></svg>`}
+function riga(s,i,posti){const it=s.italia;return (i===posti?`<div class="cut mono">— qui finiscono i ${posti} posti del briefing —</div>`:"")+`<details class="c ${CL[s.stato]}"><summary><div class="rk">${i+1}</div><div><div class="t">${esc(s.titolo)}</div><div class="m">${s.n_fonti} fonti · ${it?s.orientamenti+" testate italiane":s.aree.length+" "+(s.aree.length===1?"area":"aree")+" · "+s.non_occidentali+" non occidentali"}${s.primarie?" · "+s.primarie+" primarie":""}${s.filone?" · filone «"+esc(s.filone.titolo)+"»":" · nuova"}${spark(s.serie)}</div></div><div class="sc">${s.indice}<small>${esc(s.stato)}</small></div>
+ <div class="bar">${Object.entries(s.parti).map(([k,v])=>v?`<i title="${k}" style="width:${v}%;background:${PC[k]}"></i>`:"").join("")}</div>${!it&&s.aree.length===1&&s.n_fonti>=4?`<div class="why warn">Una sola area: ripresa molto, ma da fonti della stessa parte del mondo.</div>`:it&&s.orientamenti<3?`<div class="why warn">Solo ${s.orientamenti} testate italiane: cerca gli orientamenti che mancano prima di scriverla.</div>`:""}</summary><div class="vv">`+s.voci.map(v=>`<a href="${esc(v.link)}" target="_blank" rel="noopener">${esc(v.titolo)}<small>${esc(v.nome)} · ${esc(v.orient)} · ${esc(quando(v.data))}${v.google?" · solo segnale":""}</small></a>`).join("")+`</div></details>`}
+function oggi(){const E=D.equilibrio||{aree:{},italia:[]},EQ=Object.entries(E.aree).sort((a,b)=>b[1]-a[1]),mx=Math.max(1,...EQ.map(x=>x[1]));
+ $("#v-oggi").innerHTML=`<div class="grid"><div>
+ <div class="sx"><h2>Dove succede</h2><span class="mono">cerchio = fonti diverse</span></div><svg id="map"></svg>
+ <div class="leg"><span><i style="background:#E8B050"></i>candidata al briefing</span><span><i style="background:var(--acc)"></i>da valutare</span><span><i style="background:#3A4A58"></i>sotto soglia</span><span><i style="border:1.5px solid #E8B050"></i>in crescita nelle ultime 6 ore</span></div>
+ <div class="sx"><h2>Candidate al briefing · Mondo</h2><span class="mono">5-7 posti · indice 0-100</span></div>
+ <div class="legsc"><span><i style="background:#E8B050"></i>fonti diverse</span><span><i style="background:var(--acc)"></i>aree (Italia: testate)</span><span><i style="background:#4FC3B5"></i>non occidentali</span><span><i style="background:#A796F5"></i>fonte primaria</span><span><i style="background:#5FCB8C"></i>filone attivo</span><span><i style="background:#E8EDF2"></i>crescita</span><span><i style="background:#3A4A58"></i>novità</span></div>
+ <div>${(D.mondo||[]).map((s,i)=>riga(s,i,7)).join("")||'<div class="empty">Nessuna storia con almeno 2 fonti.</div>'}</div>
+ <div class="sx"><h2>Candidate al briefing · Italia</h2><span class="mono">3-4 posti</span></div>
+ <div>${(D.italia||[]).map((s,i)=>riga(s,i,4)).join("")||'<div class="empty">Nessuna storia italiana con almeno 2 fonti.</div>'}</div>
+ <p class="note">L'indice ordina, non decide: misura quanto una storia è ripresa, da quante aree o testate, se tocca un filone che seguiamo e se cresce. Il briefing sceglie per impatto e scrive perché scarta le altre. Tocca una riga per vedere i titoli.</p>
+ </div><div>
+ <div class="sx"><h2>Equilibrio delle fonti</h2><span class="mono">titoli per area, 24 ore</span></div>
+ <div class="eq">${EQ.map(([a,v])=>`<div class="row"><span>${esc(D.aree[a]||a)}</span><span class="track"><span class="fill" style="width:${v/mx*100}%;background:${AREA_C[a]||"#7F909E"}"></span></span><span class="n">${v}</span></div>`).join("")}</div>
+ <div class="sx"><h2>Italia, testate</h2><span class="mono">titoli oggi</span></div>
+ <div class="ita">${E.italia.map(f=>`<div><span>${esc(f.nome)}<small>${esc(f.orient)}</small></span><span class="${f.n<3?"z":""}">${f.n}</span></div>`).join("")}</div>
+ <div class="sx"><h2>Sotto il radar</h2><span class="mono">poche fonti, ma primarie o locali</span></div>
+ <div class="sr">${(D.radar||[]).map(s=>`<div class="q"><a href="${esc(s.voci[0].link)}" target="_blank" rel="noopener"><div class="t">${esc(s.titolo)}</div></a><div class="m">${s.voci.map(v=>esc(v.nome)).join(", ")}${s.filone?" · filone «"+esc(s.filone.titolo)+"»":""}</div></div>`).join("")||'<div class="empty">Niente oggi.</div>'}</div>
+ <div class="sx"><h2>In crescita</h2><span class="mono">fonti per ora, ultime 12</span></div>
+ <div class="sr">${(D.crescita||[]).map(s=>`<div class="q" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><div class="t">${esc(s.titolo)}</div><div class="m">${s.serie.slice(9).reduce((a,b)=>a+b,0)} fonti nelle ultime 3 ore</div></div>${spark(s.serie,90,26,"#E8B050")}</div>`).join("")||'<div class="empty">Nessuna storia in forte crescita.</div>'}</div>
+ </div></div>`;mappa()}
+let GEO=null;function mappa(){const el=document.getElementById("map");if(!el||!window.d3||!window.topojson)return;
+ (GEO?Promise.resolve(GEO):fetch("/ig/geo.json").then(r=>r.json()).then(t=>GEO=t)).then(t=>{const svg=d3.select(el),W=el.clientWidth||600,H=Math.round(W*.52);svg.attr("viewBox",`0 0 ${W} ${H}`).selectAll("*").remove();
+  const pr=d3.geoNaturalEarth1().fitExtent([[4,4],[W-4,H-4]],{type:"Sphere"}),pa=d3.geoPath(pr),F=topojson.feature(t,t.objects.countries).features,FC=Object.fromEntries(F.map(f=>[f.id,f]));
+  svg.append("path").attr("d",pa({type:"Sphere"})).attr("fill","#0E1720");svg.append("g").selectAll("path").data(F).join("path").attr("d",pa).attr("fill","#18242F").attr("stroke","#0B1118").attr("stroke-width",.5);
+  const M=(D.mappa||[]),r=d3.scaleSqrt().domain([1,Math.max(10,...M.map(x=>x.n))]).range([3,W/36]),col=s=>s.stato==="candidata"?"#E8B050":s.stato==="da valutare"?"#86B4EA":"#3A4A58",tip=document.getElementById("tip");
+  const g=svg.append("g");M.slice().reverse().forEach(s=>{const ll=s.ll||(FC[s.iso]?d3.geoCentroid(FC[s.iso]):null);if(!ll)return;const[x,y]=pr(ll);
+   if(s.cresce)g.append("circle").attr("cx",x).attr("cy",y).attr("r",r(s.n)+5).attr("fill","none").attr("stroke","#E8B050").attr("stroke-width",1.5);
+   g.append("circle").attr("cx",x).attr("cy",y).attr("r",r(s.n)).attr("fill",col(s)).attr("fill-opacity",.85).attr("stroke","#0B1118").attr("stroke-width",1.2)
+    .on("mousemove click",ev=>{tip.style.display="block";tip.style.left=Math.min(innerWidth-270,ev.clientX+12)+"px";tip.style.top=(ev.clientY+12)+"px";tip.innerHTML=`<b>${esc(s.titolo)}</b><br><span class="mono">${s.n} fonti · ${esc(s.stato)}</span>`}).on("mouseleave",()=>tip.style.display="none")})})}
+
+function render(){$("#sum").innerHTML=`<b>${D.ok}</b> feed funzionano su <b>${D.totale}</b>${D.ko-D.fermi?` · <span class="ko-t">${D.ko-D.fermi} non rispondono</span>`:""}${D.fermi?` · <span class="fe-t">${D.fermi} fermi</span>`:""}${D.mai?` · ${D.mai} da verificare`:""} · ${D.voci24} titoli nelle ultime 24 ore · ${D.n_storie||0} storie con almeno 2 fonti`+(D.err?`<div class="note ko-t">Ultimo errore del giro automatico: ${esc(D.err.msg)}</div>`:"");$("#h1").textContent=`La giornata vista da ${D.ok} fonti`;fonti();oggi()}
 function load(){return api({action:"rs_get"}).then(j=>{D=j;render()}).catch(e=>{$("#sum").textContent="Errore: "+e.message})}
 $("#ver").onclick=async()=>{const b=$("#ver");b.disabled=true;let fatti=0,tot=D?D.totale:999;try{while(fatti<tot){b.textContent=`Verifico… ${fatti} su ${tot}`;const j=await api({action:"rs_giro",n:12});if(!j.ok)throw new Error(j.error||"errore");tot=j.totale;fatti+=j.fatti.length}await load();b.textContent="Verifica adesso tutti i feed ›"}catch(e){b.textContent="Errore: "+e.message}b.disabled=false};
 function testo(){const L=[`Rassegna · ${new Date().toLocaleString("it-IT")} · ${D.ok} su ${D.totale} funzionano, ${D.ko-D.fermi} non rispondono, ${D.fermi} fermi, ${D.mai} da verificare · ${D.voci24} titoli in 24 ore`];

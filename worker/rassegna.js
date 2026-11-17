@@ -5,6 +5,7 @@
    - GET /v1/rassegna?ore=24 (token): i titoli raggruppati per storia, con le fonti che la riportano, per le routine
    - pannello /ig/rassegna: stato di ogni feed (funziona o no) e storie del giorno per numero di fonti */
 import { RS_FONTI, RS_AREE } from "./rassegna-fonti.js";
+import { rsIndice, rsEntita, raggruppa, luogo, parole } from "./rassegna-entita.js";
 
 const UA = "ReadGeopolitics-rassegna/1.0 (+https://www.readgeopolitics.com/metodo.html)";
 const K_STATO = "rs:stato", K_GIRO = "rs:giro", PER_GIRO = 10, ORE_TENUTE = 72;
@@ -84,33 +85,66 @@ export async function rsGiro(env, h, n) {
 }
 export async function rsCron(env, h) { try { await rsGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "rs:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
 
-/* ---------- storie: titoli simili raggruppati (parole in comune) ---------- */
-const STOP = new Set("della dello delle degli dalla dalle nella nelle sulla sulle alla alle anche come dopo prima perché questo questa sono stato stata essere hanno ancora contro senza verso oltre with from that this have will about after over into their they what when where which while more than been says said amid news live update updates video watch".split(" "));
-const parole = (t) => new Set(String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !STOP.has(w)));
-function jac(a, b) { let n = 0; for (const w of a) if (b.has(w)) n++; return n / (a.size + b.size - n || 1); }
-const PESO = { ufficiale: 4, agenzia: 3, analisi: 2, testata: 1, statale: 0 };
+/* ---------- indice dei nomi: glossario del sito e filoni attivi, ricaricati ogni 12 ore ---------- */
+const K_IND = "rs:indice";
+async function indice(env, h) {
+  let x = await h.kvGet(env, K_IND);
+  if (!x || Date.now() - Date.parse(x.at) > 12 * 3600e3) {
+    const gl = await env.DB.prepare("SELECT key, json_extract(data,'$.tipo') t, json_extract(data,'$.termine') n, json_extract(data,'$.alias') a FROM rdocs WHERE type='glossario'").all();
+    const th = await env.DB.prepare("SELECT key, json_extract(data,'$.titolo') t, json_extract(data,'$.breve') b, json_extract(data,'$.bandiere') p FROM rdocs WHERE type='threads' AND json_extract(data,'$.stato')='attivo'").all();
+    const js = (v) => { try { return JSON.parse(v || "[]"); } catch (e) { return []; } };
+    x = { at: new Date().toISOString(), gloss: (gl.results || []).map((r) => [r.key, r.t, [r.n, ...js(r.a)].filter(Boolean)]), filoni: (th.results || []).map((r) => ({ id: r.key, titolo: r.t || "", breve: r.b || "", paesi: js(r.p) })) };
+    await h.kvSet(env, K_IND, x);
+  }
+  const I = rsIndice(x.gloss);
+  const filoni = x.filoni.map((t) => ({ ...t, E: new Set([...rsEntita(t.titolo + " " + t.breve, I).map((e) => e.k), ...t.paesi.map((p) => "p:" + p)]), K: parole(t.titolo + " " + t.breve) }));
+  return { I, filoni };
+}
 
 export async function rsVoci(env, ore) {
   await tabella(env);
   const da = new Date(Date.now() - Math.max(1, Math.min(72, ore || 24)) * 3600e3).toISOString();
-  const r = await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 ORDER BY data DESC LIMIT 3000").bind(da).all();
+  const r = await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 ORDER BY data ASC LIMIT 4000").bind(da).all();
   return r.results || [];
 }
-export function rsStorie(voci) {
-  const M = Object.fromEntries(RS_FONTI.map((f) => [f.id, f])), G = [];
-  for (const v of voci) {
-    const f = M[v.fonte]; if (!f) continue; const P = parole(v.titolo); if (P.size < 3) continue;
-    let best = null, bj = 0;
-    for (const g of G) { if (g.lingua !== f.lingua) continue; const j = jac(P, g.P); if (j > bj) { bj = j; best = g; } }
-    const voce = { fonte: f.id, nome: f.nome, area: f.area, tipo: f.tipo, orient: f.orient, paese: f.paese, titolo: v.titolo, link: v.link, data: v.data, google: v.link.includes("news.google.com") || v.link.includes("bing.com") };
-    if (best && bj >= 0.45) { best.voci.push(voce); for (const w of P) best.P.add(w); }
-    else G.push({ lingua: f.lingua, P, voci: [voce] });
-  }
+
+/* ---------- storie e indice per il briefing (regole fisse, 0-100) ----------
+   Mondo: fonti diverse (max 25), aree diverse (20), almeno una non occidentale (10), fonte primaria (10), filone attivo (15),
+   crescita nelle ultime 6 ore rispetto alle 6 prima (10), novità (10 se nuova, 5 se aggiorna un filone).
+   Italia: le aree sono sostituite dagli orientamenti diversi (30) e non conta il non occidentale.
+   ≥ 60 candidata, 40-59 da valutare, sotto 40 sotto soglia. L'indice ordina, non decide: il briefing sceglie per impatto. */
+const PESO = { ufficiale: 4, agenzia: 3, analisi: 2, testata: 1, statale: 0 };
+export function rsStorie(voci, ctx) {
+  const M = Object.fromEntries(RS_FONTI.map((f) => [f.id, f])), ora = Date.now();
+  const items = [];
+  for (const v of voci) { const f = M[v.fonte]; if (!f) continue; const K = parole(v.titolo); if (K.size < 2) continue; items.push({ ...v, f, lingua: f.lingua, K, ent: rsEntita(v.titolo, ctx.I) }); }
+  const G = raggruppa(items);
   return G.map((g) => {
-    const fonti = [...new Set(g.voci.map((v) => v.fonte))], capo = g.voci.slice().sort((a, b) => (PESO[b.tipo] - PESO[a.tipo]) || String(b.data).localeCompare(String(a.data)))[0];
-    const aree = [...new Set(g.voci.map((v) => v.area))];
-    return { titolo: capo.titolo, n_fonti: fonti.length, aree, non_occidentali: [...new Set(g.voci.filter((v) => NON_OCC.has(v.area)).map((v) => v.fonte))].length, statali: g.voci.some((v) => v.tipo === "statale"), prima: g.voci.reduce((m, v) => (v.data < m ? v.data : m), g.voci[0].data), ultima: g.voci.reduce((m, v) => (v.data > m ? v.data : m), g.voci[0].data), voci: g.voci.filter((v, i, a) => a.findIndex((x) => x.fonte === v.fonte) === i).slice(0, 12) };
-  }).sort((a, b) => b.n_fonti - a.n_fonti || String(b.ultima).localeCompare(String(a.ultima)));
+    const vv = g.voci, fonti = [...new Set(vv.map((x) => x.fonte))], uniche = fonti.map((id) => vv.find((x) => x.fonte === id));
+    const aree = [...new Set(uniche.map((x) => x.f.area))], nonocc = uniche.filter((x) => NON_OCC.has(x.f.area)).length;
+    const primarie = uniche.filter((x) => x.f.classe === "P" || x.f.tipo === "ufficiale").length, statali = uniche.filter((x) => x.f.tipo === "statale").length;
+    const ita = uniche.filter((x) => x.f.area === "italia");
+    let L = luogo(g); if (!L.iso && ita.length >= Math.max(1, uniche.length * 0.6)) L = { iso: "ITA", ll: null, paesi: ["ITA"] };
+    const isIta = L.iso === "ITA";
+    const serie = Array(12).fill(0); for (const x of uniche) { const h = Math.floor((ora - Date.parse(x.data)) / 3600e3); if (h >= 0 && h < 12) serie[11 - h]++; }
+    const last = serie.slice(6).reduce((a, b) => a + b, 0), prev = serie.slice(0, 6).reduce((a, b) => a + b, 0);
+    const soglia = Math.max(1, Math.ceil(g.n * 0.3)), core = new Set([...g.ec.entries()].filter(([, c]) => c >= soglia).map(([k]) => k));
+    let filone = null, fb = 0;
+    for (const t of ctx.filoni) { let e = 0, enc = 0; for (const k of t.E) if (core.has(k)) { e++; if (k[0] !== "p") enc++; } let kw = 0; for (const w of t.K) if (g.K.has(w)) kw++; const sc = e + enc + kw * 0.5; if ((enc >= 1 || e >= 2 || kw >= 2) && sc >= 2 && sc > fb) { fb = sc; filone = { id: t.id, titolo: t.titolo }; } }
+    const n = fonti.length, p = isIta
+      ? { f: Math.min(n, 10) / 10 * 25, a: Math.min(Math.max(ita.length - 1, 0), 4) / 4 * 30, pr: primarie ? 10 : 0, fi: filone ? 15 : 0, cr: Math.max(0, Math.min(10, (last - prev) * 1.5)), nv: filone ? 5 : 10 }
+      : { f: Math.min(n, 10) / 10 * 25, a: Math.min(aree.length - 1, 3) / 3 * 20, no: nonocc ? 10 : 0, pr: primarie ? 10 : 0, fi: filone ? 15 : 0, cr: Math.max(0, Math.min(10, (last - prev) * 1.5)), nv: filone ? 5 : 10 };
+    const indice = Math.round(Object.values(p).reduce((a, b) => a + b, 0));
+    const capo = (uniche.filter((x) => x.f.lingua === "it").sort((a, b) => PESO[b.f.tipo] - PESO[a.f.tipo])[0]) || uniche.slice().sort((a, b) => (PESO[b.f.tipo] - PESO[a.f.tipo]) || String(b.data).localeCompare(String(a.data)))[0];
+    return { titolo: capo.titolo, n_fonti: n, aree, non_occidentali: nonocc, primarie, statali, italia: isIta, orientamenti: ita.length, iso: L.iso, ll: L.ll, paesi: L.paesi || [], filone, serie, cresce: last >= 4 && last > prev * 1.5, indice, parti: p, stato: indice >= 60 ? "candidata" : indice >= 40 ? "da valutare" : "sotto soglia",
+      prima: vv[0].data, ultima: vv[vv.length - 1].data,
+      voci: uniche.sort((a, b) => (PESO[b.f.tipo] - PESO[a.f.tipo])).slice(0, 14).map((x) => ({ fonte: x.fonte, nome: x.f.nome, area: x.f.area, tipo: x.f.tipo, orient: x.f.orient, paese: x.f.paese, titolo: x.titolo, link: x.link, data: x.data, google: x.link.includes("news.google.com") || x.link.includes("bing.com") })) };
+  }).sort((a, b) => b.indice - a.indice || b.n_fonti - a.n_fonti);
+}
+function equilibrio(voci) {
+  const M = Object.fromEntries(RS_FONTI.map((f) => [f.id, f])), A = {}, I = {};
+  for (const v of voci) { const f = M[v.fonte]; if (!f) continue; A[f.area] = (A[f.area] || 0) + 1; if (f.area === "italia") I[f.id] = (I[f.id] || 0) + 1; }
+  return { aree: A, italia: RS_FONTI.filter((f) => f.area === "italia").map((f) => ({ id: f.id, nome: f.nome, orient: f.orient, n: I[f.id] || 0 })) };
 }
 function riepilogo(stato) {
   const fonti = RS_FONTI.map((f) => { const s = stato[f.id] || {}; return { id: f.id, nome: f.nome, area: f.area, tipo: f.tipo, classe: f.classe, orient: f.orient, paese: f.paese, lingua: f.lingua, ok: s.ok ?? null, fermo: !!s.fermo, senza_data: !!s.senza_data, via: s.via || null, url: s.url || null, n: s.n || 0, fresche: s.fresche || 0, ultima: s.ultima || null, errori: s.errori || [], at: s.at || null, campione: s.campione || [], urls: f.urls }; });
@@ -121,18 +155,24 @@ function riepilogo(stato) {
 export async function rsRoute(request, env, url, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
   const ore = +url.searchParams.get("ore") || 24, min = Math.max(1, +url.searchParams.get("min") || 1);
-  const voci = await rsVoci(env, ore), S = rsStorie(voci).filter((g) => g.n_fonti >= min).slice(0, 400);
+  const voci = await rsVoci(env, ore), S = rsStorie(voci, await indice(env, h)).filter((g) => g.n_fonti >= min).slice(0, 300);
   const R = riepilogo((await h.kvGet(env, K_STATO)) || {});
   return h.json({ ok: true, ore, voci: voci.length, fonti_ok: R.ok, fonti_totale: R.totale, fonti_ko: R.fonti.filter((f) => f.ok === false).map((f) => f.nome),
-    nota: "Solo titoli e link. Per i fatti apri l'articolo (una pagina per volta) o cerca lo stesso fatto su una fonte leggibile; i link news.google.com rimandano alla testata indicata. Media di Stato solo per la posizione ufficiale.",
-    storie: S.map((g) => ({ titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree, non_occidentali: g.non_occidentali, statali: g.statali, prima: g.prima, ultima: g.ultima, voci: g.voci.map((v) => ({ fonte: v.nome, tipo: v.tipo, orient: v.orient, paese: v.paese, titolo: v.titolo, link: v.link, data: v.data })) })) });
+    nota: "Solo titoli e link. Per i fatti apri l'articolo (una pagina per volta) o cerca lo stesso fatto su una fonte leggibile; i link news.google.com e bing.com sono solo segnali. Media di Stato solo per la posizione ufficiale. «indice» (0-100) ordina per ampiezza e pluralità delle fonti, filone attivo e crescita: non misura l'impatto, che valuti tu.",
+    storie: S.map((g) => ({ titolo: g.titolo, indice: g.indice, stato: g.stato, italia: g.italia, n_fonti: g.n_fonti, aree: g.aree, non_occidentali: g.non_occidentali, orientamenti_italiani: g.orientamenti, primarie: g.primarie, statali: g.statali, paese: g.iso, filone: g.filone, in_crescita: g.cresce, prima: g.prima, ultima: g.ultima, voci: g.voci.map((v) => ({ fonte: v.nome, tipo: v.tipo, orient: v.orient, paese: v.paese, titolo: v.titolo, link: v.link, data: v.data })) })) });
 }
 
-/* pannello: rs_get (stato e storie), rs_giro (verifica un gruppo di feed adesso) */
+/* pannello: rs_get (stato, storie con indice, equilibrio), rs_giro (verifica un gruppo di feed adesso) */
 export async function rsPanelApi(env, b, h) {
   if (b.action === "rs_get") {
-    const R = riepilogo((await h.kvGet(env, K_STATO)) || {}), voci = await rsVoci(env, 24);
-    return { ok: true, ...R, voci24: voci.length, giro: (await h.kvGet(env, K_GIRO)) || null, err: (await h.kvGet(env, "rs:err")) || null, storie: rsStorie(voci).filter((g) => g.n_fonti >= 2).slice(0, 60) };
+    const R = riepilogo((await h.kvGet(env, K_STATO)) || {}), voci = await rsVoci(env, 24), S = rsStorie(voci, await indice(env, h));
+    const multi = S.filter((g) => g.n_fonti >= 2);
+    return { ok: true, ...R, voci24: voci.length, n_storie: multi.length, giro: (await h.kvGet(env, K_GIRO)) || null, err: (await h.kvGet(env, "rs:err")) || null,
+      mondo: multi.filter((g) => !g.italia).slice(0, 14), italia: multi.filter((g) => g.italia).slice(0, 8),
+      radar: S.filter((g) => !g.italia && g.n_fonti <= 2 && (g.primarie >= 1 || g.non_occidentali === g.n_fonti)).sort((a, b) => b.indice - a.indice).slice(0, 8),
+      crescita: S.filter((g) => g.cresce).sort((a, b) => b.serie.slice(9).reduce((x, y) => x + y, 0) - a.serie.slice(9).reduce((x, y) => x + y, 0)).slice(0, 6),
+      mappa: multi.filter((g) => g.iso).slice(0, 40).map((g) => ({ titolo: g.titolo, iso: g.iso, ll: g.ll, n: g.n_fonti, stato: g.stato, cresce: g.cresce })),
+      equilibrio: equilibrio(voci) };
   }
   if (b.action === "rs_giro") return { ok: true, ...(await rsGiro(env, h, Math.max(1, Math.min(15, +b.n || 12)))) };
   return null;
