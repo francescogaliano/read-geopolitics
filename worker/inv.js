@@ -219,6 +219,14 @@ export function invEccesso(p, direzione, eccezione, oggi) {
   if (g != null && g >= 0 && g <= 14 && cut(e.testo, 200).length >= 10) return null;
   return "regola E1 (eccesso): " + (su ? "il titolo è già salito troppo" : "il titolo è già sceso troppo") + " (RSI " + t.rsi + (t.var1m != null ? ", " + (t.var1m >= 0 ? "+" : "") + t.var1m + "% in un mese" : "") + "); si può solo con un fatto nuovo con data entro 14 giorni: eccezione {data, testo}";
 }
+/* REGOLA E2 (conti trimestrali, dal 17/11/2026): niente nuove ipotesi né acquisti su un'azienda che presenta i conti
+   entro 5 giorni. In quei giorni il prezzo salta per motivi che il radar non vede. Nessuna eccezione. */
+export const E2_GIORNI = 5;
+export function invConti(conti, oggi) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(conti || "")) return null;
+  const g = Math.round((Date.parse(conti) - Date.parse(oggi)) / 864e5);
+  return g >= 0 && g <= E2_GIORNI ? "regola E2 (conti): l'azienda presenta i conti il " + conti.split("-").reverse().join("/") + (g === 0 ? ", oggi" : ", tra " + g + (g === 1 ? " giorno" : " giorni")) + ": niente ipotesi né acquisti fino a dopo i conti" : null;
+}
 /* REGOLA C1 (confidenza calcolata, dal 17/11/2026): la fiducia di un'ipotesi non la dichiara il modello, la calcola il Worker.
    Punti: fonti indipendenti (domini diversi) 3+ = 2, 2 = 1; evento con data entro l'orizzonte = 1; per le aziende,
    tecnica concorde (sopra/sotto la media a 50 giorni e MACD nella stessa direzione) = 1, discorde = -1;
@@ -231,7 +239,7 @@ export function invConfidenza(x, strumento, p, oggi, orizzonte, direzione) {
   const tot = punti.fonti + punti.evento + punti.tecnica + punti.voce;
   return { fiducia: tot >= 3 ? "alta" : tot >= 1 ? "media" : "bassa", punti, totale: tot, domini: dom.size };
 }
-function ipPulisci(x, serie, oggi, ora) {
+function ipPulisci(x, serie, oggi, ora, conti) {
   if (!x || typeof x !== "object") return { err: "ipotesi non valida" };
   let strumento = String(x.strumento || "").trim();
   if (!INV_STR[strumento]) { const s = invSim(strumento); strumento = s ? "az:" + s : ""; }
@@ -246,6 +254,7 @@ function ipPulisci(x, serie, oggi, ora) {
   const p0 = lastOnOrBefore(serie[strumento], oggi); // ultimo prezzo noto al momento della registrazione
   if (!p0) return { err: "nessun prezzo per " + strumento };
   if (isAz(strumento)) { const e1 = invEccesso(serie[strumento], direzione, x.eccezione, oggi); if (e1) return { err: strumento.slice(3) + ": " + e1 }; }
+  if (isAz(strumento) && direzione !== "zero") { const e2 = invConti(/^\d{4}-\d{2}-\d{2}$/.test(String(x.conti || "")) ? String(x.conti) : (conti || {})[strumento.slice(3)], oggi); if (e2) return { err: strumento.slice(3) + ": " + e2 }; }
   const id = "h-" + oggi.replace(/-/g, "") + "-" + strumento.replace(/[^a-z0-9]+/gi, "") + "-" + orizzonte + "-" + (origine.id || cut(meccanismo, 24)).replace(/[^a-z0-9]+/gi, "").slice(0, 28).toLowerCase();
   const conf = invConfidenza(x, strumento, serie[strumento], oggi, orizzonte, direzione), fiducia = conf.fiducia;
   const ecc = x.eccezione && x.eccezione.data ? { data: cut(x.eccezione.data, 10), testo: cut(x.eccezione.testo, 200) } : undefined;
@@ -254,13 +263,15 @@ function ipPulisci(x, serie, oggi, ora) {
 async function registraIpotesi(h, env, arr, serie, oggi) {
   const L = (await h.kvGet(env, K_IP)) || [];
   const ora = new Date().toISOString(), ids = new Set(L.map((x) => x.id)), out = [];
+  const O = (await h.kvGet(env, K_OSS)) || [], conti = Object.fromEntries(O.filter((o) => o.conti).map((o) => [o.sim, o.conti]));
   for (const x of (arr || []).slice(0, 40)) {
-    const r = ipPulisci(x, serie, oggi, ora);
+    const r = ipPulisci(x, serie, oggi, ora, conti);
     if (r.err) {
       out.push({ ok: false, errore: r.err });
-      if (/regola E1/.test(r.err)) { // si tiene traccia delle ipotesi bloccate, per misurare se la regola evita errori
+      const rg = (r.err.match(/regola (E[12])/) || [])[1];
+      if (rg) { // si tiene traccia delle ipotesi bloccate, per misurare se la regola evita errori
         const s0 = invSim(x.strumento), k = s0 ? "az:" + s0 : "", p0 = k && serie[k] ? lastOnOrBefore(serie[k], oggi) : null;
-        if (p0) { const B = (await h.kvGet(env, K_BL)) || []; if (!B.some((b) => b.data === oggi && b.strumento === k && b.direzione === x.direzione)) { B.push({ data: oggi, strumento: k, direzione: x.direzione, prezzo0: p0[1], data0: p0[0], regola: "E1" }); await h.kvSet(env, K_BL, B.slice(-300)); } }
+        if (p0) { const B = (await h.kvGet(env, K_BL)) || []; if (!B.some((b) => b.data === oggi && b.strumento === k && b.direzione === x.direzione)) { B.push({ data: oggi, strumento: k, direzione: x.direzione, prezzo0: p0[1], data0: p0[0], regola: rg }); await h.kvSet(env, K_BL, B.slice(-300)); } }
       }
       continue;
     }
@@ -279,6 +290,7 @@ function ossPulisci(x, P) {
   if (x.stato) s.stato = STATI.includes(x.stato) ? x.stato : s.stato || "osservo";
   if (x.perche != null) s.perche = cut(x.perche, 240);
   if (x.smentita != null) s.smentita = cut(x.smentita, 200);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(x.conti || ""))) s.conti = String(x.conti); // data dei prossimi conti trimestrali (regola E2)
   if (x.opportunita_id != null) s.opportunita_id = cut(x.opportunita_id, 40);
   if (x.scheda && typeof x.scheda === "object") {
     const k = x.scheda;
@@ -365,8 +377,14 @@ async function pfOrdini(h, env, arr, conto, oggi) {
     if (conto === "modello" && tipo === "compra" && /^A[12]$/.test(regola)) { // A1/A2 richiedono un'ipotesi «su» di oggi; il peso segue la fiducia calcolata
       const ip = ((await h.kvGet(env, K_IP)) || []).filter((y) => y.strumento === "az:" + sim && y.direzione === "su" && y.data === oggi).pop();
       if (!ip) { out.push({ ok: false, errore: sim + ": regola " + regola + " senza un'ipotesi «su» registrata oggi" }); continue; }
+      if (ip.voce) { out.push({ ok: false, errore: sim + ": regola E3 (voci): l'ipotesi poggia su una voce non confermata, niente acquisto" }); continue; }
       if (ip.fiducia === "bassa") { out.push({ ok: false, errore: sim + ": fiducia calcolata bassa (" + ip.confidenza.totale + " punti): niente acquisto" }); continue; }
       x.peso = ip.fiducia === "alta" ? 8 : 5; regola = ip.fiducia === "alta" ? "A2" : "A1";
+    }
+    if (conto === "modello" && tipo === "compra") {
+      if (x.voce === true || ((await h.kvGet(env, K_IP)) || []).some((y) => y.strumento === "az:" + sim && y.data === oggi && y.voce)) { out.push({ ok: false, errore: sim + ": regola E3 (voci): oggi su questo titolo c'è solo una voce non confermata, niente acquisto" }); continue; }
+      const oss = ((await h.kvGet(env, K_OSS)) || []).find((o) => o.sim === sim), e2 = invConti(/^\d{4}-\d{2}-\d{2}$/.test(String(x.conti || "")) ? String(x.conti) : oss && oss.conti, oggi);
+      if (e2) { out.push({ ok: false, errore: sim + ": " + e2 }); continue; }
     }
     if (conto === "modello" && tipo === "compra") { const px = await pxGet(h, env, sim); const e1 = px && invEccesso(px.p, "su", x.eccezione, oggi); if (e1) { out.push({ ok: false, errore: sim + ": " + e1 }); continue; } }
     let eur = null, quota = null;
@@ -390,7 +408,7 @@ export async function invRoute(request, env, p, method, h) {
     const serie = await serieTutte(h, env, O.map((o) => o.sim));
     const L = (await h.kvGet(env, K_IP)) || [];
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
-    const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
+    const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
     return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
