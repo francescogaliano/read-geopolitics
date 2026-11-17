@@ -17,7 +17,6 @@ export const RS_FONTI = [
   F("ansa-economia", "ANSA · Economia", "italia", "agenzia", "S", "agenzia nazionale", "ITA", "it", "https://www.ansa.it/sito/notizie/economia/economia_rss.xml"),
   F("nova", "Agenzia Nova", "italia", "agenzia", "S", "agenzia, esteri", "ITA", "it", "https://www.agenzianova.com/feed/", g("site:agenzianova.com", "it")),
   F("corriere", "Corriere della Sera", "italia", "testata", "S", "centro, liberale", "ITA", "it", "https://xml2.corriereobjects.it/rss/homepage.xml", "https://xml2.corriereobjects.it/rss/esteri.xml", g("site:corriere.it", "it")),
-  F("corriere-pol", "Corriere · Politica", "italia", "testata", "S", "centro, liberale", "ITA", "it", "https://xml2.corriereobjects.it/rss/politica.xml"),
   F("repubblica", "la Repubblica", "italia", "testata", "S", "centro-sinistra", "ITA", "it", "https://www.repubblica.it/rss/esteri/rss2.0.xml", "https://www.repubblica.it/rss/homepage/rss2.0.xml", g("site:repubblica.it", "it")),
   F("sole", "Il Sole 24 Ore", "italia", "testata", "S", "economico, Confindustria", "ITA", "it", "https://www.ilsole24ore.com/rss/mondo.xml", "https://www.ilsole24ore.com/rss/italia.xml", g("site:ilsole24ore.com", "it")),
   F("stampa", "La Stampa", "italia", "testata", "S", "centro, liberale", "ITA", "it", "https://www.lastampa.it/rss/esteri/rss2.0.xml", "https://www.lastampa.it/rss/homepage/rss2.0.xml", g("site:lastampa.it", "it")),

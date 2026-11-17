@@ -72,8 +72,8 @@ export async function rsGiro(env, h, n) {
   for (const [f, r] of esiti) {
     const fresche = r.voci.filter((v) => !v.data || v.data >= lim);
     const ultima = r.voci.reduce((m, v) => (v.data && v.data > m ? v.data : m), "");
-    stato[f.id] = { ok: r.ok, fermo: !!r.fermo, url: r.url || null, via: r.via || null, n: r.voci.length, fresche: fresche.length, ultima: ultima || null, errori: r.tentativi, at: ora, campione: r.voci.slice(0, 3).map((v) => v.titolo) };
-    for (const v of fresche) ins.push(env.DB.prepare("INSERT OR IGNORE INTO rs_voci (link, fonte, titolo, sito, data, visto) VALUES (?1, ?2, ?3, ?4, ?5, ?6)").bind(v.link, f.id, v.titolo, v.sito || null, v.data || ora, ora));
+    stato[f.id] = { ok: r.ok, fermo: !!r.fermo, url: r.url || null, via: r.via || null, n: r.voci.length, fresche: fresche.length, ultima: ultima || null, senza_data: r.voci.length > 0 && !r.voci.some((v) => v.data), errori: r.tentativi, at: ora, campione: r.voci.slice(0, 3).map((v) => v.titolo) };
+    for (const v of fresche) ins.push(env.DB.prepare("INSERT OR IGNORE INTO rs_voci (link, fonte, titolo, sito, data, visto) VALUES (?1, ?2, ?3, ?4, ?5, ?6)").bind(v.link, f.id, v.titolo, v.sito || null, v.data || ora, ora)); // senza data: vale la prima volta che il titolo è stato visto
   }
   for (let i = 0; i < ins.length; i += 50) await env.DB.batch(ins.slice(i, i + 50));
   await env.DB.prepare("DELETE FROM rs_voci WHERE data < ?1").bind(lim).run();
@@ -113,7 +113,7 @@ export function rsStorie(voci) {
   }).sort((a, b) => b.n_fonti - a.n_fonti || String(b.ultima).localeCompare(String(a.ultima)));
 }
 function riepilogo(stato) {
-  const fonti = RS_FONTI.map((f) => { const s = stato[f.id] || {}; return { id: f.id, nome: f.nome, area: f.area, tipo: f.tipo, classe: f.classe, orient: f.orient, paese: f.paese, lingua: f.lingua, ok: s.ok ?? null, fermo: !!s.fermo, via: s.via || null, url: s.url || null, n: s.n || 0, fresche: s.fresche || 0, ultima: s.ultima || null, errori: s.errori || [], at: s.at || null, campione: s.campione || [], urls: f.urls }; });
+  const fonti = RS_FONTI.map((f) => { const s = stato[f.id] || {}; return { id: f.id, nome: f.nome, area: f.area, tipo: f.tipo, classe: f.classe, orient: f.orient, paese: f.paese, lingua: f.lingua, ok: s.ok ?? null, fermo: !!s.fermo, senza_data: !!s.senza_data, via: s.via || null, url: s.url || null, n: s.n || 0, fresche: s.fresche || 0, ultima: s.ultima || null, errori: s.errori || [], at: s.at || null, campione: s.campione || [], urls: f.urls }; });
   return { fonti, aree: RS_AREE, totale: fonti.length, ok: fonti.filter((f) => f.ok === true).length, ko: fonti.filter((f) => f.ok === false).length, fermi: fonti.filter((f) => f.ok === false && f.fermo).length, mai: fonti.filter((f) => f.ok === null).length };
 }
 
