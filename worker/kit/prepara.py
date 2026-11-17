@@ -7,6 +7,7 @@ inizi: cosi' le routine trovano i kit gia' pronti e non scaricano codice.
   - /tmp/pod/kit/                    kit del podcast (da worker/kit/podkit.tgz)
   - /tmp/ico/kit/                    kit dei video iconografici (da worker/kit/puntikit.tgz)
   - /tmp/rgkit/                      kit video su HyperFrames (da kit/video)
+  - /tmp/routine/*.md                istruzioni delle routine private (da worker/kit/routine)
   - $HOME/igkit/*.mjs, package.json  kit Instagram, identico a quello servito
     da /ig/kit/ (viene da IG_KIT in worker/worker.js); reel.mjs anche in /tmp/reel
 Non fallisce mai: ogni passo e' indipendente, l'esito va in /tmp/prepara.log.
@@ -28,6 +29,16 @@ def passo(nome, fn):
 def rgdb():
     shutil.copy(os.path.join(KIT, "rgdb.py"), "/tmp/rgdb.py")
 
+
+
+def routine():
+    src = os.path.join(KIT, "routine")
+    os.makedirs("/tmp/routine", exist_ok=True)
+    n = 0
+    for f in os.listdir(src):
+        if f.endswith(".md"):
+            shutil.copy(os.path.join(src, f), os.path.join("/tmp/routine", f)); n += 1
+    return f"{n} file"
 
 def podcast():
     os.makedirs("/tmp/pod/kit", exist_ok=True)
@@ -79,6 +90,7 @@ def instagram():
 
 
 passo("rgdb", rgdb)
+passo("routine", routine)
 passo("podcast", podcast)
 passo("iconografiche", iconografiche)
 passo("instagram", instagram)
