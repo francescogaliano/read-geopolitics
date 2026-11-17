@@ -88,6 +88,7 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 .gl{border-top:1px solid var(--line);padding:9px 0;font-size:14px}.gl b{display:block}.gl span{color:var(--mut)}
 .wat{border-top:1px solid var(--line);padding:9px 0;display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;font-size:14px}.wat .d{font:12px ui-monospace,monospace;color:var(--amb);text-transform:uppercase}
 .seg{border-top:1px solid var(--line);border-left:3px solid;padding:10px 0 10px 10px;display:grid;grid-template-columns:minmax(0,1fr) 54px 64px;gap:2px 10px;align-items:center;min-height:56px;cursor:pointer}.seg small{display:block;color:var(--mut);font-size:12.5px;line-height:1.35;margin-top:2px}.seg .sdt{text-align:right;font-size:12.5px;color:var(--mut)}.seg .sv{text-align:right;font-size:13.5px}
+.affr{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0;margin-top:10px;font-size:14px;cursor:pointer;min-height:44px}.affr b{font-variant-numeric:tabular-nums}.affr .mu{margin-left:auto;font-size:12.5px}
 </style></head><body><div class="wrap">
 <a class="back" href="/ig/panel">‹ Pannello</a>
 <div class="top"><h1>Investimenti</h1><span class="mono" id="st">solo tu</span></div>
@@ -111,7 +112,11 @@ textarea{width:100%;min-height:90px;background:#121B24;color:var(--fg);border:1p
 </section>
 <section class="v" id="rad">
 <p class="lead">Una <b>situazione</b> è un fatto di oggi che può muovere il prezzo di un'azienda. Le aziende toccate entrano in <b>«Le aziende che seguo»</b>, in fondo, e restano lì finché la tesi regge.</p>
+<div id="affR"></div>
 <div id="valuta"></div>
+<div class="sec"><span class="mono">Vista d'insieme</span><span class="mono" id="mapD"></span></div>
+<div id="map"></div>
+<div class="leg" id="mapL"></div>
 <div class="sec"><span class="mono" id="oppD">Oggi</span><span class="mono">forza della tesi · quando</span></div>
 <div id="rank"></div>
 <div id="odet"></div>
@@ -243,8 +248,26 @@ function aff(){const A=D.bilancio.aziende||{},R=[["1 g",A.g1],["7 g",A.g7],["30 
 function valuta(){const V=D.osservati.filter(o=>o.stato==="da_valutare");document.getElementById("valuta").innerHTML=V.map(o=>`<div class="vlt" data-sim="${esc(o.sim)}"><span class="mono" style="color:var(--up)">Da valutare oggi</span><div class="t">${esc(o.nome)} · ${esc(o.ticker)}</div><div class="w">${esc(o.perche||"")}</div></div>`).join("");document.querySelectorAll(".vlt").forEach(e=>e.onclick=()=>scheda(e.dataset.sim))}
 const SNL={en:"Energia e materie prime",te:"Tecnologia",di:"Difesa e spazio",tr:"Trasporti e turismo",altro:"Altro"};
 const prezzoA=(p,d)=>{let z=null;for(const x of p||[]){if(x[0]<=d)z=x;else break}return z};
+// vista d'insieme: ogni situazione è una bolla; in alto le tesi più forti, a sinistra le più vicine nel tempo
+function mappa(O){const el=document.getElementById("map"),lg=document.getElementById("mapL");document.getElementById("mapD").textContent=O.length?"tocca una bolla":"";
+ if(!O.length){el.innerHTML="";lg.innerHTML="";return}
+ const W=420,H=220,x0=40,x1=W-16,y0=14,y1=H-34,X=g=>g==null||g<0?x1-14:x0+Math.min(g,30)/30*(x1-x0-40),Y=s=>y1-(Math.max(40,s)-40)/60*(y1-y0);
+ let g=`<rect x="${x0}" y="${y0}" width="${X(10)-x0}" height="${Y(70)-y0}" fill="rgba(95,203,140,.07)"/><text x="${x0+6}" y="${y0+14}" font-size="11.5" fill="var(--up)">forti e vicine</text><line x1="${x0}" x2="${x1}" y1="${y1}" y2="${y1}" stroke="var(--line)"/><line x1="${x0}" x2="${x0}" y1="${y0}" y2="${y1}" stroke="var(--line)"/>`;
+ [0,10,20,30].forEach(d=>g+=`<text x="${X(d)}" y="${y1+16}" text-anchor="middle" font-size="12" fill="var(--mut)">${d?"+"+d+" g":"oggi"}</text>`);
+ g+=`<text x="${x1-14}" y="${y1+16}" text-anchor="middle" font-size="12" fill="var(--mut)">?</text><text x="${(x0+x1)/2}" y="${H-2}" text-anchor="middle" font-size="12" fill="var(--mut)">quando si decide (giorni)</text>`;
+ [50,75,100].forEach(v=>g+=`<text x="${x0-6}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--mut)">${v}</text><line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="2 4"/>`);
+ const B=O.map(o=>({r:8+o.impatto*5,x:X(ddiff(o.catalizzatore.data)),y:Y(o.punteggio)}));
+ for(let k=0;k<60;k++){let m=false;for(let a=0;a<B.length;a++)for(let b=a+1;b<B.length;b++){const p=B[a],q=B[b],dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||.01,ov=p.r+q.r+3-d;if(ov>0){const ux=d<.1?1:dx/d,uy=d<.1?0:dy/d;p.x-=ux*ov/2;p.y-=uy*ov/2;q.x+=ux*ov/2;q.y+=uy*ov/2;m=true}}B.forEach(p=>{p.x=Math.max(x0+p.r+1,Math.min(x1-p.r,p.x));p.y=Math.max(y0+p.r,Math.min(y1-p.r-1,p.y))});if(!m)break}
+ O.forEach((o,i)=>{const {r,x,y}=B[i],c=SC[o.settore]||"var(--al)";g+=`<g style="cursor:pointer" data-i="${i}" class="mo"><circle cx="${x}" cy="${y}" r="${r}" fill="${c}" fill-opacity="${i===osel?.9:.35}" stroke="${c}" stroke-width="1.5"/><text x="${x}" y="${y+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="${i===osel?"#0B1118":"var(--fg)"}">${i+1}</text></g>`});
+ el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+ lg.innerHTML=`<span>in alto = tesi più forte</span><span>a sinistra = si decide prima</span><span>più grande = più impatto</span><span>? = data non nota</span>`;
+ el.querySelectorAll(".mo").forEach(e=>e.onclick=()=>{osel=+e.dataset.i;opps();document.getElementById("odet").scrollIntoView({behavior:"smooth",block:"start"})})}
+// «Quanto ci prende» in una riga, in cima al Radar; il dettaglio è nel Bilancio
+function affR(){const A=D.bilancio.aziende||{},f=x=>x&&x.n?Math.round(x.giuste/x.n*100)+"%":"–",n=x=>x&&x.n?x.n:0,tot=n(A.g7)+n(A.g30);
+ document.getElementById("affR").innerHTML=`<div class="affr" id="affRb"><span class="mono">Quanto ci prende</span><span>7 g <b>${f(A.g7)}</b></span><span>30 g <b>${f(A.g30)}</b></span><span class="mu">${tot?tot+" chiuse":"nessuna chiusa"} ›</span></div>`;
+ document.getElementById("affRb").onclick=()=>{document.querySelector('.tabs button[data-v="bil"]').click()}}
 function opps(){const O=(D.opp&&D.opp.lista)||[];document.getElementById("oppD").textContent=(D.opp&&D.opp.data?(D.opp.data===D.oggi?"Oggi":"Giro del "+dd(D.opp.data)):"Oggi")+" · "+O.length+(O.length===1?" situazione":" situazioni");
- const rk=document.getElementById("rank"),od=document.getElementById("odet");
+ const rk=document.getElementById("rank"),od=document.getElementById("odet");mappa(O);
  if(!O.length){rk.innerHTML='<div class="empty">Ancora nessun giro del radar. Le situazioni arrivano con la routine «investimenti», nei giorni feriali.</div>';od.innerHTML="";return}
  const nomeDi=sim=>{const o=D.osservati.find(x=>x.sim===sim);return o?o.nome:sim.replace(/\..*$/,"").toUpperCase()};
  rk.innerHTML=O.map((o,i)=>{const gg=ddiff(o.catalizzatore.data),az=(o.coinvolte&&o.coinvolte.length?o.coinvolte.map(c=>c.nome):o.strumenti.map(nomeDi)).join(", ");
@@ -365,7 +388,7 @@ function chiave(id){const k=(D.chiavi||[]).find(x=>x.id===id);if(!k)return;const
  document.getElementById("fa2B").onclick=()=>fatto("fa2","fa2M",k.id)}
 function fatto(inp,msg,id){const el=document.getElementById(inp),m=document.getElementById(msg),t=el.value.trim();if(t.length<8){m.textContent="Scrivi il fatto o incolla un link.";return}m.textContent="Salvo…";api({action:"inv_fatto",testo:t,chiave_id:id||""}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}el.value="";m.textContent="Ricevuto: lo verifica la routine «chiavi» al prossimo giro.";if(!id)load()}).catch(e=>m.textContent=e.message)}
 document.getElementById("faB").onclick=()=>fatto("fa","faM","");
-function radar(){aff();valuta();opps();ossL()}
+function radar(){aff();affR();valuta();opps();ossL()}
 document.getElementById("tkB").onclick=()=>{const t=document.getElementById("tk").value.trim();if(!t)return;const m=document.getElementById("tkM");m.textContent="Aggiungo…";api({action:"inv_aggiungi",ticker:t,subito:document.getElementById("tkS").checked}).then(j=>{if(!j.ok){m.textContent=j.error||"errore";return}m.textContent="Aggiunta "+j.sim+" · prezzi: "+j.prezzi+(j.avvio?" · routine "+j.avvio:" · la classifica il prossimo giro del radar");document.getElementById("tk").value="";load()}).catch(e=>m.textContent=e.message)};
 function load(){api({action:"inv_get"}).then(j=>{if(!j.ok)throw new Error(j.error||"errore");D=j;if(!sel||!D.strumenti[sel]){const g=giorno(),f=D.ipotesi.find(h=>h.data===g&&D.strumenti[h.strumento]);sel=f?f.strumento:Object.keys(D.strumenti)[0]}document.getElementById("st").textContent="solo tu · "+dd(D.oggi);baro();det();bil();dia();radar();chiavi()}).catch(e=>{if(e.message!=="401")document.getElementById("kmap").innerHTML='<div class="empty">Non riesco a leggere i dati: '+esc(e.message)+'</div>'})}
 const vai=v=>{document.querySelectorAll(".v").forEach(x=>x.classList.toggle("on",x.id===v));scrollTo(0,0)};
