@@ -27,10 +27,18 @@ SE IL MESSAGGIO DI AVVIO DICE «Nuova azienda dal pannello»: fai solo i passi 1
    - Stato: «osservo»; «da_valutare» SOLO se tesi forte, catalizzatore entro 30 giorni e tecnica concorde (sopra la media a 50 giorni per una tesi al rialzo, sotto per una al ribasso; MACD nella stessa direzione); «in_bilico» se un fatto nuovo indebolisce la tesi; in «rimossi» le aziende la cui tesi è finita. Al massimo 25 osservate insieme.
 
 5. SCEGLI LE PRIORITÀ. Da 3 a 5 opportunità, decise da te: titolo breve, settore, tesi (una o due frasi, causa → effetto, senza giudizi politici), punteggio 0-100 (quanto è forte e verificata), impatto 1-3, direzione, catalizzatore con data se c'è, strumenti (simboli), cosa la smentirebbe, fonti. Meglio 3 solide che 5 deboli.
+   Nel pannello ogni opportunità si chiama «situazione» e va spiegata a Francesco come una storia di Read Geopolitics, a chi non conosce il tema (italiano semplice, niente sigle senza spiegarle, nessun giudizio, nessun consiglio d'investimento). Per ognuna aggiungi:
+   - cosa: i fatti in 2-4 frasi, chi, cosa, quanto, quando (max 900 caratteri), solo da fonti lette oggi;
+   - meccanismo: perché questo fatto dovrebbe muovere quel prezzo, la parte non evidente (max 1.200 caratteri, paragrafi separati da una riga vuota); se il punto è un livello o una differenza da osservare (es. lo sconto rispetto a un prezzo d'offerta), dillo con la domanda giusta («lo sconto si stringe o si allarga?»);
+   - coinvolte: [{ticker, nome, ruolo}] le aziende toccate, anche non quotate in lista, con una frase su cosa c'entra ciascuna;
+   - rischi: [{titolo, testo}] 2-4 cose che possono far saltare la tesi;
+   - guardare: [{quando, testo}] le prossime tappe; quando = data AAAA-MM-GG se nota, altrimenti «presto», «settimane», «mesi»;
+   - glossario: [{termine, def}] le parole tecniche usate (OPA, golden power, TTF, guida, ecc.), una frase ciascuna;
+   - riferimento (solo se esiste un prezzo di riferimento chiaro, es. il prezzo di un'offerta): {valore, testo, ticker}.
    Per ogni opportunità nuova registra le ipotesi sulle aziende o sui fondi collegati (strumento = simbolo): direzione, orizzonte 7 o 30, fiducia, meccanismo, origine {"tipo":"radar","id":id dell'opportunità}. Al massimo 6 ipotesi al giorno, al massimo 2 dalla stessa crisi. Non ripetere ipotesi già aperte sullo stesso titolo.
 
 6. SALVA in un solo invio: scrivi /tmp/radar.json come
-   {"opportunita":[…], "osservati":[{ticker, nome, borsa, tipo, settore, stato, perche, smentita, opportunita_id, scheda:{sintesi, esposizione:[["area",percentuale],…], numeri:{…}, periodo, catalizzatori:[{data, testo}], fonti:[{nome,url}]}}], "rimossi":[simboli], "richieste_fatte":[id delle richieste trattate], "ipotesi":[…]}
+   {"opportunita":[{id, titolo, settore, tesi, punteggio, impatto, direzione, catalizzatore, strumenti, smentita, fonti, cosa, meccanismo, coinvolte, rischi, guardare, glossario, riferimento}], "osservati":[{ticker, nome, borsa, tipo, settore, stato, perche, smentita, opportunita_id, scheda:{sintesi, esposizione:[["area",percentuale],…], numeri:{…}, periodo, catalizzatori:[{data, testo}], fonti:[{nome,url}]}}], "rimossi":[simboli], "richieste_fatte":[id delle richieste trattate], "ipotesi":[…]}
    e lancia `python3 /tmp/rgdb.py inv-radar /tmp/radar.json`. Se qualche ipotesi è rifiutata, correggi e rilancia solo quelle.
 
 7. RESOCONTO breve: opportunità del giorno in una riga ciascuna; aziende entrate, uscite, cambiate di stato; schede aggiornate; ipotesi registrate; fonti non raggiungibili; dubbi.
