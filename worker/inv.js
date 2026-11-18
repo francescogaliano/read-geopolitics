@@ -118,7 +118,9 @@ async function invScarica(env, sim) {
 async function pxSalva(h, env, sim, r) {
   const prev = (await h.kvGet(env, "inv:px:" + sim)) || {};
   const now = new Date().toISOString();
-  const rec = r.ok ? { p: r.p, at: now, tentato: now, errore: null, fonte: r.fonte } : { p: prev.p || [], at: prev.at || null, tentato: now, errore: r.errore, fonte: prev.fonte || null };
+  // i giorni già salvati non spariscono (18/11/2026: Yahoo ha mandato una serie senza il 17/11 e l'acquisto di Avio è tornato in attesa); i valori nuovi prevalgono
+  const unisci = (a, b) => { const m = new Map((a || []).map((x) => [x[0], x[1]])); for (const x of b || []) m.set(x[0], x[1]); return [...m.entries()].sort((x, y) => x[0].localeCompare(y[0])).slice(-520); };
+  const rec = r.ok ? { p: unisci(prev.p, r.p), at: now, tentato: now, errore: null, fonte: r.fonte } : { p: prev.p || [], at: prev.at || null, tentato: now, errore: r.errore, fonte: prev.fonte || null };
   await h.kvSet(env, "inv:px:" + sim, rec);
   return rec;
 }
@@ -359,6 +361,9 @@ async function pfDati(h, env, oggi, scarica) {
   const A = {};
   for (const s of sims) { let r = await pxGet(h, env, s); if ((!r || !r.p.length) && scarica && k < 6) { r = await pxAggiorna(h, env, s); k++; } S[s] = r && r.p ? r.p : []; A[s] = r && r.at; }
   const R = pfCalcola(ops, (s) => S[s] || [], S[PF_FX], oggi, (s) => A[s]);
+  // congela le operazioni appena eseguite (18/11/2026): il registro non cambia più a posteriori
+  const nuove = ops.filter((o) => o.tipo !== "versa" && !o.fisso && R.esiti[o.id] && R.esiti[o.id].stato === "eseguita" && R.esiti[o.id].pe > 0);
+  if (nuove.length) { const L2 = (await h.kvGet(env, K_PF)) || { ops: [] }; let n = 0; for (const o of L2.ops || []) { const e = R.esiti[o.id]; if (!o.fisso && nuove.some((x) => x.id === o.id)) { o.fisso = { d: e.data, prezzo: e.prezzo, pe: e.pe, at: new Date().toISOString() }; n++; } } if (n) await h.kvSet(env, K_PF, L2); }
   return { ...R, ops: ops.map((o) => ({ ...o, esito: R.esiti[o.id] || { stato: "in_attesa" } })), prezzi: S };
 }
 /* ordini: dal radar (conto «modello») o dal pannello (conto «mio»); si eseguono alla prima chiusura successiva */

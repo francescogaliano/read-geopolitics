@@ -49,6 +49,8 @@ export function pfCalcola(ops, serie, fx, oggi, aggiornato) {
   const E = [];
   for (const o of ops || []) {
     if (o.tipo === "versa") { E.push({ o, d: o.data, k: 0 }); continue; }
+    // eseguita una volta = congelata (18/11/2026): data e prezzo non si ricalcolano più, anche se la serie dei prezzi cambia
+    if (o.fisso && o.fisso.d && o.fisso.pe > 0) { E.push({ o, d: o.fisso.d, k: o.tipo === "vendi" ? 1 : 2 }); continue; }
     const v = pfValuta(o.sim);
     if (!v) { esiti[o.id] = { stato: "rifiutata", nota: "valuta non supportata (per ora euro e dollari)" }; continue; }
     const P = serie(o.sim), primaChiusura = o.at && Date.parse(o.at) < pfChiusura(o.data, v) - 5 * 60000;
@@ -81,7 +83,7 @@ export function pfCalcola(ops, serie, fx, oggi, aggiornato) {
         c.cassa += o.eur; c.versato += o.eur; c.quote += o.eur / idx;
         esiti[o.id] = { stato: "eseguita", data: d, eur: o.eur }; continue;
       }
-      const pe = prezzoEur(o.sim, d); if (pe == null || !(pe > 0)) { esiti[o.id] = { stato: "in_attesa", nota: "prezzo non disponibile" }; continue; }
+      const fx0 = o.fisso && o.fisso.pe > 0 ? o.fisso : null, pe = fx0 ? fx0.pe : prezzoEur(o.sim, d); if (pe == null || !(pe > 0)) { esiti[o.id] = { stato: "in_attesa", nota: "prezzo non disponibile" }; continue; }
       if (o.tipo === "compra") {
         let eur = Math.min(+o.eur || 0, c.cassa);
         if (o.conto === "modello") { // limiti del modello: 10% per titolo, 15 titoli
@@ -92,12 +94,12 @@ export function pfCalcola(ops, serie, fx, oggi, aggiornato) {
         if (eur < 1) { esiti[o.id] = { stato: "rifiutata", nota: c.cassa < 1 ? "liquidità insufficiente" : "limite raggiunto (10% per titolo o 15 titoli)" }; continue; }
         const costo = eur * PF_COSTO, n = (eur - costo) / pe, q = (c.pos[o.sim] ||= { n: 0, speso: 0, dal: d, ops: [] });
         q.n += n; q.speso += eur; q.ultimo = pe; q.ops.push(o.id); c.cassa -= eur;
-        esiti[o.id] = { stato: "eseguita", data: d, prezzo: lastOn(serie(o.sim), d)[1], eur: +eur.toFixed(2), n: +n.toFixed(6), costo: +costo.toFixed(2) };
+        esiti[o.id] = { stato: "eseguita", data: d, prezzo: fx0 ? fx0.prezzo : lastOn(serie(o.sim), d)[1], pe: +pe.toFixed(6), eur: +eur.toFixed(2), n: +n.toFixed(6), costo: +costo.toFixed(2) };
       } else {
         const q = c.pos[o.sim]; if (!q || q.n <= 0) { esiti[o.id] = { stato: "rifiutata", nota: "titolo non in portafoglio" }; continue; }
         const fr = Math.max(0, Math.min(1, o.quota == null ? 1 : +o.quota)), n = q.n * fr, lordo = n * pe, costo = lordo * PF_COSTO, base = q.speso * fr;
         c.cassa += lordo - costo; q.n -= n; q.speso -= base;
-        const r = { stato: "eseguita", data: d, prezzo: lastOn(serie(o.sim), d)[1], eur: +(lordo - costo).toFixed(2), n: +n.toFixed(6), costo: +costo.toFixed(2), resa: base > 0 ? +(((lordo - costo) / base - 1) * 100).toFixed(2) : null };
+        const r = { stato: "eseguita", data: d, prezzo: fx0 ? fx0.prezzo : lastOn(serie(o.sim), d)[1], pe: +pe.toFixed(6), eur: +(lordo - costo).toFixed(2), n: +n.toFixed(6), costo: +costo.toFixed(2), resa: base > 0 ? +(((lordo - costo) / base - 1) * 100).toFixed(2) : null };
         esiti[o.id] = r; c.chiuse.push({ sim: o.sim, data: d, resa: r.resa, eur: r.eur });
         if (q.n < 1e-9 || fr >= 1) delete c.pos[o.sim];
       }
