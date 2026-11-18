@@ -5589,7 +5589,7 @@ async function route(request, env, ctx) {
     return new Response(RS_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
   }
   if (p === "/ig/geo.json" && method === "GET") return new Response(JSON.stringify(GEO_JSON), { headers: { "content-type": "application/json", "cache-control": "public, max-age=86400" } }); // mappa della rassegna
-  if (p === "/v1/rassegna" && method === "GET") return await rsRoute(request, env, url, { authorized, fail, json, kvGet });
+  if (p === "/v1/rassegna" && method === "GET") return await rsRoute(request, env, url, { authorized, fail, json, kvGet, kvSet });
   if (p.startsWith("/v1/inv/")) return await invRoute(request, env, p, method, { authorized, fail, json, kvGet, kvSet, romeToday });
   if (p === "/" || p === "/ping")
     return json({ ok: true, service: "rg-api", time: new Date().toISOString() });
