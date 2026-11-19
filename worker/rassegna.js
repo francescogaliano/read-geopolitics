@@ -70,6 +70,7 @@ export async function rsGiro(env, h, n) {
   const ora = new Date().toISOString(), lim = new Date(Date.now() - ORE_TENUTE * 3600e3).toISOString();
   const esiti = await Promise.all(lista.map((f) => leggi(f).then((r) => [f, r])));
   const stato = (await h.kvGet(env, K_STATO)) || {}, ins = [];
+  for (const k of Object.keys(stato)) if (!RS_FONTI.some((f) => f.id === k)) delete stato[k]; // fonti tolte dall'elenco (es. corriere-pol il 17/11) non restano come errori
   for (const [f, r] of esiti) {
     const fresche = r.voci.filter((v) => !v.data || v.data >= lim);
     const ultima = r.voci.reduce((m, v) => (v.data && v.data > m ? v.data : m), "");
