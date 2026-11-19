@@ -3269,8 +3269,23 @@ async function igStats(env, n) {
       const r = await igCall("GET", `/${m.id}/insights`, t, { metric: reel ? IG_MET_REEL : IG_MET_FEED });
       for (const v of r.data || []) x[v.name] = v.values && v.values[0] ? v.values[0].value : (v.total_value ? v.total_value.value : null);
     } catch (e) { x.errore = String((e && e.detail && (e.detail.message || e.detail.error_user_msg)) || (e && e.code) || e).slice(0, 200); }
+    if (reel) { // 19/11/2026: follower e visite al profilo portati da ogni reel, chiesti a parte (se Instagram non li dà, le altre metriche restano)
+      try { const r2 = await igCall("GET", `/${m.id}/insights`, t, { metric: "follows,profile_visits" }); for (const v of r2.data || []) x[v.name] = v.values && v.values[0] ? v.values[0].value : (v.total_value ? v.total_value.value : null); }
+      catch (e) { x.extra_err = igErr(e); }
+    }
     post.push(x);
   }
+  // 19/11/2026: fotografia di ogni post a circa 48 ore (prima lettura tra 44 e 96 ore), così i formati si confrontano alla stessa età
+  try {
+    const F = (await kvGet(env, "ig_48h")) || {}; let n48 = 0; const ora = Date.now();
+    for (const x of post) {
+      const eta = (ora - Date.parse(x.data)) / 3600e3;
+      if (F[x.id] || !(eta >= 44 && eta <= 96) || x.errore) continue;
+      F[x.id] = { at: new Date(ora).toISOString(), eta_ore: Math.round(eta), data: x.data, tipo: x.tipo, titolo: x.titolo, views: x.views, reach: x.reach, saved: x.saved, shares: x.shares, likes: x.likes, comments: x.comments, follows: x.follows ?? null, profile_visits: x.profile_visits ?? null, ig_reels_avg_watch_time: x.ig_reels_avg_watch_time ?? null, reels_skip_rate: x.reels_skip_rate ?? null };
+      n48++;
+    }
+    if (n48) { const ids = Object.keys(F).sort((a, b) => String(F[b].data).localeCompare(String(F[a].data))); for (const id of ids.slice(400)) delete F[id]; await kvSet(env, "ig_48h", F); }
+  } catch (e) {}
   const out = { at: new Date().toISOString(), account: { username: me.username, follower: me.followers_count, post: me.media_count }, post };
   // v87: numeri dell'account nelle ultime 24 ore e, una volta a settimana, chi sono i follower. Ogni lettura è separata: se una fallisce le altre restano.
   try { out.giorno = await igAccountIns(t); } catch (e) {}
