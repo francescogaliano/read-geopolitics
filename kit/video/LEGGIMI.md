@@ -30,7 +30,7 @@ Se il copione non li rispetta, il video non si genera (`"ok": false`, fase `scen
 - **Giudizi**: nessuna frase che contrappone due cose con «ma» senza dire chi lo afferma (`Kuwait: …`). Nessun titolo con «nostra lettura», «verdetto», «giudizio».
 - **Mappa (globo)**: `mappa.accesi` non vuota e con i paesi di `apertura.evidenzia`; il luogo `apertura.punto` sta in un paese acceso (solo se il luogo è neutro, come una mediazione in un paese terzo, si scrive il motivo in `apertura.luogo_neutro`); in ogni scena tranne l'ultima almeno un paese acceso si vede (≥ 45 px, dentro l'inquadratura); nella prima scena il paese del fatto misura almeno 120 px: per paesi piccoli (Kuwait, Libano, Qatar…) zoom 8-12.
 - `python3 fai.py copione.json /tmp/reel.mp4 --solo-controlli` fa solo questi controlli, in un secondo.
-- A video pronto, `tavola` è un'immagine con un fotogramma per frase: guardala prima di inviare.
+- A video pronto, `tavola` è un'immagine con un fotogramma per frase: guardala prima di inviare. `bozza` contiene `controlli` e `testi`: mettili nel corpo della bozza insieme a `tavola_b64` (la tavola in base64), così il pannello mostra l'anteprima.
 
 ## Limiti (li controlla fai.py)
 

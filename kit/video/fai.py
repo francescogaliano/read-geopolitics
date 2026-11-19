@@ -158,8 +158,15 @@ if mb > 9.5: fine(False, fase="peso", errori=[f"{mb} MB: massimo 9,5"], file=out
 # tavola: un fotogramma a metà di ogni frase, da guardare (Read) prima di inviare
 tav = os.path.splitext(out)[0] + "_tavola.jpg"
 try:
-    n = max(1, len(SC.get("frasi") or [])); passo = max(dur / (n + 1), 0.5)
-    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", out, "-vf", f"fps=1/{passo:.3f},scale=270:-1,tile=6x{math.ceil((n + 1) / 6)}", "-frames:v", "1", tav], check=True, timeout=120)
+    n = max(1, len(SC.get("frasi") or [])); passo = max(dur / n, 0.5); col = 4 if n <= 16 else 6
+    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-ss", f"{passo / 2:.2f}", "-i", out, "-vf", f"fps=1/{passo:.3f},scale=270:-1,tile={col}x{math.ceil(n / col)}", "-frames:v", "1", "-q:v", "4", tav], check=True, timeout=120)
 except Exception: tav = None
 avvisi = [f"luogo neutro dichiarato: {ap.get('luogo_neutro')}"] if str((SC.get("apertura") or {}).get("luogo_neutro") or "").strip() else []
-fine(True, file=out, secondi=round(dur, 1), mb=mb, motore=info["motore_tempi"], promessa=f"IN {int(5 * round(dur / 5))} SECONDI", tavola=tav, avvisi=avvisi, controlli="modello, fonti, giudizi, mappa: ok")
+kick = str(SC.get("kicker") or "").strip().upper(); lu = (SC.get("mappa") or {}).get("luogo")
+voci = ([{"t": f"Scene del modello «{kick.capitalize()}», in ordine", "ok": True}] if kick in MODELLI else []) + [
+    {"t": "Fonti: solo testate ed enti della storia", "ok": True},
+    {"t": "Nessun giudizio nostro («ma» senza attribuzione)", "ok": True},
+    {"t": "Paesi accesi visibili in ogni scena" + (f"; paese del fatto: {lu}" if lu else ""), "ok": True}]
+# da mettere nella bozza così com'è: il pannello mostra esito, tavola e testi
+bozza = {"controlli": {"esito": "avvisi" if avvisi else "ok", "voci": voci, "avvisi": avvisi}, "testi": [puro(f[0]) for f in SC.get("frasi") or []]}
+fine(True, file=out, secondi=round(dur, 1), mb=mb, motore=info["motore_tempi"], promessa=f"IN {int(5 * round(dur / 5))} SECONDI", tavola=tav, avvisi=avvisi, controlli="modello, fonti, giudizi, mappa: ok", bozza=bozza)
