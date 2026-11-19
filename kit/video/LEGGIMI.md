@@ -22,6 +22,16 @@ Il modello è `esempi/due-letture.json` (reel del giovedì approvato il 12/11/20
 - Blocchi: `numero`, `timbro`, `etichetta`, `nomi`, `rotta`, `navi`, `misura`, `sbarramento`, `barra`, `barre`, `giorni`, `fila`, `scelta`, `firma`.
   `quando`/`fino` sono tempi: `"g4"` (inizio della frase 4), `"g4+0.2"`, `"s+0.5"` (dall'inizio della scena).
 
+## Controlli di redazione (fai.py, dal 19/11/2026)
+
+Se il copione non li rispetta, il video non si genera (`"ok": false`, fase `sceneggiatura`):
+- **Modello**: con `kicker` «DUE LETTURE» le scene sono esattamente le 5 di `esempi/due-letture.json`, con quei titoli e quell'ordine; l'ultima frase è quella fissa.
+- **Fonti**: mai «Read Geopolitics», «analisi», «sintesi», «redazione» come fonte di una scena.
+- **Giudizi**: nessuna frase che contrappone due cose con «ma» senza dire chi lo afferma (`Kuwait: …`). Nessun titolo con «nostra lettura», «verdetto», «giudizio».
+- **Mappa (globo)**: `mappa.accesi` non vuota e con i paesi di `apertura.evidenzia`; il luogo `apertura.punto` sta in un paese acceso (solo se il luogo è neutro, come una mediazione in un paese terzo, si scrive il motivo in `apertura.luogo_neutro`); in ogni scena tranne l'ultima almeno un paese acceso si vede (≥ 45 px, dentro l'inquadratura); nella prima scena il paese del fatto misura almeno 120 px: per paesi piccoli (Kuwait, Libano, Qatar…) zoom 8-12.
+- `python3 fai.py copione.json /tmp/reel.mp4 --solo-controlli` fa solo questi controlli, in un secondo.
+- A video pronto, `tavola` è un'immagine con un fotogramma per frase: guardala prima di inviare.
+
 ## Limiti (li controlla fai.py)
 
 Frase ≤ 80 caratteri · titolo di scena ≤ 26 · fonte ≤ 40 (una riga) · timbro ≤ 18 · video ≤ 45 s (la musica finisce lì).

@@ -78,3 +78,7 @@ body.globo #scrim{top:960px;height:700px;background:linear-gradient(180deg,rgba(
 body.muto .cap{left:90px;right:90px;top:1180px;font:600 58px/1.2 "Plex Serif RG";text-align:left;text-wrap:balance}
 body.muto .cap b{color:var(--oro);font-weight:600}
 body.muto #src{top:1420px}body.muto .nota{top:1462px !important}
+
+/* paese dove succede il fatto (19/11/2026): stesso azzurro delle parti, bordo oro più spesso; non è un colore di colpa */
+#map path.luogo,body.globo #map path.luogo{fill:#3d5276;stroke:#E8B050;stroke-width:3.4}
+#globe .ev2{fill:#33466a;stroke:#86B4EA;stroke-width:2}
