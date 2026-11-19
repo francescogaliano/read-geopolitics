@@ -6,3 +6,5 @@ index.html
 .hyperframes/
 *.mp4
 node_modules/
+
+_copione.json

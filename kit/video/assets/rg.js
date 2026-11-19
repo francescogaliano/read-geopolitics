@@ -58,14 +58,14 @@ else G.forEach((g,i)=>{const d=mk("div","cap",g.s.split(" ").map(w=>'<span class
 
 /* ---------- mappa piatta (resta dietro a tutte le scene) ---------- */
 const M=SC.mappa||{centro:[12.5,42],scala:2600};
-const GLOBO=!!M.globo,CY=M.cy||820,R0=M.raggio||430,ACC=new Set(M.accesi||[]);
+const GLOBO=!!M.globo,CY=M.cy||820,R0=M.raggio||430,ACC=new Set(M.accesi||[]),LUOGO=M.luogo||null;/* luogo = paese dove succede il fatto (19/11/2026): bordo oro */
 const proj=d3.geoMercator().center(M.centro).scale(M.scala||600).translate([540,640]);const path=d3.geoPath(proj);
 const feats=(window.REGIONE&&window.REGIONE.length?window.REGIONE:window.MONDO);
 const mapSvg=$("#map");const PATHS={};let h="";
 if(!GLOBO){feats.forEach(f=>{const d=path(f);if(d&&d.length<900000)h+='<path data-id="'+f.id+'" d="'+d+'"/>'});mapSvg.innerHTML=h}
 else{document.body.classList.add("globo");const sh=mk("div","gshade");$("#cam").insertBefore(sh,$("#ov"))}
 mapSvg.querySelectorAll("path").forEach(p=>{(PATHS[p.dataset.id]=PATHS[p.dataset.id]||[]).push(p)});
-(M.accesi||[]).forEach(id=>(PATHS[id]||[]).forEach(p=>p.classList.add("on")));
+(M.accesi||[]).forEach(id=>(PATHS[id]||[]).forEach(p=>p.classList.add("on")));if(LUOGO)(PATHS[LUOGO]||[]).forEach(p=>p.classList.add("luogo"));
 /* camera: chiavi {t, centro, zoom}; zoom 1 = scala della mappa; il punto centro va in (540,640) */
 const CAM=[{t:0,c:M.centro,z:1}];
 S.forEach(s=>{if(s.camera)CAM.push({t:s.t0,c:s.camera.centro||CAM[CAM.length-1].c,z:s.camera.zoom||1,d:s.camera.durata||1.2})});
@@ -79,7 +79,7 @@ function camG(t){let a=CAM[0];for(const k of CAM)if(t>=k.t)a=k;const i=CAM.index
   return {c:[prev.c[0]+(a.c[0]-prev.c[0])*u,prev.c[1]+(a.c[1]-prev.c[1])*u],z:Math.exp(Math.log(prev.z)+(Math.log(a.z)-Math.log(prev.z))*u)}}
 function drawG(t){const c=camG(t),R=R0*c.z;GC=c.c;GP=d3.geoOrthographic().rotate([-c.c[0],-c.c[1]]).scale(R).translate([540,CY]).clipAngle(90);const pa=d3.geoPath(GP);
   let o='<circle class="oc" cx="540" cy="'+CY+'" r="'+R.toFixed(1)+'"/><path class="gr" d="'+(pa(GRA)||"")+'"/>';
-  for(const f of window.MONDO){const d=pa(f);if(d)o+='<path class="'+(ACC.has(f.id)?"on":"")+'" d="'+d+'"/>'}mapSvg.innerHTML=o}
+  for(const f of window.MONDO){const d=pa(f);if(d)o+='<path class="'+(ACC.has(f.id)?"on":"")+(f.id===LUOGO?" luogo":"")+'" d="'+d+'"/>'}mapSvg.innerHTML=o}
 const OV=$("#ov");const DRAW=[];const CACHE=new Map();let USED=null;
 /* gli elementi sulla mappa restano gli stessi da un fotogramma all'altro (chiave fissa): cambiano solo gli attributi */
 function E(key,tag,at,txt){let e=CACHE.get(key);if(!e){e=sv(tag,{});CACHE.set(key,e);OV.appendChild(e)}for(const k in at)e.setAttribute(k,at[k]);if(txt!=null&&e.textContent!==txt)e.textContent=txt;e.style.display="";USED.add(key);return e}/* funzioni (t) che disegnano le sovrapposizioni */
@@ -94,9 +94,11 @@ const A=SC.apertura,gsvg=$("#globe"),gra=d3.geoGraticule10(),EV=new Set(A.eviden
 function drawGlobe(t){const ctr=A.centro,k=EI(t/2.2),lon=ctr[0]-70*(1-k),lat=ctr[1]*k+8*(1-k),R0=430+((A.zoom||2400)-430)*EI((t-1.6)/1.6);
   const pr=d3.geoOrthographic().rotate([-lon,-lat]).scale(R0).translate([540,880]).clipAngle(90);const pa=d3.geoPath(pr);
   let o='<circle class="oc" cx="540" cy="880" r="'+R0.toFixed(1)+'"/><path class="gr" d="'+(pa(gra)||"")+'"/>';
-  for(const f of window.MONDO){const d=pa(f);if(d)o+='<path class="'+(EV.has(f.id)?"ev":"c")+'" d="'+d+'"/>'}
+  const LU=(SC.mappa||{}).luogo;let ox=0,on=0;/* con il paese del fatto: lui in oro, le altre parti in azzurro (19/11/2026) */
+  for(const f of window.MONDO){const d=pa(f);if(d){o+='<path class="'+(EV.has(f.id)?(LU&&f.id!==LU?"ev2":"ev"):"c")+'" d="'+d+'"/>';if(LU&&EV.has(f.id)&&f.id!==LU){const cc=pr(d3.geoCentroid(f));if(cc){ox+=cc[0];on++}}}}
   const q=pr(A.punto||ctr);if(q&&t>1.9){const pu=Math.min(1,(t-1.9)/0.5);o+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+(16*pu)+'" fill="#EEF2F6"/><circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+(40*pu)+'" fill="none" stroke="rgba(238,242,246,.85)" stroke-width="4"/>';
-    if(A.etichetta&&pu>0.3)o+='<text x="'+(q[0]+52)+'" y="'+(q[1]-34)+'" fill="#EEF2F6" opacity="'+pu+'" style="font:500 32px \'Plex Mono RG\';letter-spacing:.08em">'+A.etichetta+'</text>'}
+    if(A.etichetta&&pu>0.3){const sx=on&&ox/on>q[0];/* l'etichetta va dal lato opposto agli altri paesi evidenziati, per non finirci sopra */
+      o+='<text x="'+(q[0]+(sx?-52:52))+'" y="'+(q[1]-34)+'" text-anchor="'+(sx?"end":"start")+'" fill="#EEF2F6" opacity="'+pu+'" style="font:500 32px \'Plex Mono RG\';letter-spacing:.08em">'+A.etichetta+'</text>'}}
   gsvg.innerHTML=o}
 drawGlobe(0);const og={t:0};tl.to(og,{t:3.4,duration:3.4,ease:"none",onUpdate:()=>drawGlobe(og.t)},0);
 gsap.set("#cam",{opacity:0});
