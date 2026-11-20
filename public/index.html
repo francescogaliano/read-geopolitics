@@ -2136,6 +2136,12 @@ function sciopPanel(oggi){const L=sciopList(oggi,366).concat(sciopNews(oggi).fil
   const subOf=a=>[a.orari||"",a.chi||""].filter(Boolean).join(" · ")||(a.filone_id&&S.threads&&S.threads[a.filone_id]?"tema: "+S.threads[a.filone_id].titolo:"");
   const grpRow=(k,ic,t,sub,A,inner)=>`<details class="skg" style="--c:${SC_CAT[k][0]}"><summary><span class="sk-ic" aria-hidden="true">${ic}</span><span class="sk-tx"><span class="sk-t">${esc(t)}</span><span class="sk-s">${esc(sub)}</span></span><span class="sk-cd">${A.length}</span></summary><div class="skg-in">${inner}</div></details>`;
   const city=a=>sciopCitta(a)||"";
+  const bar=a=>{const F=scFasce(a.fasce),Gr=scFasce(a.garantite),x=m=>Math.max(0,Math.min(100,(m-360)/1080*100)).toFixed(1),seg=(L,c)=>L.filter(f=>f[1]>360).map(f=>`<${c} style="left:${x(f[0])}%;width:${(x(f[1])-x(f[0])).toFixed(1)}%"></${c}>`).join("");
+    if(!F.length&&!Gr.length)return '<span class="skb"><span class="skb-b nd"></span><span class="skb-t"><span>6</span><span>12</span><span>18</span><span>24</span></span></span>';
+    return `<span class="skb"><span class="skb-b">${!F.length?'<i style="left:0;width:100%"></i>':seg(F,"i")}${seg(Gr,"u")}</span><span class="skb-t"><span>6</span><span>12</span><span>18</span><span>24</span></span></span>`};
+  const sub3=(a,t,s2,withBar)=>`<details class="sk sk3 skc${withBar?"":" nb"}${a.stato==="revocato"?" rv":""}" style="--c:${SC_CAT[sciopCat(a)][0]}"><summary><span class="sk-tx"><span class="sk-t">${esc(t)}${a.stato!=="revocato"?sciopPos(a):""}</span>${s2?`<span class="sk-s">${esc(s2)}</span>`:""}</span>${withBar?bar(a):""}<span class="skch" aria-hidden="true">›</span></summary>${det(a)}</details>`;
+  const LEG='<div class="skl"><span>a rischio</span><span class="g">garantito</span><span class="n">orari non ancora noti</span></div>';
+
   const dayKey=a=>a.data<oggi?oggi:a.data;
   const e7=new Date(oggi+"T12:00:00");e7.setDate(e7.getDate()+6);const end7=isoDay(e7);
   const W=L.filter(a=>dayKey(a)<=end7),FUT=L.filter(a=>dayKey(a)>end7);
@@ -2144,11 +2150,11 @@ function sciopPanel(oggi){const L=sciopList(oggi,366).concat(sciopNews(oggi).fil
     const G=act.filter(a=>sciopCat(a)==="generale"),LOc=act.filter(a=>sciopCat(a)==="locale"&&city(a));const grLoc=LOc.length>1;
     const rest=A.filter(a=>!(a.stato!=="revocato"&&(sciopCat(a)==="generale"||(grLoc&&sciopCat(a)==="locale"&&city(a)))));
     const rows=[],parts=[];
-    if(G.length>1)rows.push(grpRow("generale","⏸️","Sciopero generale",G.map(a=>a.chi||"").filter(Boolean).join(" · "),G,G.map(a=>one(a,a.chi||lab(a),a.titolo,"·",cd(a)," sk3")).join("")));
+    if(G.length>1)rows.push(grpRow("generale","⏸️","Sciopero generale",G.map(a=>a.chi||"").filter(Boolean).join(" · "),G,G.map(a=>sub3(a,a.chi||lab(a),[a.durata||"",a.perche?"":a.titolo].filter(Boolean).join(" · "),false)).join("")));
     else if(G.length)rows.push(one(G[0],"Sciopero generale",subOf(G[0]),"⏸️",cd(G[0])));
     if(G.length)parts.push("sciopero generale");
     if(grLoc){const C=[...new Set(LOc.map(city))].sort((p,q)=>p.localeCompare(q,"it"));
-      rows.push(grpRow("locale","🚌","Bus e metro in "+C.length+" città",C.join(", "),LOc,LOc.slice().sort((p,q)=>city(p).localeCompare(city(q),"it")).map(a=>{const az=(String(a.titolo||"").match(/\(([^)]+)\)\s*$/)||[])[1]||"";return one(a,city(a)+(az?" · "+az:""),a.orari||"orari non ancora indicati","·",cd(a)," sk3")}).join("")));
+      rows.push(grpRow("locale","🚌","Bus e metro in "+C.length+" città",C.join(", "),LOc,LEG+LOc.slice().sort((p,q)=>city(p).localeCompare(city(q),"it")).map(a=>{const az=(String(a.titolo||"").match(/\(([^)]+)\)\s*$/)||[])[1]||"";const ext=/toscana|regione/i.test(a.titolo||"")?"tutta la regione":/ e ([A-Z][a-zà-ù]+)/.test(String(a.titolo||"").replace(/\(.*$/,""))?"anche "+String(a.titolo).replace(/\(.*$/,"").match(/ e ([A-Z][a-zà-ù]+)/)[1]:"";return sub3(a,city(a),[az,ext].filter(Boolean).join(" · "),true)}).join("")));
       parts.push("bus e metro in "+C.length+" città")}
     rest.sort((p,q)=>(sciopIta(q)?1:0)-(sciopIta(p)?1:0));rest.forEach(a=>{const k=sciopCat(a);rows.push(one(a,lab(a),subOf(a),sciopIta(a)?sciopIco(a):(agFlag(a)||"🌍"),cd(a)));if(a.stato==="revocato"||k==="estero")return;
       const w=k==="locale"?(city(a)?"bus e metro a "+city(a):"bus e metro"):(SC_CAT[k][1]||lab(a));if(w&&!parts.includes(w))parts.push(w)});
@@ -7553,6 +7559,13 @@ body.has-sc #pubBar[data-plain="1"]{display:none}
 .sk2,.skg{border-left:3px solid var(--c)}.sk.sk2>summary{grid-template-columns:26px 1fr auto;min-height:56px;padding-left:10px}.sk-ic{font-size:18px;text-align:center}.sk.sk2[open]{border-left:3px solid var(--c)}.sk2 .sk-kv{padding-left:48px}.sk2 .sk-th{margin-left:48px}
 .skg{border-top:1px solid var(--line)}.skg>summary{list-style:none;display:grid;grid-template-columns:26px 1fr auto;gap:12px;align-items:center;min-height:56px;padding:12px 4px 12px 10px;cursor:pointer}.skg>summary::-webkit-details-marker{display:none}.skg>summary .sk-cd::after{content:" ▾";font-size:10px}.skg[open]>summary .sk-cd::after{content:" ▴"}.skg[open]{background:var(--surface-2)}.skg-in{padding:0 0 6px 28px}
 .sk.sk3{border-left:0}.sk.sk3>summary{grid-template-columns:10px 1fr auto;min-height:48px}.sk3 .sk-ic{color:var(--muted)}.sk3 .sk-kv{padding-left:22px}.sk3 .sk-th{margin-left:22px}.sk.sk3[open]{border-left:2px solid var(--c)}
+.skg[open]{background:var(--surface-2);border-radius:0 10px 10px 0}.skg-in{padding:0 0 4px}
+.skc{border-top:1px solid var(--line)}.sk.skc>summary{grid-template-columns:1fr 112px 14px;gap:10px;min-height:56px;padding:10px 12px 10px 48px}.sk.skc.nb>summary{grid-template-columns:1fr 14px}.sk.skc[open]{border-left:0;border-radius:0;background:rgba(127,144,158,.08)}.sk.skc[open]>summary{padding-left:48px}
+.skch{color:var(--muted);font-size:18px;transition:transform .2s;text-align:center}.skc[open] .skch{transform:rotate(90deg);color:#C98A2A}
+.skb{display:block}.skb-b{position:relative;display:block;height:8px;border-radius:4px;background:var(--line);overflow:hidden}.skb-b i,.skb-b u{position:absolute;top:0;bottom:0;text-decoration:none}.skb-b i{background:#E8A33D}.skb-b u{background:rgba(64,160,115,.75)}.skb-b.nd{background:repeating-linear-gradient(135deg,var(--line) 0 4px,transparent 4px 8px);box-shadow:inset 0 0 0 1px var(--line)}
+.skb-t{display:flex;justify-content:space-between;font:500 9.5px "IBM Plex Mono",monospace;color:var(--muted);margin-top:3px}
+.skl{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px 10px 48px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}.skl span::before{content:"";display:inline-block;width:10px;height:8px;border-radius:2px;margin-right:5px;background:#E8A33D}.skl .g::before{background:rgba(64,160,115,.75)}.skl .n::before{background:repeating-linear-gradient(135deg,var(--muted) 0 2px,transparent 2px 4px)}
+.skc .sk-kv{padding-left:48px}.skc .sk-th{margin-left:48px}
 .sk-tl{position:relative;height:56px;margin:4px 4px 10px}.sk-tl .in{position:absolute;left:52px;right:60px;top:0;bottom:0}.sk-tl .ax{position:absolute;left:-8px;right:-8px;top:31px;height:2px;background:var(--line)}.sk-tl .t0,.sk-tl .t1{position:absolute;top:25px;font:500 10.5px "IBM Plex Mono",monospace;color:var(--muted)}.sk-tl .t0{left:0}.sk-tl .t1{right:0}
 .sk-tl .m{position:absolute;top:0;transform:translateX(-50%);text-align:center;line-height:1}.sk-tl .m b{display:block;font-size:15px;font-weight:400}.sk-tl .m i{display:block;width:10px;height:10px;border-radius:50%;background:#8fa0bd;margin:6px auto 0;border:2px solid var(--surface)}.sk-tl .m.on i{background:#F0AE45}.sk-tl .m small{display:block;font:500 10.5px "IBM Plex Mono",monospace;color:var(--ink);margin-top:3px}
 .sk-g{display:flex;align-items:center;gap:8px;padding:14px 4px 6px;border-top:1px solid var(--line);font:500 11.5px "IBM Plex Mono",monospace;letter-spacing:.12em;color:var(--muted)}
