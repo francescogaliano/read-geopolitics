@@ -410,14 +410,25 @@ function soglia(x) { // soglia di smentita misurabile su un numero di verticale:
   if (!VER_NUM[ver] || !VER_NUM[ver].some((c) => c[0] === num) || !["sotto", "sopra"].includes(x.verso) || !Number.isFinite(valore)) return null;
   return { ver, num, verso: x.verso, valore };
 }
-function chPulisci(x, prev, oggi) {
+const RIP_ST = ["visibile", "attesa", "possibile"];
+function chDirezione(x, p) { // la direzione della chiave: dove porta, ripercussioni, chi è toccato, cosa osservare (le scrive la routine dai fatti)
+  const o = {}, has = (k) => x[k] != null;
+  o.porta = has("porta") ? cut(x.porta, 280) : p.porta || "";
+  o.ripercussioni = Array.isArray(x.ripercussioni) ? x.ripercussioni.slice(0, 5).map((r) => ({ stato: RIP_ST.includes(r && r.stato) ? r.stato : "possibile", testo: cut(r && r.testo, 170), base: cut(r && r.base, 150) })).filter((r) => r.testo) : p.ripercussioni || [];
+  const t = x.toccati && typeof x.toccati === "object" ? { perde: cut(x.toccati.perde, 170), guadagna: cut(x.toccati.guadagna, 170) } : p.toccati || null;
+  if (t && (t.perde || t.guadagna)) o.toccati = t;
+  o.osservare = Array.isArray(x.osservare) ? x.osservare.slice(0, 4).map((r) => ({ quando: /^\d{4}-\d{2}-\d{2}$/.test((r && r.quando) || "") || ["presto", "settimane", "mesi"].includes(r && r.quando) ? r.quando : "", testo: cut(r && r.testo, 170), senso: cut(r && r.senso, 170) })).filter((r) => r.testo) : p.osservare || [];
+  o.direzione_del = has("porta") || Array.isArray(x.ripercussioni) || Array.isArray(x.osservare) ? null : p.direzione_del || "";
+  return o;
+}
+export function chPulisci(x, prev, oggi) {
   if (!x || typeof x !== "object") return null;
   const nome = cut(x.nome, 80) || (prev && prev.nome); if (!nome) return null;
   const p = prev || {}, has = (k) => x[k] != null, sg = x.soglia === null ? null : soglia(x.soglia) || p.soglia || null;
   return { id: p.id || slug(x.id, 40) || "k-" + slug(nome, 36), nome, tesi: has("tesi") ? cut(x.tesi, 320) : p.tesi || "", settore: SETT.includes(x.settore) ? x.settore : p.settore || "altro",
     stato: ST_CH.includes(x.stato) ? x.stato : p.stato || "spunto", catena: Array.isArray(x.catena) ? x.catena.slice(0, 4).map((c) => cut(c, 60)).filter(Boolean) : p.catena || [], manca: has("manca") ? cut(x.manca, 60) : p.manca || "",
     smentita: has("smentita") ? cut(x.smentita, 200) : p.smentita || "", prova_se: has("prova_se") ? cut(x.prova_se, 200) : p.prova_se || "", strumenti: Array.isArray(x.strumenti) ? x.strumenti.slice(0, 8).map((t) => invSim(t)).filter(Boolean) : p.strumenti || [],
-    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello", ...(sg ? { soglia: sg } : {}) };
+    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello", ...(sg ? { soglia: sg } : {}), ...(() => { const d = chDirezione(x, p); if (d.direzione_del === null) d.direzione_del = oggi; return d; })() };
 }
 function faPulisci(x, prev, oggi, ids) {
   if (!x || typeof x !== "object") return { err: "fatto non valido" };
@@ -500,7 +511,7 @@ export async function invRoute(request, env, p, method, h) {
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
+    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, porta: k.porta || undefined, ripercussioni: k.ripercussioni && k.ripercussioni.length ? k.ripercussioni : undefined, toccati: k.toccati || undefined, osservare: k.osservare && k.osservare.length ? k.osservare : undefined, direzione_del: k.direzione_del || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
       verticali: await verVista(h, env, oggi, true),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
