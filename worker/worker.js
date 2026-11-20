@@ -8,6 +8,7 @@ import SPIEGATI_HTML from "./spiegati.html";
 import INV_HTML from "./inv.html";
 import PUB_HTML from "./chiavi-pub.html";
 import { PUB_KV, PUB_TOKEN_KV } from "./chiavi-pub.js";
+import { pubAggiorna } from "./inv.js";
 import RS_HTML from "./rassegna.html";
 import GEO_JSON from "../public/geo.json";
 import { rsRoute, rsPanelApi, rsCron } from "./rassegna.js";
@@ -5640,7 +5641,10 @@ async function route(request, env, ctx) {
     const m = /^\/k\/([a-f0-9]{16,40})(\/dati\.json)?\/?$/.exec(p), t = m && (await kvGet(env, PUB_TOKEN_KV));
     if (!m || !t || m[1] !== t) return new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } });
     const sec = { "x-robots-tag": "noindex, nofollow", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" };
-    if (m[2]) return new Response(JSON.stringify((await kvGet(env, PUB_KV)) || { chiavi: [] }), { headers: { "content-type": "application/json; charset=utf-8", ...sec } });
+    if (m[2]) { // la copia si ricostruisce da sola se ha più di 3 ore (numeri e date cambiano ogni giorno)
+      let c = await kvGet(env, PUB_KV);
+      if (!c || !(Date.now() - (c.costruita || 0) < 3 * 3600e3)) { try { await pubAggiorna({ kvGet, kvSet, romeToday }, env, romeToday()); c = await kvGet(env, PUB_KV); } catch (e) {} }
+      return new Response(JSON.stringify(c || { chiavi: [] }), { headers: { "content-type": "application/json; charset=utf-8", ...sec } }); }
     return new Response(PUB_HTML, { headers: { "content-type": "text/html; charset=utf-8", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'", ...sec } });
   }
   if (p.startsWith("/v1/inv/")) return await invRoute(request, env, p, method, { authorized, fail, json, kvGet, kvSet, romeToday });
