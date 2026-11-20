@@ -23,6 +23,7 @@
 #   python3 rgdb.py inv-contesto                            sezione Investimenti (privata): strumenti, ultimi prezzi, ipotesi aperte
 #   python3 rgdb.py inv-radar FILE                          giro del radar: {opportunita, osservati, rimossi, richieste_fatte, ipotesi}
 #   python3 rgdb.py inv-chiavi FILE                         chiavi di lettura e micro-fatti: {chiavi, fatti, richieste_fatte, ipotesi}
+#   python3 rgdb.py inv-verticale FILE                      raccoglitore di una verticale: {verticale, agenda, agenda_tolte, atti}
 #   python3 rgdb.py inv-prezzi SIMBOLO [FILE]               il Worker scarica e salva i prezzi di un titolo prima di usarlo;
 #                                                            con FILE li carichi tu: risposta JSON di Yahoo «chart»
 #                                                            (query1.finance.yahoo.com/v8/finance/chart/SIMBOLO?range=2y&interval=1d)
@@ -250,6 +251,10 @@ def main():
         if len(a) != 1:
             die("uso: inv-chiavi FILE   (FILE = {chiavi, fatti, richieste_fatte, ipotesi})")
         out(call("POST", "/v1/inv/chiavi", loadjson(open(a[0], encoding="utf-8").read(), a[0])))
+    elif cmd == "inv-verticale":
+        if len(a) != 1:
+            die("uso: inv-verticale FILE   (FILE = {verticale, agenda, agenda_tolte, atti})")
+        out(call("POST", "/v1/inv/verticale", loadjson(open(a[0], encoding="utf-8").read(), a[0])))
     elif cmd == "inv-prezzi":
         if len(a) not in (1, 2):
             die("uso: inv-prezzi SIMBOLO [FILE]   (es. NVDA, RHM.DE, LDO.MI; FILE = JSON di Yahoo chart o [[data, chiusura], ...])")

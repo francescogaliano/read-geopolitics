@@ -325,14 +325,89 @@ function oppPulisci(o, oggi) {
 
 /* chiavi di lettura e micro-fatti */
 const slug = (t, n) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, n);
+
+/* VERTICALI (20/11/2026): un settore con i suoi numeri, la sua agenda e i suoi atti ufficiali. Il motore delle chiavi resta uno;
+   ogni verticale ha un raccoglitore (routine) che porta materia prima con /v1/inv/verticale. Energia: i numeri vengono dal Worker
+   rs-numeri (collegamento RS + secret RS_TOKEN), agenda e atti da kv «inv:ver:en». */
+export const VER = { en: { n: "Energia e materie prime" } };
+const K_VER = (v) => "inv:ver:" + v;
+const VER_NUM = { en: [ // [chiave, nome, unità, colonna del valore, colonna della data, divisore]
+  ["ttf", "Gas TTF (ACER)", "€/MWh", "ttf", "acer_pub"], ["gnl", "GNL spot Europa", "€/MWh", "lng", "acer_pub"],
+  ["stor_ue", "Stoccaggi gas UE", "%", "stor_eu", "stor_date"], ["stor_it", "Stoccaggi gas Italia", "%", "stor_it", "stor_date"], ["stor_de", "Stoccaggi gas Germania", "%", "stor_de", "stor_date"],
+  ["el_nord", "Elettricità zona Nord", "€/MWh", "el_nord", "el_nord_date"], ["brent", "Brent", "$/barile", "brent", "brent_date"],
+  ["gasolio_it", "Gasolio Italia", "€/l", "diesel_it", "wob_date", 1000], ["cbam", "CBAM", "€/t", "cbam", null], ["import_el", "Import netto elettrico", "GWh", "net_imp_gwh", "net_imp_date"] ] };
+const verIso = (d) => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(d || "")); return m ? m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0") : String(d || "").slice(0, 10); };
+export function verSerie(hist, cols) { // storico di rs-numeri (una riga per giorno di raccolta) → serie per data vera del dato
+  const out = {};
+  for (const [k, n, u, col, dcol, div] of cols) {
+    const o = {};
+    for (const r of Array.isArray(hist) ? hist : []) { if (!r || r[col] == null || r[col] === "") continue; const d = verIso((dcol && r[dcol]) || r.date); const v = +r[col]; if (/^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(v)) o[d] = div && v > 100 ? +(v / div).toFixed(3) : v; }
+    const p = Object.entries(o).sort((a, b) => a[0].localeCompare(b[0]));
+    if (p.length) out[k] = { n, u, p };
+  }
+  return out;
+}
+async function verNumeri(env, v) {
+  if (v !== "en") return { numeri: {} };
+  try {
+    if (!env.RS || !env.RS_TOKEN) throw new Error("collegamento rs-numeri non configurato");
+    const r = await env.RS.fetch("https://rs-numeri/history.json", { headers: { authorization: "Bearer " + env.RS_TOKEN } });
+    if (!r.ok) throw new Error("rs-numeri: HTTP " + r.status);
+    return { numeri: verSerie(await r.json(), VER_NUM.en) };
+  } catch (e) { return { numeri: {}, errore: String((e && e.message) || e).slice(0, 120) }; }
+}
+const verUrl = (u) => (/^https:\/\/[^\s"<>]{4,400}$/.test(String(u || "")) ? String(u) : "");
+export function verPulisci(b, prev, oggi) { // unisce agenda e atti nuovi a quelli in archivio; restituisce { dati, res }
+  const D = { agenda: Array.isArray(prev && prev.agenda) ? prev.agenda : [], atti: Array.isArray(prev && prev.atti) ? prev.atti : [] }, res = { errori: [], agenda: 0, atti: 0, tolte: 0 };
+  const giorni = (n) => new Date(Date.parse(oggi + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+  const A = new Map(D.agenda.map((x) => [x.id, x]));
+  for (const x of (Array.isArray(b.agenda) ? b.agenda : []).slice(0, 120)) {
+    const cosa = cut(x && x.cosa, 220), data = x && /^\d{4}-\d{2}-\d{2}$/.test(x.data || "") ? x.data : "", url = verUrl(x && x.fonte && x.fonte.url);
+    if (!cosa || cosa.length < 8 || !data) { res.errori.push("agenda: servono data (AAAA-MM-GG) e cosa: " + cut(cosa, 40)); continue; }
+    if (!url) { res.errori.push("agenda: serve la fonte con link https: " + cut(cosa, 40)); continue; }
+    const id = slug(x.id, 60) || "d-" + data.replace(/-/g, "") + "-" + slug(cosa, 30), p = A.get(id) || {};
+    A.set(id, { id, data, data_fine: /^\d{4}-\d{2}-\d{2}$/.test(x.data_fine || "") && x.data_fine > data ? x.data_fine : "", cosa, livello: ["globale", "UE", "Italia", "regione"].includes(x.livello) ? x.livello : p.livello || "Italia", stato: ["ufficiale", "da_confermare"].includes(x.stato) ? x.stato : p.stato || "da_confermare", fonte: { nome: cut(x.fonte.nome, 60) || "fonte", url }, inserita: p.inserita || oggi }); res.agenda++;
+  }
+  for (const id of (Array.isArray(b.agenda_tolte) ? b.agenda_tolte : []).slice(0, 60)) if (A.delete(slug(id, 60))) res.tolte++;
+  D.agenda = [...A.values()].filter((x) => (x.data_fine || x.data) >= giorni(-30)).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 500);
+  const T = new Map(D.atti.map((x) => [x.id, x]));
+  for (const x of (Array.isArray(b.atti) ? b.atti : []).slice(0, 80)) {
+    const testo = cut(x && x.testo, 260), data = x && /^\d{4}-\d{2}-\d{2}$/.test(x.data || "") ? x.data : "", url = verUrl(x && x.fonte && x.fonte.url);
+    if (!testo || testo.length < 12 || !data || data > oggi) { res.errori.push("atto: servono data non futura e testo: " + cut(testo, 40)); continue; }
+    if (!url) { res.errori.push("atto: serve il link https all'atto: " + cut(testo, 40)); continue; }
+    if (x.letto !== true) { res.errori.push("atto non letto (letto: true solo se hai aperto l'atto): " + cut(testo, 40)); continue; }
+    const id = slug(x.id, 60) || "a-" + data.replace(/-/g, "") + "-" + slug(testo, 30), p = T.get(id) || {};
+    T.set(id, { id, data, testo, ente: cut(x.ente, 60) || p.ente || "", ambito: cut(x.ambito, 40) || p.ambito || "", territorio: cut(x.territorio, 40) || p.territorio || "", scadenza: /^\d{4}-\d{2}-\d{2}$/.test(x.scadenza || "") ? x.scadenza : p.scadenza || "", fonte: { nome: cut(x.fonte.nome, 60) || "fonte", url }, inserito: p.inserito || oggi }); res.atti++;
+  }
+  D.atti = [...T.values()].filter((x) => x.data >= giorni(-120)).sort((a, b) => a.data.localeCompare(b.data)).slice(-600);
+  D.aggiornato = oggi;
+  return { dati: D, res };
+}
+async function verVista(h, env, oggi, breve) { // breve = per la routine (ultimo valore e finestre corte); altrimenti per il pannello (serie)
+  const out = {}, giorni = (n) => new Date(Date.parse(oggi + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+  for (const v of Object.keys(VER)) {
+    const d = (await h.kvGet(env, K_VER(v))) || {}, N = await verNumeri(env, v), numeri = {};
+    for (const [k, x] of Object.entries(N.numeri)) { const p = x.p.slice(-60), vv = p.slice(-30).map((q) => q[1]), l = p[p.length - 1]; numeri[k] = breve ? { nome: x.n, unita: x.u, ultimo: { data: l[0], valore: l[1] }, min_30: Math.min(...vv), max_30: Math.max(...vv) } : { n: x.n, u: x.u, p }; }
+    const ag = (Array.isArray(d.agenda) ? d.agenda : []).filter((x) => (x.data_fine || x.data) >= oggi && x.data <= giorni(breve ? 30 : 60)).slice(0, breve ? 40 : 60);
+    const at = (Array.isArray(d.atti) ? d.atti : []).filter((x) => x.data >= giorni(breve ? -14 : -30)).slice(-(breve ? 60 : 80)).reverse();
+    out[v] = { nome: VER[v].n, numeri, ...(N.errore ? { numeri_errore: N.errore } : {}), agenda: ag, atti: at, aggiornato: d.aggiornato || null };
+  }
+  return out;
+}
+function soglia(x) { // soglia di smentita misurabile su un numero di verticale: { ver, num, verso: "sotto"|"sopra", valore }
+  if (!x || typeof x !== "object") return null;
+  const ver = String(x.ver || ""), num = String(x.num || ""), valore = +x.valore;
+  if (!VER_NUM[ver] || !VER_NUM[ver].some((c) => c[0] === num) || !["sotto", "sopra"].includes(x.verso) || !Number.isFinite(valore)) return null;
+  return { ver, num, verso: x.verso, valore };
+}
 function chPulisci(x, prev, oggi) {
   if (!x || typeof x !== "object") return null;
   const nome = cut(x.nome, 80) || (prev && prev.nome); if (!nome) return null;
-  const p = prev || {}, has = (k) => x[k] != null;
+  const p = prev || {}, has = (k) => x[k] != null, sg = x.soglia === null ? null : soglia(x.soglia) || p.soglia || null;
   return { id: p.id || slug(x.id, 40) || "k-" + slug(nome, 36), nome, tesi: has("tesi") ? cut(x.tesi, 320) : p.tesi || "", settore: SETT.includes(x.settore) ? x.settore : p.settore || "altro",
     stato: ST_CH.includes(x.stato) ? x.stato : p.stato || "spunto", catena: Array.isArray(x.catena) ? x.catena.slice(0, 4).map((c) => cut(c, 60)).filter(Boolean) : p.catena || [], manca: has("manca") ? cut(x.manca, 60) : p.manca || "",
     smentita: has("smentita") ? cut(x.smentita, 200) : p.smentita || "", prova_se: has("prova_se") ? cut(x.prova_se, 200) : p.prova_se || "", strumenti: Array.isArray(x.strumenti) ? x.strumenti.slice(0, 8).map((t) => invSim(t)).filter(Boolean) : p.strumenti || [],
-    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello" };
+    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello", ...(sg ? { soglia: sg } : {}) };
 }
 function faPulisci(x, prev, oggi, ids) {
   if (!x || typeof x !== "object") return { err: "fatto non valido" };
@@ -404,7 +479,7 @@ async function pfOrdini(h, env, arr, conto, oggi) {
 }
 const pfRiassunto = (D, conto) => { const c = D.conti[conto]; if (!c) return { avviato: false }; return { avviato: true, valore: c.valore, versato: c.versato, cassa: c.cassa, peso_cassa: c.peso_cassa, rend: c.rend, posizioni: c.posizioni.map((p) => ({ sim: p.sim, peso: p.peso, resa: p.resa, dal: p.dal, origine: (D.ops.find((o) => o.id === p.ops[p.ops.length - 1]) || {}).origine || null })), in_attesa: D.ops.filter((o) => o.conto === conto && o.esito.stato === "in_attesa").map((o) => ({ id: o.id, tipo: o.tipo, sim: o.sim, data: o.data })), regole: "ordini: {tipo: compra|vendi, ticker, peso (% del portafoglio, max " + PF_MAX_PESO + ") oppure eur, quota (0-1, per vendere una parte), motivo, origine {tipo, id}}; eseguiti alla prima chiusura successiva, costi 0,15%" }; };
 
-/* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi, /v1/inv/chiavi */
+/* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi, /v1/inv/chiavi, /v1/inv/verticale */
 export async function invRoute(request, env, p, method, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
   const oggi = h.romeToday();
@@ -415,7 +490,8 @@ export async function invRoute(request, env, p, method, h) {
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
+    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
+      verticali: await verVista(h, env, oggi, true),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
   if (p === "/v1/inv/ipotesi" && method === "POST") {
@@ -459,6 +535,13 @@ export async function invRoute(request, env, p, method, h) {
     const b = await request.json().catch(() => null); const arr = b && (b.ordini || b.portafoglio);
     if (!Array.isArray(arr)) return h.fail(400, "json", "atteso { ordini: [ … ] }");
     return h.json({ ok: true, esiti: await pfOrdini(h, env, arr, "modello", oggi) });
+  }
+  if (p === "/v1/inv/verticale" && method === "POST") { // il raccoglitore di una verticale: { verticale, agenda, agenda_tolte, atti }
+    const b = await request.json().catch(() => null); if (!b) return h.fail(400, "json");
+    const v = String(b.verticale || ""); if (!VER[v]) return h.fail(400, "verticale", "verticale sconosciuta: " + Object.keys(VER).join(", "));
+    const { dati, res } = verPulisci(b, await h.kvGet(env, K_VER(v)), oggi);
+    await h.kvSet(env, K_VER(v), dati);
+    return h.json({ ok: true, verticale: v, ...res, in_archivio: { agenda: dati.agenda.length, atti: dati.atti.length } });
   }
   if (p === "/v1/inv/chiavi" && method === "POST") { // la routine «chiavi»: { chiavi, fatti, richieste_fatte, ipotesi }
     const b = await request.json().catch(() => null); if (!b) return h.fail(400, "json");
@@ -510,7 +593,7 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
       for (const c of Object.values(P.conti || {})) for (const q of (c && c.posizioni) || []) if (!px[q.sim]) { const pp = (P.prezzi[q.sim] || []).filter((x) => x[0] <= oggi); const t = invTecnica(pp); if (t) delete t.hist; px[q.sim] = { p: pp.slice(-520), tecnica: t }; }
       return { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15, per_regola: pfPerRegola(P.ops, P.prezzi, oggi), px }; })() };
   }
