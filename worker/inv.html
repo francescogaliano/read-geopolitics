@@ -412,7 +412,7 @@ function scheda(sim){const o=D.osservati.find(x=>x.sim===sim);if(!o)return;const
  ${cat?`<div class="sec"><span class="mono">Prossimi catalizzatori</span></div>${cat}`:""}
  ${fo?`<p class="note">Fonti: ${fo}${K.aggiornata_il?" · scheda del "+dd(K.aggiornata_il.slice(0,10)):""}</p>`:""}`;pzAvvia();
  const sh=document.getElementById("sh");sh.classList.add("on");document.getElementById("shx").onclick=()=>sh.classList.remove("on");sh.onclick=e=>{if(e.target===sh)sh.classList.remove("on")};}
-const SN={en:"Energia e materie prime",te:"Tecnologia",di:"Difesa",tr:"Trasporti",altro:"Altro"},KST={spunto:["spunto","var(--mut)"],in_prova:["in prova","var(--amb)"],confermata:["confermata","var(--up)"],scartata:["scartata","var(--mut)"]};
+const SN={en:"Energia e materie prime",te:"Tecnologia",di:"Industria e difesa",tr:"Trasporti",altro:"Altro"},KST={spunto:["spunto","var(--mut)"],in_prova:["in prova","var(--amb)"],confermata:["confermata","var(--up)"],scartata:["scartata","var(--mut)"]};
 const ksaldo=k=>{let s=0;return k.fatti.map(f=>s+=f.verso)};
 let VSEL="tutte";
 const vnum=(sg)=>{const V=D.verticali&&D.verticali[sg.ver],n=V&&V.numeri&&V.numeri[sg.num];return n&&n.p&&n.p.length?n:null};
@@ -422,11 +422,11 @@ function sogliaHtml(k){const sg=k.soglia;if(!sg)return"";const n=vnum(sg);if(!n)
 function verticali(){const K=D.chiavi||[],S=D.sciolti||[],V=D.verticali||{},ids=[...new Set(Object.keys(V).concat(K.map(k=>k.settore),S.map(f=>f.settore)))].filter(x=>SN[x]).sort((a,b)=>Object.keys(SN).indexOf(a)-Object.keys(SN).indexOf(b));
  if(VSEL!=="tutte"&&!ids.includes(VSEL))VSEL="tutte";
  const vt=document.getElementById("vt"),n=x=>K.filter(k=>k.stato!=="scartata"&&(x==="tutte"||k.settore===x)).length;
- vt.innerHTML=["tutte"].concat(ids).map(x=>`<button role="tab" aria-selected="${VSEL===x}" data-x="${x}" style="--c:${x==="tutte"?"var(--acc)":SC[x]||"var(--al)"}">${x==="tutte"?"Tutte":esc(SNL[x]||SN[x]).split(" e ")[0]}<i>${n(x)||""}</i></button>`).join("");
+ vt.innerHTML=["tutte"].concat(ids).map(x=>`<button role="tab" aria-selected="${VSEL===x}" data-x="${x}" style="--c:${x==="tutte"?"var(--acc)":SC[x]||"var(--al)"}">${x==="tutte"?"Tutte":esc(SN[x]).split(" e ")[0]}<i>${n(x)||""}</i></button>`).join("");
  vt.querySelectorAll("button").forEach(b=>b.onclick=()=>{VSEL=b.dataset.x;chiavi()});
  const W=VSEL!=="tutte"?V[VSEL]:null,num=document.getElementById("vnum"),xk=document.getElementById("vxk"),ag=document.getElementById("vag"),at=document.getElementById("vat");
  num.innerHTML=xk.innerHTML=ag.innerHTML=at.innerHTML="";
- document.getElementById("chiT").textContent=VSEL==="tutte"?"Mappa delle chiavi":"Chiavi · "+(SNL[VSEL]||SN[VSEL]);
+ document.getElementById("chiT").textContent=VSEL==="tutte"?"Mappa delle chiavi":"Chiavi · "+SN[VSEL];
  if(VSEL==="tutte")return;
  if(W){const N=Object.values(W.numeri||{});
   num.innerHTML=`<div class="sec"><span class="mono">Numeri della verticale</span><span class="mono">${N.length?"raccolti ogni mattina":""}</span></div>`+(N.length?`<div class="vn">${N.map(x=>{const l=x.p.at(-1);return `<div><small>${esc(x.n)}</small><b>${fnum(l[1])}</b><em>${esc(x.u)} · ${dd(l[0])}</em>${spark(x.p.slice(-30),96,20)}</div>`}).join("")}</div>`:`<div class="note">${W.numeri_errore?"Numeri non disponibili: "+esc(W.numeri_errore)+".":"Ancora nessun numero raccolto."}</div>`);
