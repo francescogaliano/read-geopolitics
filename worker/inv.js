@@ -347,14 +347,24 @@ export function verSerie(hist, cols) { // storico di rs-numeri (una riga per gio
   }
   return out;
 }
-async function verNumeri(env, v) {
+export function verArchivia(arch, fresche, cols) { // unisce le serie fresche all'archivio permanente { chiave: { data: valore } }; il dato fresco vince
+  const A = arch && typeof arch === "object" ? arch : {}; let nuovi = 0;
+  for (const [k, x] of Object.entries(fresche || {})) { const o = A[k] || (A[k] = {}); for (const [d, v] of x.p) if (o[d] !== v) { o[d] = v; nuovi++; } }
+  const numeri = {};
+  for (const [k, n, u] of cols) { const p = Object.entries(A[k] || {}).sort((a, b) => a[0].localeCompare(b[0])); if (p.length) numeri[k] = { n, u, p }; }
+  return { arch: A, numeri, nuovi };
+}
+async function verNumeri(h, env, v) { // rs-numeri tiene solo gli ultimi 120 giorni: qui ogni dato letto resta per sempre in kv «inv:ver:en:num»
   if (v !== "en") return { numeri: {} };
+  const arch = (await h.kvGet(env, K_VER(v) + ":num").catch(() => null)) || {};
   try {
     if (!env.RS || !env.RS_TOKEN) throw new Error("collegamento rs-numeri non configurato");
     const r = await env.RS.fetch("https://rs-numeri/history.json", { headers: { authorization: "Bearer " + env.RS_TOKEN } });
     if (!r.ok) throw new Error("rs-numeri: HTTP " + r.status);
-    return { numeri: verSerie(await r.json(), VER_NUM.en) };
-  } catch (e) { return { numeri: {}, errore: String((e && e.message) || e).slice(0, 120) }; }
+    const m = verArchivia(arch, verSerie(await r.json(), VER_NUM[v]), VER_NUM[v]);
+    if (m.nuovi) await h.kvSet(env, K_VER(v) + ":num", m.arch).catch(() => {});
+    return { numeri: m.numeri };
+  } catch (e) { return { numeri: verArchivia(arch, {}, VER_NUM[v]).numeri, errore: String((e && e.message) || e).slice(0, 120) }; }
 }
 const verUrl = (u) => (/^https:\/\/[^\s"<>]{4,400}$/.test(String(u || "")) ? String(u) : "");
 export function verPulisci(b, prev, oggi) { // unisce agenda e atti nuovi a quelli in archivio; restituisce { dati, res }
@@ -386,7 +396,7 @@ export function verPulisci(b, prev, oggi) { // unisce agenda e atti nuovi a quel
 async function verVista(h, env, oggi, breve) { // breve = per la routine (ultimo valore e finestre corte); altrimenti per il pannello (serie)
   const out = {}, giorni = (n) => new Date(Date.parse(oggi + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
   for (const v of Object.keys(VER)) {
-    const d = (await h.kvGet(env, K_VER(v))) || {}, N = await verNumeri(env, v), numeri = {};
+    const d = (await h.kvGet(env, K_VER(v))) || {}, N = await verNumeri(h, env, v), numeri = {};
     for (const [k, x] of Object.entries(N.numeri)) { const p = x.p.slice(-60), vv = p.slice(-30).map((q) => q[1]), l = p[p.length - 1]; numeri[k] = breve ? { nome: x.n, unita: x.u, ultimo: { data: l[0], valore: l[1] }, min_30: Math.min(...vv), max_30: Math.max(...vv) } : { n: x.n, u: x.u, p }; }
     const ag = (Array.isArray(d.agenda) ? d.agenda : []).filter((x) => (x.data_fine || x.data) >= oggi && x.data <= giorni(breve ? 30 : 60)).slice(0, breve ? 40 : 60);
     const at = (Array.isArray(d.atti) ? d.atti : []).filter((x) => x.data >= giorni(breve ? -14 : -30)).slice(-(breve ? 60 : 80)).reverse();

@@ -7,13 +7,8 @@ SCOPO: portare materia prima pulita alla routine «chiavi», che è l'unica a de
 STRUMENTI: `python3 /tmp/rgdb.py …` per il database; ricerca web e lettura pagine integrate (WebSearch, WebFetch). Non usare Firecrawl. Se /tmp/rgdb.py non c'è, scrivilo nel resoconto e fermati.
 
 1. CONTESTO. `python3 /tmp/rgdb.py inv-contesto` e leggi «verticali.en»:
-   - numeri: li raccoglie da solo un altro servizio ogni mattina. Controlla solo che la data dell'ultimo valore sia recente (entro 4 giorni per i dati di mercato). Se un numero è fermo o manca, scrivilo nel resoconto: non cercarlo e non sostituirlo tu.
+   - numeri: li raccoglie da solo un altro servizio ogni mattina. Controlla solo che la data dell'ultimo valore sia recente (entro 4 giorni per i dati di mercato; il gasolio Italia è settimanale: entro 9 giorni). Se un numero è fermo o manca, scrivilo nel resoconto: non cercarlo e non sostituirlo tu.
    - agenda e atti già in archivio: non reinserirli.
-
-0. CARICO INIZIALE (una volta sola). Se in «verticali.en» l'agenda è vuota, leggi worker/kit/routine/energia-avvio.json nella cartella del repository:
-   - «agenda»: invia le voci così come sono, in un primo invio con `inv-verticale` ({"verticale":"en","agenda":[…]}).
-   - «atti_da_verificare»: sono atti raccolti dal vecchio progetto, NON ancora verificati. Apri ciascun link: inserisci l'atto solo se la pagina si apre e conferma il testo; data, numero e cifre prendili dall'atto, non dal file (correggi ciò che non coincide). Quelli che non si aprono restano fuori. Questi atti non contano nel budget del punto 2.
-   Scrivi nel resoconto quante date hai caricato e, per ogni atto, se è entrato, corretto o scartato. Se l'agenda non è vuota, salta questo punto.
 
 2. ATTI UFFICIALI (budget: al massimo 10 ricerche e 16 pagine lette). Cerca gli atti pubblicati negli ultimi 3 giorni (7 il lunedì) da fonti primarie:
    - Italia: ARERA (delibere, consultazioni), MASE, GSE, Terna, GME, Gazzetta Ufficiale (decreti e leggi su energia, bollette, rinnovabili, reti, rifiuti, acqua), Parlamento (memorie e audizioni depositate), Regioni (delibere su impianti, aree idonee, autorizzazioni);
