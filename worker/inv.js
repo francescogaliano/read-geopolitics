@@ -10,6 +10,7 @@
      bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
+import { PUB_KV, PUB_TOKEN_KV, PUB_CFG_KV, VERDETTI, verdettoMeccanico, copiaPubblica } from "./chiavi-pub.js";
 import { pfCalcola, pfValuta, pfChiusura, pfPerRegola, PF_RIF, PF_FX, PF_MAX_PESO, PF_SC_PESO, PF_SC_MAX } from "./inv-pf.js";
 import { RETRO_VERSIONE, RETRO_FILONI, retroIpotesi, retroValuta, retroRiepilogo } from "./inv-retro.js";
 
@@ -434,13 +435,15 @@ function soglia(x) { // soglia di smentita misurabile su un numero di verticale:
   if (!x || typeof x !== "object") return null;
   const ver = String(x.ver || ""), num = String(x.num || ""), valore = +x.valore;
   if (!VER_NUM[ver] || !VER_NUM[ver].some((c) => c[0] === num) || !["sotto", "sopra"].includes(x.verso) || !Number.isFinite(valore)) return null;
-  return { ver, num, verso: x.verso, valore };
+  const durata = Math.round(+x.durata); // per quante rilevazioni di fila deve restare oltre la soglia perché la chiave cada (10 se non indicata)
+  return { ver, num, verso: x.verso, valore, ...(durata >= 1 && durata <= 250 ? { durata } : {}) };
 }
 const RIP_ST = ["visibile", "attesa", "possibile"];
-function chDirezione(x, p) { // la direzione della chiave: dove porta, ripercussioni, chi è toccato, cosa osservare (le scrive la routine dai fatti)
+function chDirezione(x, p, oggi) { // la direzione della chiave: dove porta, ripercussioni, chi è toccato, cosa osservare (le scrive la routine dai fatti)
   const o = {}, has = (k) => x[k] != null;
   o.porta = has("porta") ? cut(x.porta, 280) : p.porta || "";
-  o.ripercussioni = Array.isArray(x.ripercussioni) ? x.ripercussioni.slice(0, 5).map((r) => ({ stato: RIP_ST.includes(r && r.stato) ? r.stato : "possibile", testo: cut(r && r.testo, 170), base: cut(r && r.base, 150) })).filter((r) => r.testo) : p.ripercussioni || [];
+  // ogni conseguenza attesa dice in quale dato si vedrebbe ed entro quando; «dal» = quando è stata dichiarata (non si riscrive)
+  o.ripercussioni = Array.isArray(x.ripercussioni) ? x.ripercussioni.slice(0, 5).map((r) => { const testo = cut(r && r.testo, 170), prima = (p.ripercussioni || []).find((y) => y.testo === testo) || {}; return { stato: RIP_ST.includes(r && r.stato) ? r.stato : "possibile", testo, base: cut(r && r.base, 150), dato: cut(r && r.dato, 150), entro: cut(r && r.entro, 40), dal: prima.dal || oggi, ...(prima.stato === "attesa" && r.stato === "visibile" ? { visibile_dal: oggi } : prima.visibile_dal ? { visibile_dal: prima.visibile_dal } : {}) }; }).filter((r) => r.testo) : p.ripercussioni || [];
   const t = x.toccati && typeof x.toccati === "object" ? { perde: cut(x.toccati.perde, 170), guadagna: cut(x.toccati.guadagna, 170) } : p.toccati || null;
   if (t && (t.perde || t.guadagna)) o.toccati = t;
   o.osservare = Array.isArray(x.osservare) ? x.osservare.slice(0, 4).map((r) => ({ quando: /^\d{4}-\d{2}-\d{2}$/.test((r && r.quando) || "") || ["presto", "settimane", "mesi"].includes(r && r.quando) ? r.quando : "", testo: cut(r && r.testo, 170), senso: cut(r && r.senso, 170) })).filter((r) => r.testo) : p.osservare || [];
@@ -454,7 +457,12 @@ export function chPulisci(x, prev, oggi) {
   return { id: p.id || slug(x.id, 40) || "k-" + slug(nome, 36), nome, tesi: has("tesi") ? cut(x.tesi, 320) : p.tesi || "", settore: SETT.includes(x.settore) ? x.settore : p.settore || "altro",
     stato: ST_CH.includes(x.stato) ? x.stato : p.stato || "spunto", catena: Array.isArray(x.catena) ? x.catena.slice(0, 4).map((c) => cut(c, 60)).filter(Boolean) : p.catena || [], manca: has("manca") ? cut(x.manca, 60) : p.manca || "",
     smentita: has("smentita") ? cut(x.smentita, 200) : p.smentita || "", prova_se: has("prova_se") ? cut(x.prova_se, 200) : p.prova_se || "", strumenti: Array.isArray(x.strumenti) ? x.strumenti.slice(0, 8).map((t) => invSim(t)).filter(Boolean) : p.strumenti || [],
-    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello", ...(sg ? { soglia: sg } : {}), ...(() => { const d = chDirezione(x, p); if (d.direzione_del === null) d.direzione_del = oggi; return d; })() };
+    nota: has("nota") ? cut(x.nota, 240) : p.nota || "", sintesi: has("sintesi") ? cut(x.sintesi, 1000) : p.sintesi || "", sintesi_del: has("sintesi") && cut(x.sintesi, 1000) ? oggi : p.sintesi_del || "", creata: p.creata || oggi, aggiornata: oggi, origine: p.origine || "modello", ...(sg ? { soglia: sg } : {}), ...(() => { const d = chDirezione(x, p, oggi); if (d.direzione_del === null) d.direzione_del = oggi; return d; })(),
+    // pagina esterna e verdetti (20/11/2026): la condizione di smentita resta con la sua data, le versioni precedenti si conservano
+    ...(() => { const sm = has("smentita") ? cut(x.smentita, 200) : p.smentita || "", cambiata = !!p.smentita && sm !== p.smentita;
+      const vp = x.verdetto_proposto === null ? null : x.verdetto_proposto && ["confermata", "smentita"].includes(x.verdetto_proposto.stato) && cut(x.verdetto_proposto.motivo, 240).length >= 10 ? { stato: x.verdetto_proposto.stato, motivo: cut(x.verdetto_proposto.motivo, 240), fatto_id: slug(x.verdetto_proposto.fatto_id, 60), del: oggi } : p.verdetto_proposto || null;
+      return { smentita_del: cambiata ? oggi : p.smentita_del || (sm ? p.creata || oggi : ""), smentita_prec: cambiata ? (p.smentita_prec || []).concat([{ testo: p.smentita, dal: p.smentita_del || p.creata || "", fino: oggi }]).slice(-5) : p.smentita_prec || [],
+        racconto_pubblico: has("racconto_pubblico") ? cut(x.racconto_pubblico, 1300) : p.racconto_pubblico || "", ...(vp ? { verdetto_proposto: vp } : {}), ...(p.pubblica != null ? { pubblica: p.pubblica, pubblica_il: p.pubblica_il } : {}), ...(p.verdetto ? { verdetto: p.verdetto } : {}), ...(p.verdetto_storia ? { verdetto_storia: p.verdetto_storia } : {}) }; })() };
 }
 function faPulisci(x, prev, oggi, ids) {
   if (!x || typeof x !== "object") return { err: "fatto non valido" };
@@ -473,6 +481,15 @@ async function chiaviVista(h, env, L) {
   const F2 = F.map((f) => (sup.has(f.id) ? { ...f, superato_da: sup.get(f.id) } : f));
   const chiavi = K.map((k) => { const tutti = F2.filter((f) => f.chiave_id === k.id).sort((a, b) => a.data.localeCompare(b.data) || a.id.localeCompare(b.id)), mie = tutti.filter((f) => !f.superato_da); return { ...k, fatti: mie, superati: tutti.filter((f) => f.superato_da), favore: mie.filter((f) => f.verso > 0).length, contro: mie.filter((f) => f.verso < 0).length, chiamate: (L || []).filter((x) => x.origine && x.origine.tipo === "chiave" && x.origine.id === k.id) }; });
   return { chiavi, sciolti: F2.filter((f) => !f.chiave_id && !f.superato_da).sort((a, b) => b.data.localeCompare(a.data)).slice(0, 60), richieste_fatti: ((await h.kvGet(env, K_RQF)) || []).filter((r) => !r.fatta) };
+}
+
+/* pagina esterna: ricostruisce la copia filtrata (solo chiavi con pubblica = true, solo campi ammessi) */
+async function serieSoglie(h, env) { const N = {}; for (const v of Object.keys(VER)) N[v] = (await verNumeri(h, env, v)).numeri; return (sg) => ((N[sg.ver] || {})[sg.num] || {}).p || null; }
+export async function pubAggiorna(h, env, oggi) {
+  const v = await chiaviVista(h, env, []), r = copiaPubblica(v.chiavi, oggi, (await h.kvGet(env, PUB_CFG_KV)) || {});
+  await h.kvSet(env, PUB_KV, r.copia);
+  let t = await h.kvGet(env, PUB_TOKEN_KV); if (!t) { t = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, "0")).join(""); await h.kvSet(env, PUB_TOKEN_KV, t); }
+  return { token: t, pubblicate: r.copia.chiavi.length, trattenuti: r.trattenuti };
 }
 
 /* simulatore: legge il registro, scarica i prezzi mancanti (al massimo 6) e ricalcola tutto */
@@ -556,7 +573,7 @@ export async function invRoute(request, env, p, method, h) {
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
     const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t, forza: forzaDi(o.sim, serie) || undefined }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, mercati: mercatiVista(serie, L, false), opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, porta: k.porta || undefined, ripercussioni: k.ripercussioni && k.ripercussioni.length ? k.ripercussioni : undefined, toccati: k.toccati || undefined, osservare: k.osservare && k.osservare.length ? k.osservare : undefined, direzione_del: k.direzione_del || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
+    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, mercati: mercatiVista(serie, L, false), opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, porta: k.porta || undefined, ripercussioni: k.ripercussioni && k.ripercussioni.length ? k.ripercussioni : undefined, toccati: k.toccati || undefined, osservare: k.osservare && k.osservare.length ? k.osservare : undefined, direzione_del: k.direzione_del || undefined, racconto_pubblico: k.racconto_pubblico || undefined, smentita_del: k.smentita_del || undefined, pubblica: k.pubblica === true || undefined, verdetto: k.verdetto || undefined, verdetto_proposto: k.verdetto_proposto || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
       verticali: await verVista(h, env, oggi, true),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
@@ -621,6 +638,7 @@ export async function invRoute(request, env, p, method, h) {
     }
     if (Array.isArray(b.richieste_fatte)) { const R = (await h.kvGet(env, K_RQF)) || []; const f = new Set(b.richieste_fatte.map(String)); R.forEach((r) => { if (f.has(r.id)) r.fatta = oggi; }); await h.kvSet(env, K_RQF, R.slice(-200)); }
     if (Array.isArray(b.ipotesi)) res.ipotesi = await registraIpotesi(h, env, b.ipotesi, await serieTutte(h, env, O.map((o) => o.sim)), oggi);
+    try { const pb = await pubAggiorna(h, env, oggi); if (pb.trattenuti.length) res.pagina_esterna_trattenuti = pb.trattenuti; } catch (e) { res.errori.push("pagina esterna: copia non aggiornata"); }
     return h.json({ ok: true, ...res });
   }
   return h.fail(404, "not_found");
@@ -659,7 +677,7 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), forza: forzaDi(o.sim, serie) || undefined, chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), mercati: mercatiVista(serie, L, true), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), mercati: mercatiVista(serie, L, true), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await (async () => { const v = await chiaviVista(h, env, L), sr = await serieSoglie(h, env), oggi = h.romeToday(); for (const k of v.chiavi) { const m = verdettoMeccanico(k, oggi, sr), pr = k.verdetto_proposto || m, at = (k.verdetto || {}).stato || "aperta"; if (pr && pr.stato !== at) k.proposta = pr; } const r = copiaPubblica(v.chiavi, oggi, {}); let tk = await h.kvGet(env, PUB_TOKEN_KV); if (!tk) tk = (await pubAggiorna(h, env, oggi)).token; return { ...v, pub: { token: tk, pubblicate: r.copia.chiavi.length, trattenuti: r.trattenuti, cfg: (await h.kvGet(env, PUB_CFG_KV)) || {} } }; })()), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
       for (const c of Object.values(P.conti || {})) for (const q of (c && c.posizioni) || []) if (!px[q.sim]) { const pp = (P.prezzi[q.sim] || []).filter((x) => x[0] <= oggi); const t = invTecnica(pp); if (t) delete t.hist; px[q.sim] = { p: pp.slice(-520), tecnica: t }; }
       return { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15, per_regola: pfPerRegola(P.ops, P.prezzi, oggi), px }; })() };
   }
@@ -677,6 +695,21 @@ export async function invPanelApi(env, b, h) {
     const L = (await h.kvGet(env, K_PF)) || { ops: [] }, D = await pfDati(h, env, h.romeToday(), false), o = (L.ops || []).find((x) => x.id === b.id);
     if (!o || o.conto !== "mio" || o.tipo === "versa" || (D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa")) return { ok: false, error: "ordine non annullabile" };
     L.ops = L.ops.filter((x) => x.id !== b.id); await h.kvSet(env, K_PF, L); return { ok: true };
+  }
+  if (b.action === "inv_pub_cfg") { // nome del prodotto e riga di contatto in fondo alla pagina esterna
+    const c = { nome: cut(b.nome, 60), contatto: /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i.test(String(b.contatto || "").trim()) ? String(b.contatto).trim() : "" };
+    if (String(b.contatto || "").trim() && !c.contatto) return { ok: false, error: "indirizzo email non valido" };
+    await h.kvSet(env, PUB_CFG_KV, c); return { ok: true, ...(await pubAggiorna(h, env, h.romeToday())) };
+  }
+  if (b.action === "inv_chiave_pubblica" || b.action === "inv_chiave_verdetto") { // ok di Francesco, chiave per chiave: pubblicabile sì/no e verdetto
+    const K = (await h.kvGet(env, K_CH)) || [], k = K.find((x) => x.id === b.id), oggi = h.romeToday(); if (!k) return { ok: false, error: "chiave sconosciuta" };
+    if (b.action === "inv_chiave_pubblica") { k.pubblica = b.pubblica === true; k.pubblica_il = oggi; }
+    else { if (!VERDETTI.includes(b.stato)) return { ok: false, error: "verdetto: " + VERDETTI.join(" | ") }; const prima = (k.verdetto || {}).stato || "aperta";
+      k.verdetto_storia = (k.verdetto_storia || []).concat([{ da: prima, a: b.stato, il: oggi, motivo: cut(b.motivo, 240) }]).slice(-20);
+      if (b.stato === "aperta") delete k.verdetto; else k.verdetto = { stato: b.stato, dal: oggi, motivo: cut(b.motivo, 240), fatto_id: cut(b.fatto_id, 60) };
+      delete k.verdetto_proposto; }
+    await h.kvSet(env, K_CH, K); const pb = await pubAggiorna(h, env, oggi);
+    return { ok: true, ...pb };
   }
   if (b.action === "inv_fatto") { // un fatto o un link scritto a mano: lo verifica e lo colloca la routine «chiavi»
     const t = cut(b.testo, 600); if (t.length < 8) return { ok: false, error: "scrivi il fatto o incolla un link" };
