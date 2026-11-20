@@ -6,6 +6,8 @@ import KIT_RGDB from "./kit/rgdb.py";
 import SALA_HTML from "./sala.html";
 import SPIEGATI_HTML from "./spiegati.html";
 import INV_HTML from "./inv.html";
+import PUB_HTML from "./chiavi-pub.html";
+import { PUB_KV, PUB_TOKEN_KV } from "./chiavi-pub.js";
 import RS_HTML from "./rassegna.html";
 import GEO_JSON from "../public/geo.json";
 import { rsRoute, rsPanelApi, rsCron } from "./rassegna.js";
@@ -5634,6 +5636,13 @@ async function route(request, env, ctx) {
   }
   if (p === "/ig/geo.json" && method === "GET") return new Response(JSON.stringify(GEO_JSON), { headers: { "content-type": "application/json", "cache-control": "public, max-age=86400" } }); // mappa della rassegna
   if (p === "/v1/rassegna" && method === "GET") return await rsRoute(request, env, url, { authorized, fail, json, kvGet, kvSet });
+  if (p.startsWith("/k/") && method === "GET") { // pagina esterna delle chiavi: indirizzo non pubblico (con codice), legge solo la copia filtrata
+    const m = /^\/k\/([a-f0-9]{16,40})(\/dati\.json)?\/?$/.exec(p), t = m && (await kvGet(env, PUB_TOKEN_KV));
+    if (!m || !t || m[1] !== t) return new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } });
+    const sec = { "x-robots-tag": "noindex, nofollow", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" };
+    if (m[2]) return new Response(JSON.stringify((await kvGet(env, PUB_KV)) || { chiavi: [] }), { headers: { "content-type": "application/json; charset=utf-8", ...sec } });
+    return new Response(PUB_HTML, { headers: { "content-type": "text/html; charset=utf-8", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'", ...sec } });
+  }
   if (p.startsWith("/v1/inv/")) return await invRoute(request, env, p, method, { authorized, fail, json, kvGet, kvSet, romeToday });
   if (p === "/" || p === "/ping")
     return json({ ok: true, service: "rg-api", time: new Date().toISOString() });
