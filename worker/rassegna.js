@@ -255,11 +255,13 @@ const nrm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-�
 export function rsConfronta(RS, st, sel, ctx) { // puro: storie larghe della rassegna contro storie e candidate del briefing
   const GEN = new Set(["p:USA", "g:ue", "g:donald-trump"]);
   const E = (t) => new Set(rsEntita(t, ctx.I).map((e) => (e.iso ? "p:" + e.iso : e.k)).filter((k) => !GEN.has(k)));
-  const dove = [...st.map((x) => ({ t: x.titolo, testo: x.titolo + " " + (x.fatti || ""), esito: "storia", motivo: "", fonti: x.fonti || [] })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, testo: x.titolo, esito: x.esito || "esclusa", motivo: x.motivo || "", fonti: [] }))].map((x) => ({ ...x, E: E(x.testo), K: parole(x.testo) }));
+  const dove = [...st.map((x) => ({ t: x.titolo, testo: x.titolo + " " + (x.fatti || ""), esito: "storia", motivo: "", fonti: x.fonti || [] })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, testo: x.titolo, esito: x.esito || "esclusa", motivo: x.motivo || "", fonti: [] }))].map((x) => ({ ...x, E: E(x.testo), Et: E(x.t), Kt: parole(x.t) }));
   const non = {}, out = [];
   for (const g of RS) {
     const testo = g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 6).join(" "), ge = E(testo), gk = parole(testo); let best = null, bs = 0;
-    for (const x of dove) { let e = 0; for (const k of x.E) if (ge.has(k)) e++; let kw = 0; for (const w of x.K) if (gk.has(w)) kw++; const sc = e * 2 + kw; if ((e >= 2 || (e >= 1 && kw >= 2)) && sc > bs) { bs = sc; best = x; } }
+    // v2 (20/11/2026): il testo lungo di una storia contiene molti nomi e attirava storie estranee. Ora conta il TITOLO della storia:
+    // due nomi del titolo in comune più una parola del titolo (o tre nomi del titolo); oppure un nome del titolo più due nomi in tutto e una parola del titolo (o tre nomi in tutto); oppure un nome e due parole del titolo.
+    for (const x of dove) { let et = 0; for (const k of x.Et) if (ge.has(k)) et++; let e = 0; for (const k of x.E) if (ge.has(k)) e++; let kw = 0; for (const w of x.Kt) if (gk.has(w)) kw++; const sc = et * 3 + e + kw; if (((et >= 2 && (kw >= 1 || et >= 3)) || (et >= 1 && e >= 2 && (kw >= 1 || e >= 3)) || (et >= 1 && kw >= 2)) && sc > bs) { bs = sc; best = x; } }
     const r = { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? (best.esito === "storia" ? "nel briefing" : "valutata ed esclusa") : "non valutata", motivo: best ? String(best.motivo || "").slice(0, 160) : "", con: best && best.esito === "storia" ? best.t : null };
     if (best && best.esito === "storia") {
       const citate = best.fonti.map((f) => nrm(f.nome)).concat(best.fonti.map((f) => String(f.id || "")), best.fonti.map((f) => String(f.origine || "")));
@@ -282,12 +284,12 @@ export async function rsFoto(env, h, data) {
   await tabella(env);
   const voci = ((await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 AND data < ?2 ORDER BY data DESC LIMIT 4000").bind(da.toISOString(), a.toISOString()).all()).results || []).reverse(), prima = (await env.DB.prepare("SELECT min(data) m FROM rs_voci").first()) || {};
   const RS = rsStorie(voci, ctx).filter((g) => g.n_fonti >= 4).slice(0, 80);
-  return { data, fatta: new Date().toISOString(), titoli: voci.length, fonti_attive: new Set(voci.map((v) => v.fonte)).size, parziale: voci.length >= 4000 ? "letti i 4.000 titoli più recenti della finestra" : prima.m && prima.m > da.toISOString() ? "la raccolta non copre tutta la finestra" : "", storie_briefing: st.length, ...rsConfronta(RS, st, b.selezione || [], ctx) };
+  return { v: 2, data, fatta: new Date().toISOString(), titoli: voci.length, fonti_attive: new Set(voci.map((v) => v.fonte)).size, parziale: voci.length >= 4000 ? "letti i 4.000 titoli più recenti della finestra" : prima.m && prima.m > da.toISOString() ? "la raccolta non copre tutta la finestra" : "", storie_briefing: st.length, ...rsConfronta(RS, st, b.selezione || [], ctx) };
 }
 /* dal cron: dopo le 9 di Roma salva la fotografia di oggi; recupera ieri e l'altro ieri se mancano (finché i titoli ci sono) */
 export async function rsFotoCron(env, h, oggi, oraRoma) {
   if (oraRoma < 9) return; const F = (await h.kvGet(env, K_FOTO)) || {}; let fatto = false;
-  for (const g of [0, 1, 2]) { const d = new Date(Date.parse(oggi + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10); if (F[d]) continue; const f = await rsFoto(env, h, d); if (f) { F[d] = f; fatto = true; break; } } // una per giro: il cron resta leggero
+  for (const g of [0, 1, 2]) { const d = new Date(Date.parse(oggi + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10); if (F[d] && (F[d].v === 2 || F[d].tenuta)) continue; const f = await rsFoto(env, h, d); if (!f) continue; if (!F[d] || !f.parziale || f.parziale.startsWith("letti")) F[d] = f; else F[d].tenuta = true; /* titoli già scaduti: resta la fotografia vecchia, non si riprova */ fatto = true; break; } // una per giro: il cron resta leggero
   if (fatto) { const K = Object.keys(F).sort().slice(-90), o = {}; for (const k of K) o[k] = F[k]; await h.kvSet(env, K_FOTO, o); }
 }
 
