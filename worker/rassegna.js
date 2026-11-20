@@ -245,6 +245,52 @@ export async function rsBrief(env, h, data) {
   return { ok: true, data: B.key, prima: prev ? prev.key : null, dopo: next ? next.key : null, n_storie: storie.length, n_mondo: mondo.length, n_italia: storie.length - mondo.length, candidate: sel.length, citazioni: tot, testate_n: testate.length, regole, storie, selezione: sel, testate: testate.slice(0, 10), rassegna };
 }
 
+/* ---------- fotografia del giorno: rassegna e briefing a confronto, salvata (dal 20/11/2026) ----------
+   I titoli della rassegna restano 72 ore: senza una fotografia salvata non resta nulla su cui decidere se usarla come base.
+   Finestra: le 24 ore prima delle 7 (ora di Roma) del giorno del briefing. «Storia larga» = almeno 4 fonti diverse.
+   Per ogni storia larga: era nel briefing, era stata valutata ed esclusa, o non era stata valutata.
+   Per quelle nel briefing: quali testate della rassegna la davano e il briefing non ha citato. */
+const K_FOTO = "rs:foto";
+const nrm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\(.*?\)/g, " ").replace(/\b(via|da)\b.*$/, " ").replace(/[^a-z0-9]+/g, " ").trim();
+export function rsConfronta(RS, st, sel, ctx) { // puro: storie larghe della rassegna contro storie e candidate del briefing
+  const GEN = new Set(["p:USA", "g:ue", "g:donald-trump"]);
+  const E = (t) => new Set(rsEntita(t, ctx.I).map((e) => (e.iso ? "p:" + e.iso : e.k)).filter((k) => !GEN.has(k)));
+  const dove = [...st.map((x) => ({ t: x.titolo, testo: x.titolo + " " + (x.fatti || ""), esito: "storia", motivo: "", fonti: x.fonti || [] })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, testo: x.titolo, esito: x.esito || "esclusa", motivo: x.motivo || "", fonti: [] }))].map((x) => ({ ...x, E: E(x.testo), K: parole(x.testo) }));
+  const non = {}, out = [];
+  for (const g of RS) {
+    const testo = g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 6).join(" "), ge = E(testo), gk = parole(testo); let best = null, bs = 0;
+    for (const x of dove) { let e = 0; for (const k of x.E) if (ge.has(k)) e++; let kw = 0; for (const w of x.K) if (gk.has(w)) kw++; const sc = e * 2 + kw; if ((e >= 2 || (e >= 1 && kw >= 2)) && sc > bs) { bs = sc; best = x; } }
+    const r = { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? (best.esito === "storia" ? "nel briefing" : "valutata ed esclusa") : "non valutata", motivo: best ? String(best.motivo || "").slice(0, 160) : "", con: best && best.esito === "storia" ? best.t : null };
+    if (best && best.esito === "storia") {
+      const citate = best.fonti.map((f) => nrm(f.nome)).concat(best.fonti.map((f) => String(f.id || "")), best.fonti.map((f) => String(f.origine || "")));
+      const manca = g.voci.filter((v) => v.tipo !== "statale" && !citate.some((c) => c && (c === v.fonte || c.includes(nrm(v.nome)) || nrm(v.nome).includes(c) && c.length > 4)));
+      r.fonti_briefing = best.fonti.length; r.non_citate = manca.length;
+      for (const v of manca) { non[v.fonte] = non[v.fonte] || { nome: v.nome, area: v.area, n: 0 }; non[v.fonte].n++; }
+    }
+    out.push(r);
+  }
+  const nb = out.filter((r) => r.esito === "nel briefing"), fuori = out.filter((r) => r.esito !== "nel briefing");
+  return { storie_larghe: out.length, nel_briefing: nb.length, valutate_escluse: out.filter((r) => r.esito === "valutata ed esclusa").length, non_valutate: out.filter((r) => r.esito === "non valutata").length,
+    media_fonti_rassegna: nb.length ? +(nb.reduce((a, r) => a + r.n_fonti, 0) / nb.length).toFixed(1) : null, media_fonti_briefing: nb.length ? +(nb.reduce((a, r) => a + (r.fonti_briefing || 0), 0) / nb.length).toFixed(1) : null,
+    mancate: fuori.slice(0, 10), coperte: nb.slice(0, 12), testate_non_citate: Object.values(non).sort((a, b) => b.n - a.n).slice(0, 12) };
+}
+export async function rsFoto(env, h, data) {
+  const B = await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='briefings' AND key=?1").bind(data).first(); if (!B) return null;
+  const b = jp(B.data, {}), ids = [...(b.storie_mondo || []), ...(b.storie_italia || [])]; if (!ids.length) return null;
+  const S = (await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='stories' AND key IN (" + ids.map((_, i) => "?" + (i + 1)).join(",") + ")").bind(...ids).all()).results || [];
+  const st = S.map((x) => jp(x.data, {})), a = new Date(Date.parse(data + "T06:00:00Z")), da = new Date(a.getTime() - 24 * 3600e3), ctx = await indice(env, h);
+  await tabella(env);
+  const voci = ((await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 AND data < ?2 ORDER BY data DESC LIMIT 4000").bind(da.toISOString(), a.toISOString()).all()).results || []).reverse(), prima = (await env.DB.prepare("SELECT min(data) m FROM rs_voci").first()) || {};
+  const RS = rsStorie(voci, ctx).filter((g) => g.n_fonti >= 4).slice(0, 80);
+  return { data, fatta: new Date().toISOString(), titoli: voci.length, fonti_attive: new Set(voci.map((v) => v.fonte)).size, parziale: voci.length >= 4000 ? "letti i 4.000 titoli più recenti della finestra" : prima.m && prima.m > da.toISOString() ? "la raccolta non copre tutta la finestra" : "", storie_briefing: st.length, ...rsConfronta(RS, st, b.selezione || [], ctx) };
+}
+/* dal cron: dopo le 9 di Roma salva la fotografia di oggi; recupera ieri e l'altro ieri se mancano (finché i titoli ci sono) */
+export async function rsFotoCron(env, h, oggi, oraRoma) {
+  if (oraRoma < 9) return; const F = (await h.kvGet(env, K_FOTO)) || {}; let fatto = false;
+  for (const g of [0, 1, 2]) { const d = new Date(Date.parse(oggi + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10); if (F[d]) continue; const f = await rsFoto(env, h, d); if (f) { F[d] = f; fatto = true; break; } } // una per giro: il cron resta leggero
+  if (fatto) { const K = Object.keys(F).sort().slice(-90), o = {}; for (const k of K) o[k] = F[k]; await h.kvSet(env, K_FOTO, o); }
+}
+
 /* pannello: rs_get (stato, storie con indice, equilibrio), rs_giro (verifica un gruppo di feed adesso) */
 export async function rsPanelApi(env, b, h) {
   if (b.action === "rs_get") {
@@ -257,6 +303,7 @@ export async function rsPanelApi(env, b, h) {
       mappa: multi.filter((g) => g.iso).slice(0, 40).map((g) => ({ titolo: g.titolo, iso: g.iso, ll: g.ll, n: g.n_fonti, stato: g.stato, cresce: g.cresce })),
       equilibrio: equilibrio(voci) };
   }
+  if (b.action === "rs_foto") { const F = (await h.kvGet(env, K_FOTO)) || {}; return { ok: true, giorni: Object.keys(F).sort().reverse().map((k) => F[k]) }; }
   if (b.action === "rs_brief") return await rsBrief(env, h, /^\d{4}-\d{2}-\d{2}$/.test(b.data || "") ? b.data : null);
   if (b.action === "rs_giro") return { ok: true, ...(await rsGiro(env, h, Math.max(1, Math.min(15, +b.n || 12)))) };
   return null;
