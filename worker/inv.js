@@ -446,7 +446,7 @@ function chDirezione(x, p, oggi) { // la direzione della chiave: dove porta, rip
   o.ripercussioni = Array.isArray(x.ripercussioni) ? x.ripercussioni.slice(0, 5).map((r) => { const testo = cut(r && r.testo, 170), prima = (p.ripercussioni || []).find((y) => y.testo === testo) || {}; return { stato: RIP_ST.includes(r && r.stato) ? r.stato : "possibile", testo, base: cut(r && r.base, 150), dato: cut(r && r.dato, 150), entro: cut(r && r.entro, 40), dal: prima.dal || oggi, ...(prima.stato === "attesa" && r.stato === "visibile" ? { visibile_dal: oggi } : prima.visibile_dal ? { visibile_dal: prima.visibile_dal } : {}) }; }).filter((r) => r.testo) : p.ripercussioni || [];
   const t = x.toccati && typeof x.toccati === "object" ? { perde: cut(x.toccati.perde, 170), guadagna: cut(x.toccati.guadagna, 170) } : p.toccati || null;
   if (t && (t.perde || t.guadagna)) o.toccati = t;
-  o.osservare = Array.isArray(x.osservare) ? x.osservare.slice(0, 4).map((r) => ({ quando: /^\d{4}-\d{2}-\d{2}$/.test((r && r.quando) || "") || ["presto", "settimane", "mesi"].includes(r && r.quando) ? r.quando : "", testo: cut(r && r.testo, 170), senso: cut(r && r.senso, 170) })).filter((r) => r.testo) : p.osservare || [];
+  o.osservare = Array.isArray(x.osservare) ? x.osservare.slice(0, 4).map((r) => ({ quando: /^\d{4}-\d{2}-\d{2}$/.test((r && r.quando) || "") || ["presto", "settimane", "mesi"].includes(r && r.quando) ? r.quando : "", testo: cut(r && r.testo, 170), senso: cut(r && r.senso, 170), ...(r && r.agenda_id ? { agenda_id: cut(r.agenda_id, 80) } : {}) })).filter((r) => r.testo) : p.osservare || [];
   o.direzione_del = has("porta") || Array.isArray(x.ripercussioni) || Array.isArray(x.osservare) ? null : p.direzione_del || "";
   return o;
 }
@@ -486,7 +486,9 @@ async function chiaviVista(h, env, L) {
 /* pagina esterna: ricostruisce la copia filtrata (solo chiavi con pubblica = true, solo campi ammessi) */
 async function serieSoglie(h, env) { const N = {}; for (const v of Object.keys(VER)) N[v] = (await verNumeri(h, env, v)).numeri; return (sg) => ((N[sg.ver] || {})[sg.num] || {}).p || null; }
 export async function pubAggiorna(h, env, oggi) {
-  const v = await chiaviVista(h, env, []), r = copiaPubblica(v.chiavi, oggi, (await h.kvGet(env, PUB_CFG_KV)) || {});
+  const v = await chiaviVista(h, env, []), F = (await h.kvGet(env, K_FA)) || [], sup = new Set(F.filter((f) => f.aggiorna).map((f) => f.aggiorna)), raw = (await h.kvGet(env, K_VER("en"))) || {};
+  const extra = { ver: (await verVista(h, env, oggi, false)).en, sciolti: v.sciolti, fatti: F.map((f) => (sup.has(f.id) ? { ...f, superato_da: 1 } : f)), n_atti: (raw.atti || []).length, n_date: (raw.agenda || []).filter((a) => (a.data_fine || a.data) >= oggi).length, n_date_uff: (raw.agenda || []).filter((a) => (a.data_fine || a.data) >= oggi && a.stato === "ufficiale").length };
+  const r = copiaPubblica(v.chiavi, oggi, (await h.kvGet(env, PUB_CFG_KV)) || {}, extra);
   await h.kvSet(env, PUB_KV, r.copia);
   let t = await h.kvGet(env, PUB_TOKEN_KV); if (!t) { t = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, "0")).join(""); await h.kvSet(env, PUB_TOKEN_KV, t); }
   return { token: t, pubblicate: r.copia.chiavi.length, trattenuti: r.trattenuti };
