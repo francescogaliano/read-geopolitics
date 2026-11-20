@@ -6,7 +6,7 @@ SCOPO: trovare micro-fatti verificati, piccoli e poco seguiti, e riconoscere gli
 
 STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pagine usa la ricerca web e la lettura pagine integrate (WebSearch, WebFetch). Non usare Firecrawl: i suoi crediti servono al briefing del mattino; solo se una pagina indispensabile non si apre in nessun altro modo, al massimo 3 volte, e lo scrivi nel resoconto. Se /tmp/rgdb.py non c'è, scrivilo nel resoconto e fermati.
 
-1. CONTESTO. `python3 /tmp/rgdb.py inv-contesto`: chiavi esistenti con i loro fatti, fatti sciolti, richieste_fatti (fatti o link aggiunti a mano da Francesco), osservati del radar, ipotesi aperte.
+1. CONTESTO. `python3 /tmp/rgdb.py inv-contesto`: chiavi esistenti con i loro fatti, fatti sciolti, richieste_fatti (fatti o link aggiunti a mano da Francesco), osservati del radar, ipotesi aperte. In «verticali» trovi, per ogni verticale che ha un raccoglitore (oggi «en»): i numeri (ultimo valore, minimo e massimo a 30 giorni), l'agenda dei prossimi 30 giorni e gli atti ufficiali raccolti negli ultimi 14 giorni.
 
 2. RICHIESTE A MANO (prima di tutto). Per ogni voce di richieste_fatti: apri il link o cerca il fatto, risali alla fonte primaria, correggi ciò che il passaparola ha deformato (chi, cosa, quando), scrivilo in forma neutra. Se non lo trovi in una fonte leggibile, non inventarlo: lascialo fuori e dillo nel resoconto. In ogni caso metti il suo id in richieste_fatte.
 
@@ -18,6 +18,7 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pag
    - filiere: chiusure o aperture di impianti, carenze, richiami, cambi di fornitore, tempi di consegna;
    - comunità tecniche e professionali: mailing list, registri pubblici, verbali, riviste di settore, bollettini;
    - numeri strani: un prezzo, un tempo d'attesa o un volume che cambia senza che se ne parli.
+   VERTICALI: gli atti in «verticali» sono materia prima già letta alla fonte dal raccoglitore, non fatti. Guardali come guardi il resto: un atto diventa un fatto solo se è piccolo, concreto e dice qualcosa (una regola che cambia, soldi che si spostano, una scadenza che slitta). Riapri il link prima di usarlo e scrivi il fatto con parole tue. La maggior parte degli atti non diventa nulla, ed è giusto così: non c'è nessun obbligo di collocarli. Le date in agenda servono solo a sapere quando guardare; i numeri servono a controllare le soglie (punto 5). Le verticali non contano nel budget di ricerca e non cambiano la rotazione dei settori.
    Un fatto vale se è datato, attribuibile e letto in una fonte (meglio se primaria). Leggi la pagina: mai un fatto dal solo titolo o dall'anteprima di una ricerca. Voci e indiscrezioni restano fuori.
 
 4. COLLOCA I FATTI. Per ogni fatto nuovo:
@@ -28,6 +29,8 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pag
 
 5. CHIAVI.
    - Nuova chiave solo se almeno 3 fatti INDIPENDENTI (fonti e attori diversi, non la stessa notizia ripresa) vanno nella stessa direzione. Dalle: nome breve, tesi in una frase, settore (en = energia e materie prime, metalli compresi; te = tecnologia; di = difesa e industria; tr = trasporti e turismo; altro), catena di 2-3 anelli causa → effetto (massimo 40 caratteri ciascuno, frasi complete e semplici), «manca» = l'anello che ancora non c'è, massimo 40 caratteri (es. «Chi ci guadagna?»), smentita (cosa la farebbe cadere), prova_se (cosa servirebbe per metterla in prova). Poi assegna alla chiave i fatti sciolti che la sostengono, reinviandoli con lo stesso id e il chiave_id.
+   - SOGLIA (facoltativa): solo se la smentita di una chiave, di qualunque settore, si può misurare su un numero presente in «verticali», aggiungi "soglia": {"ver":"en","num":codice del numero,"verso":"sotto"|"sopra","valore":numero} = la chiave cade se quel numero va sotto/sopra quel valore. Deve dire la stessa cosa del campo smentita, non una cosa nuova; se non c'è un numero adatto, niente soglia. Per toglierla invia "soglia": null. A ogni giro confronta l'ultimo valore con le soglie esistenti: se una è superata, cerca conferma e valuta lo stato della chiave, scrivendo il motivo in «nota».
+   - Le regole per far nascere una chiave sono le stesse per ogni settore: una verticale con molti atti non abbassa la soglia dei 3 fatti indipendenti. Nessuna chiave nasce perché «serve» a una verticale.
    - Stato: «spunto» di norma. «in_prova» SOLO se c'è un beneficiario o un esposto quotato con un meccanismo chiaro: allora togli «manca», indica gli strumenti (simboli) e registra 1-2 ipotesi con origine {"tipo":"chiave","id":id della chiave}, orizzonte 30 o 90, fiducia, meccanismo. Prima `python3 /tmp/rgdb.py inv-prezzi SIMBOLO`; se il Worker risponde con errore «Yahoo 429», «bloccato» o «rete», scarica tu i prezzi come nella routine radar e ricaricali. Senza prezzi, niente ipotesi.
    - «scartata» se i fatti contro prevalgono in modo netto o la smentita si è avverata; «confermata» solo se le ipotesi in prova si sono chiuse giuste e i fatti reggono. Scrivi il motivo in «nota».
    - SINTESI («In breve»): per ogni chiave nuova, e per ogni chiave in cui oggi hai aggiunto o tolto fatti o cambiato stato, riscrivi il campo sintesi: 2 paragrafi brevi (separati da una riga vuota, max 900 caratteri in tutto), in italiano semplice per chi non conosce il settore. Primo paragrafo: cosa sta succedendo e perché conta, spiegando il meccanismo con parole comuni (niente sigle senza spiegarle). Secondo paragrafo: cosa va contro la tesi, cosa manca ancora e cosa la confermerebbe o smentirebbe nelle prossime settimane. Solo fatti già presenti nella chiave; nessun giudizio, nessun consiglio d'investimento. Se una chiave esistente non ha ancora la sintesi, scrivila oggi. Se nella chiave gli anelli della catena o «manca» sono tagliati a metà parola, riscrivili.
@@ -35,7 +38,7 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; per cercare e leggere pag
    - Il venerdì rivedi tutte le chiavi: quali si rafforzano, quali si indeboliscono, quali scartare.
 
 6. SALVA in un solo invio: scrivi /tmp/chiavi.json come
-   {"chiavi":[{id, nome, tesi, sintesi, settore, stato, catena:[…], manca, smentita, prova_se, strumenti:[…], nota}],
+   {"chiavi":[{id, nome, tesi, sintesi, settore, stato, catena:[…], manca, smentita, soglia (facoltativa), prova_se, strumenti:[…], nota}],
     "fatti":[{id (solo per aggiornare un fatto esistente), aggiorna (id del fatto precedente sulla stessa vicenda, se c'è), data:"AAAA-MM-GG", testo (una riga, max 200 caratteri, neutra), verso:1|-1, chiave_id, settore, fonti:[{nome,url}]}],
     "richieste_fatte":[id], "ipotesi":[…]}
    e lancia `python3 /tmp/rgdb.py inv-chiavi /tmp/chiavi.json`. Leggi «errori» nella risposta: correggi e rilancia solo le voci rifiutate.
