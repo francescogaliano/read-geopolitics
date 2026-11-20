@@ -44,7 +44,17 @@ export function invSim(t) {
   return SIM_RE.test(s) ? s : "";
 }
 const isAz = (k) => String(k || "").startsWith("az:");
-const cfgOf = (k) => (isAz(k) ? { n: k.slice(3).toUpperCase(), u: "", banda: BANDA_AZ } : INV_STR[k]);
+/* MERCATI (20/11/2026): indici di riferimento. Hanno sempre i prezzi, si possono usare nelle ipotesi (strumento «^GSPC», ecc.)
+   e servono a misurare la forza di un titolo rispetto al suo mercato. Non si comprano nel simulatore (lì servono i fondi). */
+export const MERCATI = [["^gspc", "S&P 500"], ["^ndx", "Nasdaq 100"], ["^stoxx50e", "Euro Stoxx 50"], ["ftsemib.it", "FTSE MIB"]];
+const BANDA_IDX = [1.2, 2.5]; // indici: si muovono meno di un singolo titolo
+const isIdx = (sim) => MERCATI.some((m) => m[0] === sim);
+const cfgOf = (k) => (isAz(k) ? { n: (MERCATI.find((m) => m[0] === k.slice(3)) || [])[1] || k.slice(3).toUpperCase(), u: "", banda: isIdx(k.slice(3)) ? BANDA_IDX : BANDA_AZ } : INV_STR[k]);
+export function mercatoDi(sim) { // l'indice con cui confrontare un titolo, dalla Borsa in cui è quotato
+  const s = String(sim || ""); if (isIdx(s) || s.startsWith("^")) return null;
+  const suf = s.slice(s.lastIndexOf(".") + 1);
+  return suf === "us" ? "^gspc" : suf === "it" ? "ftsemib.it" : ["de", "fr", "nl", "es", "be", "pt", "at", "fi", "ie"].includes(suf) ? "^stoxx50e" : null;
+}
 
 export async function invSerie(env) {
   const keys = Object.keys(INV_STR);
@@ -60,7 +70,7 @@ export async function invSerie(env) {
 async function pxGet(h, env, sim) { const r = await h.kvGet(env, "inv:px:" + sim); return r && Array.isArray(r.p) ? r : null; }
 async function serieTutte(h, env, sims) {
   const S = await invSerie(env);
-  for (const s of [...new Set(sims)]) { const r = await pxGet(h, env, s); if (r && r.p.length) S["az:" + s] = r.p; }
+  for (const s of [...new Set(sims.concat(MERCATI.map((m) => m[0])))]) { const r = await pxGet(h, env, s); if (r && r.p.length) S["az:" + s] = r.p; }
   return S;
 }
 
@@ -140,7 +150,7 @@ export async function invCron(env, h) {
   const P = (((await h.kvGet(env, K_PF)) || {}).ops || []).map((o) => o.sim).filter(Boolean);
   const pf = P.length || (((await h.kvGet(env, K_PF)) || {}).ops || []).length ? [PF_FX, PF_RIF.sim] : [];
   let n = 0;
-  for (const s of [...new Set(pf.concat(P, O.map((o) => o.sim), Lp))]) {
+  for (const s of [...new Set(pf.concat(P, O.map((o) => o.sim), Lp, O.length ? MERCATI.map((m) => m[0]) : []))]) {
     if (n >= 6) break;
     const r = await h.kvGet(env, "inv:px:" + s);
     if (r && r.tentato) {
@@ -207,7 +217,23 @@ export function invTecnica(p) {
   let giro = null; for (let i = n - 1; i > 0; i--) if (Math.sign(hist[i]) !== Math.sign(hist[i - 1])) { giro = n - 1 - i; break; }
   let g = 0, l = 0; for (let i = Math.max(1, n - 14); i < n; i++) { const d = v[i] - v[i - 1]; if (d > 0) g += d; else l -= d; }
   const m50 = ma(50), m200 = ma(200);
-  return { ultimo: last, data: p[n - 1][0], m50, m200, sopra50: m50 == null ? null : last > m50, sopra200: m200 == null ? null : last > m200, macd: hist[n - 1] >= 0 ? "su" : "giu", macd_giro: giro, rsi: Math.round(100 - 100 / (1 + g / (l || 1e-9))), var1m: n > 21 ? +((last / v[n - 22] - 1) * 100).toFixed(1) : null, hist: hist.slice(-260).map((x) => +x.toFixed(4)) };
+  let am = 0; for (let i = n - 14; i < n; i++) am += Math.abs(v[i] / v[i - 1] - 1); // quanto si muove di solito in un giorno (media su 14 sedute, dalle chiusure)
+  return { amp14: +(am / 14 * 100).toFixed(2), ultimo: last, data: p[n - 1][0], m50, m200, sopra50: m50 == null ? null : last > m50, sopra200: m200 == null ? null : last > m200, macd: hist[n - 1] >= 0 ? "su" : "giu", macd_giro: giro, rsi: Math.round(100 - 100 / (1 + g / (l || 1e-9))), var1m: n > 21 ? +((last / v[n - 22] - 1) * 100).toFixed(1) : null, hist: hist.slice(-260).map((x) => +x.toFixed(4)) };
+}
+
+/* forza rispetto al mercato: variazione del titolo meno variazione del suo indice, in punti, a 1 e a 3 mesi */
+export function invForza(p, pm, nome) {
+  if (!p || !pm || p.length < 10 || pm.length < 10) return null;
+  const d1 = p[p.length - 1][0], a = lastOnOrBefore(p, d1), b = lastOnOrBefore(pm, d1); if (!a || !b) return null;
+  const diff = (g) => { const d0 = new Date(Date.parse(d1 + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10), a0 = lastOnOrBefore(p, d0), b0 = lastOnOrBefore(pm, d0); return a0 && b0 && p[0][0] <= d0 && pm[0][0] <= d0 ? +(((a[1] / a0[1]) - (b[1] / b0[1])) * 100).toFixed(1) : null; };
+  const m1 = diff(30), m3 = diff(91); return m1 == null && m3 == null ? null : { rif: nome, m1, m3 };
+}
+const forzaDi = (sim, serie) => { const m = mercatoDi(sim); return m ? invForza(serie["az:" + sim], serie["az:" + m], (MERCATI.find((x) => x[0] === m) || [])[1]) : null; };
+function mercatiVista(serie, L, pannello) {
+  return MERCATI.map(([sim, nome]) => { const s = serie["az:" + sim] || [], l = s[s.length - 1], t = invTecnica(s); if (t) delete t.hist;
+    const o = { sim, simbolo: invYsym(sim), nome, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t, banda_7: BANDA_IDX[0], banda_30: BANDA_IDX[1] };
+    if (pannello) { o.p = s.slice(-260); o.chiamate = L.filter((x) => x.strumento === "az:" + sim); }
+    return o; });
 }
 
 /* REGOLA E1 (eccesso, dal 17/11/2026): dopo uno scatto troppo forte non si scommette che continui.
@@ -509,9 +535,9 @@ export async function invRoute(request, env, p, method, h) {
     const serie = await serieTutte(h, env, O.map((o) => o.sim));
     const L = (await h.kvGet(env, K_IP)) || [];
     const strumenti = Object.fromEntries(Object.entries(INV_STR).map(([k, c]) => { const s = serie[k] || []; const l = s[s.length - 1]; return [k, { nome: c.n, unita: c.u, ultimo: l ? { data: l[0], valore: l[1] } : null, banda_7: c.banda[0], banda_30: c.banda[1] }]; }));
-    const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t }; });
+    const osservati = O.map((o) => { const s = serie["az:" + o.sim] || []; const l = s[s.length - 1]; const t = invTecnica(s); if (t) delete t.hist; return { sim: o.sim, ticker: o.ticker, nome: o.nome, settore: o.settore, stato: o.stato, perche: o.perche, origine: o.origine, aggiunta_il: o.aggiunta_il, conti: o.conti || null, scheda_del: o.scheda ? o.scheda.aggiornata_il : null, ultimo: l ? { data: l[0], valore: l[1] } : null, tecnica: t, forza: forzaDi(o.sim, serie) || undefined }; });
     const aperte = L.map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) })).filter((x) => x.v.stato === "aperta").map((x) => ({ id: x.id, strumento: x.strumento, direzione: x.direzione, orizzonte: x.orizzonte, data: x.data, origine: x.origine }));
-    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, porta: k.porta || undefined, ripercussioni: k.ripercussioni && k.ripercussioni.length ? k.ripercussioni : undefined, toccati: k.toccati || undefined, osservare: k.osservare && k.osservare.length ? k.osservare : undefined, direzione_del: k.direzione_del || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
+    return h.json({ ok: true, oggi, portafoglio: pfRiassunto(await pfDati(h, env, oggi, true), "modello"), strumenti, osservati, mercati: mercatiVista(serie, L, false), opportunita: ((await h.kvGet(env, K_OPP)) || {}).lista || [], richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), aperte, ...(await (async () => { const v = await chiaviVista(h, env, L); return { chiavi: v.chiavi.map((k) => ({ id: k.id, nome: k.nome, tesi: k.tesi, sintesi: k.sintesi, sintesi_del: k.sintesi_del, settore: k.settore, stato: k.stato, catena: k.catena, manca: k.manca, smentita: k.smentita, soglia: k.soglia || undefined, porta: k.porta || undefined, ripercussioni: k.ripercussioni && k.ripercussioni.length ? k.ripercussioni : undefined, toccati: k.toccati || undefined, osservare: k.osservare && k.osservare.length ? k.osservare : undefined, direzione_del: k.direzione_del || undefined, strumenti: k.strumenti, favore: k.favore, contro: k.contro, fatti: k.fatti.map((f) => ({ id: f.id, data: f.data, verso: f.verso, testo: f.testo, aggiorna: f.aggiorna || undefined })), ipotesi: k.chiamate.length })), fatti_sciolti: v.sciolti.map((f) => ({ id: f.id, data: f.data, settore: f.settore, testo: f.testo, aggiorna: f.aggiorna || undefined })), richieste_fatti: v.richieste_fatti }; })()),
       verticali: await verVista(h, env, oggi, true),
       regole: "ipotesi: strumento = una chiave di strumenti oppure «az:<simbolo interno>» di un osservato con prezzi; direzione su|giu|zero; orizzonte 7|30 (90 solo con origine.tipo «chiave»); fiducia bassa|media|alta; meccanismo 10-240 caratteri. Le ipotesi non si modificano." });
   }
@@ -612,9 +638,9 @@ export async function invPanelApi(env, b, h) {
     const osservati = [];
     for (const o of O) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
-      osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
+      osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), forza: forzaDi(o.sim, serie) || undefined, chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
+    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), mercati: mercatiVista(serie, L, true), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await chiaviVista(h, env, L)), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
       for (const c of Object.values(P.conti || {})) for (const q of (c && c.posizioni) || []) if (!px[q.sim]) { const pp = (P.prezzi[q.sim] || []).filter((x) => x[0] <= oggi); const t = invTecnica(pp); if (t) delete t.hist; px[q.sim] = { p: pp.slice(-520), tecnica: t }; }
       return { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15, per_regola: pfPerRegola(P.ops, P.prezzi, oggi), px }; })() };
   }
