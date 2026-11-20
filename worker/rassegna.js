@@ -251,6 +251,7 @@ export async function rsBrief(env, h, data) {
    Per ogni storia larga: era nel briefing, era stata valutata ed esclusa, o non era stata valutata.
    Per quelle nel briefing: quali testate della rassegna la davano e il briefing non ha citato. */
 const K_FOTO = "rs:foto";
+const K_GIUD = "rs:giudizi"; // { dal, al, sintesi_il, verdetto, sintesi, giorni: { "AAAA-MM-GG": { frase, recuperate, controlli, storie: [{ titolo, g: "A"|"B"|"C", motivo, n_fonti, tipo }] } } }
 const nrm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\(.*?\)/g, " ").replace(/\b(via|da)\b.*$/, " ").replace(/[^a-z0-9]+/g, " ").trim();
 export function rsConfronta(RS, st, sel, ctx) { // puro: storie larghe della rassegna contro storie e candidate del briefing
   const GEN = new Set(["p:USA", "g:ue", "g:donald-trump"]);
@@ -305,7 +306,7 @@ export async function rsPanelApi(env, b, h) {
       mappa: multi.filter((g) => g.iso).slice(0, 40).map((g) => ({ titolo: g.titolo, iso: g.iso, ll: g.ll, n: g.n_fonti, stato: g.stato, cresce: g.cresce })),
       equilibrio: equilibrio(voci) };
   }
-  if (b.action === "rs_foto") { const F = (await h.kvGet(env, K_FOTO)) || {}; return { ok: true, giorni: Object.keys(F).sort().reverse().map((k) => F[k]) }; }
+  if (b.action === "rs_foto") { const F = (await h.kvGet(env, K_FOTO)) || {}; return { ok: true, giorni: Object.keys(F).sort().reverse().map((k) => F[k]), giudizi: (await h.kvGet(env, K_GIUD)) || null }; } // i giudizi li scrive Claude ogni mattina, a mano, durante la prova: qui si leggono soltanto
   if (b.action === "rs_brief") return await rsBrief(env, h, /^\d{4}-\d{2}-\d{2}$/.test(b.data || "") ? b.data : null);
   if (b.action === "rs_giro") return { ok: true, ...(await rsGiro(env, h, Math.max(1, Math.min(15, +b.n || 12)))) };
   return null;
