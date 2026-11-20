@@ -10,7 +10,7 @@
      bloccato, la routine scarica i prezzi da sé e li carica con /v1/inv/prezzi { ticker, p }.
    Tutto sta nella tabella kv (privata): non passa mai da /api/data.json, /api/docs o /api/doc. */
 
-import { pfCalcola, pfValuta, pfChiusura, pfPerRegola, PF_RIF, PF_FX, PF_MAX_PESO } from "./inv-pf.js";
+import { pfCalcola, pfValuta, pfChiusura, pfPerRegola, PF_RIF, PF_FX, PF_MAX_PESO, PF_SC_PESO, PF_SC_MAX } from "./inv-pf.js";
 import { RETRO_VERSIONE, RETRO_FILONI, retroIpotesi, retroValuta, retroRiepilogo } from "./inv-retro.js";
 
 export const INV_STR = {
@@ -494,13 +494,30 @@ async function pfOrdini(h, env, arr, conto, oggi) {
   if (!L.ops.some((o) => o.conto === conto && o.tipo === "versa")) return [{ ok: false, errore: conto === "modello" ? "simulatore non ancora avviato da Francesco: nessun ordine" : "prima versa dei soldi virtuali nel tuo conto" }];
   const D = await pfDati(h, env, oggi, false), V = (D.conti[conto] || {}).valore || 0, out = [];
   for (const x of (arr || []).slice(0, 12)) {
-    const tipo = x && x.tipo; if (!["compra", "vendi"].includes(tipo)) { out.push({ ok: false, errore: "tipo: compra | vendi" }); continue; }
+    const tipo = x && x.tipo; if (!["compra", "vendi", "scoperto", "ricopri"].includes(tipo)) { out.push({ ok: false, errore: "tipo: compra | vendi | scoperto | ricopri" }); continue; }
+    if (conto !== "modello" && (tipo === "scoperto" || tipo === "ricopri")) { out.push({ ok: false, errore: "il ribasso per ora è solo nel conto del modello" }); continue; }
     const sim = invSim(x.ticker || x.sim); if (!sim) { out.push({ ok: false, errore: "simbolo non valido: " + cut(x.ticker, 20) }); continue; }
     if (!pfValuta(sim)) { out.push({ ok: false, errore: "valuta non supportata per " + sim + " (per ora euro e dollari)" }); continue; }
     const motivo = cut(x.motivo, 300); if (conto === "modello" && motivo.length < 10) { out.push({ ok: false, errore: "motivo mancante per " + sim }); continue; }
     if (L.ops.some((o) => o.conto === conto && o.sim === sim && !(D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa") && o.tipo === tipo)) { out.push({ ok: false, errore: "c'è già un ordine in attesa su " + sim }); continue; }
     let regola = cut(x.regola, 6).toUpperCase();
-    if (conto === "modello" && !/^(A[1-4]|V[1-5])$/.test(regola)) { out.push({ ok: false, errore: "regola mancante per " + sim + ": A1-A4 per comprare, V1-V5 per vendere (vedi istruzioni)" }); continue; }
+    if (conto === "modello" && !(tipo === "scoperto" ? /^S1$/ : tipo === "ricopri" ? /^C[2-5]$/ : tipo === "compra" ? /^A[1-4]$/ : /^V[1-5]$/).test(regola)) { out.push({ ok: false, errore: "regola mancante o sbagliata per " + sim + ": A1-A4 per comprare, V1-V5 per vendere, S1 per aprire al ribasso, C2-C5 per chiuderlo (vedi istruzioni)" }); continue; }
+    let stop = null;
+    if (tipo === "scoperto") { // REGOLA S1 (ribasso, dal 20/11/2026): più stretta del rialzo, la applica il Worker
+      const ip = ((await h.kvGet(env, K_IP)) || []).filter((y) => y.strumento === "az:" + sim && y.direzione === "giu" && y.data === oggi).pop();
+      if (!ip) { out.push({ ok: false, errore: sim + ": regola S1 senza un'ipotesi «giù» registrata oggi" }); continue; }
+      if (ip.voce) { out.push({ ok: false, errore: sim + ": regola E3 (voci): niente ribasso su una voce non confermata" }); continue; }
+      if (ip.fiducia !== "alta") { out.push({ ok: false, errore: sim + ": al ribasso solo con fiducia calcolata alta (qui " + ip.fiducia + ")" }); continue; }
+      const oss = ((await h.kvGet(env, K_OSS)) || []).find((o) => o.sim === sim), e2 = invConti(oss && oss.conti, oggi); if (e2) { out.push({ ok: false, errore: sim + ": " + e2 }); continue; }
+      const px = await pxGet(h, env, sim), t = px && invTecnica(px.p.filter((y) => y[0] <= oggi));
+      if (!t || t.sopra200 == null) { out.push({ ok: false, errore: sim + ": serve almeno un anno di prezzi per aprire al ribasso" }); continue; }
+      if (t.sopra200) { out.push({ ok: false, errore: sim + ": al ribasso solo sotto la media a 200 giorni (qui il prezzo è sopra)" }); continue; }
+      const e1 = invEccesso(px.p, "giu", x.eccezione, oggi); if (e1) { out.push({ ok: false, errore: sim + ": " + e1 }); continue; }
+      if ((((await h.kvGet(env, K_OPP)) || {}).lista || []).some((op) => op.riferimento && invSim(op.riferimento.ticker) === sim)) { out.push({ ok: false, errore: sim + ": c'è un prezzo di riferimento aperto (es. un'offerta d'acquisto): niente ribasso" }); continue; }
+      if (((D.conti[conto] || {}).posizioni || []).some((q) => q.sim === sim)) { out.push({ ok: false, errore: sim + ": è già in portafoglio al rialzo" }); continue; }
+      stop = +Math.max(4, Math.min(12, 3 * (t.amp14 || 2))).toFixed(1); x.peso = PF_SC_PESO;
+    }
+    if (tipo === "ricopri" && !((D.conti[conto] || {}).scoperti || []).some((q) => q.sim === sim) && !L.ops.some((o) => o.conto === conto && o.sim === sim && o.tipo === "scoperto" && !(D.esiti[o.id] && D.esiti[o.id].stato !== "in_attesa"))) { out.push({ ok: false, errore: sim + ": nessuna posizione al ribasso da chiudere" }); continue; }
     if (conto === "modello" && tipo === "compra" && /^A[12]$/.test(regola)) { // A1/A2 richiedono un'ipotesi «su» di oggi; il peso segue la fiducia calcolata
       const ip = ((await h.kvGet(env, K_IP)) || []).filter((y) => y.strumento === "az:" + sim && y.direzione === "su" && y.data === oggi).pop();
       if (!ip) { out.push({ ok: false, errore: sim + ": regola " + regola + " senza un'ipotesi «su» registrata oggi" }); continue; }
@@ -515,16 +532,18 @@ async function pfOrdini(h, env, arr, conto, oggi) {
     }
     if (conto === "modello" && tipo === "compra") { const px = await pxGet(h, env, sim); const e1 = px && invEccesso(px.p, "su", x.eccezione, oggi); if (e1) { out.push({ ok: false, errore: sim + ": " + e1 }); continue; } }
     let eur = null, quota = null;
-    if (tipo === "compra") { eur = x.peso != null ? V * Math.min(PF_MAX_PESO, Math.max(0, +x.peso)) / 100 : +x.eur; if (!(eur >= 1)) { out.push({ ok: false, errore: "importo (eur) o peso (%) mancante per " + sim }); continue; } eur = +eur.toFixed(2); }
+    if (tipo === "ricopri") quota = 1;
+    else if (tipo === "scoperto") eur = +(V * PF_SC_PESO / 100).toFixed(2);
+    else if (tipo === "compra") { eur = x.peso != null ? V * Math.min(PF_MAX_PESO, Math.max(0, +x.peso)) / 100 : +x.eur; if (!(eur >= 1)) { out.push({ ok: false, errore: "importo (eur) o peso (%) mancante per " + sim }); continue; } eur = +eur.toFixed(2); }
     else { quota = x.quota == null ? 1 : Math.max(0.05, Math.min(1, +x.quota)); if (!((D.conti[conto] || {}).posizioni || []).some((p) => p.sim === sim) && !L.ops.some((o) => o.conto === conto && o.sim === sim && o.tipo === "compra")) { out.push({ ok: false, errore: sim + " non è in portafoglio" }); continue; } }
     if (!(await pxGet(h, env, sim))) await pxAggiorna(h, env, sim);
-    const o = { id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conto, tipo, data: oggi, sim, eur, quota, motivo, regola: regola || undefined, origine: x.origine && typeof x.origine === "object" ? { tipo: cut(x.origine.tipo, 20), id: cut(x.origine.id, 80) } : null, at: new Date().toISOString() };
+    const o = { id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conto, tipo, data: oggi, sim, eur, quota, ...(stop ? { stop } : {}), motivo, regola: regola || undefined, origine: x.origine && typeof x.origine === "object" ? { tipo: cut(x.origine.tipo, 20), id: cut(x.origine.id, 80) } : null, at: new Date().toISOString() };
     L.ops.push(o); out.push({ ok: true, id: o.id, sim, tipo, eur, quota });
   }
   await h.kvSet(env, K_PF, L);
   return out;
 }
-const pfRiassunto = (D, conto) => { const c = D.conti[conto]; if (!c) return { avviato: false }; return { avviato: true, valore: c.valore, versato: c.versato, cassa: c.cassa, peso_cassa: c.peso_cassa, rend: c.rend, posizioni: c.posizioni.map((p) => ({ sim: p.sim, peso: p.peso, resa: p.resa, dal: p.dal, origine: (D.ops.find((o) => o.id === p.ops[p.ops.length - 1]) || {}).origine || null })), in_attesa: D.ops.filter((o) => o.conto === conto && o.esito.stato === "in_attesa").map((o) => ({ id: o.id, tipo: o.tipo, sim: o.sim, data: o.data })), regole: "ordini: {tipo: compra|vendi, ticker, peso (% del portafoglio, max " + PF_MAX_PESO + ") oppure eur, quota (0-1, per vendere una parte), motivo, origine {tipo, id}}; eseguiti alla prima chiusura successiva, costi 0,15%" }; };
+const pfRiassunto = (D, conto) => { const c = D.conti[conto]; if (!c) return { avviato: false }; return { avviato: true, valore: c.valore, versato: c.versato, cassa: c.cassa, peso_cassa: c.peso_cassa, rend: c.rend, posizioni: c.posizioni.map((p) => ({ sim: p.sim, peso: p.peso, resa: p.resa, dal: p.dal, origine: (D.ops.find((o) => o.id === p.ops[p.ops.length - 1]) || {}).origine || null })), al_ribasso: (c.scoperti || []).map((p) => ({ sim: p.sim, peso: p.peso, resa: p.resa, dal: p.dal, uscita_obbligatoria_sopra: p.stop_prezzo, origine: (D.ops.find((o) => o.id === p.ops[0]) || {}).origine || null })), in_attesa: D.ops.filter((o) => o.conto === conto && o.esito.stato === "in_attesa").map((o) => ({ id: o.id, tipo: o.tipo, sim: o.sim, data: o.data })), regole_ribasso: "tipo: scoperto (regola S1) apre al ribasso con peso fisso " + PF_SC_PESO + "% (max " + PF_SC_MAX + "% in tutto); tipo: ricopri (regole C2-C5) lo chiude; l'uscita obbligatoria C1 la applica il Worker", regole: "ordini: {tipo: compra|vendi, ticker, peso (% del portafoglio, max " + PF_MAX_PESO + ") oppure eur, quota (0-1, per vendere una parte), motivo, origine {tipo, id}}; eseguiti alla prima chiusura successiva, costi 0,15%" }; };
 
 /* rotte della routine (token): /v1/inv/contesto, /v1/inv/ipotesi, /v1/inv/radar, /v1/inv/prezzi, /v1/inv/chiavi, /v1/inv/verticale */
 export async function invRoute(request, env, p, method, h) {
