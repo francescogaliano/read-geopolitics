@@ -17,6 +17,11 @@ MUTO = bool(SC.get("muto"))  # senza voce: frasi intere da leggere, tempi dal nu
 SENZA = os.environ.get("PROVA_SENZA_VOCE") == "1" or MUTO
 if MUTO:
     for g_ in GRUPPI: g_[1] = re.sub(r"\*", "", g_[0])
+else:  # 20/11/2026: gli *asterischi* sono l'oro del testo a schermo; dal testo letto si tolgono sempre (copione fisso dal pannello)
+    for g_ in GRUPPI:
+        if len(g_) > 1 and isinstance(g_[1], str): g_[1] = g_[1].replace("*", "")
+    for c_ in CHIAVI:
+        if len(c_) > 2: c_[2] = re.sub(r"\*", "", str(c_[2]))
 def tenuta(g_):  # secondi in cui una frase resta a schermo nel modo muto
     return float(g_[2]) if len(g_) > 2 else max(1.6, 0.7 + 0.28 * len(g_[1].split()))
 key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
