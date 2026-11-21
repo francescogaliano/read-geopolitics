@@ -8,7 +8,8 @@
        ai_approf/<slug>       approfondimenti
        ai_clienti/<slug>      i clienti seguiti (SOLO nel database, mai nel repository: è pubblico)
        ai_casi/<id>           casi d'uso: chi, area, tecnologia, modello, cloud, installazione, integratore, stadio, risultato
-       ai_attori/<id>         i protagonisti (Anthropic, OpenAI, Google…): direzione, scommesse, posizione per capacità, mosse
+       ai_attori/<id>         i protagonisti (Anthropic, OpenAI, Google…): direzione, scommesse, posizione per capacità, mosse, legami
+       ai_confronti/<id>      numeri confrontabili tra protagonisti (investimenti, ricavi), con data e fonte per voce
      nessuna di queste collezioni va sul sito pubblico (non sono in DB_SITE)
    - pannello /ig/ia (ai.html): azioni ai_get e ai_fonti
    - routine: GET /v1/ia/voci?ore=36 (token) — titoli raggruppati per gruppo di fonti */
@@ -79,10 +80,10 @@ export async function aiRoute(request, env, p, method, url, h) {
 export async function aiPanelApi(env, b, h) {
   if (b.action === "ai_get") {
     const edz = await coll(env, "ai_oggi", 60), data = String(b.data || ""), oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
-    const [tesi, adozione, approf, clienti, casi, attori] = await Promise.all([coll(env, "ai_tesi", 60), coll(env, "ai_adozione", 40), coll(env, "ai_approf", 80), coll(env, "ai_clienti", 80), coll(env, "ai_casi", 600), coll(env, "ai_attori", 40)]);
+    const [tesi, adozione, approf, clienti, casi, attori, confronti] = await Promise.all([coll(env, "ai_tesi", 60), coll(env, "ai_adozione", 40), coll(env, "ai_approf", 80), coll(env, "ai_clienti", 80), coll(env, "ai_casi", 600), coll(env, "ai_attori", 40), coll(env, "ai_confronti", 20)]);
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
-    return { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "" })), tesi: tesi.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), adozione, livelli: AI_LIVELLI, approf: approf.map(({ sezioni, ...r }) => ({ ...r, n_sezioni: (sezioni || []).length })), casi: casi.map((c) => ({ id: c.id, chi: c.chi, settore: c.settore, paese: c.paese, area: c.area, tecnologia: c.tecnologia, modello: c.modello, cloud: c.cloud, deploy: c.deploy, partner: c.partner, stadio: c.stadio, cosa: c.cosa, dato: c.dato, misura: c.misura, data: c.data, fonte: c.fonte })), attori: attori.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA, clienti: clienti.map((c) => ({ id: c.id, nome: c.nome, settore: c.settore || c.cluster || "", tocchi: (tocchi[c.nome] || []).slice(0, 8) })), fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
+    return { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "" })), tesi: tesi.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), adozione, livelli: AI_LIVELLI, approf: approf.map(({ sezioni, ...r }) => ({ ...r, n_sezioni: (sezioni || []).length })), casi: casi.map((c) => ({ id: c.id, chi: c.chi, settore: c.settore, paese: c.paese, area: c.area, tecnologia: c.tecnologia, modello: c.modello, cloud: c.cloud, deploy: c.deploy, partner: c.partner, stadio: c.stadio, cosa: c.cosa, dato: c.dato, misura: c.misura, data: c.data, iso: c.iso, chi_lo_dice: c.chi_lo_dice, fonte: c.fonte })), confronti: confronti.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), attori: attori.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA, clienti: clienti.map((c) => ({ id: c.id, nome: c.nome, settore: c.settore || c.cluster || "", tocchi: (tocchi[c.nome] || []).slice(0, 8) })), fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
   }
   if (b.action === "ai_approf") { const r = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_approf' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, approf: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_fonti") {
