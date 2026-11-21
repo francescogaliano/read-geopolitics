@@ -318,3 +318,5 @@ export async function rsPanelApi(env, b, h) {
   if (b.action === "rs_giro") return { ok: true, ...(await rsGiro(env, h, Math.max(1, Math.min(15, +b.n || 12)))) };
   return null;
 }
+
+export { leggi as rsLeggi }; // usato anche dalla sezione IA (ai.js)
