@@ -21,7 +21,8 @@ RISERVATEZZA: i nomi dei clienti solo in ai_clienti, mai nel repository.
     "perche_breve": 4-8 parole, il motivo sotto il nome del livello nella mappa («Molti casi in produzione, pochi risultati misurati»),
     "perche": 1-2 frasi: perché le direzioni sono quelle, citando i casi e i numeri decisivi (*asterischi* per l'evidenza),
     "grafico": facoltativo ma quasi sempre utile (stesso formato di ai_oggi): la misura che meglio racconta il livello,
-    "kpi": [{"val","testo","fonte"}] 1-2 numeri da citare (vanno nella lista «I numeri che contano»),
+    "tesi": ["t3","t8"] le 1-3 chiavi (tesi) che spiegano di più questo livello: sono i collegamenti mostrati nella mappa,
+    "kpi": [{"val","corto": 2-3 parole sotto il numero nella mappa («imprese IT»),"testo","fonte"}] 1-2 numeri da citare (vanno nella lista «I numeri che contano»),
     "orizzonti": {"breve"|"medio"|"lungo": {
        "titolo": la direzione in poche parole («Meno assunzioni junior»),
        "direzione": "su|giu|stabile|incerta" (su = l'adozione o l'effetto cresce),
