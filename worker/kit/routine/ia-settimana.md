@@ -8,6 +8,8 @@ STRUMENTI: `python3 /tmp/rgdb.py …`, WebSearch, WebFetch. Costo zero (niente F
 BUDGET: al massimo 60 ricerche e 65 pagine lette (i protagonisti ne usano circa 15). Prima fonti dirette e misure (ISTAT, Eurostat, OCSE, ILO, Banca d'Italia, BCE, Commissione, Gazzetta Ufficiale, SEC, rapporti con metodo dichiarato, sondaggi con campione dichiarato), poi la stampa.
 RISERVATEZZA: i nomi dei clienti solo in ai_clienti, mai nel repository.
 
+DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europe/Rome date +%F` e usala ovunque queste istruzioni dicono <oggi> (dopo le 23:00 o le 22:00 UTC il giorno UTC è ancora quello prima). Se l'edizione di oggi esiste già perché la routine è stata lanciata a mano, non rifarla: completa solo i campi mancanti e il riordino.
+
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"ia-settimana","fase":"inizio"}'`
 
 2. CONTESTO: `python3 /tmp/rgdb.py ia-voci 168` (la settimana dei feed), `python3 /tmp/rgdb.py list ai_oggi --order data --desc --limit 7` (le edizioni della settimana: le letture sono la base), `python3 /tmp/rgdb.py list ai_adozione --all`, `python3 /tmp/rgdb.py list ai_tesi --all`, `python3 /tmp/rgdb.py list ai_approf --all`.
