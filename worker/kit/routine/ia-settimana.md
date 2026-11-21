@@ -16,19 +16,24 @@ RISERVATEZZA: i nomi dei clienti solo in ai_clienti, mai nel repository.
    governi (governi e regole: UE, Italia, USA, Cina; leggi, autorità, appalti pubblici, sovranità) · aziende (adozione nelle imprese per settore: moda e lusso, banche e assicurazioni, sanità e farmaceutica, industria, PA; profondità vs ampiezza, misure di risultato) · lavoro (mansioni, assunzioni, competenze, sindacati, ruoli di ingresso, salari) · famiglie (consumatori, scuola, figli, acquisti, fiducia, spesa) · persona (uso individuale, salute mentale, apprendimento, privacy, dipendenza, creatività) · infrastruttura (calcolo, data center, energia, acqua, chip, reti) · capitali (investimenti, quotazioni, ricavi dei laboratori, debito, concentrazione) · modelli (capacità, costi, aperti contro chiusi, sicurezza, misure indipendenti).
    Ogni domenica: aggiorna TUTTI i livelli toccati dai fatti della settimana, e rifai da capo 2 livelli a rotazione (nell'ordine sopra: due a settimana, così ogni livello è rifatto ogni mese). Il primo giro (livelli vuoti) li crea tutti e 8.
 
-4. OGNI LIVELLO, documento `ai_adozione/<id>`:
+4. OGNI LIVELLO, documento `ai_adozione/<id>`. REGOLA DI FRANCESCO (21/11/2026): ogni direzione si spiega con i CASI che l'hanno fatta emergere. Non «le aziende adottano gli agenti», ma «su perché Customers Bancorp ha risparmiato 76.000 ore, BBVA ha un assistente al 90%, INPS ha messo Arianna su 400 prestazioni; incerta nel medio perché la quota con effetti sul margine è ferma al 37%». Chi ha investito dove, chi ha adottato cosa, con quale risultato e se il risultato è misurato o solo dichiarato.
    {"sintesi": una frase sul livello oggi, "aggiornato":"<oggi>",
+    "perche_breve": 4-8 parole, il motivo sotto il nome del livello nella mappa («Molti casi in produzione, pochi risultati misurati»),
+    "perche": 1-2 frasi: perché le direzioni sono quelle, citando i casi e i numeri decisivi (*asterischi* per l'evidenza),
+    "grafico": facoltativo ma quasi sempre utile (stesso formato di ai_oggi): la misura che meglio racconta il livello,
+    "kpi": [{"val","testo","fonte"}] 1-2 numeri da citare (vanno nella lista «I numeri che contano»),
     "orizzonti": {"breve"|"medio"|"lungo": {
        "titolo": la direzione in poche parole («Meno assunzioni junior»),
        "direzione": "su|giu|stabile|incerta" (su = l'adozione o l'effetto cresce),
        "dove_siamo": 1-3 frasi con i numeri (solo misure con fonte),
        "numeri": [{"val","testo","fonte"}] (max 4, con data del dato nel testo),
+       "perche": i CASI, 4-10 per il breve e per i livelli con molti fatti: [{"chi": azienda, governo o attore, "settore": settore e paese, "cosa": cosa ha fatto e con che risultato (1-2 frasi), "dato": il numero del caso («76.000 h»), "stadio": "esplora|pilota|produzione|scala", "misura": "misurato" (cifra verificabile, bilancio, documento) o "dichiarato" (lo dice l'azienda senza metodo), "data": "23 ott", "fonte": {nome,url}}] — il pannello li conta per stadio e li mostra in una barra;
        "dove_va": 1-3 frasi: la tua lettura motivata,
        "chi_decide": attori che spostano questa casella,
        "decisioni": [{"data":"AAAA-MM-GG o «entro marzo 2027»","testo"}] solo scadenze lette in una fonte,
        "letture": {"si": la tesi più forte a favore con un fatto, "no": la più forte contro con un fatto} — stessa misura, nessuna caricatura,
        "smentirebbe": il fatto osservabile che la ribalterebbe,
-       "confidenza": "alta|media|bassa" con il motivo in poche parole,
+       "confidenza": "alta|media|bassa", "confidenza_perche": il motivo in poche parole,
        "fonti": [{nome,url}] }},
     "intrecci": [{"verso":"<id livello>","breve": 2-4 parole per il grafico,"testo": il meccanismo in una frase,"forte": true solo per i 2-3 più forti della mappa}],
     "attori": [{"nome","ruolo","mossa": l'ultima decisione concreta, "data":"AAAA-MM-GG"}] (max 6 per livello)}
