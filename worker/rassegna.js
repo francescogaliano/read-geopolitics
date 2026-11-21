@@ -259,10 +259,17 @@ export function rsConfronta(RS, st, sel, ctx) { // puro: storie larghe della ras
   const dove = [...st.map((x) => ({ t: x.titolo, testo: x.titolo + " " + (x.fatti || ""), esito: "storia", motivo: "", fonti: x.fonti || [] })), ...sel.filter((x) => x.esito !== "storia").map((x) => ({ t: x.titolo, testo: x.titolo, esito: x.esito || "esclusa", motivo: x.motivo || "", fonti: [] }))].map((x) => ({ ...x, E: E(x.testo), Et: E(x.t), Kt: parole(x.t) }));
   const non = {}, out = [];
   for (const g of RS) {
-    const testo = g.titolo + " " + g.voci.map((v) => v.titolo).slice(0, 6).join(" "), ge = E(testo), gk = parole(testo); let best = null, bs = 0;
-    // v2 (20/11/2026): il testo lungo di una storia contiene molti nomi e attirava storie estranee. Ora conta il TITOLO della storia:
-    // due nomi del titolo in comune più una parola del titolo (o tre nomi del titolo); oppure un nome del titolo più due nomi in tutto e una parola del titolo (o tre nomi in tutto); oppure un nome e due parole del titolo.
-    for (const x of dove) { let et = 0; for (const k of x.Et) if (ge.has(k)) et++; let e = 0; for (const k of x.E) if (ge.has(k)) e++; let kw = 0; for (const w of x.Kt) if (gk.has(w)) kw++; const sc = et * 3 + e + kw; if (((et >= 2 && (kw >= 1 || et >= 3)) || (et >= 1 && e >= 2 && (kw >= 1 || e >= 3)) || (et >= 1 && kw >= 2)) && sc > bs) { bs = sc; best = x; } }
+    // v3 (21/11/2026): i gruppi della rassegna possono mescolare titoli diversi, e un nome comune (Xi, Roma) bastava ad agganciarli.
+    // Ora si guardano i titoli UNO PER UNO: un titolo «parla della storia» se ha due nomi del titolo della storia, o un nome e una parola,
+    // o tre parole (un paese vale mezzo nome). Il gruppo è abbinato se almeno un terzo dei suoi titoli (e almeno 2) parla della stessa storia.
+    // Se il titolo principale del gruppo parla della storia basta un quarto dei titoli (almeno 1).
+    const VV = g.voci.slice(0, 8).map((v) => ({ e: E(v.titolo), k: parole(v.titolo) })), HV = { e: E(g.titolo), k: parole(g.titolo) }; let best = null, bs = 0;
+    const parla = (x, v) => { let ev = 0; for (const k of x.Et) if (v.e.has(k)) ev += k.startsWith("p:") ? 0.5 : 1; /* un paese (anche da una città) vale mezzo nome */ let kv = 0; for (const w of x.Kt) if (v.k.has(w)) kv++; return ev >= 2 || (ev >= 1 && kv >= 1) || kv >= 3; };
+    for (const x of dove) {
+      let ok = 0; for (const v of VV) if (parla(x, v)) ok++;
+      const serve = parla(x, HV) ? Math.max(1, Math.ceil(VV.length / 4)) : Math.max(2, Math.ceil(VV.length / 3));
+      if (ok >= serve && ok > bs) { bs = ok; best = x; }
+    }
     const r = { titolo: g.titolo, n_fonti: g.n_fonti, aree: g.aree.length, italia: g.italia, indice: g.indice, esito: best ? (best.esito === "storia" ? "nel briefing" : "valutata ed esclusa") : "non valutata", motivo: best ? String(best.motivo || "").slice(0, 160) : "", con: best && best.esito === "storia" ? best.t : null };
     if (best && best.esito === "storia") {
       const citate = best.fonti.map((f) => nrm(f.nome)).concat(best.fonti.map((f) => String(f.id || "")), best.fonti.map((f) => String(f.origine || "")));
@@ -275,7 +282,7 @@ export function rsConfronta(RS, st, sel, ctx) { // puro: storie larghe della ras
   const nb = out.filter((r) => r.esito === "nel briefing"), fuori = out.filter((r) => r.esito !== "nel briefing");
   return { storie_larghe: out.length, nel_briefing: nb.length, valutate_escluse: out.filter((r) => r.esito === "valutata ed esclusa").length, non_valutate: out.filter((r) => r.esito === "non valutata").length,
     media_fonti_rassegna: nb.length ? +(nb.reduce((a, r) => a + r.n_fonti, 0) / nb.length).toFixed(1) : null, media_fonti_briefing: nb.length ? +(nb.reduce((a, r) => a + (r.fonti_briefing || 0), 0) / nb.length).toFixed(1) : null,
-    mancate: fuori.slice(0, 10), coperte: nb.slice(0, 12), testate_non_citate: Object.values(non).sort((a, b) => b.n - a.n).slice(0, 12) };
+    mancate: fuori.slice(0, 30), coperte: nb.slice(0, 12), testate_non_citate: Object.values(non).sort((a, b) => b.n - a.n).slice(0, 12) };
 }
 export async function rsFoto(env, h, data) {
   const B = await env.DB.prepare("SELECT key, data FROM rdocs WHERE type='briefings' AND key=?1").bind(data).first(); if (!B) return null;
@@ -285,12 +292,12 @@ export async function rsFoto(env, h, data) {
   await tabella(env);
   const voci = ((await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM rs_voci WHERE data >= ?1 AND data < ?2 ORDER BY data DESC LIMIT 4000").bind(da.toISOString(), a.toISOString()).all()).results || []).reverse(), prima = (await env.DB.prepare("SELECT min(data) m FROM rs_voci").first()) || {};
   const RS = rsStorie(voci, ctx).filter((g) => g.n_fonti >= 4).slice(0, 80);
-  return { v: 2, data, fatta: new Date().toISOString(), titoli: voci.length, fonti_attive: new Set(voci.map((v) => v.fonte)).size, parziale: voci.length >= 4000 ? "letti i 4.000 titoli più recenti della finestra" : prima.m && prima.m > da.toISOString() ? "la raccolta non copre tutta la finestra" : "", storie_briefing: st.length, ...rsConfronta(RS, st, b.selezione || [], ctx) };
+  return { v: 3, data, fatta: new Date().toISOString(), titoli: voci.length, fonti_attive: new Set(voci.map((v) => v.fonte)).size, parziale: voci.length >= 4000 ? "letti i 4.000 titoli più recenti della finestra" : prima.m && prima.m > da.toISOString() ? "la raccolta non copre tutta la finestra" : "", storie_briefing: st.length, ...rsConfronta(RS, st, b.selezione || [], ctx) };
 }
 /* dal cron: dopo le 9 di Roma salva la fotografia di oggi; recupera ieri e l'altro ieri se mancano (finché i titoli ci sono) */
 export async function rsFotoCron(env, h, oggi, oraRoma) {
   if (oraRoma < 9) return; const F = (await h.kvGet(env, K_FOTO)) || {}; let fatto = false;
-  for (const g of [0, 1, 2]) { const d = new Date(Date.parse(oggi + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10); if (F[d] && (F[d].v === 2 || F[d].tenuta)) continue; const f = await rsFoto(env, h, d); if (!f) continue; if (!F[d] || !f.parziale || f.parziale.startsWith("letti")) F[d] = f; else F[d].tenuta = true; /* titoli già scaduti: resta la fotografia vecchia, non si riprova */ fatto = true; break; } // una per giro: il cron resta leggero
+  for (const g of [0, 1, 2]) { const d = new Date(Date.parse(oggi + "T12:00:00Z") - g * 864e5).toISOString().slice(0, 10); if (F[d] && (F[d].v === 3 || F[d].tenuta)) continue; const f = await rsFoto(env, h, d); if (!f) continue; if (!F[d] || !f.parziale || f.parziale.startsWith("letti")) F[d] = f; else F[d].tenuta = true; /* titoli già scaduti: resta la fotografia vecchia, non si riprova */ fatto = true; break; } // una per giro: il cron resta leggero
   if (fatto) { const K = Object.keys(F).sort().slice(-90), o = {}; for (const k of K) o[k] = F[k]; await h.kvSet(env, K_FOTO, o); }
 }
 
