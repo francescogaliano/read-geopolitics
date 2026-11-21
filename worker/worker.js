@@ -7189,8 +7189,7 @@ async function salaRoute(request, env, p, method, url) {
 
 export default {
   async scheduled(event, env, ctx) {
-    if (event && event.cron === "*/5 * * * *") { try { await rsCron(env, { kvGet, kvSet }); } catch (e) {} try { await rsFotoCron(env, { kvGet, kvSet }, romeToday(), +new Date().toLocaleString("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false })); } catch (e) {} try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} try { await canaliRecupero(env); } catch (e) {} return; } // v83: solo le uscite programmate
-    if (event && event.cron === "*/5 * * * *") { try { await aiCron(env, { kvGet, kvSet }); } catch (e) {} } // IA: un gruppo di feed per volta
+    if (event && event.cron === "*/5 * * * *") { try { await rsCron(env, { kvGet, kvSet }); } catch (e) {} try { await rsFotoCron(env, { kvGet, kvSet }, romeToday(), +new Date().toLocaleString("en-GB", { timeZone: "Europe/Rome", hour: "2-digit", hour12: false })); } catch (e) {} try { await autoProgrammati(env); } catch (e) {} try { await codaPubblica(env); } catch (e) {} try { await canaliRecupero(env); } catch (e) {} try { await aiCron(env, { kvGet, kvSet }); } catch (e) {} return; } // v83: solo le uscite programmate; IA: un gruppo di feed per volta
     try { await invCron(env, { kvGet, kvSet }); } catch (e) {} // investimenti: prezzi di azioni ed ETF osservati (Stooq)
     // rinnovo del token Instagram: se mancano meno di 30 giorni
     try {
