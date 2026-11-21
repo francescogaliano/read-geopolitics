@@ -10,7 +10,7 @@ RISERVATEZZA: i nomi dei clienti di Francesco stanno solo nella collezione ai_cl
 
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"ia","fase":"inizio"}'`
 
-1-bis. TRASLOCO (una volta sola, prima di tutto il resto). `python3 /tmp/rgdb.py get config ia_trasloco`. Se risponde not_found: con lo strumento dei dati dell'artifact (ArtifactData, oppure db_list di claude-artifacts; caricalo con ToolSearch), SOLO IN LETTURA, leggi dall'artifact «AI Intelligence» (https://claude.ai/artifact/LZQfTAbYcUvhiyfCsEdzKr) le collezioni «tendenze» e «aziende» per intero (segui i cursori). Scrivi ogni tendenza in ai_tesi con lo stesso id (t1…) e gli stessi campi, aggiungendo "direzione": {"verso":"incerta","perche":"da ricalcolare","dal":"<oggi>"} e "storia": []; scrivi ogni azienda in ai_clienti con lo stesso id e tutti i suoi campi (sono dati privati: restano nel database). Usa `python3 /tmp/rgdb.py batch` a gruppi di 50 (file {"writes":[{"op":"create",…}]}). Poi `python3 /tmp/rgdb.py set config ia_trasloco --data '{"fatto":"<ora UTC>","tesi":N,"clienti":M}'`. Non scrivere mai nell'artifact. Se l'artifact non si legge, scrivilo nel resoconto e continua.
+1-bis. TRASLOCO (una volta sola, prima di tutto il resto). `python3 /tmp/rgdb.py get config ia_trasloco`. Se risponde not_found: con lo strumento dei dati dell'artifact (ArtifactData, oppure db_list di claude-artifacts; caricalo con ToolSearch), SOLO IN LETTURA, leggi dall'artifact «AI Intelligence» (https://claude.ai/artifact/LZQfTAbYcUvhiyfCsEdzKr) le collezioni «tendenze», «aziende» ed «eventi» per intero (segui i cursori). Scrivi ogni tendenza in ai_tesi con lo stesso id (t1…) e gli stessi campi, aggiungendo "direzione": {"verso":"incerta","perche":"da ricalcolare","dal":"<oggi>"} e "storia": []; scrivi ogni azienda in ai_clienti con lo stesso id e tutti i suoi campi (sono dati privati: restano nel database). Ogni evento che descrive un'azienda che ADOTTA l'IA (non chi la vende) diventa un caso in ai_casi con lo schema del punto 6-bis; i campi che l'evento non dice restano vuoti, mai inventati. Usa `python3 /tmp/rgdb.py batch` a gruppi di 50 (file {"writes":[{"op":"create",…}]}). Poi `python3 /tmp/rgdb.py set config ia_trasloco --data '{"fatto":"<ora UTC>","tesi":N,"clienti":M,"casi":K}'`. Non scrivere mai nell'artifact. Se l'artifact non si legge, scrivilo nel resoconto e continua.
 
 2. CONTESTO.
    - `python3 /tmp/rgdb.py ia-voci 36`: i titoli dei feed IA delle ultime 36 ore, per gruppo (laboratori, fornitori, ricerca, regole, testate, italia, capitali, settori, società). È la materia prima: dice dove guardare, non è un fatto finché non hai letto la pagina.
@@ -46,6 +46,15 @@ RISERVATEZZA: i nomi dei clienti di Francesco stanno solo nella collezione ai_cl
    - "smentirebbe" non si riscrive per comodità: se cambia, scrivi perché nel log.
    Una tesi NUOVA solo se 3 fatti indipendenti di almeno 2 settimane diverse la sostengono: id t10, t11…, con "ordine", "titolo", "uno", "cosa", "interpretazione", "domanda", "smentirebbe", "stato":"attiva".
 
+6-bis. CASI D'USO. Ogni caso concreto di adozione letto oggi (un'azienda o un ente che USA l'IA, con un fatto verificato) va in `ai_casi/<slug-chi-AAAAMM>`; se esiste già (`python3 /tmp/rgdb.py get ai_casi <id>`) aggiornalo, non duplicarlo. Campi:
+   {"chi","settore","paese","area": una di A1 Clienti e vendite, A2 Prodotto e design, A3 Supply chain e pianificazione, A4 Funzioni corporate (HR, finanza, legale), A5 Tecnologia e dati, A6 Operazioni e servizi, A7 Ricerca e sviluppo,
+    "tecnologia": una di assistente | agente | ricerca (RAG) | contenuti | predittivo | visione | ibrido (genAI + ML + regole),
+    "modello": es. «Claude», «GPT», «Gemini», «Llama», «Mistral», «proprietario» — SOLO se la fonte lo dice,
+    "cloud": es. «AWS», «Azure», «Google Cloud», «Oracle», «on-premise» — solo se dichiarato,
+    "deploy": cloud | ibrido | on-premise — solo se dichiarato,
+    "partner": integratore o fornitore citato dalla fonte (mai i nomi dei clienti di Francesco),
+    "stadio": pilota | produzione | scala, "cosa": una frase, "dato": la cifra principale, "misura": misurato | dichiarato, "data": «gg mmm», "iso": AAAA-MM-GG, "fonte": {"nome","url"}}.
+   Lo stack non dichiarato si lascia vuoto: la pagina mostra «non dichiarato», ed è un'informazione utile anche quella.
 7. CONTROLLO prima di salvare: ogni lettura ha fonti; nessun fatto senza data; nessuna cifra arrotondata in modo diverso da quello letto; «lettura» e «diversa» non sono parafrasi una dell'altra; la frase si capisce da sola; niente parole di giudizio sulle persone. Dopo il salvataggio rileggi con get.
 
 8. RESOCONTO (breve): letture scelte e perché, tesi toccate con effetto, ricerche e pagine usate, fonti non raggiungibili, dubbi.

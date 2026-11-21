@@ -7,6 +7,8 @@
        ai_adozione/<livello>  la mappa dell'adozione: livello × orizzonte (breve, medio, lungo), intrecci, protagonisti
        ai_approf/<slug>       approfondimenti
        ai_clienti/<slug>      i clienti seguiti (SOLO nel database, mai nel repository: è pubblico)
+       ai_casi/<id>           casi d'uso: chi, area, tecnologia, modello, cloud, installazione, integratore, stadio, risultato
+       ai_attori/<id>         i protagonisti (Anthropic, OpenAI, Google…): direzione, scommesse, posizione per capacità, mosse
      nessuna di queste collezioni va sul sito pubblico (non sono in DB_SITE)
    - pannello /ig/ia (ai.html): azioni ai_get e ai_fonti
    - routine: GET /v1/ia/voci?ore=36 (token) — titoli raggruppati per gruppo di fonti */
@@ -18,6 +20,12 @@ export const AI_LIVELLI = [
   ["governi", "Governi e regole"], ["aziende", "Aziende"], ["lavoro", "Lavoro"], ["famiglie", "Famiglie e consumatori"],
   ["persona", "La persona"], ["infrastruttura", "Infrastruttura ed energia"], ["capitali", "Capitali"], ["modelli", "Modelli e ricerca"],
 ];
+
+/* casi d'uso: area aziendale × tipo di tecnologia (con modello, cloud, modo di installazione, integratore) */
+export const AI_AREE = [["A1", "Clienti e vendite"], ["A2", "Prodotto e design"], ["A3", "Supply chain e pianificazione"], ["A4", "Funzioni corporate (HR, finanza, legale)"], ["A5", "Tecnologia e dati"], ["A6", "Operazioni e servizi"], ["A7", "Ricerca e sviluppo"]];
+export const AI_TECNOLOGIE = [["assistente", "Assistente (copilota)"], ["agente", "Agente che agisce"], ["ricerca", "Ricerca nei documenti (RAG)"], ["contenuti", "Generazione di contenuti"], ["predittivo", "ML predittivo"], ["visione", "Visione"], ["ibrido", "Ibrido (genAI + ML + regole)"]];
+/* protagonisti: posizione su ogni capacità — avanti | pari | indietro | assente (giudizio con il motivo, niente punteggi) */
+export const AI_CAPACITA = [["frontiera", "Modelli di frontiera"], ["agenti", "Agenti e programmazione"], ["aziende", "Vendita alle aziende"], ["consumatori", "Consumatori"], ["calcolo", "Calcolo e chip propri"], ["distribuzione", "Cloud e distribuzione"], ["aperti", "Modelli aperti"], ["europa", "Europa e sovranità"]];
 
 async function tabella(env) {
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS ai_voci (link TEXT PRIMARY KEY, fonte TEXT NOT NULL, titolo TEXT NOT NULL, sito TEXT, data TEXT NOT NULL, visto TEXT NOT NULL)").run();
@@ -71,10 +79,10 @@ export async function aiRoute(request, env, p, method, url, h) {
 export async function aiPanelApi(env, b, h) {
   if (b.action === "ai_get") {
     const edz = await coll(env, "ai_oggi", 60), data = String(b.data || ""), oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
-    const [tesi, adozione, approf, clienti] = await Promise.all([coll(env, "ai_tesi", 60), coll(env, "ai_adozione", 40), coll(env, "ai_approf", 80), coll(env, "ai_clienti", 80)]);
+    const [tesi, adozione, approf, clienti, casi, attori] = await Promise.all([coll(env, "ai_tesi", 60), coll(env, "ai_adozione", 40), coll(env, "ai_approf", 80), coll(env, "ai_clienti", 80), coll(env, "ai_casi", 600), coll(env, "ai_attori", 40)]);
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
-    return { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "" })), tesi: tesi.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), adozione, livelli: AI_LIVELLI, approf: approf.map(({ sezioni, ...r }) => ({ ...r, n_sezioni: (sezioni || []).length })), clienti: clienti.map((c) => ({ id: c.id, nome: c.nome, settore: c.settore || c.cluster || "", tocchi: (tocchi[c.nome] || []).slice(0, 8) })), fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
+    return { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "" })), tesi: tesi.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), adozione, livelli: AI_LIVELLI, approf: approf.map(({ sezioni, ...r }) => ({ ...r, n_sezioni: (sezioni || []).length })), casi: casi.map((c) => ({ id: c.id, chi: c.chi, settore: c.settore, paese: c.paese, area: c.area, tecnologia: c.tecnologia, modello: c.modello, cloud: c.cloud, deploy: c.deploy, partner: c.partner, stadio: c.stadio, cosa: c.cosa, dato: c.dato, misura: c.misura, data: c.data, fonte: c.fonte })), attori: attori.sort((a, b2) => (a.ordine || 99) - (b2.ordine || 99)), aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA, clienti: clienti.map((c) => ({ id: c.id, nome: c.nome, settore: c.settore || c.cluster || "", tocchi: (tocchi[c.nome] || []).slice(0, 8) })), fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
   }
   if (b.action === "ai_approf") { const r = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_approf' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, approf: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_fonti") {
