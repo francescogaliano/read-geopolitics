@@ -46,10 +46,12 @@ RISERVATEZZA: i nomi dei clienti solo in ai_clienti, mai nel repository.
     "direzione": una frase su dove sta andando e perché (con i fatti, non con gli aggettivi),
     "numeri":[{"val","testo","fonte"}] 2-4 cifre lette (ricavi, capex, utenti, quote), "grafico": facoltativo, stesso formato di ai_oggi,
     "scommesse":[{"titolo","testo"}] 2-3: su cosa sta puntando, con la prova,
-    "posizioni":{"frontiera"|"agenti"|"aziende"|"consumatori"|"calcolo"|"distribuzione"|"aperti"|"europa": {"stato": avanti | pari | indietro | assente, "perche": una frase con il fatto che lo giustifica}} — tutte e 8 le capacità; «avanti» solo con un dato che lo mostra (classifiche indipendenti, ricavi, quote), altrimenti «pari»,
-    "mosse":[{"data":"gg mmm","iso":"AAAA-MM-GG","testo","fonte"}] le più recenti prima, max 12,
+    "legami":[{"con": nome dell'altra azienda (usa sempre gli stessi nomi: Nvidia, AMD, Broadcom, ASML, «Amazon (AWS)», Microsoft, Google, Oracle, CoreWeave, Anthropic, OpenAI, Meta, Mistral, DeepSeek…), "verso": "a" se è l'altra che dà a questo protagonista (investe, vende calcolo, fornisce chip) oppure "da" se è questo che dà all'altra, "tipo": investe | calcolo | chip | distribuisce, "peso": "forte" sopra 10 Mld$ o se è il partner principale, "testo","valore","data","fonte"}] — solo legami annunciati con una fonte; un legame finito si toglie,
+    "posizioni":{"frontiera"|"agenti"|"aziende"|"consumatori"|"calcolo"|"distribuzione"|"aperti"|"europa": {"stato": avanti | pari | indietro | assente, "prima": lo stato della domenica precedente (copialo dal documento prima di aggiornarlo), "perche": una frase con il fatto che lo giustifica}} — tutte e 8 le capacità; «avanti» solo con un dato che lo mostra (classifiche indipendenti, ricavi, quote), altrimenti «pari»,
+    "mosse":[{"data":"gg mmm","iso":"AAAA-MM-GG","tipo": prodotto | soldi | accordo | persone | regole,"testo","fonte"}] le più recenti prima, max 12,
     "osservare":[{"testo","data"?}], "fonti":[…]}.
    Numeri dichiarati dall'azienda su sé stessa: «secondo <azienda>». Nessun giudizio sulle persone.
+5-ter. CONFRONTI, documenti `ai_confronti/capex` e `ai_confronti/ricavi` (aggiungine altri solo se confrontabili davvero): {"titolo","ordine","nota": unità e avvertenze (date diverse, modi diversi di contare), "serie":[{"et": nome,"v": numero,"lab": facoltativo («~77», «>37»),"quando": periodo,"fonte":{"nome","url"}}]}. Aggiorna una voce solo quando esce un dato nuovo (trimestrali, documenti ufficiali, Bloomberg/Reuters); mai stime tue.
 6. TESI: rivedi la direzione di ogni tesi (regola delle 8 settimane come nella routine «ia») e segnala nel resoconto quelle senza fatti da 4 settimane.
 
 7. CONTROLLO: ogni numero ha fonte e data; le due letture hanno la stessa misura; gli intrecci puntano a id esistenti; nessun fatto inventato per riempire una casella (una casella può restare con "dove_siamo" e "confidenza":"bassa"). Rileggi con get dopo ogni set.

@@ -53,7 +53,8 @@ RISERVATEZZA: i nomi dei clienti di Francesco stanno solo nella collezione ai_cl
     "cloud": es. «AWS», «Azure», «Google Cloud», «Oracle», «on-premise» — solo se dichiarato,
     "deploy": cloud | ibrido | on-premise — solo se dichiarato,
     "partner": integratore o fornitore citato dalla fonte (mai i nomi dei clienti di Francesco),
-    "stadio": pilota | produzione | scala, "cosa": una frase, "dato": la cifra principale, "misura": misurato | dichiarato, "data": «gg mmm», "iso": AAAA-MM-GG, "fonte": {"nome","url"}}.
+    "stadio": pilota | produzione | scala, "cosa": una frase, "dato": la cifra principale, "misura": misurato | dichiarato, "chi_lo_dice": azienda (l'azienda stessa: comunicato, conference call, bilancio) | fornitore (chi vende il modello o il cloud: pagine «customer story», blog del fornitore) | stampa | analisti, "data": «gg mmm», "iso": AAAA-MM-GG, "fonte": {"nome","url"}}.
+   Cerca attivamente anche i casi con lo stack dichiarato (pagine clienti di AWS, Google Cloud, Microsoft, Anthropic, OpenAI, Mistral): sono le uniche che dicono modello e cloud, ma vanno etichettati «fornitore».
    Lo stack non dichiarato si lascia vuoto: la pagina mostra «non dichiarato», ed è un'informazione utile anche quella.
 7. CONTROLLO prima di salvare: ogni lettura ha fonti; nessun fatto senza data; nessuna cifra arrotondata in modo diverso da quello letto; «lettura» e «diversa» non sono parafrasi una dell'altra; la frase si capisce da sola; niente parole di giudizio sulle persone. Dopo il salvataggio rileggi con get.
 
