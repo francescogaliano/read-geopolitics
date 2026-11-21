@@ -41,6 +41,15 @@ details[open]>summary{padding-bottom:6px}.in{padding:0 0 16px}
 .empty{padding:22px 0;color:var(--mut);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:12px}
 select{background:var(--bg);color:var(--fg);border:1px solid var(--line);padding:8px;border-radius:6px;font:inherit;min-height:40px}
 .back{font-size:14px;color:var(--acc);text-decoration:none}
+.dsec{border-top:1px solid var(--line);margin-top:0}.dsec:last-of-type{border-bottom:1px solid var(--line)}
+.dsec>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;min-height:48px;font-weight:600;font-size:15.5px}
+.dsec>summary .meta{font:11px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);text-align:right;white-space:nowrap}
+.dsec>summary .meta::after{content:" ›";display:inline-block;transition:transform .15s;color:var(--acc);font-size:15px}
+.dsec[open]>summary .meta::after{transform:rotate(90deg)}
+.dsec>.dsb{padding:0 0 18px}.dsec>.dsb>.chart:first-child,.dsec>.dsb>.rows:first-child{margin-top:0}
+.sezioni{margin-top:22px}
+.pan{border-left:3px solid var(--acc);padding:4px 0 6px 12px;margin:10px 0 4px}.pan .x{float:right;font-size:13px;color:var(--acc);cursor:pointer;padding:4px 0 8px 12px}
+.mx tr.det{cursor:default}.mx tr.det td{width:auto;font-weight:400;padding:4px 0 14px}
 </style></head><body><div class="wrap">
 <div class="top"><div><div class="mono"><a class="back" href="/ig/panel">← Pannello</a> · privato</div><h1>Intelligenza artificiale</h1></div><div class="mono" id="agg"></div></div>
 <div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Oggi</button><button data-v="adozione">Adozione</button><button data-v="casi">Casi d'uso</button><button data-v="attori">Protagonisti</button><button data-v="tesi">Tesi</button><button data-v="clienti">Clienti</button><button data-v="archivio">Archivio</button></div>
@@ -83,7 +92,7 @@ function rete(N,A,nota){if(!N||!N.length)return"";const n=N.length,W=680,H=n<=4?
 /* ---- Oggi ---- */
 function vOggi(){const E=D.edizione;if(!E)return `<p class="lead">Qui ogni mattina: il numero della settimana, tre letture che collegano i fatti (con grafico), domande per la riunione, cosa tocca i tuoi clienti.</p><div class="empty">Nessuna edizione ancora: la prima arriva con la routine del mattino.</div>`;
  const sel=D.edizioni.length>1?`<select id="ed">${D.edizioni.map(e=>`<option value="${e.id}"${e.id===E.id?" selected":""}>${dl(e.id)}</option>`).join("")}</select>`:"";
- let h=`<div class="sec"><span class="mono">${esc(dl(E.id))}</span>${sel}</div>`;
+ let h=`<div class="sec tool"><span class="mono">${esc(dl(E.id))}</span>${sel}</div>`;
  if(E.frase)h+=`<div class="frase" style="margin-top:0">${rich(E.frase)}</div>`;
  if(E.numero)h+=`<div class="sec"><span class="mono">Il numero della settimana</span><span class="mono">${esc(E.numero.data||"")}</span></div><div class="big">${esc(E.numero.val)}</div><div class="bigsub">${rich(E.numero.testo)}</div>${grafico(E.numero.grafico)}${fonti(E.numero.fonti)}`;
  if((E.letture||[]).length)h+=`<div class="sec"><span class="mono">Letture che collegano i fatti</span><span class="mono">${E.letture.length}</span></div><div>`+E.letture.map(l=>{const tc=l.tesi?tcol(l.tesi.id):"var(--acc)",tt=l.tesi&&(D.tesi.find(t=>t.id===l.tesi.id)||{});
@@ -172,11 +181,12 @@ function vCasi(){const T=D.casi||[];if(!T.length)return `<p class="lead">Chi usa
  h+=`<p class="lead">L'area con più casi è ${esc(AB[topA[0]]||topA[0])} (${topA[1]}); la tecnologia più usata è ${esc(TB[topT[0]]||topT[0])} (${topT[1]}).</p>`;
  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">${opt("modello","Modello",c=>famM(c.modello))}${opt("cloud","Cloud",c=>famC(c.cloud))}</div>`;
  h+=`<div class="sec"><span class="mono">Chi alimenta cosa</span><span class="mono">modello → area</span></div>`+flusso(C);
- h+=`<div class="sec"><span class="mono">Dove e con che tecnologia</span><span class="mono">${C.length} casi</span></div>`+calore(C);
+ h+=`<div class="sec"><span class="mono">Dove e con che tecnologia</span><span class="mono">${C.length} casi</span></div>`+calore(C)+"@@FIL@@";
  h+=`<div class="sec"><span class="mono">Quanto è solido</span></div>`+barra100("A che punto sono",[{l:"pilota",v:C.filter(c=>c.stadio==="pilota").length,c:"#E8A33D"},{l:"in produzione",v:C.filter(c=>c.stadio==="produzione").length,c:"#5FCB8C"},{l:"in scala",v:C.filter(c=>c.stadio==="scala").length,c:"#2E9E62"}])+barra100("Il risultato",[{l:"misurato",v:C.filter(c=>c.dato&&c.misura==="misurato").length,c:"#5FCB8C"},{l:"solo dichiarato",v:C.filter(c=>c.dato&&c.misura!=="misurato").length,c:"#E8A33D"},{l:"nessun numero",v:C.filter(c=>!c.dato).length,c:ND}])+barra100("Chi lo racconta",Object.entries(DICE).map(([k,[l,c]])=>({l,v:C.filter(x=>x.chi_lo_dice===k).length,c})));
  const riga=c=>{const m=famM(c.modello),cl=c.cloud?famC(c.cloud):"";return `<div class="row"><span><b>${esc(c.chi)}</b> <span class="n" style="display:inline">· ${esc(c.settore||"")}${c.paese?", "+esc(c.paese):""}</span><span style="display:block;margin-top:3px">${rich(c.cosa)}</span><span class="n" style="margin-top:5px"><span style="color:var(--fg)">${esc(TB[c.tecnologia]||c.tecnologia||"")}</span> · ${c.modello?`<span style="color:var(--fg)">${esc(c.modello)}</span>`:"modello non dichiarato"} · <span style="color:${clcol(cl)}">■</span> ${cl?`<span style="color:var(--fg)">${esc(c.cloud)}</span>`:"cloud non dichiarato"}${c.partner?` · con ${esc(c.partner)}`:""}</span><span class="n">${c.data?esc(c.data)+" · ":""}${c.chi_lo_dice?`lo dice ${esc((DICE[c.chi_lo_dice]||[c.chi_lo_dice])[0])} · `:""}${c.fonte?(c.fonte.url?`<a href="${esc(c.fonte.url)}" target="_blank" rel="noopener">${esc(c.fonte.nome)}</a>`:esc(c.fonte.nome)):""}</span></span><span style="text-align:right">${c.dato?`<b style="color:${c.misura==="misurato"?"var(--up)":"var(--amb)"};display:block;font-size:17px">${esc(c.dato)}</b><span class="mono" style="font-size:9.5px">${c.misura==="misurato"?"misurato":"dichiarato"}</span>`:""}${stadio(c.stadio)}</span></div>`};
- if(FC.area||FC.tec){h+=`<div class="sec"><span class="mono">${esc(AB[FC.area]||"tutte le aree")} · ${esc(TB[FC.tec]||"tutte")}</span><a href="#" id="clr" class="mono" style="color:var(--acc)">togli il filtro</a></div><div class="rows" id="lst">${L.map(riga).join("")}</div>`;return h}
- h+=`<div class="sec" id="lst"><span class="mono">I casi, per area</span><span class="mono">${L.length}</span></div><div class="rows">`+D.aree.filter(([a])=>L.some(c=>c.area===a)).map(([a])=>{const X=L.filter(c=>c.area===a).sort((x,y)=>dk(y.iso||y.data).localeCompare(dk(x.iso||x.data))),tt=conta(X,c=>TB[c.tecnologia]||c.tecnologia).slice(0,3).map(([k,v])=>`${k} ${v}`).join(" · ");
+ 
+ if(FC.area||FC.tec)h=h.replace("@@FIL@@",`<div class="pan" id="lst"><a class="x" href="#" id="clr">chiudi ✕</a><span class="k" style="margin-top:0">${esc(AB[FC.area]||"tutte le aree")} · ${esc(TB[FC.tec]||"tutte")} · ${L.length}</span><div class="rows">${L.map(riga).join("")||'<div class="n">Nessun caso.</div>'}</div></div>`);else h=h.replace("@@FIL@@","");
+ h+=`<div class="sec"><span class="mono">I casi, per area</span><span class="mono">${C.length}</span></div><div class="rows">`+D.aree.filter(([a])=>C.some(c=>c.area===a)).map(([a])=>{const X=C.filter(c=>c.area===a).sort((x,y)=>dk(y.iso||y.data).localeCompare(dk(x.iso||x.data))),tt=conta(X,c=>TB[c.tecnologia]||c.tecnologia).slice(0,3).map(([k,v])=>`${k} ${v}`).join(" · ");
   return `<details><summary><div class="row" style="border:0;padding:0"><span><b>${esc(AB[a]||a)}</b><span class="n">${esc(tt)}</span></span><span class="mono">${X.length}</span></div></summary><div class="in rows">${X.map(riga).join("")}</div></details>`}).join("")+`</div>`;
  return h}
 
@@ -220,7 +230,7 @@ function vAttori(){const P=D.attori||[];if(!P.length)return `<p class="lead">Ant
  if(sett.length)h+=`<div class="ob"><span class="k">Questa settimana</span>${sett.slice(0,4).map(m=>`<div style="padding:3px 0"><b>${esc(m.chi)}</b> · ${rich(m.testo)}</div>`).join("")}</div>`;
  h+=`<div class="sec"><span class="mono">Chi è legato a chi</span></div>`+legami(P);
  if((D.confronti||[]).length)h+=`<div class="sec"><span class="mono">Chi spende, chi incassa</span></div>`+D.confronti.map(confronto).join("");
- h+=`<div class="sec"><span class="mono">Chi è avanti su cosa</span></div>`+posMappa(P);
+ h+=`<div class="sec"><span class="mono">Chi è avanti su cosa</span></div>`+posMappa(P)+`<div id="atp"></div>`;
  h+=`<div class="sec"><span class="mono">Il ritmo</span><span class="mono">60 giorni</span></div>`+ritmo(P,M);
  if(M.length)h+=`<details><summary class="mono" style="color:var(--acc)">Tutte le mosse (${M.length})</summary><div class="in dots">${M.slice(0,40).map(m=>`<div><b>${esc(m.data||"")}</b> · <b>${esc(m.chi)}</b> · ${rich(m.testo)}</div>`).join("")}</div></details>`;
  h+=`<div class="sec"><span class="mono">Ognuno, in profondità</span></div><div class="rows">`+P.map(a=>{const K=D.capacita,po=a.posizioni||{},av=K.filter(([k])=>(po[k]||{}).stato==="avanti"),ind=K.filter(([k])=>["indietro","assente"].includes((po[k]||{}).stato));
@@ -241,19 +251,24 @@ function vClienti(){if(!D.clienti.length)return `<div class="empty">Nessun clien
 function vArchivio(){return `<p class="lead">Le edizioni passate e lo stato delle fonti.</p><div class="rows">`+D.edizioni.map(e=>`<div class="row" data-ed="${e.id}" style="cursor:pointer"><span><b>${esc(dl(e.id))}</b><span class="n">${rich(e.frase)}</span></span><span class="mono">apri</span></div>`).join("")+`</div><div class="sec"><span class="mono">Fonti</span><span class="mono">${D.fonti.ok} su ${D.fonti.totale} rispondono</span></div><details id="fo"><summary class="mono">Vedi ogni feed</summary><div class="in" id="fol">…</div></details>`}
 
 const arr=x=>Array.isArray(x)?x:(x?[x]:[]);
-function vai(v){V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));const el=$("#v");
+const APERTE={};
+function sezioni(el,v){const A=APERTE[v]||(APERTE[v]=new Set()),K=[...el.children];let cur=null;
+ K.forEach(n=>{if(n.classList&&n.classList.contains("sec")&&!n.classList.contains("tool")){const sp=n.children,tit=(sp[0]&&sp[0].textContent)||"",meta=sp[1]?sp[1].outerHTML:"";const d=document.createElement("details");d.className="dsec";d.dataset.s=tit;if(A.has(tit))d.open=true;d.innerHTML=`<summary><span>${esc(tit.charAt(0).toUpperCase()+tit.slice(1).toLowerCase())}</span><span class="meta">${sp[1]&&sp[1].tagName!=="SELECT"&&sp[1].textContent.length<18?esc(sp[1].textContent):""}</span></summary><div class="dsb"></div>`;d.addEventListener("toggle",()=>{d.open?A.add(tit):A.delete(tit)});n.replaceWith(d);cur=d.querySelector(".dsb");return}
+  if(cur)cur.appendChild(n)})}
+function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));const el=$("#v"),y=scrollY;
  try{el.innerHTML={oggi:vOggi,adozione:vAdozione,casi:vCasi,attori:vAttori,tesi:vTesi,clienti:vClienti,archivio:vArchivio}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
- el.querySelectorAll("select[data-f]").forEach(x=>x.onchange=()=>{FC[x.dataset.f]=x.value;const y=scrollY;vai("casi");scrollTo(0,y)});
- el.querySelectorAll("g[data-c]").forEach(g=>g.onclick=()=>{const[a,t]=g.dataset.c.split("|");FC.area=a;FC.tec=t;vai("casi");const r=$("#lst");if(r)r.scrollIntoView({block:"start"})});
+ sezioni(el,v);
+ el.querySelectorAll("select[data-f]").forEach(x=>x.onchange=()=>{FC[x.dataset.f]=x.value;vai("casi",1)});
+ el.querySelectorAll("g[data-c]").forEach(g=>g.onclick=()=>{const[a,t]=g.dataset.c.split("|");if(FC.area===a&&FC.tec===t){FC.area=FC.tec=""}else{FC.area=a;FC.tec=t}vai("casi",1)});
  el.querySelectorAll("g[data-n]").forEach(g=>g.onclick=()=>{const n=g.dataset.n,sv=$("#rete"),on=sv.dataset.on===n?"":n;sv.dataset.on=on;sv.querySelectorAll("path[data-e]").forEach(p=>{const[a,b]=p.dataset.e.split("|");p.style.strokeOpacity=!on||a===on||b===on?".85":".07"});sv.querySelectorAll("g[data-n]").forEach(x=>x.style.opacity=!on||x.dataset.n===on||[...sv.querySelectorAll("path[data-e]")].some(p=>{const[a,b]=p.dataset.e.split("|");return (a===on&&b===x.dataset.n)||(b===on&&a===x.dataset.n)})?"1":".3")});
- {const c=$("#clr");if(c)c.onclick=e=>{e.preventDefault();FC.area=FC.tec="";const y=scrollY;vai("casi");scrollTo(0,y)}}
- el.querySelectorAll("g[data-a]").forEach(g=>g.onclick=()=>{const d=document.getElementById("at-"+g.dataset.a);if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}});
+ {const c=$("#clr");if(c)c.onclick=e=>{e.preventDefault();FC.area=FC.tec="";vai("casi",1)}}
+ el.querySelectorAll("g[data-a]").forEach(g=>g.onclick=()=>{const box=$("#atp"),id=g.dataset.a;if(!box)return;if(box.dataset.id===id){box.innerHTML="";box.dataset.id="";return}const d=document.getElementById("at-"+id),a=(D.attori||[]).find(x=>x.id===id)||{};if(!d)return;box.dataset.id=id;box.innerHTML=`<div class="pan"><a class="x" href="#">chiudi ✕</a><b style="font-size:16px">${esc(a.nome||"")}</b><p style="margin-top:4px">${rich(a.direzione||"")}</p>${d.querySelector(".in").innerHTML}</div>`;box.querySelector(".x").onclick=e=>{e.preventDefault();box.innerHTML="";box.dataset.id=""}});
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);
  el.querySelectorAll("[data-ed]").forEach(r=>r.onclick=()=>load(r.dataset.ed,"oggi"));
- el.querySelectorAll("tr[data-l]").forEach(r=>r.onclick=()=>{const d=document.getElementById("lv-"+r.dataset.l);if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}});
+ el.querySelectorAll("tr[data-l]").forEach(r=>r.onclick=()=>{const nx=r.nextElementSibling;if(nx&&nx.classList.contains("det")){nx.remove();return}el.querySelectorAll("tr.det").forEach(x=>x.remove());const d=document.getElementById("lv-"+r.dataset.l);if(!d)return;const t=document.createElement("tr");t.className="det";t.innerHTML=`<td colspan="4"><div class="pan"><a class="x" href="#">chiudi ✕</a>${d.querySelector(".in").innerHTML}</div></td>`;r.after(t);t.querySelector(".x").onclick=e=>{e.preventDefault();t.remove()}});
  el.querySelectorAll("details[data-ap]").forEach(d=>d.addEventListener("toggle",()=>{if(!d.open||d.dataset.ok)return;d.dataset.ok=1;api({action:"ai_approf",id:d.dataset.ap}).then(j=>{const a=j.approf||{};document.getElementById("ap-"+d.dataset.ap).innerHTML=(a.sezioni||[]).map(s=>`<span class="k">${esc(s.titolo)}</span><p>${rich(s.testo)}</p>${grafico(s.grafico)}`).join("")+fonti(a.fonti)})}));
  const fo=$("#fo");if(fo)fo.addEventListener("toggle",()=>{if(!fo.open||fo.dataset.ok)return;fo.dataset.ok=1;api({action:"ai_fonti"}).then(j=>{$("#fol").innerHTML=`<div class="rows">${j.fonti.map(f=>`<div class="row"><span>${esc(f.nome)}<span class="n">${esc(j.gruppi[f.gruppo]||f.gruppo)} · ${f.mai?"non ancora letta":f.ok?`${f.titoli} titoli in 7 giorni`:esc((f.errori||[]).slice(-1)[0]||"non risponde")}</span></span><span class="mono" style="color:${f.mai?"var(--mut)":f.ok?"var(--up)":"var(--dn)"}">${f.mai?"·":f.ok?"ok":"no"}</span></div>`).join("")}</div>`})});
- if(!vai._k)window.scrollTo(0,0)}
+ if(resta||!cambia)scrollTo(0,y);else{const t=$(".tabs");if(t&&t.getBoundingClientRect().top<0)scrollTo(0,t.offsetTop-6)}}
 function load(data,v){return api({action:"ai_get",data:data||""}).then(j=>{D=j;$("#agg").textContent=j.edizione?"edizione "+dl(j.edizione.id):"";vai(v||V)}).catch(e=>{$("#v").innerHTML=`<div class="empty">Errore: ${esc(e.message)}</div>`})}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>vai(b.dataset.v));
 load();
