@@ -24,6 +24,16 @@ h1{margin:0;font:600 23px/1.2 "Source Serif 4",Georgia,serif}
 p{margin:8px 0 0}.k{color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;display:block;margin:12px 0 2px}
 .dots{margin-top:6px;font-size:14px}.dots div{padding:6px 0 6px 14px;border-left:2px solid var(--line);position:relative}.dots div:before{content:"";position:absolute;left:-5px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--acc)}
 .ob{margin-top:12px;padding-left:12px;border-left:3px solid var(--acc)}.ob .k{color:var(--acc);margin-top:0}
+.gl{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-decoration-color:#6B7D8C;text-underline-offset:3px;text-decoration-thickness:1px}.gl:hover,.gl.on{color:var(--amb);text-decoration-color:var(--amb)}
+#aigl{position:fixed;left:12px;right:12px;max-width:520px;margin:0 auto;z-index:400;background:#15202A;border:1px solid #3A4A58;border-radius:12px;padding:12px 16px 10px;box-shadow:0 18px 50px rgba(0,0,0,.7);font-size:14.5px}
+#aigl .gh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}#aigl .gt{font:600 17px/1.25 "Source Serif 4",Georgia,serif}#aigl .gk{font:600 10.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+#aigl p{margin:6px 0 0}#aigl .gf{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:10px;min-height:40px;font-size:13px}#aigl .gf button{background:none;border:0;color:var(--acc);font:inherit;cursor:pointer;padding:10px 0}
+.meta2{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12.5px;color:var(--mut);padding:2px 0 10px;border-bottom:1px solid var(--line);margin-bottom:4px}.meta2 b{color:var(--fg);font-weight:600}
+.how{border-left:3px solid var(--acc);padding:2px 0 2px 12px;margin-top:4px}.how ol{margin:8px 0 0;padding-left:18px}.how li{margin:0 0 7px}
+.sch{display:flex;align-items:stretch;gap:4px;margin:6px 0 8px}.sch div{flex:1;min-width:0;border:1px solid #3A4A58;border-radius:6px;padding:6px 6px;text-align:center;font-size:12.5px;line-height:1.25;background:#16212B}.sch div small{display:block;color:var(--mut);font-size:11px;margin-top:2px}.sch i{align-self:center;color:var(--acc);font-style:normal}
+.schy{color:var(--up);font-size:13px}.schn{color:var(--amb);font-size:13px}
+.pos{border-top:1px solid var(--line);padding:10px 0 10px 12px;margin-top:2px}.pos.a{border-left:3px solid var(--dn)}.pos.b{border-left:3px solid var(--up)}.pos .who{font-size:12.5px;color:var(--mut)}.pos .t{font-weight:600;margin-top:3px}.pos p{font-size:14px;margin-top:4px}
+.oss{display:flex;gap:10px;border-top:1px solid var(--line);padding:9px 0;font-size:14px}.oss b{color:var(--amb)}
 .f{margin-top:8px;font-size:12.5px;color:var(--acc)}.f a{color:var(--acc)}
 .chart{margin-top:12px}.chart svg{width:100%;height:auto;display:block}.cap{font-size:12.5px;color:var(--mut);margin-top:4px}
 .row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 0;border-top:1px solid var(--line);align-items:baseline}
@@ -376,17 +386,74 @@ function shEl(){if(SH.el)return SH.el;const w=document.createElement("div");w.cl
  w.querySelector(".sh-dim").onclick=()=>shClose();w.querySelector(".sh-x").onclick=()=>shClose();w.querySelector(".sh-b").onclick=()=>shBack();
  const hd=w.querySelector(".sh-hd"),p=w.querySelector(".sh-p");let y0=null,dy=0;hd.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;dy=0;p.style.transition="none"},{passive:true});hd.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);p.style.transform=`translateY(${dy}px)`},{passive:true});hd.addEventListener("touchend",()=>{p.style.transition="";p.style.transform="";if(dy>90)shClose();y0=null});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&SH.open)shClose()});return w}
-function shShow(k){const w=shEl(),x=SH.st.at(-1);w.querySelector(".sh-k").innerHTML=x.k||"";w.querySelector(".sh-t").textContent=x.t||"";w.querySelector(".sh-b").style.visibility=SH.st.length>1?"visible":"hidden";const l=w.querySelector(".sh-l");l.innerHTML=x.h;l.scrollTop=0;bind(l)}
+function shShow(k){const w=shEl(),x=SH.st.at(-1);w.querySelector(".sh-k").innerHTML=x.k||"";w.querySelector(".sh-t").textContent=x.t||"";w.querySelector(".sh-b").style.visibility=SH.st.length>1?"visible":"hidden";const l=w.querySelector(".sh-l");l.innerHTML=x.h;l.scrollTop=0;bind(l);glClose();glossify(l)}
 function sheet(k,t,h){const w=shEl();SH.st.push({k,t,h});shShow();if(!SH.open){SH.open=true;w.hidden=false;document.body.style.overflow="hidden";requestAnimationFrame(()=>requestAnimationFrame(()=>w.classList.add("on")));try{history.pushState({sh:1},"")}catch(e){}}}
 function shBack(){if(SH.st.length>1){SH.st.pop();shShow()}else shClose()}
 function shClose(nav){if(!SH.open)return;SH.open=false;SH.st=[];const w=SH.el;w.classList.remove("on");document.body.style.overflow="";setTimeout(()=>{if(!SH.open){w.hidden=true;w.querySelector(".sh-l").innerHTML=""}},300);if(!nav)try{if(history.state&&history.state.sh)history.back()}catch(e){}}
 addEventListener("popstate",()=>{if(SH.open)shClose(1)});
 const tmp=f=>{const d=document.createElement("div");try{d.innerHTML=f()}catch(e){}return d};
 
+
+/* ---------- la storia, come su Read Geopolitics (dal 22/11/2026): i campi nuovi si mostrano se ci sono ---------- */
+const CCOL={alta:"var(--up)",media:"var(--amb)",bassa:"var(--dn)"};
+const filOf=id=>(D.filoni||[]).find(f=>f.id===id);
+function storiaHtml(l,i,E,q){const C=l.confidenza||{},F=l.filone&&filOf(l.filone),cf=l.come_funziona||{},sc=cf.schema||{};
+ const meta=(F||C.fatti)?`<div class="meta2">${F?`<span>Filone <b class="kr" data-sh="fil:${esc(F.id)}" style="text-decoration:underline dotted;text-underline-offset:3px">${esc(F.titolo)}</b>${tappaN(F,E.id,i)}</span>`:""}${C.fatti?`<span>Confidenza <b style="color:${CCOL[C.fatti]||"var(--fg)"}">${esc(C.fatti)}</b> sui fatti${C.effetti?`, <b style="color:${CCOL[C.effetti]||"var(--fg)"}">${esc(C.effetti)}</b> sugli effetti`:""}</span>`:""}</div>`:"";
+ const pos=(x,c,lab)=>x&&(x.tesi||x.argomento)?`<div class="pos ${c}"><div class="who">${lab}${arr(x.chi).length?" · "+arr(x.chi).map(esc).join(", "):""}</div>${x.tesi?`<div class="t">${rich(x.tesi)}</div>`:""}${x.argomento?`<p>${rich(x.argomento)}</p>`:""}${fonti(x.fonti)}</div>`:"";
+ const nuovo=l.pro||l.contro;
+ return `${l.tesi?`<div style="margin:2px 0 8px">${kref(l.tesi.id)}</div>`:""}${meta}
+ ${l.due_righe?`<span class="k">In due righe</span><p>${rich(l.due_righe)}</p>`:`<h2 class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif;margin:4px 0 0">${rich(l.titolo)}</h2>`}
+ ${(cf.punti||[]).length||(sc.passi||[]).length?`<span class="k" style="color:var(--acc)">Come funziona</span><div class="how">${(sc.passi||[]).length?`<div class="sch">${sc.passi.map(p=>`<div>${esc(p.t||"")}${p.s?`<small>${esc(p.s)}</small>`:""}</div>`).join("<i>→</i>")}</div>${sc.si?`<div class="schy">✓ ${esc(sc.si)}</div>`:""}${sc.no?`<div class="schn">? ${esc(sc.no)}</div>`:""}`:""}${(cf.punti||[]).length?`<ol>${cf.punti.map(p=>`<li>${rich(p)}</li>`).join("")}</ol>`:""}</div>`:""}
+ ${l.perche_conta?`<span class="k">Perché conta</span><p>${rich(l.perche_conta)}</p>`:""}
+ ${grafico(l.grafico)}
+ ${(l.fatti||[]).length?`<span class="k">I fatti, in fila</span><div class="dots">${l.fatti.map(f=>`<div>${f.data?`<b>${esc(f.data)}</b> · `:""}${rich(f.testo)}</div>`).join("")}</div>`:""}
+ ${nuovo?`<span class="k">Le due tesi</span>${pos(l.pro,"a","Chi spinge")}${pos(l.contro,"b","Chi frena")}`:""}
+ ${l.sintesi?`<span class="k">Dove reggono, dove cedono</span><p>${rich(l.sintesi)}</p>`:l.lettura?`<span class="k">La lettura</span><p>${rich(l.lettura)}</p>`:""}
+ ${l.decide?`<p class="n" style="font-size:14px"><b style="color:var(--fg)">Cosa deciderebbe la questione:</b> ${rich(l.decide)}</p>`:""}
+ ${!nuovo&&l.diversa?`<div class="ob"><span class="k">Chi la vede diversamente</span>${rich(l.diversa)}</div>`:""}
+ ${C.perche?`<p class="n">Confidenza: ${rich(C.perche)}</p>`:""}
+ ${(l.segnali||[]).length?`<span class="k">Cosa osservare</span>${l.segnali.map((x,j)=>`<div class="oss"><b>${j+1}</b><div>${rich(x)}</div></div>`).join("")}`:""}
+ ${q?`<span class="k" style="color:var(--acc)">In riunione</span><p class="sub" style="color:var(--acc)">${esc(q)}</p>${(E.domande||[])[i]&&E.domande[i].perche?`<p class="n">${rich(E.domande[i].perche)}</p>`:""}`:""}
+ ${F?filTappe(F,E.id,i,3):""}
+ ${fonti(l.fonti)}`}
+function tappaN(F,data,i){const T=(F.tappe||[]).slice().sort((a,b)=>String(a.iso||"").localeCompare(String(b.iso||""))),k=T.findIndex(t=>t.edizione===data&&+t.lettura===i);return T.length>1?` · ${k>=0?k+1:T.length}ª tappa di ${T.length}`:""}
+function filTappe(F,data,i,n){const T=(F.tappe||[]).slice().sort((a,b)=>String(b.iso||"").localeCompare(String(a.iso||""))),V=n?T.slice(0,n):T;
+ return `<span class="k">Il filone · ${esc(F.titolo)}</span><div class="rows">${V.map(t=>{const qui=t.edizione===data&&+t.lettura===i,go=t.edizione&&t.lettura!=null&&!qui;return `<div class="row"${go?` data-sh="lt:${esc(t.edizione)}|${+t.lettura}" style="cursor:pointer"`:""}><span><span class="n" style="margin:0;display:inline">${esc(t.data||"")}</span> · ${qui?"<b>":""}${rich(t.testo)}${qui?"</b> <span class='n' style='display:inline'>(questa)</span>":""}</span><span class="mono" style="color:var(--mut)">${go?"›":""}</span></div>`}).join("")}${n&&T.length>n?`<div class="row" data-sh="fil:${esc(F.id)}" style="cursor:pointer"><span style="color:var(--acc)">Tutto il filone (${T.length} tappe)</span><span class="mono" style="color:var(--mut)">›</span></div>`:n?`<div class="row" data-sh="fil:${esc(F.id)}" style="cursor:pointer"><span style="color:var(--acc)">Apri il filone</span><span class="mono" style="color:var(--mut)">›</span></div>`:""}</div>`}
+function filSheet(id){const F=filOf(id);if(!F)return;return sheet(`Filone · ${esc(F.stato||"attivo")}`,F.titolo,`${F.sintesi?`<p class="sub">${rich(F.sintesi)}</p>`:""}${F.tesi?`<div style="margin:8px 0">${kref(F.tesi)}</div>`:""}${filTappe(F,null,null,0)}`)}
+
+/* ---------- glossario IA: parole sottolineate e cliccabili ---------- */
+const GTIPO={azienda:"azienda",modello:"modello",persona:"persona",istituzione:"istituzione",concetto:"concetto",sigla:"sigla",prodotto:"prodotto"};
+let GLRE=null,GLMAP={},GLN=-1;
+const glById=id=>(D.glossario||[]).find(g=>g.id===id);
+function glRe(){const G=D.glossario||[];if(GLN===G.length&&GLRE!==undefined)return GLRE;GLN=G.length;GLMAP={};const T=[];G.forEach(g=>[g.termine,...arr(g.alias)].filter(t=>t&&String(t).length>2).forEach(t=>{if(!GLMAP[t]){GLMAP[t]=g.id;T.push(t)}}));T.sort((a,b)=>b.length-a.length);
+ GLRE=T.length?new RegExp("(^|[^\\p{L}\\p{N}])("+T.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(?=$|[^\\p{L}\\p{N}])","gu"):null;return GLRE}
+function glossify(root,salta){try{const RE=glRe();if(!RE||!root)return;const seen=new Set(salta?[salta]:[]);
+ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest("a,button,svg,.k,.f,.gl,.kr,.lab,.mono,[data-sh],h1,select,option")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});const N=[];while(w.nextNode())N.push(w.currentNode);
+ N.forEach(n=>{const t=n.nodeValue;RE.lastIndex=0;let m,last=0,fr=null;while((m=RE.exec(t))){const id=GLMAP[m[2]],st=m.index+m[1].length;if(seen.has(id)){RE.lastIndex=st+m[2].length;continue}seen.add(id);fr=fr||document.createDocumentFragment();fr.append(t.slice(last,st));const b=document.createElement("button");b.className="gl";b.dataset.gl=id;b.textContent=m[2];b.setAttribute("aria-label",m[2]+": spiegazione");fr.append(b);last=st+m[2].length;RE.lastIndex=last}if(fr){fr.append(t.slice(last));n.replaceWith(fr)}})}catch(e){console.warn("glossario",e)}}
+function glClose(){const d=document.getElementById("aigl");if(d)d.remove();document.querySelectorAll(".gl.on").forEach(x=>x.classList.remove("on"))}
+function glPop(btn){glClose();const g=glById(btn.dataset.gl);if(!g)return;btn.classList.add("on");const d=document.createElement("div");d.id="aigl";d.setAttribute("role","dialog");const ns=(g.storie||[]).length,tz=arr(g.tesi);
+ d.innerHTML=`<div class="gh"><span class="gt">${esc(g.termine)}</span><span class="gk">${esc([GTIPO[g.tipo]||g.tipo,g.paese].filter(Boolean).join(" · "))}</span></div>${g.def?`<p>${rich(g.def)}</p>`:""}${g.nell_ia?`<p style="font-size:13.5px"><span style="color:var(--mut)">Nell'IA:</span> ${rich(g.nell_ia)}</p>`:""}<div class="gf"><span>${ns?`In <b>${ns}</b> ${ns>1?"storie":"storia"}`:""}${tz.length?`${ns?" · ":""}tesi ${tz.map(t=>`<span style="color:${tcol(t)}">${tN(t)}</span>`).join(" ")}`:""}</span><button data-gs="${esc(g.id)}">Scheda completa ›</button></div>`;
+ document.body.append(d);glossify(d,g.id);const r=btn.getBoundingClientRect(),h=d.offsetHeight,vh=innerHeight;d.style.top=(r.bottom+8+h<vh-8?r.bottom+8:Math.max(8,r.top-8-h))+"px";
+ d.querySelector("[data-gs]").onclick=e=>{e.stopPropagation();glClose();apri("gl:"+g.id)}}
+document.addEventListener("click",e=>{const b=e.target.closest(".gl");if(b){e.preventDefault();e.stopPropagation();glPop(b);return}if(!e.target.closest("#aigl"))glClose()},true);
+addEventListener("resize",glClose);document.addEventListener("scroll",glClose,true);
+function glSheet(id){const g=glById(id);if(!g)return;const S=g.scheda||{},att=g.attore&&(D.attori||[]).find(a=>a.id===g.attore);
+ return sheet(`<span style="color:var(--acc)">${esc([GTIPO[g.tipo]||g.tipo,g.area,g.paese].filter(Boolean).join(" · "))}</span>`,g.termine,`${arr(g.alias).length?`<p class="n" style="margin-top:0">anche: ${arr(g.alias).map(esc).join(", ")}</p>`:""}${g.def?`<p class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif">${rich(g.def)}</p>`:""}
+ ${S.cosa?`<span class="k">${g.tipo==="concetto"||g.tipo==="sigla"?"Cosa vuol dire":"Chi è"}</span><p>${rich(S.cosa)}</p>`:""}
+ ${(S.punti||[]).map(p=>`<p><b>${esc(p.titolo||"")}</b> ${rich(p.testo||"")}</p>`).join("")}
+ ${g.nell_ia||S.perche?`<span class="k">Perché conta nell'IA</span>${g.nell_ia?`<p>${rich(g.nell_ia)}</p>`:""}${S.perche?`<p>${rich(S.perche)}</p>`:""}`:""}
+ ${(S.chi||[]).length?`<span class="k">${esc(S.chi_titolo||"Chi")}</span><div class="rows">${S.chi.map(c=>`<div class="row"><span>${esc(c.gruppo||"")}</span><span class="n" style="margin:0;text-align:right">${esc(arr(c.nomi).join(", "))}</span></div>`).join("")}</div>`:""}
+ ${att?`<div class="rows" style="margin-top:12px"><div class="row" data-sh="att:${esc(att.id)}" style="cursor:pointer"><span>Profilo del protagonista</span><span class="mono" style="color:var(--acc)">›</span></div></div>`:""}
+ ${(g.storie||[]).length?`<span class="k">Nelle storie</span><div class="rows">${g.storie.map(x=>`<div class="row" data-sh="lt:${esc(x.data)}|${+x.i}" style="cursor:pointer"><span><span class="n" style="margin:0;display:inline">${esc(dl(x.data))}</span> · ${esc(corto(x.breve,80))}</span><span class="mono" style="color:var(--mut)">›</span></div>`).join("")}</div>`:""}
+ ${arr(g.tesi).length?`<span class="k">Tesi</span><div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${arr(g.tesi).map(kref).join("")}</div>`:""}
+ ${g.fonte&&g.fonte.url?fonti([g.fonte]):""}`)}
+
 /* ---------- contenuti dei pannelli ---------- */
 function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizione||{};
- if(k==="mov"){const l=(E.letture||[])[+id];if(!l)return;const tc=l.tesi?tcol(l.tesi.id):"var(--acc)",q=(l.domanda)||((E.domande||[])[+id]||{}).q;
-  return sheet(`<span style="color:${tc}">0${+id+1} · ${esc(l.tema||"")}</span>`,l.breve||corto(String(l.titolo).replace(/\*/g,""),90),`${l.tesi?`<div style="margin:2px 0 8px">${kref(l.tesi.id)}</div>`:""}<h2 class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif;margin:4px 0 0">${rich(l.titolo)}</h2>${grafico(l.grafico)}${(l.fatti||[]).length?`<span class="k">I fatti, in fila</span><div class="dots">${l.fatti.map(f=>`<div>${f.data?`<b>${esc(f.data)}</b> · `:""}${rich(f.testo)}</div>`).join("")}</div>`:""}${l.lettura?`<span class="k">La lettura</span><p>${rich(l.lettura)}</p>`:""}${l.diversa?`<div class="ob"><span class="k">Chi la vede diversamente</span>${rich(l.diversa)}</div>`:""}${q?`<span class="k" style="color:var(--acc)">In riunione</span><p class="sub" style="color:var(--acc)">${esc(q)}</p>${(E.domande||[])[+id]&&E.domande[+id].perche?`<p class="n">${rich(E.domande[+id].perche)}</p>`:""}`:""}${fonti(l.fonti)}`)}
+ if(k==="mov"){const l=(E.letture||[])[+id];if(!l)return;const tc=l.tesi?tcol(l.tesi.id):"var(--acc)",q=(l.domanda)||((E.domande||[])[+id]||{}).q;return sheet(`<span style="color:${tc}">0${+id+1} · ${esc(l.tema||"")}</span>`,l.breve||corto(String(l.titolo).replace(/\*/g,""),90),storiaHtml(l,+id,E,q))}
+ if(k==="lt"){const[d,i]=id.split("|");shClose();return load(d,"oggi").then(()=>apri("mov:"+i))}
+ if(k==="gl")return glSheet(id);
+ if(k==="fil")return filSheet(id);
  if(k==="tesi"){const T=D.tesi||[],i=T.findIndex(t=>t.id===id),t=T[i];if(!t)return;const d=tmp(vTesi).querySelectorAll("details")[i],inn=d?d.querySelector(".in").innerHTML:"";const L=(D.adozione||[]).filter(a=>livT(a).includes(id));
   return sheet(`<span style="color:${tcol(id)}">Chiave ${tN(id)}${t.stato==="contesto"?" · contesto":""}</span>`,t.titolo,`<p class="sub">${rich(t.uno||"")}</p><div style="margin:10px 0 2px">${caselle(t.direzione)}</div>${L.length?`<span class="k">Dove si vede</span><div style="font-size:14px">${L.map(a=>`<span class="kr" data-sh="liv:${a.id}">${esc((D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id)} ›</span>`).join(" &nbsp; ")}</div>`:""}${inn}`)}
  if(k==="liv"){const a=(D.adozione||[]).find(x=>x.id===id);if(!a)return;const nome=(D.livelli.find(x=>x[0]===id)||[])[1]||id,kp=(a.kpi||[])[0],P=[];OR.forEach(([o])=>((a.orizzonti||{})[o]||{}).perche&&P.push(...(a.orizzonti[o].perche||[])));const d=tmp(vAdozione).querySelector("#lv-"+id+" .in");
