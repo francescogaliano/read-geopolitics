@@ -5806,7 +5806,7 @@ async function route(request, env, ctx) {
   if (method === "POST" && p === "/ig/api") {
     const b = await request.json().catch(() => null);
     if (!b || !(await panelAuth(request, env, b))) return fail(401, "unauthorized");
-    return json(await panelApi(env, url.origin, b, ctx));
+    { const r = await panelApi(env, url.origin, b, ctx); return r instanceof Response ? r : json(r); } // ai_get risponde già con una Response (JSON costruito dal database)
   }
   if (method === "POST" && p === "/ig/test") {
     const b = await request.json().catch(() => null);
