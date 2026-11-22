@@ -29,11 +29,25 @@ function pagina(src) {
 ;
   return PAG;
 }
+
+/* loghi dei protagonisti e dei fornitori: l'icona ufficiale del sito, presa una volta e tenuta in cache 30 giorni (solo domini in elenco) */
+export const AI_LOGHI = new Set(["anthropic.com","openai.com","google.com","gemini.google.com","cloud.google.com","x.ai","meta.com","mistral.ai","deepseek.com","qwen.ai","kimi.com","nvidia.com","amd.com","broadcom.com","huawei.com","tsmc.com","asml.com","aws.amazon.com","azure.microsoft.com","microsoft.com","oracle.com","coreweave.com","copilot.microsoft.com","sap.com","siemens.com","palantir.com","salesforce.com","ibm.com","cursor.com","samsung.com","intel.com","apple.com","perplexity.ai","cohere.com","alibabacloud.com","moonshot.ai","zhipuai.cn","bytedance.com","tencent.com","baidu.com","aleph-alpha.com","huggingface.co","databricks.com","snowflake.com","servicenow.com","adobe.com","accenture.com","deloitte.com","capgemini.com","reply.com","elevenlabs.io","stability.ai","midjourney.com","runwayml.com","scale.com","arm.com","micron.com","skhynix.com","cerebras.ai","groq.com"]);
+async function logo(d) {
+  if (!AI_LOGHI.has(d)) return new Response("", { status: 404 });
+  const chiave = new Request("https://logo.cache/" + d), c = caches.default, hit = await c.match(chiave);
+  if (hit) return hit;
+  const r = await fetch("https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=128", { cf: { cacheTtl: 2592000 } }).catch(() => null);
+  if (!r || !r.ok || !/image/.test(r.headers.get("content-type") || "")) return new Response("", { status: 404, headers: { "cache-control": "public, max-age=3600" } });
+  const out = new Response(await r.arrayBuffer(), { headers: { "content-type": r.headers.get("content-type"), "cache-control": "public, max-age=2592000" } });
+  await c.put(chiave, out.clone());
+  return out;
+}
 /* restituisce una Response per i percorsi /ai…, altrimenti null */
 export async function aiSito(request, env, p, method, url, h) {
   if (p !== "/ai" && !p.startsWith("/ai/")) return null;
   const html = (b, s = 200) => new Response(b, { status: s, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
   if (/^\/ai\/icon-(180|192|512)\.png$/.test(p)) return new Response(Uint8Array.from(atob(AI_PNG[p.slice(9, 12)]), (c) => c.charCodeAt(0)), { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+  { const m = p.match(/^\/ai\/logo\/([a-z0-9.-]+)$/); if (m && method === "GET") return logo(m[1]); }
   if (p === "/ai/icon.svg") return new Response(ICON, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   if (p === "/ai/manifest.webmanifest") return new Response(MANIFEST, { headers: { "content-type": "application/manifest+json", "cache-control": "public, max-age=86400" } });
   if (p === "/ai/login" && method === "POST") {
