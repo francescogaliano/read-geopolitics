@@ -107,7 +107,8 @@ const rich=s=>esc(s).replace(/\*(.+?)\*/g,"<b>$1</b>");
 const NS=(t,a,x)=>`<${t} `+Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")+">"+(x??"")+`</${t}>`;
 const gg=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(D.oggi+"T12:00:00Z"))/864e5);
 const corto=(t,n)=>{t=String(t||"");if(t.length<=n)return t;const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
-function api(o){return fetch("/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href="/ig/panel";throw new Error("401")}return r.json()})}
+const SITO=location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
+function api(o){return fetch(SITO?"/ai/api":"/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href=SITO?"/ai":"/ig/panel";throw new Error("401")}return r.json()})}
 let D=null,V="oggi";
 const COL={t1:"var(--t1)",t2:"var(--t2)",t3:"var(--t3)",t4:"var(--t4)",t5:"var(--t5)",t6:"var(--t6)",t7:"var(--t7)",t8:"var(--t8)",t9:"var(--t9)"};
 const tcol=id=>COL["t"+(((parseInt(String(id||"").replace(/\D/g,""))||1)-1)%9+1)];

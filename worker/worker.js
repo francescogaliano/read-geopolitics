@@ -15,6 +15,7 @@ import { rsRoute, rsPanelApi, rsCron, rsFotoCron } from "./rassegna.js";
 import { invRoute, invPanelApi, invCron } from "./inv.js";
 import AI_HTML from "./ai.html";
 import { aiRoute, aiPanelApi, aiCron } from "./ai.js"; // intelligenza artificiale (privato, dal 21/11/2026)
+import { aiSito, aiEntra } from "./ai-sito.js"; // sito privato /ai (dal 22/11/2026)
 import { pushEncrypt, vapidNew, vapidHeader, pushHostOK, pushMatch, clip as pClip } from "./push.js";
 // Read Geopolitics API: Cloudflare Worker + D1
 // v42: reel col globo (radar.mjs, globo.mjs, apertura.mjs) spostati in basso di 90 px: più margine in alto, zona sicura del testo fino a 1660 px.
@@ -5645,6 +5646,11 @@ async function route(request, env, ctx) {
     if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
     return new Response(AI_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
   }
+  if (p === "/ig/ai-entra" && method === "GET") { // dal pannello al sito /ai senza ridigitare la password
+    if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
+    return await aiEntra(env, { kvSet, rid });
+  }
+  if (p === "/ai" || p.startsWith("/ai/")) { const r = await aiSito(request, env, p, method, url, { kvGet, kvSet, kvDel, rid, safeEq, getCookie, json, fail, romeToday, AI_HTML }); if (r) return r; } // sito privato «Intelligenza artificiale»
   if (p === "/ig/rassegna" && method === "GET") { // rassegna: stato dei feed e storie del giorno
     if (!(await sessionOk(request, env))) return Response.redirect(url.origin + "/ig/panel", 302);
     return new Response(RS_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
