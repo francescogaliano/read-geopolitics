@@ -90,7 +90,9 @@ export async function aiPanelApi(env, b, h) {
   if (b.action === "ai_get") {
     /* Leggero per il Worker (22/11/2026): le raccolte grandi arrivano dal database già in JSON e passano così come sono
        (niente JSON.parse/stringify nel Worker); si leggono davvero solo edizioni, glossario e clienti (proiettati). */
-    const edz = await coll(env, "ai_oggi", 60), data = String(b.data || ""), oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
+    const edz = await coll(env, "ai_oggi", 60), data = String(b.data || ""), pub = b._pubblico === true;
+    if (pub) for (const e of edz) delete e.clienti; /* i clienti non escono mai dal modo privato */
+    const oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
     const ORD = "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key";
     const cut30 = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
     const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, temiStorie] = await Promise.all([
@@ -110,8 +112,8 @@ export async function aiPanelApi(env, b, h) {
       const { _agg, ...r } = g; return { ...r, storie: st }; });
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
-    const base = { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
-      clienti: clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8) })),
+    const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
+      clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
     const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"temi_storie":${temiStorie}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
