@@ -706,13 +706,13 @@ function vOggi5(){const E=D.edizione;if(!E)return `<div class="empty">Nessuna ed
  if(Q.length)h+=`<div class="osec"><b>In riunione</b><span>${Q.length} ${Q.length===1?"domanda":"domande"}</span></div>`+Q.map(x=>`<div class="oq" data-sh="mov:${x.i}"><b>${esc(x.q)}</b>${x.p?`<span>${rich(corto(x.p,140))}</span>`:""}</div>`).join("");
  if((E.clienti||[]).length)h+=`<div class="osec"><b>I tuoi clienti</b><span>${E.clienti.length} ${E.clienti.length===1?"aggancio":"agganci"}</span></div>`+E.clienti.map(c=>{const cl=(D.clienti||[]).find(x=>(c.clienti||[]).includes(x.nome));return `<div class="orw"${cl?` data-sh="cli:${esc(cl.id)}"`:""}><div class="ic">◎</div><div class="tx"><b>${(c.clienti||[]).map(esc).join(" · ")}</b><small>${esc(c.testo||"")}</small></div><span class="oc">${cl?"›":""}</span></div>`}).join("");
  const rr=(key,ic,t,sub,ct)=>`<div class="orw" data-sh="${key}"><div class="ic">${ic}</div><div class="tx"><b>${t}</b><small>${sub||""}</small></div>${ct!=null?`<span class="ct">${ct}</span>`:""}<span class="oc">›</span></div>`;
- const O=E.osservare||[],sett=new Date(Date.parse(E.id+"T12:00:00Z")-7*864e5).toISOString().slice(0,10),CN=(D.casi||[]).filter(c=>(c.iso||"")>=sett).sort((a,b)=>String(b.iso).localeCompare(String(a.iso))),PN=(D.glossario||[]).filter(g=>g.aggiornato===E.id),TM=LT.filter(l=>l.tesi),CB=E.cambiato||[];
+ const O=E.osservare||[],sett=new Date(Date.parse(E.id+"T12:00:00Z")-7*864e5).toISOString().slice(0,10),CN=(D.casi||[]).filter(c=>(c.iso||"")>=sett).sort((a,b)=>String(b.iso).localeCompare(String(a.iso))),PN=(D.glossario||[]).filter(g=>g.aggiornato===E.id),TMV=LT.filter(l=>l.tesi),CB=E.cambiato||[];
  h+=`<div class="osec"><b>Le rubriche</b><span></span></div>`;
  if(CB.length)h+=rr("cambiato:","↻","Cosa è cambiato da ieri",esc(CB[0].testo||""),CB.length);
  if(O.length)h+=rr("date:","◷","Da osservare",esc((O[0].data?new Date(O[0].data+"T12:00:00Z").toLocaleDateString("it-IT",{day:"numeric",month:"short"})+" · ":"")+(O[0].testo||"")),O.length);
  if(CN.length)h+=rr("casinuovi:","▤","Casi d'uso della settimana",esc(`${CN[0].chi}: ${CN[0].cosa||CN[0].dato||""}`),CN.length);
  if(PN.length)h+=rr("parole:","Aa","Parole nuove",PN.slice(0,4).map(g=>esc(g.termine)).join(" · "),PN.length);
- if(TM.length)h+=rr("tesimosse:","↗","Le tesi che si muovono",TM.map(l=>`${tN(l.tesi.id)} ${ARR[l.tesi.effetto]||""}`).join(" · "),TM.length);
+ if(TMV.length)h+=rr("tesimosse:","↗","Le tesi che si muovono",TMV.map(l=>`${tN(l.tesi.id)} ${ARR[l.tesi.effetto]||""}`).join(" · "),TMV.length);
  if(E.dipendenze&&(E.dipendenze.nodi||[]).length)h+=rr("dip:","⇄","Chi dipende da chi",(E.dipendenze.nodi||[]).map(n=>esc(n.nome)).slice(0,4).join(" · "),E.dipendenze.nodi.length);
  if(E.log)h+=rr("metodo:","≡","Il log di oggi",`${(E.log.consultate||[]).length} fonti lette · ${(E.log.non_raggiungibili||[]).length} non raggiungibili`);
  return h}
