@@ -43,7 +43,9 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
      "confidenza": {"fatti":"alta|media|bassa","effetti":"alta|media|bassa","perche": max 15 parole};
      "segnali": 1-2 cose concrete da osservare nei prossimi giorni o settimane;
      "filone": id del filone (punto 5-bis).
+     "livello": uno di governi | aziende | lavoro | famiglie | persona | infrastruttura | capitali | modelli — dà il colore della storia nella pagina (come le regioni su Read Geopolitics).
    "lettura" e "diversa" restano (servono alla vista d'insieme): "lettura" può riassumere la sintesi, "diversa" la tesi contraria. Le parole del testo che sono nel glossario vengono sottolineate in automatico: usa i nomi nella stessa forma del glossario (es. «Moonshot AI», «modello a pesi aperti»).
+   - "cambiato": facoltativo, 1-4 [{"testo": max 20 parole, cosa è cambiato rispetto a ieri o all'ultima tappa su un filone già aperto («Cursor: da indagata a "valuta di lasciare Kimi"»), "filone": id}] — solo sviluppi veri di storie già seguite;
    - "dipendenze": facoltativo, quando aiuta: {"nodi":[{"id","nome","evid"}], "archi":[{"da","a","testo","forte"}], "nota"} — chi dipende da chi (max 6 nodi);
    - "domande": 2-3 [{"q": la domanda da fare in riunione, "perche": il dato che la rende forte}];
    - "clienti": solo agganci veri e pubblici [{"testo","perche","tesi":"t1","clienti":["Nome esatto da ai_clienti"]}] — se non c'è un aggancio vero, lista vuota: meglio niente che una forzatura;
