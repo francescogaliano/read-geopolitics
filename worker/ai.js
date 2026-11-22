@@ -90,10 +90,11 @@ export async function aiPanelApi(env, b, h) {
        (niente JSON.parse/stringify nel Worker); si leggono davvero solo edizioni, glossario e clienti (proiettati). */
     const edz = await coll(env, "ai_oggi", 60), data = String(b.data || ""), oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
     const ORD = "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key";
-    const [tesi, adozione, approf, casi, attori, confronti, filoni, glossario, clienti] = await Promise.all([
+    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti] = await Promise.all([
       raw(env, "ai_tesi", 60, ORD), raw(env, "ai_adozione", 40), raw(env, "ai_approf", 80, "key DESC", "json_set(json_remove(data,'$.sezioni'),'$.id',key,'$._agg',updated_at,'$.n_sezioni',coalesce(json_array_length(data,'$.sezioni'),0))"),
       raw(env, "ai_casi", 600, "key DESC", "json_object('id',key,'chi',data->>'$.chi','settore',data->>'$.settore','paese',data->>'$.paese','area',data->>'$.area','tecnologia',data->>'$.tecnologia','modello',data->>'$.modello','cloud',data->>'$.cloud','deploy',data->>'$.deploy','partner',data->>'$.partner','stadio',data->>'$.stadio','cosa',data->>'$.cosa','dato',data->>'$.dato','misura',data->>'$.misura','data',data->>'$.data','iso',data->>'$.iso','chi_lo_dice',data->'$.chi_lo_dice','fonte',data->'$.fonte')"),
       raw(env, "ai_attori", 40, ORD), raw(env, "ai_confronti", 20, ORD), raw(env, "ai_filoni", 300, "coalesce(data->>'$.aggiornato', updated_at) DESC"),
+      raw(env, "ai_agenda", 400, "coalesce(data->>'$.data', '9999'), key"),
       coll(env, "ai_glossario", 2000),
       env.DB.prepare("SELECT key, data->>'$.nome' nome, coalesce(data->>'$.settore', data->>'$.cluster', '') settore, coalesce(data->'$.aree','{}') aree, coalesce(json_array_length(data,'$.eventi'),0) n FROM rdocs WHERE type='ai_clienti' ORDER BY key DESC LIMIT 80").all().then((r) => r.results || [])]);
     /* glossario: in quali letture delle ultime edizioni compare ogni voce (termine o alias, parola intera) */
@@ -104,11 +105,19 @@ export async function aiPanelApi(env, b, h) {
       const { _agg, ...r } = g; return { ...r, storie: st }; });
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
-    const base = { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
+    const base = { ok: true, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
       clienti: clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
-    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni}}`;
+    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+  }
+  /* ricerca nell'archivio delle edizioni (titolo, frase, letture, brevi): dal 22/11/2026 */
+  if (b.action === "ai_cerca") {
+    const q = String(b.q || "").trim().slice(0, 60); if (q.length < 3) return { ok: true, storie: [] };
+    const like = "%" + q.replace(/[%_]/g, "") + "%";
+    const r = await env.DB.prepare("SELECT r.key AS ed, j.key AS i, j.value->>'$.breve' AS breve, j.value->>'$.tema_id' AS tema_id, j.value->>'$.tema' AS tema FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND j.value LIKE ?1 ORDER BY r.key DESC LIMIT 40").bind(like).all();
+    const br = await env.DB.prepare("SELECT r.key AS ed, j.value->>'$.testo' AS testo, j.value->>'$.tema_id' AS tema_id, j.value->'$.fonte' AS fonte FROM rdocs r, json_each(r.data, '$.brevi') j WHERE r.type='ai_oggi' AND j.value LIKE ?1 ORDER BY r.key DESC LIMIT 20").bind(like).all();
+    return { ok: true, storie: r.results || [], brevi: (br.results || []).map((x) => ({ ...x, fonte: jp(x.fonte, null) })) };
   }
   if (b.action === "ai_approf") { const r = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_approf' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, approf: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_fonti") {

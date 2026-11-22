@@ -48,6 +48,15 @@ p{margin:8px 0 0}.k{color:var(--mut);font-size:12px;font-weight:600;letter-spaci
 .pos{border-top:1px solid var(--line);padding:10px 0 10px 12px;margin-top:2px}.pos.a{border-left:3px solid var(--dn)}.pos.b{border-left:3px solid var(--up)}.pos .who{font-size:12.5px;color:var(--mut)}.pos .t{font-weight:600;margin-top:3px}.pos p{font-size:14px;margin-top:4px}
 /* scheda standard (22/11/2026): riquadro del tema, cifra con grafico, sezioni con icona e anteprima */
 .sh-t:empty{display:none}
+.tlsw{display:flex;gap:18px;border-bottom:1px solid var(--line);margin:16px 0 4px}.tlsw button{background:none;border:0;color:var(--mut);font:inherit;font-size:14.5px;padding:10px 0;cursor:pointer;min-height:44px}.tlsw button.on{color:var(--fg);border-bottom:2px solid var(--acc)}
+.flr{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;min-height:60px}.flr .t{font-weight:700}.flr .s{font-size:13.5px;color:var(--mut);margin-top:2px}.flr .r{text-align:right;font:11px ui-monospace,monospace;color:var(--mut)}
+.agw{font:700 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin:20px 0 4px;display:flex;justify-content:space-between}
+.agr{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer;min-height:56px}
+.agd{border-radius:9px;text-align:center;padding:5px 0;border:1px solid}.agd b{display:block;font:700 19px/1 "Source Serif 4",Georgia,serif}.agd small{display:block;font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.agr .t{font-weight:600;font-size:14.5px}.agr .s{font-size:12.5px;color:var(--mut);margin-top:2px}
+.brv{display:grid;grid-template-columns:10px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}.brv i{width:8px;height:8px;border-radius:2px;margin-top:8px}.brv a{color:var(--mut);font-size:12.5px;margin-left:6px}
+.srch{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#0E161E;margin:16px 0 6px}.srch input{flex:1;background:none;border:0;color:var(--fg);font:inherit;min-height:46px;outline:none}
+.edr{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer;min-height:56px}
 .sc-hero{border-radius:14px;padding:14px 14px 12px;margin:2px 0 0;border:1px solid}
 .sc-hk{display:flex;align-items:center;gap:10px}.sc-ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none}
 .sc-hk .k1{font:700 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.sc-hk .k2{font:11px ui-monospace,monospace;color:var(--mut);margin-top:2px}
@@ -155,7 +164,7 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 </style></head><body><div class="wrap">
 <div class="brand"><img class="lg" src="/ai/icon-180.png" alt="" width="44" height="44"><div style="flex:1;min-width:0"><h1>Intelligenza artificiale</h1><div class="tag mono">L'IA in 10 minuti · privato</div></div></div>
 <div class="stl mono"><span id="agg"></span><a class="back" id="via" href="/ig/panel">← Pannello</a></div>
-<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Oggi</button><button data-v="dove">Dove va</button><button data-v="chi">Chi</button><button data-v="miei">I miei clienti</button></div>
+<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Briefing</button><button data-v="timeline">Timeline</button><button data-v="dove">Dove va</button><button data-v="chi">Chi</button><button data-v="archivio">Archivio</button><button data-v="miei">Clienti</button></div>
 <div id="v"></div>
 </div>
 <script>
@@ -622,6 +631,64 @@ function attoreScheda(a){const id=a.id,C=casiDi(id).sort(ordC),N=a.numeri||[],M=
  const TZ=[...new Set((D.edizione&&D.edizione.letture||[]).filter(l=>l.tesi&&JSON.stringify(l).includes(a.nome)).map(l=>l.tesi.id))].map(i=>(D.tesi||[]).find(t=>t.id===i)).filter(Boolean);
  h+=scColl(TZ.map(t=>({icon:"key",col:tcol(t.id),t:esc(t.titolo),s:"chiave toccata oggi",sh:"tesi:"+t.id})));
  return h+scUpd(a.aggiornato?`aggiornato il ${esc(dl(a.aggiornato))}`:"")}
+
+/* ---------- Timeline: filoni e calendario (22/11/2026) ---------- */
+let TLV="filoni";
+const AGT={regola:"flag",trimestrale:"cap",lancio:"atom",conferenza:"users",rapporto:"list",altro:"clock"};
+function agendaDi(){const A=(D.agenda||[]).slice();if(A.length)return A;const E=D.edizione||{};return (E.osservare||[]).map((o,i)=>({id:"oss"+i,data:o.data||null,cosa:o.testo,perche:o.perche,tipo:"altro",stato:"certa",tema_id:null}))}
+function agRow(a){const t=TEMI[a.tema_id]||["",a.tipo==="regola"?"#6FA8DC":"#86B4EA"],d=a.data?new Date(a.data+"T12:00:00Z"):null,col=t[1],pas=a.stato==="avvenuta"||(d&&a.data<D.oggi);
+ return `<div class="agr" data-sh="ag:${esc(a.id)}"><div class="agd" style="border-color:${hexA(col,.45)};background:${hexA(col,.12)}">${d?`<b>${d.getUTCDate()}</b><small style="color:${col}">${MESI[d.getUTCMonth()]}</small>`:`<b style="font-size:13px;color:${col}">${esc(a.entro||"?")}</b>`}</div><div style="min-width:0"><div class="t"${pas?' style="color:var(--mut)"':""}>${esc(a.cosa||"")}</div><div class="s">${esc([t[0],a.tipo,a.chi_tocca].filter(Boolean).join(" · "))}</div></div><span style="font:11px ui-monospace,monospace;color:${a.stato==="rinviata"?"var(--dn)":a.stato==="a rischio rinvio"?"var(--amb)":"var(--mut)"}">${esc(a.stato&&a.stato!=="certa"?a.stato:"")}</span></div>`}
+function vTimeline(){let h=`<div class="o-h2">Timeline</div><div class="o-meta">Le storie che continuano e le date in arrivo.</div><div class="tlsw"><button data-tl="filoni" class="${TLV==="filoni"?"on":""}">Filoni</button><button data-tl="calendario" class="${TLV==="calendario"?"on":""}">Calendario</button></div>`;
+ if(TLV==="filoni"){const F=(D.filoni||[]).slice(),ord={attivo:0,dormiente:1,chiuso:2};F.sort((a,b)=>(ord[a.stato]??0)-(ord[b.stato]??0));if(!F.length)return h+`<div class="empty">I filoni arrivano con la routine del mattino.</div>`;
+  let st="";for(const f of F){if((f.stato||"attivo")!==st){st=f.stato||"attivo";h+=`<div class="agw"><span>${esc(st==="attivo"?"Attivi":st==="dormiente"?"Dormienti":"Chiusi")}</span><span>${F.filter(x=>(x.stato||"attivo")===st).length}</span></div>`}
+   const t=TEMI[f.tema_id]||TEMI[LIV2TEMA[f.livello]]||["","#F08A3C","thread"],T=(f.tappe||[]).slice().sort((a,b)=>String(b.iso||"").localeCompare(String(a.iso||""))),u=T[0];
+   h+=`<div class="flr" data-sh="fil:${esc(f.id)}">${icoBox(t[2]||"thread",t[1])}<div style="min-width:0"><div class="t">${esc(f.titolo)}</div><div class="s">${esc(corto((f.sappiamo||[])[0]||f.sintesi||"",110))}</div></div><div class="r">${(f.tappe||[]).length} tappe${u?`<br>${esc(u.data||"")}`:""}</div></div>`}
+  return h}
+ const A=agendaDi(),oggi=D.oggi,add=(d,n)=>new Date(Date.parse(d+"T12:00:00Z")+n*864e5).toISOString().slice(0,10),f7=add(oggi,7),f35=add(oggi,35);
+ const G=[["Questa settimana",a=>a.data&&a.data>=oggi&&a.data<f7],["Prossime 4 settimane",a=>a.data&&a.data>=f7&&a.data<f35],["Più avanti",a=>a.data&&a.data>=f35],["Senza data certa",a=>!a.data],["Passate",a=>a.data&&a.data<oggi]];
+ if(!A.length)return h+`<div class="empty">Il calendario si riempie con la routine del mattino.</div>`;
+ for(const [n,f] of G){const L=A.filter(f);if(!L.length)continue;if(n==="Passate")L.reverse();h+=`<div class="agw"><span>${n}</span><span>${L.length}</span></div>`+L.slice(0,n==="Passate"?8:40).map(agRow).join("")}
+ return h}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tl]");if(b){TLV=b.dataset.tl;vai("timeline",true)}});
+function agSheet(id){const a=agendaDi().find(x=>x.id===id);if(!a)return;const t=TEMI[a.tema_id]||["Calendario","#86B4EA","clock"],T=a.tesi&&(D.tesi||[]).find(x=>x.id===a.tesi);
+ let h=scHero({col:t[1],icon:AGT[a.tipo]||"clock",kick:esc(t[0]||"Calendario"),sub:esc([a.tipo,a.stato].filter(Boolean).join(" · ")),ans:esc(a.cosa||""),pc:a.data?`<b>${esc(new Date(a.data+"T12:00:00Z").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"}))}</b>`:`entro ${esc(a.entro||"data da definire")}`});
+ if(a.chi_tocca)h+=scTip("users","#86B4EA","Chi tocca",esc(a.chi_tocca));
+ if(a.perche)h+=scTip("eye","#A796F5","Perché conta",rich(a.perche));
+ if(a.esito)h+=scTip("clock","#4FC3B5","Com'è andata",rich(a.esito));
+ h+=scColl([T&&{icon:"key",col:tcol(T.id),t:esc(T.titolo),s:"può muovere questa chiave",sh:"tesi:"+T.id},a.storia&&a.storia.edizione&&{icon:"list",col:"#86B4EA",t:"La storia che l'ha raccontata",s:esc(dl(a.storia.edizione)),sh:`lt:${a.storia.edizione}|${a.storia.lettura||0}`}]);
+ if(a.fonte)h+=fonti([a.fonte]);
+ return sheet("","",h+scUpd(a.aggiornato?`aggiornato il ${esc(dl(a.aggiornato))}`:""),"Calendario")}
+function filoneScheda(F){const t=TEMI[F.tema_id]||TEMI[LIV2TEMA[F.livello]]||["Filone","#F08A3C","thread"],T=(F.tappe||[]).slice().sort((a,b)=>String(b.iso||"").localeCompare(String(a.iso||""))),TS=F.tesi&&(D.tesi||[]).find(x=>x.id===F.tesi);
+ const REL={causa:"causa",reazione:"reazione a",amplifica:"amplifica",contraddice:"contraddice"};
+ let h=scHero({col:t[1],icon:"thread",kick:`Filone · ${esc(t[0])}`,sub:`${esc(F.stato||"attivo")} · ${T.length} tappe${T[0]?" · ultima "+esc(T[0].data||""):""}`,ans:esc(F.titolo),pc:rich(F.sintesi||"")});
+ if((F.sappiamo||[]).length)h+=scTip("list","#4FC3B5","Cosa sappiamo finora",`<ul style="margin:4px 0 0;padding-left:18px">${F.sappiamo.map(x=>`<li>${rich(x)}</li>`).join("")}</ul>`);
+ if(F.esito)h+=scTip("shield","#8E9DAA","Com'è finita",rich(F.esito));
+ h+=`<span class="k">Le tappe</span><div class="tl2">${T.map(x=>{const go=x.edizione&&x.lettura!=null;return `<div class="dots" style="margin:0"><div${go?` data-sh="lt:${esc(x.edizione)}|${+x.lettura}" style="cursor:pointer"`:""}><b>${esc(x.data||"")}</b> · ${rich(x.testo||"")}${x.rel?` <span style="color:var(--acc);font-size:12.5px">${esc(REL[x.rel]||x.rel)}</span>`:""}${x.cambia?`<span class="n" style="margin-top:2px">Cosa cambia: ${rich(x.cambia)}</span>`:""}${go?` <span style="color:var(--acc)">›</span>`:""}</div></div>`}).join("")}</div>`;
+ const AG=agendaDi().filter(a=>a.filone===F.id||(F.tesi&&a.tesi===F.tesi&&a.data>=D.oggi)).slice(0,4);
+ if(AG.length)h+=`<span class="k">Date in arrivo</span>${AG.map(agRow).join("")}`;
+ h+=scColl([TS&&{icon:"key",col:tcol(TS.id),t:esc(TS.titolo),s:"chiave",sh:"tesi:"+TS.id}]);
+ return sheet("","",h+scUpd(F.aggiornato?`aggiornato il ${esc(dl(F.aggiornato))}`:""),"Filone")}
+
+/* ---------- Archivio con ricerca (22/11/2026) ---------- */
+let CQ="",CR=null,CT=null;
+function cercaLocale(q){const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),R=[];
+ (D.glossario||[]).filter(g=>re.test([g.termine,...arr(g.alias),g.def].join(" "))).slice(0,6).forEach(g=>R.push({k:"Glossario",t:g.termine,s:g.def,sh:"gl:"+g.id,ic:"list",col:"#8E9DAA"}));
+ (D.attori||[]).filter(a=>re.test(a.nome+" "+(a.direzione||""))).slice(0,4).forEach(a=>R.push({k:"Protagonisti",t:a.nome,s:corto(a.direzione||"",90),sh:"att:"+a.id,ic:"user",col:"#86B4EA"}));
+ (D.filoni||[]).filter(f=>re.test(JSON.stringify(f))).slice(0,4).forEach(f=>R.push({k:"Filoni",t:f.titolo,s:f.sintesi,sh:"fil:"+f.id,ic:"thread",col:"#F08A3C"}));
+ agendaDi().filter(a=>re.test(JSON.stringify(a))).slice(0,4).forEach(a=>R.push({k:"Calendario",t:a.cosa,s:a.data||a.entro,sh:"ag:"+a.id,ic:"clock",col:"#A796F5"}));
+ (D.casi||[]).filter(c=>re.test([c.chi,c.cosa,c.settore,c.modello,c.cloud,c.partner].join(" "))).slice(0,8).forEach(c=>R.push({k:"Casi d'uso",t:c.chi,s:c.cosa,sh:"caso:"+c.id,ic:"brief",col:"#4FC3B5"}));
+ return R}
+function risultati(){if(!CQ||CQ.length<3)return "";const R=cercaLocale(CQ);(CR&&CR.q===CQ?CR.storie:[]).forEach(x=>R.unshift({k:"Storie",t:x.breve,s:dl(x.ed),sh:`lt:${x.ed}|${x.i}`,ic:(TEMI[x.tema_id]||TEMI[temaOf({tema:x.tema})])[2],col:(TEMI[x.tema_id]||TEMI[temaOf({tema:x.tema})])[1]}));
+ (CR&&CR.q===CQ?CR.brevi||[]:[]).forEach(x=>R.push({k:"Brevi",t:x.testo,s:dl(x.ed),href:x.fonte&&x.fonte.url,ic:"list",col:"#8E9DAA"}));
+ if(!R.length)return `<div class="empty">${CR&&CR.q===CQ?"Nessun risultato.":"Cerco…"}</div>`;
+ const G=[...new Set(R.map(r=>r.k))];return G.map(g=>`<div class="agw"><span>${g}</span><span>${R.filter(r=>r.k===g).length}</span></div>`+R.filter(r=>r.k===g).map(r=>`<div class="sc-lk"${r.sh?` data-sh="${esc(r.sh)}"`:""}>${icoBox(r.ic,r.col,30)}<div>${r.href?`<a href="${esc(r.href)}" target="_blank" rel="noopener" style="color:var(--fg)">${esc(r.t)}</a>`:esc(r.t)}${r.s?`<small>${esc(corto(r.s,110))}</small>`:""}</div><span>${r.sh?"›":""}</span></div>`).join("")).join("")}
+function vArchivio2(){const E=D.edizioni||[];
+ let h=`<div class="o-h2">Archivio</div><div class="o-meta">Cerca in storie, brevi, protagonisti, glossario, filoni, calendario e casi d'uso.</div><label class="srch">${ico("eye","#8E9DAA",18)}<input id="cq" type="search" placeholder="Nome, modello, tema, parola…" value="${esc(CQ)}" autocomplete="off"></label><div id="cr">${risultati()}</div>`;
+ h+=`<div id="edz"${CQ?" hidden":""}>`;h+=`<div class="agw"><span>Le edizioni</span><span>${E.length}</span></div>`+E.map(e=>{const d=new Date(e.id+"T12:00:00Z");return `<div class="edr" data-ed="${esc(e.id)}"><div class="agd" style="border-color:var(--line)"><b>${d.getUTCDate()}</b><small style="color:var(--mut)">${MESI[d.getUTCMonth()]}</small></div><div style="font-size:14px">${rich(e.titolo||corto(e.frase||"",140))}</div><span style="color:var(--mut)">›</span></div>`}).join("")+`</div>`;
+ return h}
+document.addEventListener("input",e=>{if(e.target.id!=="cq")return;CQ=e.target.value.trim();clearTimeout(CT);const ez=$("#edz");if(ez)ez.hidden=!!CQ;const box=$("#cr");if(box)box.innerHTML=risultati();
+ if(CQ.length>=3)CT=setTimeout(()=>api({action:"ai_cerca",q:CQ}).then(j=>{CR={q:CQ,storie:j.storie||[],brevi:j.brevi||[]};const b=$("#cr");if(b){b.innerHTML=risultati();bind(b)}}).catch(()=>{}),350);
+ });
 /* ---------- contenuti dei pannelli ---------- */
 function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizione||{};
  if(k==="numero"){const N=E.numero||{};return sheet("Il numero",N.val||"",`<p class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif">${rich(N.testo||"")}</p>${N.data?`<p class="n">Dato del ${esc(N.data)}</p>`:""}${N.grafico?grafico(N.grafico):""}${fonti(N.fonti)}`)}
@@ -632,7 +699,9 @@ function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizion
  if(k==="mov"){const l=(E.letture||[])[+id];if(!l)return;segnaLetta(E.id+":"+id);return sheet("","",storiaScheda(l,+id,E),`Storia ${+id+1}`);const tc=l.tesi?tcol(l.tesi.id):"var(--acc)",q=(l.domanda)||((E.domande||[])[+id]||{}).q;return sheet(`<span style="color:${tc}">0${+id+1} · ${esc(l.tema||"")}</span>`,l.breve||corto(String(l.titolo).replace(/\*/g,""),90),storiaHtml(l,+id,E,q))}
  if(k==="lt"){const[d,i]=id.split("|");shClose();return load(d,"oggi").then(()=>apri("mov:"+i))}
  if(k==="gl")return glSheet(id);
- if(k==="fil")return filSheet(id);
+ if(k==="fil"){const F0=filOf(id);return F0?filoneScheda(F0):undefined}
+ if(k==="ag")return agSheet(id);
+ if(k==="cal"){TLV="calendario";shClose();window.scrollTo(0,0);return vai("timeline")}
  if(k==="caso")return casoSheet(id);
  if(k==="tesi"){const T0=(D.tesi||[]).find(t=>t.id===id);if(T0)return sheet("","",chiaveScheda(T0),"Chiave");}
  if(k==="tesiold"){const T=D.tesi||[],i=T.findIndex(t=>t.id===id),t=T[i];if(!t)return;const d=tmp(vTesi).querySelectorAll("details")[i],inn=d?d.querySelector(".in").innerHTML:"";const L=(D.adozione||[]).filter(a=>livT(a).includes(id));
@@ -694,7 +763,7 @@ function segnaLetta(id){LETTE.add(id);try{localStorage.setItem("ai_lette",JSON.s
 const ARR={su:"↑",giu:"↓",stabile:"→",incerta:"?"};
 function vOggi5(){const E=D.edizione;if(!E)return `<div class="empty">Nessuna edizione ancora: arriva con la routine del mattino.</div>`;
  const LT=E.letture||[],par=JSON.stringify(LT).split(/\s+/).length,min=Math.max(3,Math.round(par/200)),lid=i=>E.id+":"+i;
- let h=`<div class="o-h2">L'IA di oggi</div><div class="o-meta">${esc(dl(E.id))} · ${LT.length} ${LT.length===1?"storia":"storie"} · ${min} min${D.edizioni.length>1?` · <a href="#" class="lk" data-sh="archivio:">altre edizioni</a>`:""}</div>`;
+ let h=`<div class="o-h2">Il briefing di oggi</div><div class="o-meta">${esc(dl(E.id))} · ${LT.length} ${LT.length===1?"storia":"storie"} · ${min} min${D.edizioni.length>1?` · <a href="#" class="lk" data-sh="archivio:">altre edizioni</a>`:""}</div>`;
  h+=`<div class="prog">${LT.map((l,i)=>`<i class="${LETTE.has(lid(i))?"on":""}"></i>`).join("")}</div>`;
  const N=E.numero;
  if(E.frase||N)h+=`<div class="sixty"><span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase">In 60 secondi</span>${E.frase?`<p>${rich(E.frase)}</p>`:""}${N&&N.val?`<div class="nm" data-sh="numero:"><b>${esc(N.val)}</b><span>${rich(corto(N.testo||"",110))}</span></div>`:""}</div>`;
@@ -702,14 +771,16 @@ function vOggi5(){const E=D.edizione;if(!E)return `<div class="empty">Nessuna ed
  if(LV.length)h+=`<div class="lgd">${LV.map(k=>`<span><i style="background:${TEMI[k][1]}"></i>${TEMI[k][0]}</span>`).join("")}</div>`;
  h+=`<div class="osec"><b>Le storie</b><span>${LT.length}</span></div>`+LT.map((l,i)=>{const lv=TM(l),F=l.filone&&filOf(l.filone),e=l.tesi&&l.tesi.effetto;
   return `<div class="ost${LETTE.has(lid(i))?" letta":""}" data-sh="mov:${i}" style="border-left-color:${lv[1]}"><span class="nn">0${i+1}</span><div style="min-width:0"><div class="kk" style="color:${lv[1]}">${esc(l.tema||lv[0])}</div><h3>${rich(l.breve||String(l.titolo||""))}</h3><p>${rich(l.perche_breve||PRIMA(l.lettura))}</p><div class="tt">${l.tesi?`Tesi <b style="color:${tcol(l.tesi.id)}">${tN(l.tesi.id)}</b> ${esc(tBreve(l.tesi.id))} ${e?`<b style="color:${(EFF[e]||EFF.incerta)[2]}">${ARR[e]||""}</b>`:""}`:""}${F?`${l.tesi?" · ":""}filone ${esc(F.titolo)}`:""}</div></div></div>`}).join("");
- const Q=LT.map((l,i)=>({q:l.domanda||((E.domande||[])[i]||{}).q,p:((E.domande||[])[i]||{}).perche||"",i})).filter(x=>x.q);
- if(Q.length)h+=`<div class="osec"><b>In riunione</b><span>${Q.length} ${Q.length===1?"domanda":"domande"}</span></div>`+Q.map(x=>`<div class="oq" data-sh="mov:${x.i}"><b>${esc(x.q)}</b>${x.p?`<span>${rich(corto(x.p,140))}</span>`:""}</div>`).join("");
- if((E.clienti||[]).length)h+=`<div class="osec"><b>I tuoi clienti</b><span>${E.clienti.length} ${E.clienti.length===1?"aggancio":"agganci"}</span></div>`+E.clienti.map(c=>{const cl=(D.clienti||[]).find(x=>(c.clienti||[]).includes(x.nome));return `<div class="orw"${cl?` data-sh="cli:${esc(cl.id)}"`:""}><div class="ic">◎</div><div class="tx"><b>${(c.clienti||[]).map(esc).join(" · ")}</b><small>${esc(c.testo||"")}</small></div><span class="oc">${cl?"›":""}</span></div>`}).join("");
+ const BR=E.brevi||[];
+ if(BR.length)h+=`<div class="osec"><b>Le brevi</b><span>${BR.length}</span></div>`+BR.map(b=>{const t=TEMI[b.tema_id]||TEMI.adozione;return `<div class="brv"><i style="background:${t[1]}"></i><div>${rich(b.testo||"")}${b.fonte&&b.fonte.url?`<a href="${esc(b.fonte.url)}" target="_blank" rel="noopener">${esc(b.fonte.nome||"fonte")} ↗</a>`:""}</div></div>`}).join("");
+ /* «In riunione» e «I tuoi clienti» non stanno più nel briefing (Read AI v2): le domande sono nelle storie, i clienti nella vista Clienti */
  const rr=(key,ic,t,sub,ct)=>`<div class="orw" data-sh="${key}"><div class="ic">${ic}</div><div class="tx"><b>${t}</b><small>${sub||""}</small></div>${ct!=null?`<span class="ct">${ct}</span>`:""}<span class="oc">›</span></div>`;
  const O=E.osservare||[],sett=new Date(Date.parse(E.id+"T12:00:00Z")-7*864e5).toISOString().slice(0,10),CN=(D.casi||[]).filter(c=>(c.iso||"")>=sett).sort((a,b)=>String(b.iso).localeCompare(String(a.iso))),PN=(D.glossario||[]).filter(g=>g.aggiornato===E.id),TMV=LT.filter(l=>l.tesi),CB=E.cambiato||[];
  h+=`<div class="osec"><b>Le rubriche</b><span></span></div>`;
  if(CB.length)h+=rr("cambiato:","↻","Cosa è cambiato da ieri",esc(CB[0].testo||""),CB.length);
- if(O.length)h+=rr("date:","◷","Da osservare",esc((O[0].data?new Date(O[0].data+"T12:00:00Z").toLocaleDateString("it-IT",{day:"numeric",month:"short"})+" · ":"")+(O[0].testo||"")),O.length);
+ const AGN=(D.agenda||[]).filter(a=>a.data&&a.data>=E.id).sort((a,b)=>a.data.localeCompare(b.data));
+ if(AGN.length)h+=rr("cal:","◷","In arrivo",esc(`${new Date(AGN[0].data+"T12:00:00Z").toLocaleDateString("it-IT",{day:"numeric",month:"short"})} · ${AGN[0].cosa||""}`),AGN.length);
+ else if(O.length)h+=rr("date:","◷","Da osservare",esc((O[0].data?new Date(O[0].data+"T12:00:00Z").toLocaleDateString("it-IT",{day:"numeric",month:"short"})+" · ":"")+(O[0].testo||"")),O.length);
  if(CN.length)h+=rr("casinuovi:","▤","Casi d'uso della settimana",esc(`${CN[0].chi}: ${CN[0].cosa||CN[0].dato||""}`),CN.length);
  if(PN.length)h+=rr("parole:","Aa","Parole nuove",PN.slice(0,4).map(g=>esc(g.termine)).join(" · "),PN.length);
  if(TMV.length)h+=rr("tesimosse:","↗","Le tesi che si muovono",TMV.map(l=>`${tN(l.tesi.id)} ${ARR[l.tesi.effetto]||""}`).join(" · "),TMV.length);
@@ -782,8 +853,8 @@ function sez1(el,v){const A=APERTE[v]||(APERTE[v]=new Set()),K=[...el.children];
  K.forEach(n=>{if(n.classList&&n.classList.contains("sec")&&!n.classList.contains("tool")){const sp=n.children,tit=(sp[0]&&sp[0].textContent)||"",meta=sp[1]?sp[1].outerHTML:"";const d=document.createElement("details");d.className="dsec";d.dataset.s=tit;if(A.has(tit))d.open=true;d.innerHTML=`<summary><span>${esc(tit.charAt(0).toUpperCase()+tit.slice(1).toLowerCase())}</span><span class="meta">${sp[1]&&sp[1].tagName!=="SELECT"&&sp[1].textContent.length<30?esc(sp[1].textContent):""}</span></summary><div class="dsb"></div>`;d.addEventListener("toggle",()=>{d.open?A.add(tit):A.delete(tit)});n.replaceWith(d);cur=d.querySelector(".dsb");return}
   if(cur)cur.appendChild(n)})}
 function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));const el=$("#v"),y=scrollY;
- if(!["oggi","dove","chi","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
- try{el.innerHTML={oggi:vOggi5,dove:vDove,chi:vChi,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
+ if(!["oggi","timeline","dove","chi","archivio","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+ try{el.innerHTML={oggi:vOggi5,timeline:vTimeline,dove:vDove,chi:vChi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
  bind(el);
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);
  if(resta||!cambia)scrollTo(0,y);else{const t=$(".tabs");if(t&&t.getBoundingClientRect().top<0)scrollTo(0,t.offsetTop-6)}}
