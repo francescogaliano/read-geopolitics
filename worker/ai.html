@@ -46,6 +46,12 @@ p{margin:8px 0 0}.k{color:var(--mut);font-size:12px;font-weight:600;letter-spaci
 .sch{display:flex;align-items:stretch;gap:4px;margin:6px 0 8px}.sch div{flex:1;min-width:0;border:1px solid #3A4A58;border-radius:6px;padding:6px 6px;text-align:center;font-size:12.5px;line-height:1.25;background:#16212B}.sch div small{display:block;color:var(--mut);font-size:11px;margin-top:2px}.sch i{align-self:center;color:var(--acc);font-style:normal}
 .schy{color:var(--up);font-size:13px}.schn{color:var(--amb);font-size:13px}
 .pos{border-top:1px solid var(--line);padding:10px 0 10px 12px;margin-top:2px}.pos.a{border-left:3px solid var(--dn)}.pos.b{border-left:3px solid var(--up)}.pos .who{font-size:12.5px;color:var(--mut)}.pos .t{font-weight:600;margin-top:3px}.pos p{font-size:14px;margin-top:4px}
+.pav{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:10px 0 4px;padding-top:6px}.pav>div{flex:none;width:60px;text-align:center;font-size:11.5px;color:#C9D3DC;cursor:pointer}.pav b{position:relative;display:grid;place-items:center;width:46px;height:46px;margin:0 auto 4px;border-radius:14px;border:1px solid;font:700 15px ui-monospace,monospace}.pav i{position:absolute;right:-5px;top:-5px;font:700 10px ui-monospace,monospace;font-style:normal;background:#E9C46A;color:#0B1118;border-radius:9px;padding:1px 5px}
+.pgh{display:flex;align-items:center;gap:8px;margin:24px 0 4px;font:700 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}.pgh span{color:var(--mut);font:12.5px Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;margin-left:auto;text-align:right}
+.pr{display:grid;grid-template-columns:42px 1fr;gap:12px;padding:13px 0 12px 10px;border-top:1px solid var(--line);border-left:3px solid;cursor:pointer}.pic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font:700 13px ui-monospace,monospace}
+.pn{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.pn b{font-size:16.5px}.pn small{font:11px ui-monospace,monospace;color:#9FB0BE}.pr p{margin:3px 0 0;font-size:14px;color:#C5D0DA;line-height:1.42}
+.pmv{font-size:12.5px;color:#9FB0BE;display:flex;gap:6px;align-items:baseline;margin-top:7px}.pmv em{flex:none;font:700 9.5px ui-monospace,monospace;font-style:normal;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px}
+.pr2{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:10px;flex-wrap:wrap}.pbox{margin-top:22px;border:1px solid var(--line);border-radius:14px;padding:12px 12px 6px;background:#0E161E}
 /* scheda standard (22/11/2026): riquadro del tema, cifra con grafico, sezioni con icona e anteprima */
 .sh-t:empty{display:none}
 .tlsw{display:flex;gap:18px;border-bottom:1px solid var(--line);margin:16px 0 4px}.tlsw button{background:none;border:0;color:var(--mut);font:inherit;font-size:14.5px;padding:10px 0;cursor:pointer;min-height:44px}.tlsw button.on{color:var(--fg);border-bottom:2px solid var(--acc)}
@@ -164,7 +170,7 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 </style></head><body><div class="wrap">
 <div class="brand"><img class="lg" src="/ai/icon-180.png" alt="" width="44" height="44"><div style="flex:1;min-width:0"><h1>Intelligenza artificiale</h1><div class="tag mono">L'IA in 10 minuti · privato</div></div></div>
 <div class="stl mono"><span id="agg"></span><a class="back" id="via" href="/ig/panel">← Pannello</a></div>
-<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Briefing</button><button data-v="filiera">Filiera</button><button data-v="timeline">Timeline</button><button data-v="dove">Dove va</button><button data-v="chi">Chi</button><button data-v="archivio">Archivio</button><button data-v="miei">Clienti</button></div>
+<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Briefing</button><button data-v="filiera">Filiera</button><button data-v="timeline">Timeline</button><button data-v="dove">Dove va</button><button data-v="chi">Protagonisti</button><button data-v="archivio">Archivio</button><button data-v="miei">Clienti</button></div>
 <div id="v"></div>
 </div>
 <script>
@@ -930,6 +936,34 @@ function filPannello(n,G,vis){if(!n)return"";const B=FBANDE.find(b=>b[0]===n.ban
  return `<div style="margin-top:16px">${scHero({col,icon:B[2],kick:esc(B[1])+(n.eu?" · Europa":""),sub:(n.banda==="modelli"?(n.ap?"○ pesi aperti":"● modelli chiusi")+" · ":"")+FLIV[n.liv-1][1],ans:esc(n.nome),pc:rich(ans)})}
  ${sez?`<div class="sc-secs">${sez}</div>`:""}<div style="margin-top:8px">${cas}${a?`<div class="sc-lk" data-sh="att:${esc(a.id)}">${icoBox("user",col)}<span><b>Apri la scheda completa</b><small>${esc(a.nome)}: direzione, scommesse, mosse</small></span><span>›</span></div>`:""}</div></div>`}
 
+/* ---------- Protagonisti (22/11/2026): gruppi per tipo, ultima mossa, dove sono forti, ritmo a 60 giorni ---------- */
+const PGR=[["Laboratorio","Laboratori","fanno i modelli","#8FA8FF","atom"],["Big tech","Big tech","cloud, software e distribuzione","#5FB3D9","cloud"],["Chip","Chip","il calcolo","#F0A04B","chip"]];
+const PMT={soldi:["#E9C46A","Soldi"],prodotto:["#8FA8FF","Prodotto"],regole:["#5FB3D9","Regole"],alleanza:["#B5D46B","Alleanza"],persone:["#E59AC0","Persone"]};
+function pPall(st,x,y){return st==="avanti"?`<circle cx="${x}" cy="${y}" r="5" fill="#4CC9A6"/>`:st==="pari"?`<circle cx="${x}" cy="${y}" r="4.3" fill="none" stroke="#E9C46A" stroke-width="1.8"/><path d="M${x} ${y-4.3} A4.3 4.3 0 0 1 ${x} ${y+4.3}Z" fill="#E9C46A"/>`:st==="indietro"?`<circle cx="${x}" cy="${y}" r="4.3" fill="none" stroke="#F0A04B" stroke-width="1.8"/>`:`<line x1="${x-3.5}" y1="${y}" x2="${x+3.5}" y2="${y}" stroke="#3A4A58" stroke-width="2"/>`}
+function vProt(){const P=D.attori||[],K=D.capacita||[];if(!P.length)return `<div class="empty">I protagonisti si riempiono con la routine della domenica.</div>`;
+ const oggi=Date.parse((D.oggi||new Date().toISOString().slice(0,10))+"T12:00:00Z"),gg=s=>{const d=dk(s);return d?Math.round((oggi-Date.parse(d+"T12:00:00Z"))/864e5):999};
+ const MO=a=>[...(a.mosse||[])].map(m=>({...m,_g:gg(m.iso||m.data)})).sort((x,y)=>x._g-y._g);
+ const ini=n=>String(n).replace(/\(.*\)/,"").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase(),nm=n=>String(n).replace(/\s*\(.*\)/,"");
+ const gruppo=a=>PGR.find(g=>g[0]===a.tipo)||["altro","Altri","","#9FB0BE","user"];
+ const ap=a=>APERTI.test(a.id+" "+a.nome),lab=a=>a.tipo==="Laboratorio"||ap(a);
+ let h=`<div class="o-h2">Protagonisti</div><div class="o-meta">Chi muove l'IA: dove va, dove è forte, cosa ha fatto di recente.</div>`;
+ const sett=P.map(a=>[a,MO(a).filter(m=>m._g<=7).length]).filter(x=>x[1]).sort((x,y)=>y[1]-x[1]);
+ if(sett.length)h+=`<div class="mono" style="margin-top:16px">Si sono mossi negli ultimi 7 giorni</div><div class="pav">${sett.map(([a,n])=>{const c=gruppo(a)[3];return `<div data-sh="att:${esc(a.id)}"><b style="background:${hexA(c,.14)};color:${c};border-color:${hexA(c,.4)}">${esc(ini(a.nome))}<i>${n}</i></b>${esc(corto(nm(a.nome),11))}</div>`}).join("")}</div>`;
+ const grp=[...PGR,["altro","Altri","","#9FB0BE","user"]];
+ grp.forEach(([t,tit,sub,c,ic])=>{const L=P.filter(a=>(PGR.some(g=>g[0]===a.tipo)?a.tipo:"altro")===t).sort((x,y)=>(MO(x)[0]||{_g:999})._g-(MO(y)[0]||{_g:999})._g);if(!L.length)return;
+  h+=`<div class="pgh" style="color:${c}">${ico(ic,c,14)} ${tit}<span>${sub}</span></div>`;
+  L.forEach(a=>{const M=MO(a),m=M[0],[mc,ml]=m?(PMT[m.tipo]||["#9FB0BE",m.tipo||"Mossa"]):[],dir=typeof a.direzione==="string"?a.direzione:(a.direzione&&a.direzione.testo)||"",fr=String(dir).split(/(?<=[.;])\s/)[0].replace(/;$/,".");
+   const pal=`<svg width="${K.length*17.5}" height="14" viewBox="0 0 ${K.length*17.5} 14" aria-label="dove è forte">${K.map(([k],i)=>pPall(((a.posizioni||{})[k]||{}).stato,7+i*17.5,7)).join("")}</svg>`;
+   const sp=`<svg width="96" height="22" viewBox="0 0 96 22" aria-label="mosse in 60 giorni"><line x1="0" y1="18" x2="96" y2="18" stroke="#2A3A48"/>${M.filter(x=>x._g>=0&&x._g<=60).map(x=>`<rect x="${(94-x._g*1.55).toFixed(0)}" y="4" width="3" height="14" rx="1.5" fill="${c}"/>`).join("")}</svg>`;
+   h+=`<div class="pr" style="border-left-color:${c}" data-sh="att:${esc(a.id)}"><div class="pic" style="background:${hexA(c,.14)};color:${c}">${esc(ini(a.nome))}</div><div style="min-width:0"><div class="pn"><b>${esc(a.nome)}</b>${lab(a)?`<small>${ap(a)?"○ pesi aperti":"● chiusi"}</small>`:""}</div>${fr?`<p>${rich(fr)}</p>`:""}${m?`<div class="pmv"><em style="background:${hexA(mc,.14)};color:${mc}">${esc(ml)}</em><span>${esc(m.data||dl(dk(m.iso)))} · ${esc(corto(m.testo||"",90))}</span></div>`:""}<div class="pr2">${pal}${sp}</div></div></div>`})});
+ h+=`<div class="lgd" style="margin-top:10px"><span><b style="color:#4CC9A6">●</b> avanti</span><span><b style="color:#E9C46A">◐</b> pari</span><span><b style="color:#F0A04B">○</b> indietro</span><span>— assente</span></div><div class="cap">Pallini: ${K.map(([k,l])=>esc(CBREVE[k]||l)).join(" · ")}. Barrette: le mosse degli ultimi 60 giorni. Tocca un nome per la scheda.</div>`;
+ const cw=28,L0=112,W=L0+K.length*cw;let s=K.map(([k,l],j)=>`<text transform="translate(${L0+j*cw},58) rotate(-50)" fill="#7F909E" font-size="10.5">${esc(CBREVE[k]||l)}</text>`).join("");
+ P.forEach((a,i)=>{const y=72+i*26;s+=`<g data-sh="att:${esc(a.id)}" style="cursor:pointer"><rect x="0" y="${y-13}" width="${W}" height="26" fill="transparent"/><text x="0" y="${y+4}" fill="#E8EDF2" font-size="12.5" font-weight="600">${esc(corto(nm(a.nome),14))}</text>${K.map(([k],j)=>pPall(((a.posizioni||{})[k]||{}).stato,L0+j*cw,y)).join("")}</g>`});
+ h+=`<div class="pbox"><div class="mono">Chi è avanti dove</div><svg viewBox="0 0 ${W} ${80+P.length*26}" style="width:100%;max-width:${W*1.4}px;display:block">${s}</svg></div>`;
+ const go=(at,t,m)=>`<div class="go" ${at}><span>${t}</span><span class="m">${m||""}</span></div>`;
+ h+=`<div style="margin-top:14px">${go('data-v="filiera"',"Chi è legato a chi","Filiera")}${(D.confronti||[]).length?go('data-sh="soldi:"',"I soldi: chi spende, chi incassa",""):""}${P.some(a=>(a.mosse||[]).length)?go('data-sh="ritmo:"',"Tutte le mosse","60 giorni"):""}</div>`;
+ return h}
+
 const arr=x=>Array.isArray(x)?x:(x?[x]:[]);
 const APERTE={};
 function sezioni(el,v){[el,...el.querySelectorAll(".sezioni")].forEach(x=>sez1(x,v))}
@@ -938,7 +972,7 @@ function sez1(el,v){const A=APERTE[v]||(APERTE[v]=new Set()),K=[...el.children];
   if(cur)cur.appendChild(n)})}
 function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));const el=$("#v"),y=scrollY;
  if(!["oggi","filiera","timeline","dove","chi","archivio","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
- try{el.innerHTML={oggi:vOggi5,filiera:vFiliera,timeline:vTimeline,dove:vDove,chi:vChi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
+ try{el.innerHTML={oggi:vOggi5,filiera:vFiliera,timeline:vTimeline,dove:vDove,chi:vProt,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
  bind(el);
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);
  if(resta||!cambia)scrollTo(0,y);else{const t=$(".tabs");if(t&&t.getBoundingClientRect().top<0)scrollTo(0,t.offsetTop-6)}}
