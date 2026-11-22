@@ -70,7 +70,7 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    BREVI: anche una breve che fa avanzare un filone aperto aggiunge una tappa ("edizione" e "breve": indice) e ha "filone": id. Quando apri un filone, metti come tappe anche i 2-4 passaggi precedenti che hai letto nelle fonti (senza "edizione"). 
 
 6. TESI. Ogni tesi ha anche "breve": 3-5 parole che la riassumono («Provata, poco misurata»): se manca, aggiungila. Per ogni tesi toccata: `python3 /tmp/rgdb.py get ai_tesi <id>` poi update con --if-version:
-   - "prove": aggiungi la prova nuova {"testo","val","data","fonte":{nome,url},"tier":"T1|T2|T3"} (T1 documenti ufficiali e aziendali, T2 stampa autorevole, T3 il resto); tieni al massimo 8 prove, togli le più vecchie superate;
+   - "prove": aggiungi la prova nuova {"testo","val","data","fonte":{nome,url},"tier":"T1|T2|T3"} (T1 documenti ufficiali e aziendali, T2 stampa autorevole, T3 il resto); una prova è UN fatto: «val» è solo la cifra con l'unità, al massimo 10 caratteri («70 Mld$», «−5,1%»), mai una frase («70 Mld$ in 12 mesi» va diviso: val «70 Mld$», il periodo nel testo); «testo» è una frase completa che spiega quella cifra, senza attaccare con il punto e virgola un secondo fatto (un secondo fatto è una seconda prova); tieni al massimo 8 prove, togli le più vecchie superate;
    - "storia": aggiungi {"data":"<oggi>","effetto":"su|giu|stabile|incerta","testo":"una riga"};
    - "direzione": {"verso": calcolato sulle ultime 8 settimane di «storia» — su se gli effetti su sono almeno il doppio dei giu, giu nel caso opposto, stabile altrimenti, incerta con meno di 3 voci — "perche": una riga con i fatti, "dal":"<oggi>"};
    - "smentirebbe" non si riscrive per comodità: se cambia, scrivi perché nel log.
