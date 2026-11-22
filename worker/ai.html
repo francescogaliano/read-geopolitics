@@ -54,6 +54,9 @@ p{margin:8px 0 0}.k{color:var(--mut);font-size:12px;font-weight:600;letter-spaci
 .pr2{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:10px;flex-wrap:wrap}.pbox{margin-top:22px;border:1px solid var(--line);border-radius:14px;padding:12px 12px 6px;background:#0E161E}
 .lgb{position:relative;display:grid;place-items:center;border-radius:11px;font-family:ui-monospace,monospace;font-weight:700;flex:none;overflow:hidden;transition:background .2s}.lgb img{position:absolute;left:17%;top:17%;width:66%;height:66%;object-fit:contain}.lgb.ok{background:#F2F5F8!important}.lgb.ok>span{visibility:hidden}
 .pav b .lgb{border-radius:13px}
+.fpos{display:grid;grid-template-columns:1fr auto 1.15fr auto 1fr;gap:6px;align-items:stretch;margin:12px 0 0}.fpos>div{border:1px solid #2A3A48;border-radius:10px;padding:8px 8px;background:#0E161E;min-width:0}.fpos small{display:block;font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}.fpos b{display:block;font-size:12.5px;font-weight:600;margin-top:3px;line-height:1.3;overflow-wrap:anywhere}.fpos .me b{font-size:13.5px}.fpos i{align-self:center;color:var(--acc);font-style:normal}
+.fatt{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--mut)}.fatt i{width:12px;height:12px;border-radius:50%;border:3px solid;box-sizing:border-box;flex:none}
+.fsp{margin:0 0 6px;font-size:13.5px;color:#C5D0DA;border-left:3px solid;padding:2px 0 2px 10px}.fv{font:600 11px ui-monospace,monospace;font-style:normal;color:var(--amb);background:rgba(233,196,106,.12);padding:1px 5px;border-radius:4px;margin-left:4px;white-space:nowrap}.fv.f{color:#4CC9A6;background:rgba(76,201,166,.12)}
 /* scheda standard (22/11/2026): riquadro del tema, cifra con grafico, sezioni con icona e anteprima */
 .sh-t:empty{display:none}
 .tlsw{display:flex;gap:18px;border-bottom:1px solid var(--line);margin:16px 0 4px}.tlsw button{background:none;border:0;color:var(--mut);font:inherit;font-size:14.5px;padding:10px 0;cursor:pointer;min-height:44px}.tlsw button.on{color:var(--fg);border-bottom:2px solid var(--acc)}
@@ -929,22 +932,51 @@ function vFiliera(){const G=filGrafo(),W=Math.max(320,Math.min(728,(($("#v")||{}
  <div class="chart"><svg viewBox="0 0 ${W} ${y}" width="${W}" style="max-width:100%" font-family="Inter,system-ui,sans-serif">${bg.join("")}${ed}${out.join("")}</svg></div>
  <div class="cap">Tocca un attore per vedere da chi dipende e chi lo usa. Legami annunciati dai protagonisti (con fonte) e casi d'uso raccolti.</div>`;
  return h+filPannello(sel,G,vis)}
-function filPannello(n,G,vis){if(!n)return"";const B=FBANDE.find(b=>b[0]===n.banda),col=B[3],a=(D.attori||[]).find(x=>n.att.includes(x.id));
- const su=G.E.filter(e=>e.a===n.id),giu=G.E.filter(e=>e.da===n.id),NN=G.N;
+/* pannello dell'attore scelto nella Filiera: ruolo in una frase, posizione nella catena, legami spiegati per tipo (22/11/2026, v2) */
+const FRUOLO={chip:"progetta o produce i chip su cui gira l'IA",cloud:"affitta calcolo (server con chip) a chi addestra e usa i modelli",modelli:"sviluppa modelli di IA",software:"porta l'IA dentro software che le aziende usano già",energia:"fornisce l'energia ai data center",usa:"settore che adotta l'IA"};
+/* per ogni tipo di legame: titolo del gruppo, spiegazione e frase per riga, visti da chi riceve (su) o da chi dà (giu) */
+const FREL={
+ calcolo:{su:["Calcolo","Chi gli affitta i server su cui addestra e fa girare i modelli.",o=>`${o} gli vende calcolo`],giu:["A chi vende calcolo","Clienti che usano i suoi server per addestrare o far girare modelli.",o=>`vende calcolo a ${o}`]},
+ chip:{su:["Chip","Chi gli fornisce i chip: senza di loro non c'è calcolo.",o=>`${o} gli fornisce i chip`],giu:["A chi dà i chip","Chi monta i suoi chip nei data center.",o=>`fornisce i chip a ${o}`]},
+ energia:{su:["Energia","Da dove arriva l'elettricità dei data center.",o=>`${o} gli fornisce energia`],giu:["A chi dà energia","Data center che alimenta.",o=>`dà energia a ${o}`]},
+ distribuisce:{su:["Modelli che rivende","Modelli di altri che offre ai suoi clienti.",o=>`offre ai clienti i modelli di ${o}`],giu:["Chi lo distribuisce","Cloud e piattaforme che vendono i suoi modelli: è da qui che arriva a molte aziende.",o=>`${o} lo offre ai suoi clienti`]},
+ modello:{su:["Modelli che usa","I modelli su cui sono costruiti i suoi prodotti.",o=>`usa i modelli di ${o}`],giu:["Dentro quali software","Prodotti che lo usano come motore.",o=>`${o} lo usa nel suo software`]},
+ usa:{su:["Con quali fornitori","Chi c'è dietro i casi d'uso del settore: modelli, cloud o software.",o=>o],giu:["Chi lo usa","Settori in cui compare nei casi d'uso raccolti.",o=>o]}};
+const FREL_ORD=["energia","chip","calcolo","distribuisce","modello","usa"];
+function filPannello(n,G,vis){if(!n)return"";const B=FBANDE.find(b=>b[0]===n.banda),col=B[3],a=(D.attori||[]).find(x=>n.att.includes(x.id)),NN=G.N;
+ const su=G.E.filter(e=>e.a===n.id),giu=G.E.filter(e=>e.da===n.id);
+ const C=(D.casi||[]).filter(c=>n.casi.includes(c.id)),prod=C.filter(c=>/produz|scala/i.test(c.stadio||"")).length;
  const dir=a?(typeof a.direzione==="string"?a.direzione:(a.direzione&&(a.direzione.testo||a.direzione.frase))||""):"";
- const C=(D.casi||[]).filter(c=>n.casi.includes(c.id)),prod=C.filter(c=>/produz/i.test(c.stadio||"")).length;
- const ans=dir?String(dir).split(/(?<=\.)\s/)[0]:C.length?`Compare in ${C.length} casi d'uso${prod?`, ${prod} in produzione`:""}.`:"Compare nei legami dei protagonisti.";
- const riga=(e,altro)=>{const o=NN[altro],ob=FBANDE.find(b=>b[0]===o.banda),L=e.lg[0];return `<div class="sc-lk"${vis[altro]?` data-fn="${esc(altro)}"`:""}>${logoU(o.id)?logoBox(o.id,o.nome,ob[3],38):icoBox(o.banda==="usa"?SETIC[o.id.slice(2)]||"users":ob[2],ob[3])}<span><b>${esc(o.nome)}</b><small>${esc(FEC[e.tipo][1])}${L&&L.valore?" · "+esc(L.valore):""}${e.casi.length?` · ${e.casi.length} ${e.casi.length>1?"casi":"caso"}`:""}${L&&L.testo?" — "+esc(L.testo):""}</small></span><span>${vis[altro]?"›":""}</span></div>`};
- const grp=(L,chi)=>L.sort((x,y)=>(y.lg.length*5+y.n)-(x.lg.length*5+x.n)).map(e=>riga(e,e[chi])).join("");
- const nomi=(L,chi)=>[...new Set(L.map(e=>NN[e[chi]].nome))].slice(0,3).join(" · ")+(L.length>3?" …":"");
+ const nomi=(L,k,max=3)=>{const X=[...new Set(L.map(e=>NN[e[k]].nome))];return X.slice(0,max).join(", ")+(X.length>max?` e altri ${X.length-max}`:"")};
+ const perT=(L,t)=>L.filter(e=>e.tipo===t||(t==="chip"&&e.tipo==="energia"&&false));
+ /* 1. la frase sul ruolo */
+ let ruolo;
+ if(n.banda==="usa"){const top=nomi(su.sort((x,y)=>y.casi.length-x.casi.length),"da");ruolo=`<b>${esc(n.nome)}</b>: ${C.length} casi d'uso raccolti, ${prod} già in produzione o in scala.${top?` Dietro ci sono soprattutto ${esc(top)}.`:""}`}
+ else{ruolo=`<b>${esc(n.nome)}</b> ${FRUOLO[n.banda]}${n.banda==="modelli"?(n.ap?" a pesi aperti: chiunque può scaricarli e farli girare sui propri server":" chiusi: si usano solo tramite il suo servizio o i partner"):""}.`;
+  const sC=perT(su,"calcolo"),sCh=perT(su,"chip"),gD=perT(giu,"distribuisce"),gC=perT(giu,"calcolo");
+  if(sC.length)ruolo+=` Il calcolo lo compra da ${esc(nomi(sC,"da"))}.`;if(sCh.length)ruolo+=` I chip arrivano da ${esc(nomi(sCh,"da"))}.`;
+  if(gC.length)ruolo+=` Vende calcolo a ${esc(nomi(gC,"a"))}.`;if(gD.length)ruolo+=` Arriva alle aziende anche attraverso ${esc(nomi(gD,"a"))}.`}
+ /* 2. la posizione nella catena */
+ const cat=(L,k)=>{const X=[...new Set(L.map(e=>NN[e[k]].nome))];return X.length?esc(X.slice(0,2).join(", "))+(X.length>2?` +${X.length-2}`:""):"—"};
+ const flow=`<div class="fpos"><div><small>Riceve da</small><b>${cat(su,"da")}</b></div><i>→</i><div class="me" style="border-color:${col};background:${hexA(col,.12)}"><small style="color:${col}">${esc(B[1])}</small><b>${esc(n.nome)}</b></div><i>→</i><div><small>Dà a</small><b>${cat(giu,"a")}</b></div></div>`;
+ /* 3. il punto: quanto dipende, quanto è centrale */
+ const fornit=[...new Set(su.filter(e=>["calcolo","chip","energia"].includes(e.tipo)).map(e=>e.da))],clienti=[...new Set(giu.map(e=>e.a))];
+ let punto="";
+ if(n.banda!=="usa"&&n.banda!=="energia"){if(fornit.length===1)punto=`Ha un solo fornitore a monte (${esc(NN[fornit[0]].nome)}): se cambia condizioni, ${esc(n.nome)} ha poche alternative.`;else if(fornit.length>1)punto=`Si appoggia a ${fornit.length} fornitori a monte: meno rischio se uno si ferma, ma più contratti da pagare.`;
+  if(clienti.length>=3)punto+=(punto?" ":"")+`Da lui dipendono ${clienti.length} attori della filiera: quello che decide si sente a valle.`;else if(!punto&&clienti.length)punto=`A valle ha ${clienti.length===1?"un solo cliente nella filiera":clienti.length+" clienti nella filiera"}.`}
+ /* 4. i gruppi di legami spiegati */
+ const riga=(e,altro,frase)=>{const o=NN[altro],ob=FBANDE.find(b=>b[0]===o.banda),L=e.lg[0],f=L&&L.fonte;
+  return `<div class="sc-lk"${vis[altro]?` data-fn="${esc(altro)}"`:""}>${logoU(o.id)?logoBox(o.id,o.nome,ob[3],38):icoBox(o.banda==="usa"?SETIC[o.id.slice(2)]||"users":ob[2],ob[3])}<span><b>${esc((t=>t.charAt(0).toUpperCase()+t.slice(1))(frase(o.nome)).replace(/ a ([AEIOU])/g," ad $1"))}</b>${L&&L.valore?` <em class="fv">${esc(L.valore)}</em>`:""}${L&&L.peso==="forte"?` <em class="fv f">legame forte</em>`:""}<small>${[L&&L.testo?esc(L.testo):"",e.casi.length?`${e.casi.length} ${e.casi.length>1?"casi d'uso":"caso d'uso"}`:""].filter(Boolean).join(" · ")}${f&&f.url?`${(L&&L.testo)||e.casi.length?" · ":""}<a href="${esc(f.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(f.nome||"fonte")}</a>`:""}</small></span><span>${vis[altro]?"›":""}</span></div>`};
  const S=[];
- if(su.length)S.push({sez:"link",titolo:n.banda==="usa"?"Con cosa":"Dipende da",prev:esc(nomi(su,"da")),vis:`<b style="font:600 12px ui-monospace,monospace">${su.length}</b>`,body:grp(su,"da")});
- if(giu.length)S.push({sez:"users",titolo:n.banda==="modelli"?"Chi lo distribuisce e chi lo usa":"Chi se ne serve",prev:esc(nomi(giu,"a")),vis:`<b style="font:600 12px ui-monospace,monospace">${giu.length}</b>`,body:grp(giu,"a")});
- const sez=S.map(x=>{const[ic,c]=x.sez==="link"?["link","#5FB3D9"]:["users","#4CC9A6"];return `<details><summary>${icoBox(ic,c)}<div style="min-width:0"><div class="h">${x.titolo}</div><div class="p">${x.prev}</div></div><div class="v">${x.vis}<span class="ar">›</span></div></summary><div class="sc-bd">${x.body}</div></details>`}).join("");
- const cas=C.length?`<div class="sc-lk" data-fcasi="${esc(n.id)}">${icoBox("brief","#E9C46A")}<span><b>Casi d'uso</b><small>${C.length} casi${prod?`, ${prod} in produzione`:""}</small></span><span>›</span></div>`:"";
- return `<div style="margin-top:16px">${scHero({col,icon:B[2],logo:logoU(n.id,a)?logoBox(n.id,n.nome,col,38,a):n.banda==="usa"?icoBox(SETIC[n.id.slice(2)]||"users",col):"",kick:esc(B[1])+(n.eu?" · Europa":""),sub:(n.banda==="modelli"?(n.ap?"○ pesi aperti":"● modelli chiusi")+" · ":"")+FLIV[n.liv-1][1],ans:esc(n.nome),pc:rich(ans)})}
- ${sez?`<div class="sc-secs">${sez}</div>`:""}<div style="margin-top:8px">${cas}${a?`<div class="sc-lk" data-sh="att:${esc(a.id)}">${icoBox("user",col)}<span><b>Apri la scheda completa</b><small>${esc(a.nome)}: direzione, scommesse, mosse</small></span><span>›</span></div>`:""}</div></div>`}
-
+ [["su",su,"da","#5FB3D9","link"],["giu",giu,"a","#4CC9A6","users"]].forEach(([v,L,k,c0,ic0])=>FREL_ORD.forEach(t=>{const X=L.filter(e=>e.tipo===t).sort((x,y)=>(y.lg.length*5+y.casi.length)-(x.lg.length*5+x.casi.length));if(!X.length)return;const[tit,spieg,fr]=FREL[t][v],ec=FEC[t][0];
+  S.push(`<details><summary>${icoBox(v==="su"?"link":"users",ec)}<div style="min-width:0"><div class="h">${tit}</div><div class="p">${esc(nomi(X,k))}</div></div><div class="v"><b style="font:600 12px ui-monospace,monospace">${X.length}</b><span class="ar">›</span></div></summary><div class="sc-bd"><p class="fsp" style="border-color:${ec}">${spieg}</p>${X.map(e=>riga(e,e[k],fr)).join("")}</div></details>`)}));
+ const setC={};C.forEach(c=>{const s=FSETT[c.settore_norm]||c.settore||"altro";setC[s]=(setC[s]||0)+1});const sk=Object.entries(setC).sort((x,y)=>y[1]-x[1]);
+ const cas=C.length?`<div class="sc-lk" data-fcasi="${esc(n.id)}">${icoBox("brief","#E9C46A")}<span><b>${C.length} casi d'uso</b><small>${prod} in produzione o in scala${n.banda!=="usa"&&sk.length?" · "+sk.slice(0,3).map(([s,v])=>`${esc(s)} ${v}`).join(", "):""}</small></span><span>›</span></div>`:"";
+ const att=n.att.length?`${n.m30} ${n.m30===1?"mossa":"mosse"} e ${n.c30} ${n.c30===1?"caso nuovo":"casi nuovi"} negli ultimi 30 giorni`:`${n.c30} ${n.c30===1?"caso nuovo":"casi nuovi"} negli ultimi 30 giorni · non è tra i protagonisti seguiti, quindi le sue mosse non sono contate`;
+ return `<div style="margin-top:16px">${scHero({col,icon:B[2],logo:logoU(n.id,a)?logoBox(n.id,n.nome,col,38,a):n.banda==="usa"?icoBox(SETIC[n.id.slice(2)]||"users",col):"",kick:esc(B[1])+(n.eu?" · Europa":""),sub:(n.banda==="modelli"?(n.ap?"○ pesi aperti":"● modelli chiusi")+" · ":"")+`attività: ${FLIV[n.liv-1][1]}`,ans:esc(n.nome),pc:ruolo,extra:`<div class="fatt"><i style="border-color:${FLIV[n.liv-1][0]}"></i>${att}</div>`})}
+ ${flow}${punto?scTip("eye","#E9C46A","Il punto",punto):""}${dir?scTip("target",col,"Dove va",rich(String(dir).split(/(?<=\.)\s/)[0])):""}
+ ${S.length?`<div class="sc-secs">${S.join("")}</div>`:`<p class="n" style="margin-top:12px">Nessun legame annunciato per ora: compare solo nei casi d'uso.</p>`}
+ <div style="margin-top:8px">${cas}${a?`<div class="sc-lk" data-sh="att:${esc(a.id)}">${logoBox(a.id,a.nome,col,38,a)}<span><b>Apri la scheda completa</b><small>${esc(a.nome)}: direzione, scommesse, mosse, numeri</small></span><span>›</span></div>`:""}</div></div>`}
 /* ---------- Protagonisti (22/11/2026): gruppi per tipo, ultima mossa, dove sono forti, ritmo a 60 giorni ---------- */
 const PGR=[["Laboratorio","Laboratori","fanno i modelli","#8FA8FF","atom"],["Big tech","Big tech","cloud, software e distribuzione","#5FB3D9","cloud"],["Chip","Chip","il calcolo","#F0A04B","chip"]];
 const PMT={soldi:["#E9C46A","Soldi"],prodotto:["#8FA8FF","Prodotto"],regole:["#5FB3D9","Regole"],alleanza:["#B5D46B","Alleanza"],persone:["#E59AC0","Persone"]};
