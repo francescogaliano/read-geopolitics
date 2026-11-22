@@ -86,6 +86,22 @@ select{background:var(--bg);color:var(--fg);border:1px solid var(--line);padding
 .sh-hr{display:flex;align-items:center;gap:8px}.sh-t{font:600 19px/1.2 "Source Serif 4",Georgia,serif;margin-top:2px}.sh-k{color:var(--mut)}
 .sh-x,.sh-b{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;background:#1A2632;color:var(--fg);font-size:22px;line-height:1;cursor:pointer}
 .sh-l{overflow-y:auto;overscroll-behavior:contain;padding:12px 16px calc(28px + env(safe-area-inset-bottom));flex:1}
+@media (min-width:900px){.sh-p{left:auto;right:0;top:0;bottom:0;margin:0;width:min(600px,48vw);max-width:none;max-height:none;height:100vh;height:100dvh;border-radius:0;border-top:0;border-left:1px solid var(--line);box-shadow:-12px 0 32px rgba(0,0,0,.4);transform:translateX(100%)}.sh-grab{display:none}.sh-hd{padding-top:14px}}
+/* tesi, casi: più visivi (22/11/2026) */
+.tv{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0 4px;background:#0E161E}
+.tv .big{font:600 30px/1 "Source Serif 4",Georgia,serif;text-align:center;min-width:64px}.tv .big small{display:block;font:600 10.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
+.wk{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}.wk i{height:22px;border-radius:4px;border:1px dashed #2A3A48;display:grid;place-items:center;font-style:normal;font-size:12px;color:#0B1118;font-weight:700}.wk i.u{background:var(--up);border:0}.wk i.d{background:var(--dn);border:0}.wk i.s{background:#5C6B78;border:0}.wk i.m{background:linear-gradient(90deg,var(--up) 50%,var(--dn) 50%);border:0}
+.wkl{display:flex;justify-content:space-between;font:10.5px ui-monospace,monospace;color:var(--mut);margin-top:4px}
+.lvr{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding:10px 0;min-height:44px;cursor:pointer}.lvr:last-child{border-bottom:1px solid var(--line)}.lvr i{width:10px;height:10px;border-radius:3px;flex:none}.lvr span{flex:1}.lvr b{color:var(--mut);font-weight:400}
+.pv{display:grid;grid-template-columns:92px 1fr;gap:12px;border-top:1px solid var(--line);padding:11px 0}.pv .v{font:600 18px/1.15 "Source Serif 4",Georgia,serif;color:var(--amb);word-break:break-word}.pv .v small{display:block;font:11px ui-monospace,monospace;color:var(--mut);margin-top:4px}.pv p{margin:0;font-size:14px}.pv .s{font-size:12px;color:var(--mut);margin-top:4px}
+.tier{display:inline-block;font:600 10px ui-monospace,monospace;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:1px}.tier.T1{background:var(--up);color:#0B1118}.tier.T2{border:1px solid var(--acc);color:var(--acc)}.tier.T3{border:1px dashed #5C6B78;color:var(--mut)}
+.pt{border-left:3px solid var(--acc);padding:4px 0 4px 12px;margin-top:6px}.pt .q{font:600 16.5px/1.35 "Source Serif 4",Georgia,serif;color:var(--acc);margin-top:8px}
+.smt{border-left:3px solid var(--dn);padding:4px 0 4px 12px;margin-top:6px;font-size:14.5px}
+.stk{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0 6px}.stk i{display:block}
+.hb{display:grid;grid-template-columns:118px 1fr 34px;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #18242E;font-size:13.5px;cursor:pointer}.hb .bar{height:10px;border-radius:5px;background:var(--acc);opacity:.85}.hb b{text-align:right;font:12.5px ui-monospace,monospace;color:var(--mut);font-weight:400}
+.ksum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.ksum div{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}.ksum b{display:block;font:600 22px/1 "Source Serif 4",Georgia,serif}.ksum span{font-size:11.5px;color:var(--mut)}
+details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:12px 0;min-height:44px;cursor:pointer;font-weight:600}details.grp>summary::-webkit-details-marker{display:none}details.grp>summary:after{content:"›";color:var(--mut);transition:transform .2s}details.grp[open]>summary:after{transform:rotate(90deg)}details.grp>summary em{font-style:normal;color:var(--mut);font-weight:400;font-size:13px;margin-left:auto;margin-right:10px}
+.cs{display:grid;grid-template-columns:10px 1fr;gap:10px;padding:10px 0;border-top:1px solid #18242E;cursor:pointer}.cs i{width:8px;height:8px;border-radius:50%;margin-top:7px}.cs b{font-weight:600}.cs .d{display:block;color:var(--amb);font-size:13.5px;font-weight:600;margin-top:2px}.cs .c{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mut);font-size:13.5px;margin-top:2px}
 @media (prefers-reduced-motion:reduce){.sh-p,.sh-dim{transition:none}}
 .kick{margin:18px 0 6px}.frase em{font-style:normal;color:var(--amb)}.frase b{color:var(--amb);font-weight:600}
 .frase.x{border:0;padding:0;margin:4px 0 0;font-size:21px;line-height:1.32}
@@ -227,18 +243,20 @@ const DICE={azienda:["l'azienda","#5FCB8C"],fornitore:["il fornitore","#E8A33D"]
 function conta(C,f){const n={};C.forEach(c=>{const v=f(c);n[v]=(n[v]||0)+1});return Object.entries(n).sort((a,b)=>b[1]-a[1])}
 
 /* flusso: modello (sinistra) → area (destra), colore = cloud */
-function flusso(C){C=C.filter(c=>AB[c.area]);if(!C.length)return"";const W=600,L=170,R=W-160,bw=10,gap=10,TOP=34,U=Math.max(14,Math.min(30,300/C.length));
- const ML=conta(C,c=>famM(c.modello)).map(([k])=>k),AL=D.aree.map(([a])=>a).filter(a=>C.some(c=>c.area===a));
- const pos=(keys,fn)=>{let y=TOP;const o={};keys.forEach(k=>{const n=C.filter(c=>fn(c)===k).length;o[k]={y,h:n*U,n,off:0};y+=n*U+gap});return[o,y]};
+function flusso(C){C=C.filter(c=>AB[c.area]);if(!C.length)return"";const K=C.filter(c=>famM(c.modello)!=="non dichiarato"),nd=C.length-K.length;
+ if(!K.length)return `<p class="n">Nessun caso dichiara il modello usato (${C.length} casi).</p>`;
+ const W=600,L=150,R=W-150,bw=10,gap=12,TOP=34,HT=Math.max(160,Math.min(380,K.length*14)),U=(HT-gap*8)/K.length;
+ const ML=conta(K,c=>famM(c.modello)).map(([k])=>k),AL=D.aree.map(([a])=>a).filter(a=>K.some(c=>c.area===a));
+ const MC={"Claude":"#E8A33D","OpenAI (GPT)":"#5FCB8C","Gemini":"#86B4EA","Llama":"#A796F5","Mistral":"#E8836B","proprietario":"#9CCC65","altro":"#7F909E"};
+ const pos=(keys,fn)=>{let y=TOP;const o={};keys.forEach(k=>{const n=K.filter(c=>fn(c)===k).length;o[k]={y,h:Math.max(3,n*U),n,off:0};y+=Math.max(3,n*U)+gap});return[o,y]};
  const [PM,h1]=pos(ML,c=>famM(c.modello)),[PA,h2]=pos(AL,c=>c.area),H=Math.max(h1,h2)+8;
- const S=[...C].sort((a,b)=>ML.indexOf(famM(a.modello))-ML.indexOf(famM(b.modello))||AL.indexOf(a.area)-AL.indexOf(b.area));
- const SA=[...C].sort((a,b)=>AL.indexOf(a.area)-AL.indexOf(b.area)||ML.indexOf(famM(a.modello))-ML.indexOf(famM(b.modello)));
- const ya={};SA.forEach(c=>{const p=PA[c.area];ya[c.id]=p.y+p.off;p.off+=U});
- let fl="";S.forEach(c=>{const p=PM[famM(c.modello)],y0=p.y+p.off;p.off+=U;const y1=ya[c.id],x0=L+bw,x1=R,mx=(x0+x1)/2,col=clcol(c.cloud?famC(c.cloud):"");
-  fl+=`<path d="M${x0} ${y0}C${mx} ${y0} ${mx} ${y1} ${x1} ${y1}L${x1} ${y1+U-1}C${mx} ${y1+U-1} ${mx} ${y0+U-1} ${x0} ${y0+U-1}Z" fill="${col}" fill-opacity="${c.cloud?.55:.28}"><title>${esc(c.chi)}</title></path>`});
- const lab=(o,x,anc,map)=>Object.entries(o).map(([k,p])=>`<rect x="${anc==="end"?L:R}" y="${p.y}" width="${bw}" height="${p.h-1}" fill="#E8EDF2" fill-opacity=".85"/><text x="${x}" y="${p.y+p.h/2+7}" text-anchor="${anc}" fill="#E8EDF2" font-size="18">${esc(map?map(k):k)} <tspan fill="#7F909E">${p.n}</tspan></text>`).join("");
- const ncl=C.filter(c=>c.cloud).length,leg=[...new Set(C.filter(c=>c.cloud).map(c=>famC(c.cloud)))];
- return `<div class="chart"><svg viewBox="0 0 ${W} ${H}"><text x="${L+bw}" y="18" text-anchor="end" fill="#7F909E" font-size="16">MODELLO</text><text x="${R}" y="18" fill="#7F909E" font-size="16">AREA</text>${fl}${lab(PM,L-8,"end")}${lab(PA,R+bw+8,"start",k=>ABS[k]||k)}</svg><div class="cap">Ogni striscia è un caso, il colore è il cloud: ${leg.map(k=>`<span style="color:${clcol(k)}">■</span> ${esc(k)}`).join(" · ")}${leg.length?" · ":""}<span style="color:${ND}">■</span> cloud non dichiarato (${C.length-ncl}).</div></div>`}
+ const FL={};K.forEach(c=>{const k=famM(c.modello)+"|"+c.area;FL[k]=(FL[k]||0)+1});
+ const fs=Object.entries(FL).map(([k,n])=>{const[m,a]=k.split("|");return{m,a,n}}).sort((x,y)=>ML.indexOf(x.m)-ML.indexOf(y.m)||AL.indexOf(x.a)-AL.indexOf(y.a));
+ const ya={};[...fs].sort((x,y)=>AL.indexOf(x.a)-AL.indexOf(y.a)||ML.indexOf(x.m)-ML.indexOf(y.m)).forEach(f=>{const p=PA[f.a];ya[f.m+"|"+f.a]=p.y+p.off;p.off+=f.n*U});
+ let fl="";fs.forEach(f=>{const p=PM[f.m],y0=p.y+p.off,h=f.n*U;p.off+=h;const y1=ya[f.m+"|"+f.a],x0=L+bw,x1=R,mx=(x0+x1)/2;
+  fl+=`<path d="M${x0} ${y0}C${mx} ${y0} ${mx} ${y1} ${x1} ${y1}L${x1} ${y1+h}C${mx} ${y1+h} ${mx} ${y0+h} ${x0} ${y0+h}Z" fill="${MC[f.m]||"#7F909E"}" fill-opacity=".5"><title>${esc(f.m)} → ${esc(AB[f.a])}: ${f.n}</title></path>`});
+ const lab=(o,x,anc,map,col)=>Object.entries(o).map(([k,p])=>`<rect x="${anc==="end"?L:R}" y="${p.y}" width="${bw}" height="${p.h}" fill="${col?col(k):"#E8EDF2"}" fill-opacity=".9"/><text x="${x}" y="${p.y+p.h/2+6}" text-anchor="${anc}" fill="#E8EDF2" font-size="17">${esc(map?map(k):k)} <tspan fill="#7F909E">${p.n}</tspan></text>`).join("");
+ return `<div class="chart"><svg viewBox="0 0 ${W} ${H}"><text x="${L+bw}" y="18" text-anchor="end" fill="#7F909E" font-size="15">MODELLO</text><text x="${R}" y="18" fill="#7F909E" font-size="15">AREA</text>${fl}${lab(PM,L-8,"end",null,k=>MC[k]||"#7F909E")}${lab(PA,R+bw+8,"start",k=>ABS[k]||k)}</svg><div class="cap">Lo spessore è il numero di casi. Nel grafico solo i ${K.length} casi che dichiarano il modello; altri ${nd} non lo dicono.</div></div>`}
 
 /* mappa di calore area × tecnologia, con i totali e i buchi */
 function calore(C){const A=D.aree,T=D.tecnologie,L=170,cw=56,top=118,rh=46,W=L+cw*T.length+52,H=top+rh*A.length+44,n={},ra={},ct={};let mx=1;
@@ -464,6 +482,41 @@ function glSheet(id){const g=glById(id);if(!g)return;const S=g.scheda||{},att=g.
  ${arr(g.tesi).length?`<span class="k">Tesi</span><div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">${arr(g.tesi).map(kref).join("")}</div>`:""}
  ${g.fonte&&g.fonte.url?fonti([g.fonte]):""}`)}
 
+
+/* ---------- chiavi (tesi) e casi d'uso: più visivi, più navigabili (22/11/2026) ---------- */
+const STC={pilota:["Pilota","#E8A33D"],produzione:["Produzione","#86B4EA"],scala:["Scala","#5FCB8C"],esplora:["Esplora","#7F909E"]};
+function settimane(storia){const oggi=Date.parse((D.oggi||new Date().toISOString().slice(0,10))+"T12:00:00Z"),W=Array.from({length:8},()=>[]);
+ (storia||[]).forEach(x=>{const t=Date.parse(String(x.data||"").slice(0,10)+"T12:00:00Z");if(!t)return;const w=Math.floor((oggi-t)/(7*864e5));if(w>=0&&w<8)W[7-w].push(x.effetto)});
+ return W.map(e=>!e.length?"":e.includes("su")&&e.includes("giu")?"m":e.includes("su")?"u":e.includes("giu")?"d":"s")}
+function tesiSheet(t){const d=t.direzione||{},V={su:["↑","sale","var(--up)"],giu:["↓","scende","var(--dn)"],stabile:["→","stabile","var(--mut)"],incerta:["?","incerta","var(--amb)"]}[d.verso]||["?","incerta","var(--amb)"];
+ const W=settimane(t.storia),L=(D.adozione||[]).filter(a=>livT(a).includes(t.id)),P=[...(t.prove||[])].sort((a,b)=>dk(b.data).localeCompare(dk(a.data)));
+ const E=D.edizione||{},MS=(E.letture||[]).map((l,i)=>[l,i]).filter(([l])=>l.tesi&&l.tesi.id===t.id),FL=(D.filoni||[]).filter(f=>f.tesi===t.id);
+ const nu=(t.storia||[]).filter(x=>x.effetto==="su").length,ng=(t.storia||[]).filter(x=>x.effetto==="giu").length;
+ return `<p class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif;margin:0">${rich(t.uno||"")}</p>
+ <div class="tv"><div class="big" style="color:${V[2]}">${V[0]}<small>${V[1]}</small></div><div><div class="wk">${W.map(x=>`<i class="${x}">${x==="u"?"▲":x==="d"?"▼":x==="m"?"":x==="s"?"●":""}</i>`).join("")}</div><div class="wkl"><span>8 settimane fa</span><span>oggi</span></div></div></div>
+ <p class="n" style="margin-top:6px">${(t.prove||[]).length} prove · ${nu} fatti la rafforzano, ${ng} la indeboliscono. ${d.verso==="incerta"||!d.verso?"Servono almeno 3 fatti in 8 settimane per una direzione.":""}</p>
+ ${MS.length?`<span class="k">Mossa oggi da</span><div>${MS.map(([l,i])=>`<div class="lvr" data-sh="mov:${i}"><i style="background:${LIVC[livOf(l)][1]}"></i><span>${esc(l.breve||corto(String(l.titolo||"").replace(/\*/g,""),90))}</span><b>›</b></div>`).join("")}</div>`:""}
+ ${L.length?`<span class="k">Dove si vede</span><div>${L.map(a=>`<div class="lvr" data-sh="liv:${a.id}"><i style="background:${(LIVC[a.id]||[,"var(--acc)"])[1]}"></i><span>${esc((D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id)}</span><b>›</b></div>`).join("")}</div>`:""}
+ ${t.cosa?`<span class="k">Il racconto</span><p>${rich(t.cosa)}</p>`:""}
+ ${P.length?`<span class="k">Le prove</span><div>${P.map(p=>`<div class="pv"><div class="v">${esc(p.val||"·")}<small>${esc(p.data||"")}</small></div><div><p>${rich(p.testo||"")}</p><div class="s">${p.fonte?(p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.fonte.nome)}</a>`:esc(p.fonte.nome)):""}${p.tier?`<span class="tier ${esc(p.tier)}" title="${p.tier==="T1"?"documento ufficiale o aziendale":p.tier==="T2"?"stampa autorevole":"altra fonte"}">${esc(p.tier)}</span>`:""}</div></div></div>`).join("")}</div><p class="n"><span class="tier T1">T1</span> documento ufficiale o aziendale · <span class="tier T2">T2</span> stampa autorevole · <span class="tier T3">T3</span> altra fonte</p>`:""}
+ ${t.interpretazione||t.domanda?`<span class="k" style="color:var(--acc)">Per te</span><div class="pt">${t.interpretazione?`<div>${rich(t.interpretazione)}</div>`:""}${t.domanda?`<div class="q">«${esc(t.domanda)}»</div>`:""}</div>`:""}
+ ${t.smentirebbe?`<span class="k" style="color:var(--dn)">Cosa la smentirebbe</span><div class="smt">${rich(t.smentirebbe)}</div>`:""}
+ ${FL.length?`<span class="k">Filoni</span><div>${FL.map(f=>`<div class="lvr" data-sh="fil:${esc(f.id)}"><i style="background:${tcol(t.id)}"></i><span>${esc(f.titolo)}</span><b>${(f.tappe||[]).length} tappe ›</b></div>`).join("")}</div>`:""}
+ ${(t.storia||[]).length?`<span class="k">Come è cambiata</span><div class="dots">${t.storia.slice(-8).reverse().map(x=>`<div><b>${esc(x.data)}</b> · ${dir(x.effetto)} ${rich(x.testo)}</div>`).join("")}</div>`:""}`}
+
+/* casi d'uso di un'area (o di una cella): numeri, stadio, tecnologie, poi i casi per settore */
+function casiSheet(C,titolo,kick){const n=C.length;if(!n)return sheet(kick||"Casi d'uso",titolo,`<p class="n">Nessun caso.</p>`);
+ const st=Object.keys(STC).map(k=>[k,C.filter(c=>c.stadio===k).length]).filter(x=>x[1]),nd=n-st.reduce((a,x)=>a+x[1],0),prod=C.filter(att).length,mis=C.filter(c=>c.dato&&c.misura==="misurato").length;
+ const TC=conta(C.filter(c=>c.tecnologia),c=>c.tecnologia),mx=Math.max(1,...TC.map(x=>x[1])),area=C[0].area,unaArea=C.every(c=>c.area===area);
+ const SE=conta(C,c=>String(c.settore||"Altro").trim()||"Altro");
+ const caso=c=>`<div class="cs" data-sh="caso:${esc(c.id)}"><i style="background:${(STC[c.stadio]||["","#3A4A58"])[1]}"></i><div><b>${esc(c.chi)}</b>${c.paese?` <span class="n" style="display:inline">· ${esc(c.paese)}</span>`:""}${c.dato?`<span class="d">${esc(corto(c.dato,90))}</span>`:""}<span class="c">${esc(c.cosa||"")}</span></div></div>`;
+ return sheet(kick||"Casi d'uso",titolo,`<div class="ksum"><div><b>${n}</b><span>casi</span></div><div><b style="color:var(--up)">${Math.round(prod/n*100)}%</b><span>in uso o in scala</span></div><div><b style="color:var(--amb)">${mis}</b><span>con risultato misurato</span></div></div>
+ <span class="k">A che punto sono</span><div class="stk">${st.map(([k,v])=>`<i style="width:${v/n*100}%;background:${STC[k][1]}"></i>`).join("")}${nd?`<i style="width:${nd/n*100}%;background:#2A3A48"></i>`:""}</div><div class="n">${st.map(([k,v])=>`<span style="color:${STC[k][1]}">■</span> ${STC[k][0]} ${v}`).join(" · ")}${nd?` · <span style="color:#2A3A48">■</span> non detto ${nd}`:""}</div>
+ ${TC.length?`<span class="k">Con quale tecnologia</span><div>${TC.map(([k,v])=>`<div class="hb"${unaArea?` data-sh="cella:${esc(area)}|${esc(k)}"`:""}><span>${esc(TB[k]||k)}</span><span><span class="bar" style="display:block;width:${v/mx*100}%"></span></span><b>${v}</b></div>`).join("")}</div>`:""}
+ <span class="k">I casi, per settore</span>${SE.map(([s,v],i)=>`<details class="grp"${i===0?" open":""}><summary><span>${esc(s.charAt(0).toUpperCase()+s.slice(1))}</span><em>${v}</em></summary>${C.filter(c=>(String(c.settore||"Altro").trim()||"Altro")===s).map(caso).join("")}</details>`).join("")}<p class="n" style="margin-top:10px">Il pallino è lo stadio. Tocca un caso per tutti i dettagli e la fonte.</p>`)}
+function casoSheet(id){const c=(D.casi||[]).find(x=>x.id===id);if(!c)return;const rr=(k,v)=>v?`<div class="row"><span class="n" style="margin:0">${k}</span><span style="text-align:right">${esc(v)}</span></div>`:"";
+ return sheet(`${esc(AB[c.area]||"Caso d'uso")}`,c.chi,`${c.dato?`<p class="serif" style="font:600 22px/1.25 'Source Serif 4',Georgia,serif;color:${c.misura==="misurato"?"var(--up)":"var(--amb)"};margin:0">${esc(c.dato)}</p><p class="n">${c.misura==="misurato"?"risultato misurato":"risultato dichiarato"}${c.chi_lo_dice?" · lo dice: "+esc(c.chi_lo_dice):""}</p>`:""}<p>${rich(c.cosa||"")}</p>
+ <div class="rows" style="margin-top:12px">${rr("Settore",[c.settore,c.paese].filter(Boolean).join(" · "))}${rr("Stadio",(STC[c.stadio]||[c.stadio])[0])}${rr("Tecnologia",TB[c.tecnologia]||c.tecnologia)}${rr("Modello",c.modello||"non dichiarato")}${rr("Cloud",c.cloud||"non dichiarato")}${rr("Installazione",c.deploy)}${rr("Partner",c.partner)}${rr("Data",c.data)}</div>${c.fonte?fonti([c.fonte]):""}`)}
 /* ---------- contenuti dei pannelli ---------- */
 function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizione||{};
  if(k==="numero"){const N=E.numero||{};return sheet("Il numero",N.val||"",`<p class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif">${rich(N.testo||"")}</p>${N.data?`<p class="n">Dato del ${esc(N.data)}</p>`:""}${N.grafico?grafico(N.grafico):""}${fonti(N.fonti)}`)}
@@ -475,7 +528,9 @@ function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizion
  if(k==="lt"){const[d,i]=id.split("|");shClose();return load(d,"oggi").then(()=>apri("mov:"+i))}
  if(k==="gl")return glSheet(id);
  if(k==="fil")return filSheet(id);
- if(k==="tesi"){const T=D.tesi||[],i=T.findIndex(t=>t.id===id),t=T[i];if(!t)return;const d=tmp(vTesi).querySelectorAll("details")[i],inn=d?d.querySelector(".in").innerHTML:"";const L=(D.adozione||[]).filter(a=>livT(a).includes(id));
+ if(k==="caso")return casoSheet(id);
+ if(k==="tesi"){const T0=(D.tesi||[]).find(t=>t.id===id);if(T0)return sheet(`<span style="color:${tcol(id)}">Chiave ${tN(id)}${T0.stato==="contesto"?" · contesto":""}</span>`,T0.titolo,tesiSheet(T0));}
+ if(k==="tesiold"){const T=D.tesi||[],i=T.findIndex(t=>t.id===id),t=T[i];if(!t)return;const d=tmp(vTesi).querySelectorAll("details")[i],inn=d?d.querySelector(".in").innerHTML:"";const L=(D.adozione||[]).filter(a=>livT(a).includes(id));
   return sheet(`<span style="color:${tcol(id)}">Chiave ${tN(id)}${t.stato==="contesto"?" · contesto":""}</span>`,t.titolo,`<p class="sub">${rich(t.uno||"")}</p><div style="margin:10px 0 2px">${caselle(t.direzione)}</div>${L.length?`<span class="k">Dove si vede</span><div style="font-size:14px">${L.map(a=>`<span class="kr" data-sh="liv:${a.id}">${esc((D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id)} ›</span>`).join(" &nbsp; ")}</div>`:""}${inn}`)}
  if(k==="liv"){const a=(D.adozione||[]).find(x=>x.id===id);if(!a)return;const nome=(D.livelli.find(x=>x[0]===id)||[])[1]||id,kp=(a.kpi||[])[0],P=[];OR.forEach(([o])=>((a.orizzonti||{})[o]||{}).perche&&P.push(...(a.orizzonti[o].perche||[])));const d=tmp(vAdozione).querySelector("#lv-"+id+" .in");
   const pr=[...P].sort(ordC).slice(0,2).map(c=>casoEv(c,"Caso","var(--up)")).join("")+((a.kpi||[])[1]?ev("Dato","var(--amb)",rich(a.kpi[1].testo)+` <b style="color:var(--amb)">${esc(a.kpi[1].val)}</b>`):"");
@@ -484,8 +539,10 @@ function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizion
   const mie=new Set((D.clienti||[]).map(c=>c.nome.split(/[ (]/)[0].toLowerCase()));
   return sheet(`Protagonista · ${esc(a.tipo||"")}`,a.nome,`<p class="sub">${rich(a.direzione||"")}</p>${N.length?`<div class="nums">${N.map(n=>`<div><b>${esc(n.val)}</b><span class="n">${rich(corto(n.testo,60))}</span></div>`).join("")}</div>`:""}${C.length?`<span class="k">Dove lo trovi nei casi · ${C.length}</span>${C.slice(0,4).map(c=>casoEv(c,mie.has(String(c.chi).split(/[ (]/)[0].toLowerCase())?"Tuo cliente":corto(c.settore||"Caso",11),mie.has(String(c.chi).split(/[ (]/)[0].toLowerCase())?"var(--amb)":"var(--up)")).join("")}${C.length>4?`<div class="kr" data-sh="casiatt:${id}" style="margin-top:8px">Tutti i ${C.length} casi ›</div>`:""}`:""}${dip.length?`<span class="k">Da chi dipende</span><p style="font-size:14px">${dip.join(" · ")}</p>`:""}<span class="k" style="margin-top:22px">Tutto il resto</span>${d?d.innerHTML:""}`)}
  if(k==="casiatt"){const a=(D.attori||[]).find(x=>x.id===id)||{};return sheet("Casi",`Dove compare ${a.nome||id}`,casiDi(id).sort(ordC).map(c=>casoEv(c)).join(""))}
- if(k==="area"){const C=(D.casi||[]).filter(c=>c.area===id).sort(ordC);return sheet("Casi d'uso",AB[id]||id,`<p class="n">${C.length} casi · ${C.filter(att).length} in produzione o in scala</p>${C.map(c=>casoEv(c,corto(c.settore||"",11)||"Caso",att(c)?"var(--up)":"var(--mut)")).join("")}`)}
- if(k==="cella"){const[a,t]=id.split("|"),C=(D.casi||[]).filter(c=>c.area===a&&c.tecnologia===t).sort(ordC);return sheet("Casi d'uso",`${AB[a]||a} · ${TB[t]||t}`,C.map(c=>casoEv(c)).join("")||`<p class="n">Nessun caso.</p>`)}
+ if(k==="area"){const C=(D.casi||[]).filter(c=>c.area===id).sort(ordC);return casiSheet(C,AB[id]||id);
+ if(0)return sheet("Casi d'uso",AB[id]||id,`<p class="n">${C.length} casi · ${C.filter(att).length} in produzione o in scala</p>${C.map(c=>casoEv(c,corto(c.settore||"",11)||"Caso",att(c)?"var(--up)":"var(--mut)")).join("")}`)}
+ if(k==="cella"){const[a,t]=id.split("|"),C=(D.casi||[]).filter(c=>c.area===a&&c.tecnologia===t).sort(ordC);return casiSheet(C,`${AB[a]||a} · ${TB[t]||t}`);
+ if(0)return sheet("Casi d'uso",`${AB[a]||a} · ${TB[t]||t}`,C.map(c=>casoEv(c)).join("")||`<p class="n">Nessun caso.</p>`)}
  if(k==="tuttiicasi"){const C=D.casi||[],IT=C.filter(c=>/ital/i.test(c.paese||""));return sheet("Casi d'uso",`Tutti i ${C.length} casi`,`<span class="k">Chi alimenta cosa · modello → area</span>${flusso(C)}<span class="k">Area × tecnologia · tocca una casella</span>${calore(C)}<span class="k">Per area</span><div class="rows">${D.aree.filter(([a])=>C.some(c=>c.area===a)).map(([a])=>`<div class="row" data-sh="area:${a}" style="cursor:pointer"><span><b>${esc(AB[a]||a)}</b></span><span class="mono" style="color:var(--acc)">${C.filter(c=>c.area===a).length} ›</span></div>`).join("")}${IT.length?`<div class="row" data-sh="italia:" style="cursor:pointer"><span><b>Solo Italia</b></span><span class="mono" style="color:var(--acc)">${IT.length} ›</span></div>`:""}</div>`)}
  if(k==="italia"){const C=(D.casi||[]).filter(c=>/ital/i.test(c.paese||"")).sort(ordC);return sheet("Casi d'uso","In Italia",C.map(c=>casoEv(c)).join(""))}
  if(k==="soldi"){const CF=D.confronti||[];return sheet("Protagonisti","Chi spende, chi incassa",CF.map(confronto).join("")||`<p class="n">Nessun dato.</p>`)}
