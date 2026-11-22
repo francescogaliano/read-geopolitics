@@ -1105,7 +1105,7 @@ async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: c
   if (!d) throw { status: 404, code: "draft_not_found" };
   if (d.status !== "in_elaborazione" || !d.creation_id) throw { status: 409, code: "bad_status", detail: d.status };
   try {
-    const out = await igPublishUrls(null, env, origin, { creation_id: d.creation_id });
+    const out = await igPublishUrls(null, env, origin, { creation_id: d.creation_id, since: d.started_at || d.queued_at || "" });
     if (!out.ok) throw out;
     if (out.pending) { d.checked_at = new Date().toISOString(); await kvSet(env, "draft:" + id, d); return d; }
     d.status = "pubblicata"; d.published_at = new Date().toISOString(); d.permalink = out.permalink || null; d.media_id = out.media_id || null; delete d.error;
@@ -3473,6 +3473,11 @@ async function igPrivate(request, env, p, method) {
       const t0 = await igToken(env);
       const s0 = await igCall("GET", `/${b.creation_id}`, t0, { fields: "status_code,status" });
       if (s0.status_code === "ERROR" || s0.status_code === "EXPIRED") throw { status: 502, code: "container_" + s0.status_code, detail: s0 };
+      if (s0.status_code === "PUBLISHED") { // già uscito (per esempio un secondo controllo arrivato dopo la pubblicazione): non restare «in elaborazione» per sempre
+        let m = null;
+        try { const L = await igCall("GET", `/${t0.user_id}/media`, t0, { fields: "id,permalink,timestamp,media_type", limit: "5" }); const since = Date.parse(b.since || "") || 0; m = (L.data || []).find((x) => x.media_type === "VIDEO" && (!since || Date.parse(x.timestamp) >= since - 10 * 60000)) || null; } catch (e) {}
+        return json({ ok: true, media_id: m ? m.id : null, permalink: m ? m.permalink : null, gia_pubblicato: true });
+      }
       if (s0.status_code && s0.status_code !== "FINISHED") return json({ ok: true, pending: true, creation_id: b.creation_id, status_code: s0.status_code });
       return await finishOnly(t0, t0.user_id, b.creation_id);
     }
