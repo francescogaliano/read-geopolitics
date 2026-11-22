@@ -164,7 +164,7 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 </style></head><body><div class="wrap">
 <div class="brand"><img class="lg" src="/ai/icon-180.png" alt="" width="44" height="44"><div style="flex:1;min-width:0"><h1>Intelligenza artificiale</h1><div class="tag mono">L'IA in 10 minuti · privato</div></div></div>
 <div class="stl mono"><span id="agg"></span><a class="back" id="via" href="/ig/panel">← Pannello</a></div>
-<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Briefing</button><button data-v="timeline">Timeline</button><button data-v="dove">Dove va</button><button data-v="chi">Chi</button><button data-v="archivio">Archivio</button><button data-v="miei">Clienti</button></div>
+<div class="tabs" role="tablist"><button data-v="oggi" aria-selected="true">Briefing</button><button data-v="filiera">Filiera</button><button data-v="timeline">Timeline</button><button data-v="dove">Dove va</button><button data-v="chi">Chi</button><button data-v="archivio">Archivio</button><button data-v="miei">Clienti</button></div>
 <div id="v"></div>
 </div>
 <script>
@@ -555,7 +555,7 @@ function casoSheet(id){const c=(D.casi||[]).find(x=>x.id===id);if(!c)return;cons
  <div class="rows" style="margin-top:12px">${rr("Settore",[c.settore,c.paese].filter(Boolean).join(" · "))}${rr("Stadio",(STC[c.stadio]||[c.stadio])[0])}${rr("Tecnologia",TB[c.tecnologia]||c.tecnologia)}${rr("Modello",c.modello||"non dichiarato")}${rr("Cloud",c.cloud||"non dichiarato")}${rr("Installazione",c.deploy)}${rr("Partner",c.partner)}${rr("Data",c.data)}</div>${c.fonte?fonti([c.fonte]):""}`)}
 
 /* ---------- scheda standard: componenti (22/11/2026) ---------- */
-const ICP={bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',scale:'<path d="M12 3v18M5 21h14M6 7h12M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',thread:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/>',shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>',key:'<circle cx="8" cy="14" r="4"/><path d="m11 11 9-9M17 5l2 2M14 8l2 2"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.5-5 7-5s6.2 1.5 7 5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .7 3.4 2.3 4 5"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',atom:'<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',cap:'<path d="M3 17l5-6 4 3 6-8 3 3"/><path d="M21 9V6h-3"/>',link:'<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>'};
+const ICP={chip:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',cloud:'<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.5 3.5 0 0 0 7 18z"/>',app:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/>',bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',scale:'<path d="M12 3v18M5 21h14M6 7h12M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',thread:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/>',shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>',key:'<circle cx="8" cy="14" r="4"/><path d="m11 11 9-9M17 5l2 2M14 8l2 2"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.5-5 7-5s6.2 1.5 7 5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .7 3.4 2.3 4 5"/>',flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',atom:'<circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',cap:'<path d="M3 17l5-6 4 3 6-8 3 3"/><path d="M21 9V6h-3"/>',link:'<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>'};
 const hexA=(h,a)=>{const v=String(h).match(/^var\((--[\w-]+)\)$/);if(v)try{h=getComputedStyle(document.documentElement).getPropertyValue(v[1]).trim()||h}catch(e){}const m=String(h).match(/^#([0-9a-f]{6})$/i);if(!m)return `rgba(134,180,234,${a})`;const n=parseInt(m[1],16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`};
 const ico=(n,col,size=20)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICP[n]||ICP.list}</svg>`;
 const icoBox=(n,col,box=38)=>`<span class="sc-ic" style="background:${hexA(col,.18)};width:${box}px;height:${box}px">${ico(n,col,box>32?20:18)}</span>`;
@@ -842,9 +842,93 @@ function bind(root){root.querySelectorAll("[data-sh]").forEach(x=>x.onclick=e=>{
  root.querySelectorAll("g[data-a]").forEach(g=>g.onclick=()=>apri("att:"+g.dataset.a));
  root.querySelectorAll("g[data-c]").forEach(g=>g.onclick=()=>{const[a,t]=g.dataset.c.split("|");apri(t?"cella:"+a+"|"+t:"area:"+a)});
  root.querySelectorAll("[data-v]").forEach(a=>a.onclick=e=>{e.preventDefault();if(SH.open)shClose();vai(a.dataset.v)});
+ root.querySelectorAll("[data-fn]").forEach(g=>g.onclick=e=>{e.preventDefault();e.stopPropagation();FSEL=g.dataset.fn;if(SH.open)shClose();vai("filiera",true)});
+ root.querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{FFIL=b.dataset.ff;vai("filiera",true)});
+ root.querySelectorAll("[data-fcasi]").forEach(r=>r.onclick=()=>{const G=filGrafo(),n=G.N[r.dataset.fcasi];if(n)casiSheet((D.casi||[]).filter(c=>n.casi.includes(c.id)),n.nome)});
  root.querySelectorAll("[data-ed]").forEach(r=>r.onclick=()=>{if(SH.open)shClose();load(r.dataset.ed,"oggi")});
  root.querySelectorAll("g[data-n]").forEach(g=>g.onclick=()=>{const n=g.dataset.n,sv=g.closest("svg"),on=sv.dataset.on===n?"":n;sv.dataset.on=on;sv.querySelectorAll("path[data-e]").forEach(p=>{const[a,b]=p.dataset.e.split("|");p.style.strokeOpacity=!on||a===on||b===on?".85":".07"});sv.querySelectorAll("g[data-n]").forEach(x=>x.style.opacity=!on||x.dataset.n===on||[...sv.querySelectorAll("path[data-e]")].some(p=>{const[a,b]=p.dataset.e.split("|");return (a===on&&b===x.dataset.n)||(b===on&&a===x.dataset.n)})?"1":".3")});
  root.querySelectorAll("details").forEach(d=>{if(d.querySelector("#fol"))d.addEventListener("toggle",()=>{if(!d.open||d.dataset.ok)return;d.dataset.ok=1;api({action:"ai_fonti"}).then(j=>{d.querySelector("#fol").innerHTML=`<div class="rows">${j.fonti.map(f=>`<div class="row"><span>${esc(f.nome)}<span class="n">${esc(j.gruppi[f.gruppo]||f.gruppo)} · ${f.mai?"non ancora letta":f.ok?`${f.titoli} titoli in 7 giorni`:esc((f.errori||[]).slice(-1)[0]||"non risponde")}</span></span><span class="mono" style="color:${f.mai?"var(--mut)":f.ok?"var(--up)":"var(--dn)"}">${f.mai?"·":f.ok?"ok":"no"}</span></div>`).join("")}</div>`})})})}
+
+/* ---------- Filiera (22/11/2026): chi fornisce cosa a chi, dai legami dei protagonisti e dai casi d'uso ---------- */
+let FSEL="",FFIL="tutto";
+const FBANDE=[["energia","Energia e data center","bolt","#F0A04B"],["chip","Chip","chip","#F0A04B"],["cloud","Cloud","cloud","#5FB3D9"],["modelli","Modelli","atom","#8FA8FF"],["software","Software","app","#B5D46B"],["usa","Chi usa","users","#4CC9A6"]];
+/* catalogo: id, nome, banda, riconoscimento, opzioni (ap = pesi aperti, eu = europeo, att = protagonisti collegati) */
+const FCAT=[
+ ["nvidia","Nvidia","chip",/nvidia/i,{att:["nvidia"]}],["amd","AMD","chip",/\bamd\b/i],["broadcom","Broadcom","chip",/broadcom/i],["huawei","Huawei","chip",/huawei|ascend/i],["tsmc","TSMC","chip",/tsmc/i],["asml","ASML","chip",/asml/i,{eu:1}],
+ ["aws","AWS","cloud",/\baws\b|amazon|bedrock|trainium/i,{att:["aws"]}],["gcloud","Google Cloud","cloud",/google cloud|vertex|bigquery|\btpu|^google$/i,{att:["google"]}],["azure","Azure","cloud",/azure|foundry|^microsoft$/i,{att:["microsoft"]}],["oracle","Oracle","cloud",/oracle/i],["coreweave","CoreWeave","cloud",/coreweave/i],
+ ["openai","OpenAI","modelli",/openai|\bgpt|chatgpt|codex/i,{att:["openai"]}],["anthropic","Anthropic","modelli",/anthropic|claude/i,{att:["anthropic"]}],["gemini","Google","modelli",/gemini|google|deepmind|\bveo\b|nano banana/i,{att:["google"]}],["xai","xAI","modelli",/\bxai\b|grok/i],
+ ["meta","Meta","modelli",/\bmeta\b|llama/i,{ap:1,att:["meta"]}],["mistral","Mistral","modelli",/mistral/i,{ap:1,eu:1,att:["mistral"]}],["deepseek","DeepSeek","modelli",/deepseek/i,{ap:1,att:["deepseek"]}],["qwen","Qwen","modelli",/qwen|alibaba/i,{ap:1}],["kimi","Kimi","modelli",/kimi|moonshot/i,{ap:1}],
+ ["copilot","MS Copilot","software",/copilot|microsoft 365/i,{att:["microsoft"]}],["sap","SAP","software",/\bsap\b|joule/i,{eu:1}],["siemens","Siemens","software",/siemens/i,{eu:1}],["palantir","Palantir","software",/palantir/i],["salesforce","Salesforce","software",/salesforce|agentforce/i],["ibm","IBM watsonx","software",/watsonx|\bibm\b/i],["cursor","Cursor","software",/cursor|composer 2/i]];
+const FSETT={"lusso e moda":"Lusso","industria":"Industria","retail e beni di consumo":"Retail","trasporti e viaggi":"Trasporti","sanità":"Sanità","banche e assicurazioni":"Banche","telecomunicazioni e media":"Telco e media","energia e utility":"Energia","PA":"PA","tecnologia":"Tech"};
+const FEC={calcolo:["#5FB3D9","calcolo"],chip:["#F0A04B","chip ed energia"],energia:["#F0A04B","chip ed energia"],distribuisce:["#B5D46B","distribuisce"],modello:["#8FA8FF","usa il modello"],usa:["#4CC9A6","lo adotta"]};
+const FLIV=[["#2E4152","ferma"],["#46708F","poco"],["#7FB0D6","attiva"],["#E9C46A","molto"],["#F0A04B","al centro della scena"]];
+function filGrafo(){
+ const N={},E={},cut=new Date(Date.parse((D.oggi||new Date().toISOString().slice(0,10))+"T12:00:00Z")-30*864e5).toISOString().slice(0,10);
+ const nodo=(id,nome,banda,o)=>N[id]||(N[id]={id,nome,banda,ap:!!(o&&o.ap),eu:!!(o&&o.eu),att:(o&&o.att)||[],casi:[],c30:0,m30:0,lg:[]});
+ const trova=(txt,banda)=>FCAT.filter(f=>f[2]===banda&&f[3].test(txt||"")).map(f=>nodo(f[0],f[1],f[2],f[4]));
+ const uno=(txt,banda)=>{const T=trova(txt,banda);if(T.length)return T[0];if(!txt||banda==="modelli")return null;const id=banda+":"+String(txt).toLowerCase().replace(/[^a-z0-9]+/g,"-");return nodo(id,String(txt).replace(/\s*\(.*\)/,""),banda)};
+ const arco=(a,b,tipo,info)=>{if(!a||!b||a===b)return;const k=a.id+">"+b.id;const e=E[k]||(E[k]={da:a.id,a:b.id,tipo,n:0,casi:[],lg:[]});e.n++;if(info&&info.caso)e.casi.push(info.caso);if(info&&info.lg)e.lg.push(info.lg)};
+ /* nodo di un protagonista nella banda giusta */
+ const diAtt=(a,bande)=>{for(const b of bande){const f=FCAT.find(f=>f[2]===b&&(f[4]||{}).att&&f[4].att.includes(a.id));if(f)return nodo(f[0],f[1],f[2],f[4])}return null};
+ (D.attori||[]).forEach(a=>{(a.legami||[]).forEach(l=>{const t=l.tipo,in_=l.verso==="a";
+  if(t==="calcolo"){const lab=in_?diAtt(a,["modelli"]):uno(l.con,"modelli"),cl=in_?uno(l.con,"cloud"):diAtt(a,["cloud"]);arco(cl,lab,"calcolo",{lg:l})}
+  else if(t==="chip"){const ch=in_?uno(l.con,"chip"):diAtt(a,["chip"]),us=in_?diAtt(a,["cloud","modelli"]):(trova(l.con,"cloud")[0]||uno(l.con,"modelli"));arco(ch,us,"chip",{lg:l})}
+  else if(t==="distribuisce"){const m=in_?uno(l.con,"modelli"):diAtt(a,["modelli"]),di=in_?diAtt(a,["cloud","software"]):(trova(l.con,"cloud")[0]||uno(l.con,"software"));arco(m,di,"distribuisce",{lg:l})}
+  else if(t==="energia"){const en=uno(l.con,"energia"),us=diAtt(a,["cloud","modelli"]);arco(en,us,"energia",{lg:l})}});
+  const m30=(a.mosse||[]).filter(m=>dk(m.iso||m.data)>=cut).length;FCAT.filter(f=>(f[4]||{}).att&&f[4].att.includes(a.id)).forEach(f=>{const n=N[f[0]];if(n)n.m30+=m30})});
+ (D.casi||[]).forEach(c=>{const txt=[c.modello,c.cloud,c.partner].join(" · "),M=trova(txt,"modelli"),C=trova([c.cloud,c.partner].join(" · "),"cloud"),S=trova(c.partner,"software"),sk=c.settore_norm||"",rec=dk(c.iso||c.data)>=cut;
+  const se=FSETT[sk]?nodo("s:"+sk,FSETT[sk],"usa"):null;[...M,...C,...S,se].filter(Boolean).forEach(n=>{n.casi.push(c.id);if(rec)n.c30++});
+  C.forEach(cl=>M.forEach(m=>arco(cl,m,"calcolo",{caso:c.id})));M.forEach(m=>S.forEach(s=>arco(m,s,"modello",{caso:c.id})));
+  const su=S.length?S:M.length?M:C;if(se)su.forEach(x=>arco(x,se,"usa",{caso:c.id}))});
+ Object.values(N).forEach(n=>{const s=n.m30+n.c30;n.liv=s>=8?5:s>=4?4:s>=2?3:s>=1?2:1});
+ return {N,E:Object.values(E)}}
+function filPeso(n,E){return n.liv*3+E.filter(e=>e.da===n.id||e.a===n.id).length+n.casi.length/4}
+function vFiliera(){const G=filGrafo(),W=Math.max(320,Math.min(728,(($("#v")||{}).clientWidth)||366)),per=Math.max(4,Math.floor((W-28)/66));
+ if(!Object.keys(G.N).length)return `<div class="empty">La filiera si costruisce dai legami dei protagonisti e dai casi d'uso: arriva con le routine.</div>`;
+ /* scelta dei nodi visibili per banda */
+ const vis={};const BN={};FBANDE.forEach(([b])=>{let L=Object.values(G.N).filter(n=>n.banda===b);
+  if(b==="modelli"){const ch=L.filter(n=>!n.ap).sort((x,y)=>filPeso(y,G.E)-filPeso(x,G.E)).slice(0,Math.max(3,Math.floor(per*.85))),ap=L.filter(n=>n.ap).sort((x,y)=>filPeso(y,G.E)-filPeso(x,G.E)).slice(0,Math.max(4,per));BN[b]=[ch,ap]}
+  else{L=L.sort((x,y)=>filPeso(y,G.E)-filPeso(x,G.E)).slice(0,per);BN[b]=L}});
+ Object.values(BN).flat(2).forEach(n=>vis[n.id]=n);
+ if(!FSEL||!vis[FSEL])FSEL=(vis.anthropic&&"anthropic")||Object.values(vis).sort((x,y)=>y.liv-x.liv)[0].id;
+ const E=G.E.filter(e=>vis[e.da]&&vis[e.a]),sel=vis[FSEL],con=new Set([FSEL]);E.forEach(e=>{if(e.da===FSEL)con.add(e.a);if(e.a===FSEL)con.add(e.da)});
+ const spento=n=>FFIL==="movimento"?n.liv<3:FFIL==="aperti"?(n.banda==="modelli"&&!n.ap):FFIL==="europa"?(n.banda!=="usa"&&!n.eu):false;
+ const pos={},out=[],bg=[];let y=8;const tt=s=>esc(s.length>14?s.slice(0,13)+"…":s);
+ FBANDE.forEach(([b,nome,ic,col])=>{const L=BN[b];if(!L||!(b==="modelli"?L[0].length+L[1].length:L.length))return;const mod=b==="modelli",rh=mod?96:70;
+  bg.push(`<rect x="0" y="${y}" width="${W}" height="${rh-8}" rx="10" fill="${hexA(col,.07)}" stroke="${hexA(col,.25)}"/>`);
+  out.push(`<svg x="8" y="${y+6}" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICP[ic]}</svg><text x="26" y="${y+17}" fill="${col}" font-size="9.5" font-weight="700" letter-spacing="1" font-family="ui-monospace,monospace">${esc(nome.toUpperCase())}${mod?"  ·  ● CHIUSI | ○ APERTI":""}</text>`);
+  const disegna=(n,x,cy,ly)=>{pos[n.id]=[x,cy-4];const c=FLIV[n.liv-1][0],s=n.id===FSEL,op=spento(n)?.22:(FSEL&&!con.has(n.id)?.45:1);
+   out.push(`<g data-fn="${esc(n.id)}" style="cursor:pointer;opacity:${op}"><circle cx="${x}" cy="${cy-4}" r="20" fill="transparent"/>${n.ap?`<circle cx="${x}" cy="${cy-4}" r="${s?6.5:5.5}" fill="none" stroke="${c}" stroke-width="3"/>`:`<circle cx="${x}" cy="${cy-4}" r="${s?8:6.5}" fill="${c}"/>`}${s?`<circle cx="${x}" cy="${cy-4}" r="12" fill="none" stroke="#E8EDF2" stroke-width="1.5"/>`:""}<text x="${x}" y="${ly}" text-anchor="middle" fill="${s?"#fff":"#C9D3DC"}" font-size="${s?10:9.5}" font-weight="${s?700:400}">${tt(n.nome)}</text></g>`)};
+  if(mod){const cy=y+62,sp=W*.44;out.push(`<line x1="${sp}" y1="${y+26}" x2="${sp}" y2="${y+rh-14}" stroke="#3A4A58" stroke-dasharray="3 3"/>`);let k2=0;
+   [[L[0],10,sp-8],[L[1],sp+8,W-10]].forEach(([G2,x0,x1])=>G2.forEach((n,k)=>{const x=Math.round(x0+(x1-x0)*(k+.5)/G2.length);disegna(n,x,cy,k2++%2?cy-22:cy+16)}))}
+  else{const cy=y+38;L.forEach((n,k)=>disegna(n,Math.round(14+(W-28)*(k+.5)/L.length),cy,cy+16))}
+  y+=rh});
+ const ed=E.map(e=>{const[x1,y1]=pos[e.da],[x2,y2]=pos[e.a],hl=e.da===FSEL||e.a===FSEL,off=spento(vis[e.da])||spento(vis[e.a]),my=(y1+y2)/2,w=Math.min(3.2,1+Math.log2(e.n)*.6);
+  return `<path d="M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}" fill="none" stroke="${FEC[e.tipo][0]}" stroke-width="${hl?w+1:w}" stroke-opacity="${off?.05:hl?.95:FSEL?.12:.3}"/>`}).join("");
+ const fil=[["tutto","Tutto"],["movimento","In movimento"],["aperti","○ Aperti"],["europa","Europa"]];
+ const usati=[...new Set(E.map(e=>FEC[e.tipo][1]))],lgC=Object.fromEntries(Object.values(FEC).map(([c,l])=>[l,c]));
+ let h=`<div class="o-h2">Filiera</div><div class="o-meta">Chi fornisce cosa a chi, dall'energia a chi usa l'IA. Il colore dice quanto si muove ogni attore negli ultimi 30 giorni.</div>
+ <div class="tlsw">${fil.map(([k,t])=>`<button data-ff="${k}" class="${FFIL===k?"on":""}">${t}</button>`).join("")}</div>
+ <div class="lgd" style="margin-top:8px">${FLIV.map(([c,t])=>`<span><i style="background:${c};border-radius:50%"></i>${t}</span>`).join("")}</div>
+ <div class="lgd">${usati.map(l=>`<span><i style="background:${lgC[l]};height:3px;width:14px"></i>${l}</span>`).join("")}</div>
+ <div class="chart"><svg viewBox="0 0 ${W} ${y}" width="${W}" style="max-width:100%" font-family="Inter,system-ui,sans-serif">${bg.join("")}${ed}${out.join("")}</svg></div>
+ <div class="cap">Tocca un attore per vedere da chi dipende e chi lo usa. Legami annunciati dai protagonisti (con fonte) e casi d'uso raccolti.</div>`;
+ return h+filPannello(sel,G,vis)}
+function filPannello(n,G,vis){if(!n)return"";const B=FBANDE.find(b=>b[0]===n.banda),col=B[3],a=(D.attori||[]).find(x=>n.att.includes(x.id));
+ const su=G.E.filter(e=>e.a===n.id),giu=G.E.filter(e=>e.da===n.id),NN=G.N;
+ const dir=a?(typeof a.direzione==="string"?a.direzione:(a.direzione&&(a.direzione.testo||a.direzione.frase))||""):"";
+ const C=(D.casi||[]).filter(c=>n.casi.includes(c.id)),prod=C.filter(c=>/produz/i.test(c.stadio||"")).length;
+ const ans=dir?String(dir).split(/(?<=\.)\s/)[0]:C.length?`Compare in ${C.length} casi d'uso${prod?`, ${prod} in produzione`:""}.`:"Compare nei legami dei protagonisti.";
+ const riga=(e,altro)=>{const o=NN[altro],ob=FBANDE.find(b=>b[0]===o.banda),L=e.lg[0];return `<div class="sc-lk"${vis[altro]?` data-fn="${esc(altro)}"`:""}>${icoBox(ob[2],ob[3])}<span><b>${esc(o.nome)}</b><small>${esc(FEC[e.tipo][1])}${L&&L.valore?" · "+esc(L.valore):""}${e.casi.length?` · ${e.casi.length} ${e.casi.length>1?"casi":"caso"}`:""}${L&&L.testo?" — "+esc(L.testo):""}</small></span><span>${vis[altro]?"›":""}</span></div>`};
+ const grp=(L,chi)=>L.sort((x,y)=>(y.lg.length*5+y.n)-(x.lg.length*5+x.n)).map(e=>riga(e,e[chi])).join("");
+ const nomi=(L,chi)=>[...new Set(L.map(e=>NN[e[chi]].nome))].slice(0,3).join(" · ")+(L.length>3?" …":"");
+ const S=[];
+ if(su.length)S.push({sez:"link",titolo:n.banda==="usa"?"Con cosa":"Dipende da",prev:esc(nomi(su,"da")),vis:`<b style="font:600 12px ui-monospace,monospace">${su.length}</b>`,body:grp(su,"da")});
+ if(giu.length)S.push({sez:"users",titolo:n.banda==="modelli"?"Chi lo distribuisce e chi lo usa":"Chi se ne serve",prev:esc(nomi(giu,"a")),vis:`<b style="font:600 12px ui-monospace,monospace">${giu.length}</b>`,body:grp(giu,"a")});
+ const sez=S.map(x=>{const[ic,c]=x.sez==="link"?["link","#5FB3D9"]:["users","#4CC9A6"];return `<details><summary>${icoBox(ic,c)}<div style="min-width:0"><div class="h">${x.titolo}</div><div class="p">${x.prev}</div></div><div class="v">${x.vis}<span class="ar">›</span></div></summary><div class="sc-bd">${x.body}</div></details>`}).join("");
+ const cas=C.length?`<div class="sc-lk" data-fcasi="${esc(n.id)}">${icoBox("brief","#E9C46A")}<span><b>Casi d'uso</b><small>${C.length} casi${prod?`, ${prod} in produzione`:""}</small></span><span>›</span></div>`:"";
+ return `<div style="margin-top:16px">${scHero({col,icon:B[2],kick:esc(B[1])+(n.eu?" · Europa":""),sub:(n.banda==="modelli"?(n.ap?"○ pesi aperti":"● modelli chiusi")+" · ":"")+FLIV[n.liv-1][1],ans:esc(n.nome),pc:rich(ans)})}
+ ${sez?`<div class="sc-secs">${sez}</div>`:""}<div style="margin-top:8px">${cas}${a?`<div class="sc-lk" data-sh="att:${esc(a.id)}">${icoBox("user",col)}<span><b>Apri la scheda completa</b><small>${esc(a.nome)}: direzione, scommesse, mosse</small></span><span>›</span></div>`:""}</div></div>`}
 
 const arr=x=>Array.isArray(x)?x:(x?[x]:[]);
 const APERTE={};
@@ -853,8 +937,8 @@ function sez1(el,v){const A=APERTE[v]||(APERTE[v]=new Set()),K=[...el.children];
  K.forEach(n=>{if(n.classList&&n.classList.contains("sec")&&!n.classList.contains("tool")){const sp=n.children,tit=(sp[0]&&sp[0].textContent)||"",meta=sp[1]?sp[1].outerHTML:"";const d=document.createElement("details");d.className="dsec";d.dataset.s=tit;if(A.has(tit))d.open=true;d.innerHTML=`<summary><span>${esc(tit.charAt(0).toUpperCase()+tit.slice(1).toLowerCase())}</span><span class="meta">${sp[1]&&sp[1].tagName!=="SELECT"&&sp[1].textContent.length<30?esc(sp[1].textContent):""}</span></summary><div class="dsb"></div>`;d.addEventListener("toggle",()=>{d.open?A.add(tit):A.delete(tit)});n.replaceWith(d);cur=d.querySelector(".dsb");return}
   if(cur)cur.appendChild(n)})}
 function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));const el=$("#v"),y=scrollY;
- if(!["oggi","timeline","dove","chi","archivio","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
- try{el.innerHTML={oggi:vOggi5,timeline:vTimeline,dove:vDove,chi:vChi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
+ if(!["oggi","filiera","timeline","dove","chi","archivio","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+ try{el.innerHTML={oggi:vOggi5,filiera:vFiliera,timeline:vTimeline,dove:vDove,chi:vChi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
  bind(el);
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);
  if(resta||!cambia)scrollTo(0,y);else{const t=$(".tabs");if(t&&t.getBoundingClientRect().top<0)scrollTo(0,t.offsetTop-6)}}
