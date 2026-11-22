@@ -229,7 +229,9 @@ const NS=(t,a,x)=>`<${t} `+Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" 
 const gg=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(D.oggi+"T12:00:00Z"))/864e5);
 const corto=(t,n)=>{t=String(t||"");if(t.length<=n)return t;const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
 const SITO=location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
-if(SITO){const v=document.getElementById("via");if(v){v.textContent="esci";v.href="/ai/esci"}}
+const PUB=!!window.AI_PUB;
+if(SITO){const v=document.getElementById("via");if(v){v.textContent=PUB?"accedi":"esci";v.href=PUB?"/ai/accedi":"/ai/esci"}}
+if(PUB){document.querySelectorAll('.hb2.cl').forEach(b=>b.remove());const t=document.querySelector(".brand .tag");if(t)t.textContent="L'IA in 10 minuti"}
 function api(o){return fetch(SITO?"/ai/api":"/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href=SITO?"/ai":"/ig/panel";throw new Error("401")}return r.text().then(t=>{try{return JSON.parse(t)}catch(e){throw new Error(`il server ha risposto ${r.status} senza dati${/<title>([^<]{0,80})/i.test(t)?" («"+t.match(/<title>([^<]{0,80})/i)[1].trim()+"»)":""}. Riprova tra poco.`)}})})}
 let D=null,V="oggi";
 const COL={t1:"var(--t1)",t2:"var(--t2)",t3:"var(--t3)",t4:"var(--t4)",t5:"var(--t5)",t6:"var(--t6)",t7:"var(--t7)",t8:"var(--t8)",t9:"var(--t9)"};
@@ -1049,7 +1051,7 @@ function sez1(el,v){const A=APERTE[v]||(APERTE[v]=new Set()),K=[...el.children];
  K.forEach(n=>{if(n.classList&&n.classList.contains("sec")&&!n.classList.contains("tool")){const sp=n.children,tit=(sp[0]&&sp[0].textContent)||"",meta=sp[1]?sp[1].outerHTML:"";const d=document.createElement("details");d.className="dsec";d.dataset.s=tit;if(A.has(tit))d.open=true;d.innerHTML=`<summary><span>${esc(tit.charAt(0).toUpperCase()+tit.slice(1).toLowerCase())}</span><span class="meta">${sp[1]&&sp[1].tagName!=="SELECT"&&sp[1].textContent.length<30?esc(sp[1].textContent):""}</span></summary><div class="dsb"></div>`;d.addEventListener("toggle",()=>{d.open?A.add(tit):A.delete(tit)});n.replaceWith(d);cur=d.querySelector(".dsb");return}
   if(cur)cur.appendChild(n)})}
 function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));document.querySelectorAll(".hb2").forEach(b=>b.classList.toggle("on",b.dataset.v===v));const el=$("#v"),y=scrollY;
- if(!["oggi","filiera","timeline","chi","temi","archivio","miei"].includes(v))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));document.querySelectorAll(".hb2").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+ if(!["oggi","filiera","timeline","chi","temi","archivio","miei"].includes(v)||(v==="miei"&&(PUB||(D&&D.privato===false))))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));document.querySelectorAll(".hb2").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
  try{el.innerHTML={oggi:vOggi5,filiera:vFiliera,timeline:vTimeline,chi:vProt,temi:vTemi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
  bind(el);
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);

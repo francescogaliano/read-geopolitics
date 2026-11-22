@@ -61,13 +61,26 @@ export async function aiSito(request, env, p, method, url, h) {
   }
   if (p === "/ai/esci") { const id = h.getCookie(request, COOKIE); if (id) await h.kvDel(env, "sess:" + id); return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie("", 0) } }); }
   if (p === "/ai/api" && method === "POST") {
-    if (!(await aiSessione(request, env, h))) return h.fail(401, "unauthorized");
+    /* modo pubblico (variabile AI_PUBBLICO = "1"): senza accesso si leggono solo i contenuti, mai i clienti */
+    const io = await aiSessione(request, env, h), pub = !io && env.AI_PUBBLICO === "1";
+    if (!io && !pub) return h.fail(401, "unauthorized");
     const b = await request.json().catch(() => null);
-    if (!b || !String(b.action || "").startsWith("ai_")) return h.fail(400, "azione_non_ammessa");
+    if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
+    b._pubblico = !io;
+    if (pub && b.action === "ai_get") {
+      const k = new Request("https://ai.cache/get/" + encodeURIComponent(String(b.data || "oggi"))), hit = await caches.default.match(k);
+      if (hit) return hit;
+      const r0 = await aiPanelApi(env, b, { kvGet: h.kvGet, kvSet: h.kvSet, romeToday: h.romeToday });
+      if (!(r0 instanceof Response)) return r0 ? h.json(r0) : h.fail(404, "not_found");
+      const out = new Response(r0.body, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" } });
+      await caches.default.put(k, out.clone());
+      return out;
+    }
     const r = await aiPanelApi(env, b, { kvGet: h.kvGet, kvSet: h.kvSet, romeToday: h.romeToday });
     return r instanceof Response ? r : r ? h.json(r) : h.fail(404, "not_found");
   }
-  if ((p === "/ai" || p === "/ai/") && method === "GET") return (await aiSessione(request, env, h)) ? html(pagina(h.AI_HTML)) : html(LOGIN, 401);
+  if (p === "/ai/accedi" && method === "GET") return (await aiSessione(request, env, h)) ? new Response(null, { status: 302, headers: { location: "/ai" } }) : html(LOGIN, 200);
+  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : html(LOGIN, 401); }
   return h.fail(404, "not_found");
 }
 /* /ig/ai-entra: dal pannello (cookie /ig) apre /ai senza password */
