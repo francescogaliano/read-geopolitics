@@ -227,7 +227,10 @@ const $=s=>document.querySelector(s),esc=s=>String(s!=null&&typeof s==="object"?
 const rich=s=>esc(s).replace(/\*(.+?)\*/g,"<b>$1</b>");
 const NS=(t,a,x)=>`<${t} `+Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")+">"+(x??"")+`</${t}>`;
 const gg=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(D.oggi+"T12:00:00Z"))/864e5);
-const corto=(t,n)=>{t=String(t||"");if(t.length<=n)return t;const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
+/* accorcia senza lasciare frasi a metà: per i testi lunghi (oltre 60 caratteri) tiene frasi intere; solo le etichette brevi si tagliano con «…» */
+const corto=(t,n)=>{t=String(t||"").trim();if(t.length<=n)return t;
+ if(n>=60){const fr=t.split(/(?<=[.!?»])\s+(?=[A-ZÀ-ÖØ-Ý«"(*0-9])/);let out="";for(const f of fr){if((out+" "+f).trim().length>n*1.15)break;out=(out+" "+f).trim()}if(!/[.!?»]$/.test(out))out="";if(out.length>=n*.45)return out;const p=fr[0]?fr[0].trim():"";if(p&&p.length<=n*1.8)return p}
+ const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
 const SITO=location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
 const PUB=!!window.AI_PUB;
 if(SITO){const v=document.getElementById("via");if(v){v.textContent=PUB?"accedi":"esci";v.href=PUB?"/ai/accedi":"/ai/esci"}}
