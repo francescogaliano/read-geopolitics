@@ -522,7 +522,7 @@ function tesiSheet(t){const d=t.direzione||{},V={su:["↑","sale","var(--up)"],g
  return `<p class="serif" style="font:600 18px/1.35 'Source Serif 4',Georgia,serif;margin:0">${rich(t.uno||"")}</p>
  <div class="tv"><div class="big" style="color:${V[2]}">${V[0]}<small>${V[1]}</small></div><div><div class="wk">${W.map(x=>`<i class="${x}">${x==="u"?"▲":x==="d"?"▼":x==="m"?"":x==="s"?"●":""}</i>`).join("")}</div><div class="wkl"><span>8 settimane fa</span><span>oggi</span></div></div></div>
  <p class="n" style="margin-top:6px">${(t.prove||[]).length} prove · ${nu} fatti la rafforzano, ${ng} la indeboliscono. ${d.verso==="incerta"||!d.verso?"Servono almeno 3 fatti in 8 settimane per una direzione.":""}</p>
- ${MS.length?`<span class="k">Mossa oggi da</span><div>${MS.map(([l,i])=>`<div class="lvr" data-sh="mov:${i}"><i style="background:${LIVC[livOf(l)][1]}"></i><span>${esc(l.breve||corto(String(l.titolo||"").replace(/\*/g,""),90))}</span><b>›</b></div>`).join("")}</div>`:""}
+ ${MS.length?`<span class="k">Mossa oggi da</span><div>${MS.map(([l,i])=>`<div class="lvr" data-sh="mov:${i}"><i style="background:${TM(l)[1]}"></i><span>${esc(l.breve||corto(String(l.titolo||"").replace(/\*/g,""),90))}</span><b>›</b></div>`).join("")}</div>`:""}
  ${L.length?`<span class="k">Dove si vede</span><div>${L.map(a=>`<div class="lvr" data-sh="liv:${a.id}"><i style="background:${(LIVC[a.id]||[,"var(--acc)"])[1]}"></i><span>${esc((D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id)}</span><b>›</b></div>`).join("")}</div>`:""}
  ${t.cosa?`<span class="k">Il racconto</span><p>${rich(t.cosa)}</p>`:""}
  ${P.length?`<span class="k">Le prove</span><div>${P.map(p=>`<div class="pv"><div class="v">${esc(p.val||"·")}<small>${esc(p.data||"")}</small></div><div><p>${rich(p.testo||"")}</p><div class="s">${p.fonte?(p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.fonte.nome)}</a>`:esc(p.fonte.nome)):""}${p.tier?`<span class="tier ${esc(p.tier)}" title="${p.tier==="T1"?"documento ufficiale o aziendale":p.tier==="T2"?"stampa autorevole":"altra fonte"}">${esc(p.tier)}</span>`:""}</div></div></div>`).join("")}</div><p class="n"><span class="tier T1">T1</span> documento ufficiale o aziendale · <span class="tier T2">T2</span> stampa autorevole · <span class="tier T3">T3</span> altra fonte</p>`:""}
@@ -568,9 +568,9 @@ function graficoFig(g){if(!g||!(g.serie||[]).length)return"";const S=g.serie,mx=
  return scFig(f(ev.v),`${esc(ev.et)} · ${esc(g.titolo||"")}${g.nota?` <span style="display:block;margin-top:3px">${rich(g.nota)}</span>`:""}`,S.map(x=>({et:x.et,w:Math.abs(+x.v)/mx*100,c:x===ev?"#E8A33D":"#5C6B78",lab:f(x.v)})))}
 
 /* ---------- STORIA ---------- */
-function storiaScheda(l,i,E){const lvk=livOf(l),lv=LIVC[lvk],F=l.filone&&filOf(l.filone),cf=l.come_funziona||{},sc=cf.schema||{},C=l.confidenza||{},N=(E.letture||[]).length,q=l.domanda||((E.domande||[])[i]||{}).q;
+function storiaScheda(l,i,E){const lv=TM(l),F=l.filone&&filOf(l.filone),cf=l.come_funziona||{},sc=cf.schema||{},C=l.confidenza||{},N=(E.letture||[]).length,q=l.domanda||((E.domande||[])[i]||{}).q;
  const tp=F?tappaN(F,E.id,i).replace(/^ · /,""):"";
- let h=scHero({col:lv[1],icon:lv[2],kick:esc(l.tema||lv[0]),sub:`${esc(dl(E.id))} · storia ${i+1} di ${N}`,ans:rich(l.breve||String(l.titolo||"").replace(/\*/g,"")),pc:rich(l.perche_conta||l.perche_breve||PRIMA1(l.lettura)),tag:F?`Filone · ${esc(F.titolo)}${tp?" · "+esc(tp):""}`:"",tagSh:F?"fil:"+F.id:""});
+ let h=scHero({col:lv[1],icon:lv[2],kick:esc(lv[0])+(l.tema&&l.tema.includes("·")?` <span style="color:var(--mut);font-weight:400">· ${esc(l.tema.split("·").slice(1).join("·").trim())}</span>`:""),sub:`${esc(dl(E.id))} · storia ${i+1} di ${N}`,ans:rich(l.breve||String(l.titolo||"").replace(/\*/g,"")),pc:rich(l.perche_conta||l.perche_breve||PRIMA1(l.lettura)),tag:F?`Filone · ${esc(F.titolo)}${tp?" · "+esc(tp):""}`:"",tagSh:F?"fil:"+F.id:""});
  h+=graficoFig(l.grafico);
  if(q)h+=scTip("brief","#86B4EA","Per chi lavora con l'IA",esc(q));
  const fatti=l.fatti||[],pro=l.pro||{},con=l.contro||{},nuovo=pro.tesi||con.tesi,seg=l.segnali||[];
@@ -597,7 +597,7 @@ function chiaveScheda(t){const d=t.direzione||{},V={su:["▲","si rafforza","#5F
  h+=scSecs([
   {sez:"prove",titolo:"Le prove",prev:esc(P.slice(0,4).map(p=>p.fonte&&p.fonte.nome).filter(Boolean).join(", ")),vis:mvN(P.length),body:P.length?P.map(p=>`<div class="pv"><div class="v">${esc(p.val||"·")}<small>${esc(p.data?dl(p.data):"")}</small></div><div><p>${rich(p.testo||"")}</p><div class="s">${p.fonte?(p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.fonte.nome)}</a>`:esc(p.fonte.nome)):""} · ${p.tier==="T1"?"documento ufficiale":p.tier==="T2"?"stampa":"altra fonte"}</div></div></div>`).join(""):""},
   {sez:"storia",titolo:"Come è cambiata",prev:last?esc(`${dl(last.data)}: ${corto(last.testo,70)}`):"",vis:mvDots(S.length),body:S.length?`<div class="dots">${S.slice(-8).reverse().map(x=>`<div><b>${esc(dl(x.data))}</b> · ${dir(x.effetto)} ${rich(x.testo)}</div>`).join("")}</div>`:""},
-  {sez:"filone",titolo:"Storie e filoni",prev:esc(MS.length?(MS[0][0].breve||""):FL.length?FL[0].titolo:""),vis:mvDots(MS.length+FL.length,"#5C6B78"),body:(MS.length||FL.length)?`${MS.map(([l,i])=>`<div class="lvr" data-sh="mov:${i}"><i style="background:${LIVC[livOf(l)][1]}"></i><span>${esc(l.breve||"")}</span><b>›</b></div>`).join("")}${FL.map(f=>`<div class="lvr" data-sh="fil:${esc(f.id)}"><i style="background:#F08A3C"></i><span>${esc(f.titolo)}</span><b>${(f.tappe||[]).length} tappe ›</b></div>`).join("")}`:""},
+  {sez:"filone",titolo:"Storie e filoni",prev:esc(MS.length?(MS[0][0].breve||""):FL.length?FL[0].titolo:""),vis:mvDots(MS.length+FL.length,"#5C6B78"),body:(MS.length||FL.length)?`${MS.map(([l,i])=>`<div class="lvr" data-sh="mov:${i}"><i style="background:${TM(l)[1]}"></i><span>${esc(l.breve||"")}</span><b>›</b></div>`).join("")}${FL.map(f=>`<div class="lvr" data-sh="fil:${esc(f.id)}"><i style="background:#F08A3C"></i><span>${esc(f.titolo)}</span><b>${(f.tappe||[]).length} tappe ›</b></div>`).join("")}`:""},
   {sez:"perte",titolo:"Per chi lavora con l'IA",prev:esc(corto(t.interpretazione||t.domanda||"",80)),vis:"",body:(t.interpretazione||t.domanda)?`${t.interpretazione?`<p>${rich(t.interpretazione)}</p>`:""}${t.domanda?`<p class="sub" style="color:var(--acc)">«${esc(t.domanda)}»</p>`:""}`:""},
   {sez:"dove",titolo:"Dove si vede",prev:esc(L.map(a=>(D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id).join(" · ")),vis:"",body:L.length?L.map(a=>`<div class="lvr" data-sh="liv:${a.id}"><i style="background:${(LIVC[a.id]||[,"#86B4EA"])[1]}"></i><span>${esc((D.livelli.find(x=>x[0]===a.id)||[])[1]||a.id)}</span><b>›</b></div>`).join(""):""},
   {sez:"fonti",titolo:"Il racconto",prev:esc(corto(t.cosa||"",80)),vis:"",body:t.cosa?`<p>${rich(t.cosa)}</p>`:""}]);
@@ -680,6 +680,13 @@ function vOggi4(){const E=D.edizione;if(!E)return flow("Oggi","quali chiavi muov
 
 /* ---------- Oggi, impaginato come Read Geopolitics (dal 22/11/2026) ---------- */
 const LIVC={governi:["Regole","#6FA8DC","flag"],aziende:["Aziende","#4FC3B5","brief"],lavoro:["Lavoro","#E07FB0","user"],famiglie:["Famiglie","#F2C14E","users"],persona:["Persone","#9CCC65","users"],infrastruttura:["Infrastruttura","#F08A3C","bolt"],capitali:["Capitali","#E8C14D","cap"],modelli:["Modelli","#A796F5","atom"]};
+/* gli 8 temi (22/11/2026): l'unica classificazione visibile, come le regioni su Read Geopolitics */
+const TEMI={modelli:["Modelli e prezzi","#A796F5","atom"],infrastruttura:["Infrastruttura ed energia","#F08A3C","bolt"],capitali:["Capitali","#E8C14D","cap"],regole:["Regole e rischi","#6FA8DC","flag"],adozione:["Adozione","#4FC3B5","brief"],lavoro:["Lavoro","#E07FB0","user"],societa:["Società","#F2D24E","users"],sovranita:["Sovranità e Cina-USA","#D9534F","map"]};
+const LIV2TEMA={governi:"regole",aziende:"adozione",lavoro:"lavoro",famiglie:"societa",persona:"societa",infrastruttura:"infrastruttura",capitali:"capitali",modelli:"modelli"};
+function temaOf(l){if(!l)return"adozione";if(l.tema_id&&TEMI[l.tema_id])return l.tema_id;const t=String(l.tema||"").toLowerCase();
+ if(/cina|sovran|export|geopolit/.test(t))return"sovranita";if(/regol|ai act|legge|norm|rischi|garante|privacy|copyright|diritto/.test(t))return"regole";if(/societ|consum|scuol|salute|famigl|informaz/.test(t))return"societa";
+ return LIV2TEMA[livOf(l)]||"adozione"}
+const TM=l=>TEMI[temaOf(l)];
 function livOf(l){if(l.livello&&LIVC[l.livello])return l.livello;const t=String(l.tema||"").toLowerCase().split("·")[0];
  return /infrastr|energ|chip|data cent|calcol/.test(t)?"infrastruttura":/model|ricerc/.test(t)?"modelli":/capital|soldi|borsa|invest|finanz/.test(t)?"capitali":/lavor/.test(t)?"lavoro":/regol|govern|legg|norm|ue\b|europa/.test(t)?"governi":/famigl|consum|scuol/.test(t)?"famiglie":/person|salute/.test(t)?"persona":"aziende"}
 const LETTE=(()=>{try{return new Set(JSON.parse(localStorage.getItem("ai_lette")||"[]"))}catch(e){return new Set()}})();
@@ -691,9 +698,9 @@ function vOggi5(){const E=D.edizione;if(!E)return `<div class="empty">Nessuna ed
  h+=`<div class="prog">${LT.map((l,i)=>`<i class="${LETTE.has(lid(i))?"on":""}"></i>`).join("")}</div>`;
  const N=E.numero;
  if(E.frase||N)h+=`<div class="sixty"><span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase">In 60 secondi</span>${E.frase?`<p>${rich(E.frase)}</p>`:""}${N&&N.val?`<div class="nm" data-sh="numero:"><b>${esc(N.val)}</b><span>${rich(corto(N.testo||"",110))}</span></div>`:""}</div>`;
- const LV=[...new Set(LT.map(livOf))];
- if(LV.length)h+=`<div class="lgd">${LV.map(k=>`<span><i style="background:${LIVC[k][1]}"></i>${LIVC[k][0]}</span>`).join("")}</div>`;
- h+=`<div class="osec"><b>Le storie</b><span>${LT.length}</span></div>`+LT.map((l,i)=>{const lv=LIVC[livOf(l)],F=l.filone&&filOf(l.filone),e=l.tesi&&l.tesi.effetto;
+ const LV=[...new Set(LT.map(temaOf))];
+ if(LV.length)h+=`<div class="lgd">${LV.map(k=>`<span><i style="background:${TEMI[k][1]}"></i>${TEMI[k][0]}</span>`).join("")}</div>`;
+ h+=`<div class="osec"><b>Le storie</b><span>${LT.length}</span></div>`+LT.map((l,i)=>{const lv=TM(l),F=l.filone&&filOf(l.filone),e=l.tesi&&l.tesi.effetto;
   return `<div class="ost${LETTE.has(lid(i))?" letta":""}" data-sh="mov:${i}" style="border-left-color:${lv[1]}"><span class="nn">0${i+1}</span><div style="min-width:0"><div class="kk" style="color:${lv[1]}">${esc(l.tema||lv[0])}</div><h3>${rich(l.breve||String(l.titolo||""))}</h3><p>${rich(l.perche_breve||PRIMA(l.lettura))}</p><div class="tt">${l.tesi?`Tesi <b style="color:${tcol(l.tesi.id)}">${tN(l.tesi.id)}</b> ${esc(tBreve(l.tesi.id))} ${e?`<b style="color:${(EFF[e]||EFF.incerta)[2]}">${ARR[e]||""}</b>`:""}`:""}${F?`${l.tesi?" · ":""}filone ${esc(F.titolo)}`:""}</div></div></div>`}).join("");
  const Q=LT.map((l,i)=>({q:l.domanda||((E.domande||[])[i]||{}).q,p:((E.domande||[])[i]||{}).perche||"",i})).filter(x=>x.q);
  if(Q.length)h+=`<div class="osec"><b>In riunione</b><span>${Q.length} ${Q.length===1?"domanda":"domande"}</span></div>`+Q.map(x=>`<div class="oq" data-sh="mov:${x.i}"><b>${esc(x.q)}</b>${x.p?`<span>${rich(corto(x.p,140))}</span>`:""}</div>`).join("");
