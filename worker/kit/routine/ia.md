@@ -43,7 +43,9 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
      "confidenza": {"fatti":"alta|media|bassa","effetti":"alta|media|bassa","perche": max 15 parole};
      "segnali": 1-2 cose concrete da osservare nei prossimi giorni o settimane;
      "filone": id del filone (punto 5-bis).
-     "livello": uno di governi | aziende | lavoro | famiglie | persona | infrastruttura | capitali | modelli — dà il colore della storia nella pagina (come le regioni su Read Geopolitics).
+     "tema_id": OBBLIGATORIO, uno solo di modelli | infrastruttura | capitali | regole | adozione | lavoro | societa | sovranita (dal 22/11/2026: è l'unica classificazione visibile e dà il colore della storia, come le regioni su Read Geopolitics). Significati: modelli = Modelli e prezzi (capacità, listini, costo per lavoro finito, aperti contro chiusi); infrastruttura = Infrastruttura ed energia (chip, data center, rete elettrica); capitali = investimenti, quotazioni, ricavi; regole = Regole e rischi (AI Act, legge italiana, Garante, incidenti, diritto d'autore); adozione = imprese e PA, dal pilota alla produzione; lavoro = mansioni, ruoli, competenze; societa = consumatori, scuola, salute, informazione; sovranita = Sovranità e Cina-USA (export di chip, modelli cinesi, Europa). Il campo "tema" resta come occhiello breve («Data center · Europa»);
+     "paese": uno di italia | ue | usa | cina | altro (dove succede il fatto principale); "settore": facoltativo, se la storia riguarda un settore (banche, lusso e moda, retail, PA, sanità, industria, telecomunicazioni, energia, media, trasporti…);
+     "modelli": facoltativo, i modelli citati come [{"nome","aperto": true|false}] — serve a segnare ○ pesi aperti / ● chiusi.
    "lettura" e "diversa" restano (servono alla vista d'insieme): "lettura" può riassumere la sintesi, "diversa" la tesi contraria. Le parole del testo che sono nel glossario vengono sottolineate in automatico: usa i nomi nella stessa forma del glossario (es. «Moonshot AI», «modello a pesi aperti»).
    - "cambiato": facoltativo, 1-4 [{"testo": max 20 parole, cosa è cambiato rispetto a ieri o all'ultima tappa su un filone già aperto («Cursor: da indagata a "valuta di lasciare Kimi"»), "filone": id}] — solo sviluppi veri di storie già seguite;
    - "dipendenze": facoltativo, quando aiuta: {"nodi":[{"id","nome","evid"}], "archi":[{"da","a","testo","forte"}], "nota"} — chi dipende da chi (max 6 nodi);
@@ -85,7 +87,28 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    - "chi_lo_dice": azienda | fornitore | stampa | analisti, dalla fonte.
    Scrivi con `update` (solo i campi cambiati, con --if-version) in batch da 50. Nel resoconto: quanti casi sistemati, quanti restano incompleti.
 6-quater. CLIENTI. Per ogni cliente toccato oggi o con un fatto nuovo: update di `ai_clienti/<id>` con "domanda": la domanda più utile da fargli adesso, max 15 parole, legata al suo stadio («Il pilota o9 sulla pelletteria è passato in produzione? Con quali numeri?»). Se un fatto nuovo riguarda un suo fronte IA, aggiorna "aree.<fronte>" {stato: si | gruppo, testo max 8 parole, data}. Fronti: cx (negozio e cliente), contenuti, prodotti, processi, pianificazione, ruolo.
-7. CONTROLLO prima di salvare: ogni lettura ha fonti; «pro» e «contro» hanno ciascuna almeno una fonte e la stessa misura; ogni lettura ha un filone; ogni voce nuova del glossario ha una fonte; nessun fatto senza data; nessuna cifra arrotondata in modo diverso da quello letto; «lettura» e «diversa» non sono parafrasi una dell'altra; la frase si capisce da sola; niente parole di giudizio sulle persone. Dopo il salvataggio rileggi con get.
+7. CONTROLLO AUTOMATICO prima di salvare (dal 22/11/2026). Esegui sul JSON dell'edizione, salvato in /tmp/ed.json, questo controllo e correggi finché non stampa «ok»:
+   python3 - <<'PY'
+   import json,re,sys
+   e=json.load(open('/tmp/ed.json'));E=[]
+   T={"modelli","infrastruttura","capitali","regole","adozione","lavoro","societa","sovranita"}
+   s=json.dumps(e,ensure_ascii=False)
+   if "[object Object]" in s: E.append("[object Object] nel testo")
+   if re.search(r"(…|\.\.\.)\"",s): E.append("testo troncato con …")
+   for i,l in enumerate(e.get("letture",[])):
+     if l.get("tema_id") not in T: E.append(f"lettura {i}: tema_id mancante o non in lista")
+     if len(str(l.get("breve","")).split())>14: E.append(f"lettura {i}: breve oltre 14 parole")
+     if len(str(l.get("perche_conta","")).split())>45: E.append(f"lettura {i}: perche_conta oltre 45 parole")
+     if len(l.get("fonti",[]))<3: E.append(f"lettura {i}: meno di 3 fonti")
+     for k in ("pro","contro"):
+       if l.get(k) and not l[k].get("fonti"): E.append(f"lettura {i}: {k} senza fonte")
+     for k in ("breve","perche_conta","due_righe","perche_breve"):
+       if k in l and not str(l[k]).strip(): E.append(f"lettura {i}: {k} vuoto")
+   n=e.get("numero") or {}
+   if n.get("val") and not (n.get("fonti") and n.get("data")): E.append("numero del giorno senza fonte o data")
+   print("ok" if not E else "\n".join(E))
+   PY
+   Poi: ogni lettura ha fonti; «pro» e «contro» hanno ciascuna almeno una fonte e la stessa misura; ogni lettura ha un filone; ogni voce nuova del glossario ha una fonte; nessun fatto senza data; nessuna cifra arrotondata in modo diverso da quello letto; «lettura» e «diversa» non sono parafrasi una dell'altra; la frase si capisce da sola; niente parole di giudizio sulle persone. Dopo il salvataggio rileggi con get.
 
 8. RESOCONTO (breve): letture scelte e perché, voci del glossario aggiunte, filoni aperti o aggiornati, tesi toccate con effetto, ricerche e pagine usate, fonti non raggiungibili, dubbi.
 9. AVVISO DI FINE: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"ia","fase":"fine","esito":"ok oppure errore","nota":"una riga"}'`

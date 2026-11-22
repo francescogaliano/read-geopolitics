@@ -60,6 +60,11 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    - Ogni domenica: aggiorna le voci superate dai fatti della settimana (ruoli, acquisizioni, nuovi modelli) e aggiungi "tesi" dove manca.
    - FILONI: rileggi `ai_filoni`, scrivi la "sintesi" aggiornata dei filoni attivi, segna «dormiente» quelli senza tappe da 21 giorni e «chiuso» quelli risolti (decisione presa, accordo firmato, prodotto ritirato), con l'ultima tappa che dice perché.
 
+5-quinquies. TEMI E PULIZIA DEI CASI (dal 22/11/2026; una volta sola, poi solo sui casi nuovi). Senza ricerche nuove, con i dati già nel database:
+   - su ogni caso `ai_casi` imposta "paese" a uno di italia | ue | usa | cina | altro (dal campo paese o dall'azienda), "settore_norm" a uno di banche e assicurazioni | lusso e moda | retail e beni di consumo | PA | sanità | industria | telecomunicazioni e media | energia e utility | trasporti e viaggi | tecnologia | altro, e "tema_id" (quasi sempre adozione);
+   - su ogni filone `ai_filoni` imposta "tema_id" (stessa lista della routine «ia»);
+   - usa `python3 /tmp/rgdb.py batch` a blocchi di 50 e scrivi nel resoconto quanti casi hai sistemato e quanti restano «altro».
+
 6. TESI: rivedi la direzione di ogni tesi (regola delle 8 settimane come nella routine «ia») e segnala nel resoconto quelle senza fatti da 4 settimane.
 
 7. CONTROLLO: ogni numero ha fonte e data; le due letture hanno la stessa misura; gli intrecci puntano a id esistenti; nessun fatto inventato per riempire una casella (una casella può restare con "dove_siamo" e "confidenza":"bassa"). Rileggi con get dopo ogni set.
