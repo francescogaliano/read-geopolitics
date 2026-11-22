@@ -51,7 +51,7 @@ export async function aiSito(request, env, p, method, url, h) {
     const b = await request.json().catch(() => null);
     if (!b || !String(b.action || "").startsWith("ai_")) return h.fail(400, "azione_non_ammessa");
     const r = await aiPanelApi(env, b, { kvGet: h.kvGet, kvSet: h.kvSet, romeToday: h.romeToday });
-    return r ? h.json(r) : h.fail(404, "not_found");
+    return r instanceof Response ? r : r ? h.json(r) : h.fail(404, "not_found");
   }
   if ((p === "/ai" || p === "/ai/") && method === "GET") return (await aiSessione(request, env, h)) ? html(pagina(h.AI_HTML)) : html(LOGIN, 401);
   return h.fail(404, "not_found");

@@ -139,7 +139,7 @@ const gg=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(D.oggi+"T12:00:00Z"))/
 const corto=(t,n)=>{t=String(t||"");if(t.length<=n)return t;const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
 const SITO=location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
 if(SITO){const v=document.getElementById("via");if(v){v.textContent="esci";v.href="/ai/esci"}}
-function api(o){return fetch(SITO?"/ai/api":"/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href=SITO?"/ai":"/ig/panel";throw new Error("401")}return r.json()})}
+function api(o){return fetch(SITO?"/ai/api":"/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href=SITO?"/ai":"/ig/panel";throw new Error("401")}return r.text().then(t=>{try{return JSON.parse(t)}catch(e){throw new Error(`il server ha risposto ${r.status} senza dati${/<title>([^<]{0,80})/i.test(t)?" («"+t.match(/<title>([^<]{0,80})/i)[1].trim()+"»)":""}. Riprova tra poco.`)}})})}
 let D=null,V="oggi";
 const COL={t1:"var(--t1)",t2:"var(--t2)",t3:"var(--t3)",t4:"var(--t4)",t5:"var(--t5)",t6:"var(--t6)",t7:"var(--t7)",t8:"var(--t8)",t9:"var(--t9)"};
 const tcol=id=>COL["t"+(((parseInt(String(id||"").replace(/\D/g,""))||1)-1)%9+1)];
