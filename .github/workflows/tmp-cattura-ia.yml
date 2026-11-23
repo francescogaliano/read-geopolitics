@@ -1,0 +1,15 @@
+# TEMPORANEO (23/11/2026, autorizzato da Francesco): scarica i dati pubblici di ai.readgeopolitics.com per la storia Instagram. Da cancellare con il ramo.
+name: tmp cattura IA
+on:
+  push:
+    branches: [tmp-cattura-ia]
+jobs:
+  cattura:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir out
+          curl -s -X POST https://ai.readgeopolitics.com/api -d '{"action":"ai_get","data":""}' -o out/ai_get.json
+          ls -la out; head -c 200 out/ai_get.json
+      - uses: actions/upload-artifact@v4
+        with: { name: cattura, path: out }
