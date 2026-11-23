@@ -1005,8 +1005,8 @@ function vFiliera(){const G=filGrafo(),W=Math.max(320,Math.min(728,(($("#v")||{}
   y+=rh});
  const ed=E.map(e=>{const[x1,y1]=pos[e.da],[x2,y2]=pos[e.a],hl=e.da===FSEL||e.a===FSEL,off=spento(vis[e.da])||spento(vis[e.a]),my=(y1+y2)/2,w=Math.min(3.2,1+Math.log2(e.n)*.6);
   const d=`M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}`;
-  /* 23/11/2026: il flusso scorre sempre dal fornitore a chi riceve (da → a), sopra la linea */
-  return `<path d="${d}" fill="none" stroke="${FEC[e.tipo][0]}" stroke-width="${hl?w+1:w}" stroke-opacity="${off?.05:hl?.95:FSEL?.12:.3}"/><path class="fflow" d="${d}" fill="none" stroke="${hl?"#EEF4FA":FEC[e.tipo][0]}" stroke-width="${(hl?w+1:w)+.6}" stroke-linecap="round" stroke-opacity="${off?0:hl?1:FSEL?.22:.8}"/>`}).join("");
+  /* 23/11/2026: sui legami accesi (attore selezionato) il flusso scorre dal fornitore a chi riceve (da → a); gli altri restano fermi */
+  return `<path d="${d}" fill="none" stroke="${FEC[e.tipo][0]}" stroke-width="${hl?w+1:w}" stroke-opacity="${off?.05:hl?.95:FSEL?.12:.3}"/>${hl?`<path class="fflow" d="${d}" fill="none" stroke="#EEF4FA" stroke-width="${w+1.6}" stroke-linecap="round" stroke-opacity="1"/>`:""}`}).join("");
  const fil=[["tutto","Tutto"],["movimento","In movimento"],["aperti","○ Aperti"],["europa","Europa"]];
  const usati=[...new Set(E.map(e=>FEC[e.tipo][1]))],lgC=Object.fromEntries(Object.values(FEC).map(([c,l])=>[l,c]));
  let h=`<div class="o-h2">Filiera</div><div class="o-meta">Chi fornisce cosa a chi, dall'energia a chi usa l'IA. Tocca un pallino: sotto il grafico si apre la sua scheda.</div>
