@@ -3,7 +3,7 @@
    - /ai              la pagina (ai.html); senza accesso mostra il login
    - /ai/login        POST {password}: stessa password del pannello; cookie ai_sess con Path=/
    - /ig/ai-entra     dal pannello già aperto: crea la sessione e porta su ai.readgeopolitics.com/entra con un gettone usa-e-getta (niente password)
-   - /ai/entra        scambia il gettone con il cookie di accesso. Il sito pubblico non mostra nessun «accedi»: /ai/accedi resta raggiungibile solo a chi conosce l'indirizzo
+   - /ai/entra        scambia il gettone con il cookie di accesso. Il sito pubblico non ha nessun ingresso con password: /ai/accedi e /ai/login rispondono «non trovata»
    - /ai/esci         chiude la sessione
    - /ai/api          POST: solo le azioni ai_* (aiPanelApi)
    - /ai/manifest.webmanifest, /ai/icon-180|192|512.png   app sul telefono (simbolo del logo, senza scritta)
@@ -52,6 +52,9 @@ export async function aiSito(request, env, p, method, url, h) {
   { const m = p.match(/^\/ai\/logo\/([a-z0-9.-]+)$/); if (m && method === "GET") return logo(m[1]); }
   if (p === "/ai/icon.svg") return new Response(ICON, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   if (p === "/ai/manifest.webmanifest") return new Response(MANIFEST, { headers: { "content-type": "application/manifest+json", "cache-control": "no-cache" } });
+  /* 23/11/2026: niente ingresso con password dal sito. Si entra solo dal pannello (già protetto) con il gettone di /ai/entra.
+     /ai/accedi e /ai/login rispondono come pagine inesistenti, così non c'è nessuna porta da indovinare. */
+  if (p === "/ai/accedi" || p === "/ai/login") return new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } });
   if (p === "/ai/login" && method === "POST") {
     const b = await request.json().catch(() => ({})), ip = request.headers.get("cf-connecting-ip") || "x";
     const rl = (await h.kvGet(env, "rl:" + ip)) || { n: 0, t: Date.now() };
@@ -81,9 +84,9 @@ export async function aiSito(request, env, p, method, url, h) {
     const r = await aiPanelApi(env, b, { kvGet: h.kvGet, kvSet: h.kvSet, romeToday: h.romeToday });
     return r instanceof Response ? r : r ? h.json(r) : h.fail(404, "not_found");
   }
-  if (p === "/ai/entra" && method === "GET") { const t = String(url.searchParams.get("t") || ""), r = t && (await h.kvGet(env, "aitok:" + t)); if (t) await h.kvDel(env, "aitok:" + t); if (r && r.exp > Date.now()) return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie(r.id, MAX) } }); return new Response(null, { status: 302, headers: { location: "/ai/accedi" } }); }
+  if (p === "/ai/entra" && method === "GET") { const t = String(url.searchParams.get("t") || ""), r = t && (await h.kvGet(env, "aitok:" + t)); if (t) await h.kvDel(env, "aitok:" + t); if (r && r.exp > Date.now()) return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie(r.id, MAX) } }); return new Response(null, { status: 302, headers: { location: "/ai" } }); }
   if (p === "/ai/accedi" && method === "GET") return (await aiSessione(request, env, h)) ? new Response(null, { status: 302, headers: { location: "/ai" } }) : html(LOGIN, 200);
-  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : html(LOGIN, 401); }
+  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } }); }
   return h.fail(404, "not_found");
 }
 /* /ig/ai-entra: dal pannello (cookie /ig) apre /ai senza password */
