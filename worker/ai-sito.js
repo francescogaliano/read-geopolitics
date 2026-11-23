@@ -110,7 +110,9 @@ export async function aiSito(request, env, p, method, url, h) {
     const rl = (await h.kvGet(env, "rl:" + ip)) || { n: 0, t: Date.now() };
     if (Date.now() - rl.t > 900000) { rl.n = 0; rl.t = Date.now(); }
     if (rl.n >= 5) { await h.kvDel(env, "aik:" + t); return h.json({ ok: false, error: "troppi_tentativi" }, 429); }
-    if (!h.safeEq(String(b.password || ""), env.PANEL_PASSWORD || env.WRITE_TOKEN || "")) {
+    /* vale la password del pannello e, se impostata, anche la frase AI_SEGRETO (usata nella prima versione dell'ingresso); spazi ai bordi ignorati */
+    const pw = String(b.password || "").trim(), ok = [env.PANEL_PASSWORD || env.WRITE_TOKEN, env.AI_SEGRETO].some((x) => x && h.safeEq(pw, String(x).trim()));
+    if (!ok) {
       rl.n++; await h.kvSet(env, "rl:" + ip, rl); k.n++;
       if (k.n >= 3) await h.kvDel(env, "aik:" + t); else await h.kvSet(env, "aik:" + t, k);
       return h.json({ ok: false, error: k.n >= 3 ? "scaduta" : "password_errata" }, 401);
