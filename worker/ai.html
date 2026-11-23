@@ -71,6 +71,7 @@ p{margin:8px 0 0}.k{color:var(--mut);font-size:12px;font-weight:600;letter-spaci
 .tp-fl{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:11px 0;border-top:1px solid var(--line);cursor:pointer;min-height:48px}.tp-fl b{font-weight:600}.tp-fl small{display:block;color:#9FB0BE;font-size:13px}.tp-fl>span:last-child{color:var(--mut)}
 .mdn{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px;margin-top:12px}.mdn>div{border:1px solid var(--line);border-radius:10px;padding:10px;background:#0E161E}.mdn b{display:block;font:700 19px/1.1 "Source Serif 4",Georgia,serif;color:#E9C46A}.mdn small{display:block;font-size:11px;color:var(--mut);margin-top:3px;line-height:1.3}
 .mdf{display:grid;gap:8px;margin-top:12px}.mdf>div{border-left:3px solid;padding:4px 0 4px 12px;font-size:14.5px}.mdf span{display:block;font:700 10.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}.mdf em{color:var(--mut);font-style:normal}
+.fflow{stroke-dasharray:2 10;animation:fflow 1.1s linear infinite}@keyframes fflow{to{stroke-dashoffset:-24}}
 .bnav{position:fixed;left:0;right:0;bottom:0;z-index:200;margin:0;gap:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(14,22,30,.97);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);border-bottom:0;padding:4px max(4px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));overflow:visible}
 .bnav button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 4px;font-size:11px;color:var(--mut);position:relative;min-height:44px;border:0!important}
 .bnav button[aria-selected=true]{color:var(--fg)}.bnav button[aria-selected=true] svg{color:var(--acc)}.bnav button[aria-selected=true]:before{content:"";position:absolute;top:-4px;width:28px;height:3px;border-radius:2px;background:var(--acc)}
@@ -1003,7 +1004,9 @@ function vFiliera(){const G=filGrafo(),W=Math.max(320,Math.min(728,(($("#v")||{}
   else{const cy=y+40;L.forEach((n,k)=>disegna(n,Math.round(14+(W-28)*(k+.5)/L.length),cy,cy+19))}
   y+=rh});
  const ed=E.map(e=>{const[x1,y1]=pos[e.da],[x2,y2]=pos[e.a],hl=e.da===FSEL||e.a===FSEL,off=spento(vis[e.da])||spento(vis[e.a]),my=(y1+y2)/2,w=Math.min(3.2,1+Math.log2(e.n)*.6);
-  return `<path d="M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}" fill="none" stroke="${FEC[e.tipo][0]}" stroke-width="${hl?w+1:w}" stroke-opacity="${off?.05:hl?.95:FSEL?.12:.3}"/>`}).join("");
+  const d=`M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}`;
+  /* 23/11/2026: il flusso scorre sempre dal fornitore a chi riceve (da → a), sopra la linea */
+  return `<path d="${d}" fill="none" stroke="${FEC[e.tipo][0]}" stroke-width="${hl?w+1:w}" stroke-opacity="${off?.05:hl?.95:FSEL?.12:.3}"/><path class="fflow" d="${d}" fill="none" stroke="${hl?"#EEF4FA":FEC[e.tipo][0]}" stroke-width="${(hl?w+1:w)+.6}" stroke-linecap="round" stroke-opacity="${off?0:hl?1:FSEL?.22:.8}"/>`}).join("");
  const fil=[["tutto","Tutto"],["movimento","In movimento"],["aperti","○ Aperti"],["europa","Europa"]];
  const usati=[...new Set(E.map(e=>FEC[e.tipo][1]))],lgC=Object.fromEntries(Object.values(FEC).map(([c,l])=>[l,c]));
  let h=`<div class="o-h2">Filiera</div><div class="o-meta">Chi fornisce cosa a chi, dall'energia a chi usa l'IA. Tocca un pallino: sotto il grafico si apre la sua scheda.</div>
