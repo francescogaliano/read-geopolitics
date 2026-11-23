@@ -2,7 +2,8 @@
    ma con accesso, API e «aggiungi a schermata Home» propri, così un giorno si sposta su un dominio suo senza riscritture.
    - /ai              la pagina (ai.html); senza accesso mostra il login
    - /ai/login        POST {password}: stessa password del pannello; cookie ai_sess con Path=/
-   - /ig/ai-entra     dal pannello già aperto: crea la sessione /ai senza ridigitare la password (il cookie del pannello vale solo su /ig)
+   - /ig/ai-entra     dal pannello già aperto: crea la sessione e porta su ai.readgeopolitics.com/entra con un gettone usa-e-getta (niente password)
+   - /ai/entra        scambia il gettone con il cookie di accesso. Il sito pubblico non ha nessun ingresso con password: /ai/accedi e /ai/login rispondono «non trovata»
    - /ai/esci         chiude la sessione
    - /ai/api          POST: solo le azioni ai_* (aiPanelApi)
    - /ai/manifest.webmanifest, /ai/icon-180|192|512.png   app sul telefono (simbolo del logo, senza scritta)
@@ -51,6 +52,9 @@ export async function aiSito(request, env, p, method, url, h) {
   { const m = p.match(/^\/ai\/logo\/([a-z0-9.-]+)$/); if (m && method === "GET") return logo(m[1]); }
   if (p === "/ai/icon.svg") return new Response(ICON, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
   if (p === "/ai/manifest.webmanifest") return new Response(MANIFEST, { headers: { "content-type": "application/manifest+json", "cache-control": "no-cache" } });
+  /* 23/11/2026: niente ingresso con password dal sito. Si entra solo dal pannello (già protetto) con il gettone di /ai/entra.
+     /ai/accedi e /ai/login rispondono come pagine inesistenti, così non c'è nessuna porta da indovinare. */
+  if (p === "/ai/accedi" || p === "/ai/login") return new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } });
   if (p === "/ai/login" && method === "POST") {
     const b = await request.json().catch(() => ({})), ip = request.headers.get("cf-connecting-ip") || "x";
     const rl = (await h.kvGet(env, "rl:" + ip)) || { n: 0, t: Date.now() };
@@ -64,8 +68,23 @@ export async function aiSito(request, env, p, method, url, h) {
   if (p === "/ai/api" && method === "POST") {
     /* modo pubblico (variabile AI_PUBBLICO = "1"): senza accesso si leggono solo i contenuti, mai i clienti */
     const io = await aiSessione(request, env, h), pub = !io && env.AI_PUBBLICO === "1";
-    if (!io && !pub) return h.fail(401, "unauthorized");
     const b = await request.json().catch(() => null);
+    /* 23/11/2026 ingresso nascosto (vale anche nell'app installata sul telefono, che non condivide i cookie con il browser):
+       la frase segreta scritta nella casella di ricerca. Il controllo esiste solo qui sul server: la pagina non contiene né la frase
+       né il meccanismo, e per chiunque altro è una ricerca normale. Frase: AI_SEGRETO se impostata, altrimenti la password del pannello.
+       Tentativi limitati per indirizzo (30 ogni 15 minuti); oltre il limite il controllo si salta, la ricerca funziona lo stesso. */
+    if (!io && b && b.action === "ai_cerca") {
+      const q = String(b.q || ""), seg = env.AI_SEGRETO || env.PANEL_PASSWORD || "", ip = request.headers.get("cf-connecting-ip") || "x";
+      if (seg.length >= 8 && q.length >= 8) {
+        const rl = (await h.kvGet(env, "rlq:" + ip)) || { n: 0, t: Date.now() };
+        if (Date.now() - rl.t > 900000) { rl.n = 0; rl.t = Date.now(); }
+        if (rl.n < 30) {
+          if (h.safeEq(q, seg)) { await h.kvDel(env, "rlq:" + ip); return new Response(JSON.stringify({ ok: true, entra: true, storie: [], brevi: [] }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": cookie(await nuova(env, h), MAX) } }); }
+          rl.n++; await h.kvSet(env, "rlq:" + ip, rl);
+        }
+      }
+    }
+    if (!io && !pub) return h.fail(401, "unauthorized");
     if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti", "ai_c360"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
     b._pubblico = !io;
     if (pub && b.action === "ai_get") {
@@ -80,9 +99,12 @@ export async function aiSito(request, env, p, method, url, h) {
     const r = await aiPanelApi(env, b, { kvGet: h.kvGet, kvSet: h.kvSet, romeToday: h.romeToday });
     return r instanceof Response ? r : r ? h.json(r) : h.fail(404, "not_found");
   }
+  if (p === "/ai/entra" && method === "GET") { const t = String(url.searchParams.get("t") || ""), r = t && (await h.kvGet(env, "aitok:" + t)); if (t) await h.kvDel(env, "aitok:" + t); if (r && r.exp > Date.now()) return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie(r.id, MAX) } }); return new Response(null, { status: 302, headers: { location: "/ai" } }); }
   if (p === "/ai/accedi" && method === "GET") return (await aiSessione(request, env, h)) ? new Response(null, { status: 302, headers: { location: "/ai" } }) : html(LOGIN, 200);
-  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : html(LOGIN, 401); }
+  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } }); }
   return h.fail(404, "not_found");
 }
 /* /ig/ai-entra: dal pannello (cookie /ig) apre /ai senza password */
-export async function aiEntra(env, h) { return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie(await nuova(env, h), MAX) } }); }
+/* 23/11/2026: il pannello sta su un altro indirizzo, quindi non può lasciare il cookie su ai.readgeopolitics.com.
+   Crea la sessione e un gettone usa-e-getta (60 secondi) che il sottodominio scambia con il cookie in /ai/entra. */
+export async function aiEntra(env, h) { const id = await nuova(env, h), t = h.rid(); await h.kvSet(env, "aitok:" + t, { id, exp: Date.now() + 60000 }); return new Response(null, { status: 302, headers: { location: "https://ai.readgeopolitics.com/entra?t=" + t } }); }
