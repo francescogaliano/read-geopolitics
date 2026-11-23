@@ -1,4 +1,4 @@
-# TEMPORANEO (23/11/2026, autorizzato da Francesco): scarica i dati pubblici di ai.readgeopolitics.com per la storia Instagram. Da cancellare con il ramo.
+# TEMPORANEO (23/11/2026, autorizzato da Francesco): dati pubblici e loghi pubblici per la storia Instagram del sito AI. Da cancellare con il ramo.
 name: tmp cattura IA
 on:
   push:
@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir -p tmp-dati
-          curl -s -X POST https://ai.readgeopolitics.com/api -d '{"action":"ai_get","data":""}' -o tmp-dati/ai_get.json
-          python3 -c "import json;d=json.load(open('tmp-dati/ai_get.json'));assert d.get('privato') is False and not d.get('clienti'),'contiene dati privati';print('ok pubblico',len(open('tmp-dati/ai_get.json').read()))"
+          mkdir -p tmp-dati/loghi
+          while read d; do [ -n "$d" ] && curl -s -L "https://www.google.com/s2/favicons?domain=$d&sz=128" -o "tmp-dati/loghi/$d.png"; done < tmp-dati/loghi.txt
+          ls tmp-dati/loghi | wc -l
           git config user.name "tmp-cattura"; git config user.email "tmp@localhost"
-          git add tmp-dati/ai_get.json && git commit -m "TEMPORANEO: dati pubblici del sito IA" && git push
+          git add tmp-dati/loghi && git commit -m "TEMPORANEO: loghi pubblici per la storia" && git push
