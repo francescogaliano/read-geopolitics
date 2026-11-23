@@ -3,13 +3,17 @@ name: tmp cattura IA
 on:
   push:
     branches: [tmp-cattura-ia]
+    paths: [".github/workflows/tmp-cattura-ia.yml"]
+permissions:
+  contents: write
 jobs:
   cattura:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - run: |
-          mkdir out
-          curl -s -X POST https://ai.readgeopolitics.com/api -d '{"action":"ai_get","data":""}' -o out/ai_get.json
-          ls -la out; head -c 200 out/ai_get.json
-      - uses: actions/upload-artifact@v4
-        with: { name: cattura, path: out }
+          mkdir -p tmp-dati
+          curl -s -X POST https://ai.readgeopolitics.com/api -d '{"action":"ai_get","data":""}' -o tmp-dati/ai_get.json
+          python3 -c "import json;d=json.load(open('tmp-dati/ai_get.json'));assert d.get('privato') is False and not d.get('clienti'),'contiene dati privati';print('ok pubblico',len(open('tmp-dati/ai_get.json').read()))"
+          git config user.name "tmp-cattura"; git config user.email "tmp@localhost"
+          git add tmp-dati/ai_get.json && git commit -m "TEMPORANEO: dati pubblici del sito IA" && git push
