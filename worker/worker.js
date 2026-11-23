@@ -7242,6 +7242,16 @@ export default {
   },
   async fetch(request, env, ctx) {
     try {
+      /* ai.readgeopolitics.com (23/11/2026): il sottodominio (CNAME su Register.it → Pages read-intelligence → qui) serve solo la sezione IA. Ogni percorso viene letto
+         come /ai/…; nei reindirizzamenti il prefisso /ai sparisce, così l'indirizzo resta pulito. Nient'altro del worker
+         (pannello, API, IG) è raggiungibile da qui. */
+      const u0 = new URL(request.url);
+      if (u0.hostname === "ai.readgeopolitics.com" || request.headers.get("x-ai-sottodominio") === "1") { // la seconda: richiesta inoltrata dal progetto Pages read-intelligence
+        if (u0.pathname !== "/ai" && !u0.pathname.startsWith("/ai/")) { u0.pathname = u0.pathname === "/" ? "/ai" : "/ai" + u0.pathname; request = new Request(u0.toString(), request); }
+        const r = await route(request, env, ctx), loc = r.headers.get("location");
+        if (loc && /^\/ai(\/|$|\?)/.test(loc)) { const r2 = new Response(r.body, r); r2.headers.set("location", loc.replace(/^\/ai/, "") || "/"); return r2; }
+        return r;
+      }
       return await route(request, env, ctx);
     } catch (e) {
       if (e && e.status) return fail(e.status, e.code, e.detail);

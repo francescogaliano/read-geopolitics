@@ -1,0 +1,26 @@
+name: Pages read-intelligence (ai.readgeopolitics.com)
+# Pubblica l'inoltro del sottodominio. Crea il progetto Pages se non esiste ancora.
+on:
+  push:
+    branches: [main]
+    paths: ["ai-pages/**", ".github/workflows/ai-pages.yml"]
+  workflow_dispatch:
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Crea il progetto (se manca) e pubblica
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          npx -y wrangler@4 pages project create read-intelligence --production-branch main 2>&1 | tail -3 || true
+          if ! npx -y wrangler@4 pages deploy ai-pages --project-name read-intelligence --branch main --commit-dirty=true 2>&1 | tee out.log; then
+            grep -v '^\s*$' out.log | tail -25 | sed 's/^/::error::/'
+            exit 1
+          fi
