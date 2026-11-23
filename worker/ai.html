@@ -784,7 +784,7 @@ function vArchivio2(){const E=D.edizioni||[];
  const AP=D.approf||[];if(AP.length&&!CQ)h+=`<div class="agw" style="margin-top:26px"><span>Approfondimenti</span><span>${AP.length}</span></div>`+AP.map(a=>`<div class="edr" data-sh="approf:${esc(a.id)}">${icoBox("57-approfondimento",(TEMI[LIV2TEMA[a.livello]]||[])[1]||"#E9C46A",40)}<div><div class="t" style="font-weight:600">${esc(a.titolo||"")}</div><div class="s n">${esc(a.data||"")}${a.n_sezioni?` · ${a.n_sezioni} sezioni`:""}</div></div><span style="color:var(--mut)">›</span></div>`).join("");
  return h}
 document.addEventListener("input",e=>{if(e.target.id!=="cq")return;CQ=e.target.value.trim();clearTimeout(CT);const ez=$("#edz");if(ez)ez.hidden=!!CQ;const box=$("#cr");if(box)box.innerHTML=risultati();
- if(CQ.length>=3)CT=setTimeout(()=>api({action:"ai_cerca",q:CQ}).then(j=>{if(j&&j.entra)return location.reload();CR={q:CQ,storie:j.storie||[],brevi:j.brevi||[]};const b=$("#cr");if(b){b.innerHTML=risultati();bind(b)}}).catch(()=>{}),350);
+ if(CQ.length>=3)CT=setTimeout(()=>api({action:"ai_cerca",q:CQ}).then(j=>{if(j&&j.vai)return location.assign(j.vai);CR={q:CQ,storie:j.storie||[],brevi:j.brevi||[]};const b=$("#cr");if(b){b.innerHTML=risultati();bind(b)}}).catch(()=>{}),350);
  });
 /* ---------- contenuti dei pannelli ---------- */
 function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizione||{};
