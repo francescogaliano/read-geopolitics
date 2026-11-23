@@ -68,8 +68,23 @@ export async function aiSito(request, env, p, method, url, h) {
   if (p === "/ai/api" && method === "POST") {
     /* modo pubblico (variabile AI_PUBBLICO = "1"): senza accesso si leggono solo i contenuti, mai i clienti */
     const io = await aiSessione(request, env, h), pub = !io && env.AI_PUBBLICO === "1";
-    if (!io && !pub) return h.fail(401, "unauthorized");
     const b = await request.json().catch(() => null);
+    /* 23/11/2026 ingresso nascosto (vale anche nell'app installata sul telefono, che non condivide i cookie con il browser):
+       la frase segreta scritta nella casella di ricerca. Il controllo esiste solo qui sul server: la pagina non contiene né la frase
+       né il meccanismo, e per chiunque altro è una ricerca normale. Frase: AI_SEGRETO se impostata, altrimenti la password del pannello.
+       Tentativi limitati per indirizzo (30 ogni 15 minuti); oltre il limite il controllo si salta, la ricerca funziona lo stesso. */
+    if (!io && b && b.action === "ai_cerca") {
+      const q = String(b.q || ""), seg = env.AI_SEGRETO || env.PANEL_PASSWORD || "", ip = request.headers.get("cf-connecting-ip") || "x";
+      if (seg.length >= 8 && q.length >= 8) {
+        const rl = (await h.kvGet(env, "rlq:" + ip)) || { n: 0, t: Date.now() };
+        if (Date.now() - rl.t > 900000) { rl.n = 0; rl.t = Date.now(); }
+        if (rl.n < 30) {
+          if (h.safeEq(q, seg)) { await h.kvDel(env, "rlq:" + ip); return new Response(JSON.stringify({ ok: true, entra: true, storie: [], brevi: [] }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": cookie(await nuova(env, h), MAX) } }); }
+          rl.n++; await h.kvSet(env, "rlq:" + ip, rl);
+        }
+      }
+    }
+    if (!io && !pub) return h.fail(401, "unauthorized");
     if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti", "ai_c360"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
     b._pubblico = !io;
     if (pub && b.action === "ai_get") {
