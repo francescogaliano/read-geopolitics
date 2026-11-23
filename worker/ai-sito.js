@@ -122,7 +122,7 @@ export async function aiSito(request, env, p, method, url, h) {
   }
   if (p === "/ai/entra" && method === "GET") { const t = String(url.searchParams.get("t") || ""), r = t && (await h.kvGet(env, "aitok:" + t)); if (t) await h.kvDel(env, "aitok:" + t); if (r && r.exp > Date.now()) return new Response(null, { status: 302, headers: { location: "/ai", "set-cookie": cookie(r.id, MAX) } }); return new Response(null, { status: 302, headers: { location: "/ai" } }); }
   if (p === "/ai/accedi" && method === "GET") return (await aiSessione(request, env, h)) ? new Response(null, { status: 302, headers: { location: "/ai" } }) : html(LOGIN, 200);
-  if ((p === "/ai" || p === "/ai/") && method === "GET") { if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } }); }
+  if ((p === "/ai" || p === "/ai/" || /^\/ai\/(temi|filiera|protagonisti|filoni|archivio|clienti)\/?$/.test(p)) && method === "GET") { /* ogni vista ha il suo indirizzo: stessa pagina, la vista la sceglie la pagina */ if (await aiSessione(request, env, h)) return html(pagina(h.AI_HTML)); return env.AI_PUBBLICO === "1" ? html(pagina(h.AI_HTML).replace("<script>", "<script>window.AI_PUB=1;"), 200) : new Response("Pagina non trovata", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": "noindex" } }); }
   return h.fail(404, "not_found");
 }
 /* /ig/ai-entra: dal pannello (cookie /ig) apre /ai senza password */

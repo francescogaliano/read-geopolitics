@@ -305,7 +305,11 @@ const PUB=!!window.AI_PUB;
 {const v=document.getElementById("via");if(v){if(SITO){if(PUB)v.remove();else{v.textContent="esci";v.href="/ai/esci"}}else v.insertAdjacentHTML("afterend",'<a class="back" href="/ig/ai-entra" style="margin-left:14px">Apri su ai.readgeopolitics.com ›</a>')}} /* 23/11/2026: niente «accedi» per il pubblico; Francesco entra dal pannello */
 if(PUB){document.querySelectorAll('.hb2.cl').forEach(b=>b.remove());const t=document.querySelector(".brand .tag");if(t)t.textContent="L'IA in 10 minuti"}
 function api(o){return fetch(SITO?"/ai/api":"/ig/api",{method:"POST",body:JSON.stringify(o)}).then(r=>{if(r.status===401){location.href=SITO?"/ai":"/ig/panel";throw new Error("401")}return r.text().then(t=>{try{return JSON.parse(t)}catch(e){throw new Error(`il server ha risposto ${r.status} senza dati${/<title>([^<]{0,80})/i.test(t)?" («"+t.match(/<title>([^<]{0,80})/i)[1].trim()+"»)":""}. Riprova tra poco.`)}})})}
-let D=null,V="oggi";
+/* 23/11/2026: sul sito ogni vista ha il suo indirizzo (ai.readgeopolitics.com/temi, /filoni…): si può aprire, salvare e condividere; il tasto indietro torna alla vista prima */
+const SLUG={oggi:"",temi:"temi",filiera:"filiera",chi:"protagonisti",timeline:"filoni",archivio:"archivio",miei:"clienti"},BASE=location.hostname==="ai.readgeopolitics.com"?"":"/ai";
+const vDaUrl=()=>{const s=location.pathname.slice(BASE.length).replace(/^\/+|\/+$/g,"");return Object.keys(SLUG).find(k=>SLUG[k]===s)||"oggi"};
+let NOPUSH=false;
+let D=null,V=SITO?vDaUrl():"oggi";
 const COL={t1:"var(--t1)",t2:"var(--t2)",t3:"var(--t3)",t4:"var(--t4)",t5:"var(--t5)",t6:"var(--t6)",t7:"var(--t7)",t8:"var(--t8)",t9:"var(--t9)"};
 const tcol=id=>COL["t"+(((parseInt(String(id||"").replace(/\D/g,""))||1)-1)%9+1)];
 const DIR={su:["↑","su","si rafforza"],giu:["↓","giu","si indebolisce"],stabile:["→","st","stabile"],incerta:["?","inc","incerta"]};
@@ -510,7 +514,7 @@ function shDaQui(){const da=(SH.st.at(-2)||{}).key;if(!da)return;const E=D.edizi
  x.classList.add("dahl");requestAnimationFrame(()=>{const y=x.getBoundingClientRect().top-l.getBoundingClientRect().top+l.scrollTop-90;if(y>120)l.scrollTo({top:y,behavior:"smooth"})})}
 function shBack(){if(SH.st.length>1){SH.st.pop();shShow()}else shClose()}
 function shClose(nav){if(!SH.open)return;SH.open=false;SH.st=[];const w=SH.el;w.classList.remove("on");document.body.style.overflow="";setTimeout(()=>{if(!SH.open){w.hidden=true;w.querySelector(".sh-l").innerHTML=""}},300);if(!nav)try{if(history.state&&history.state.sh)history.back()}catch(e){}if(V==="oggi")try{vai("oggi",true)}catch(e){}}
-addEventListener("popstate",()=>{if(SH.open)shClose(1)});
+addEventListener("popstate",()=>{if(SH.open)return shClose(1);if(SITO&&D){const v=vDaUrl();if(v!==V){NOPUSH=true;try{vai(v)}finally{NOPUSH=false}}}});
 const tmp=f=>{const d=document.createElement("div");try{d.innerHTML=f()}catch(e){}return d};
 
 
@@ -1183,6 +1187,7 @@ function vai(v,resta){const cambia=V!==v;V=v;document.querySelectorAll(".tabs bu
  if(!["oggi","filiera","timeline","chi","temi","archivio","miei"].includes(v)||(v==="miei"&&(PUB||(D&&D.privato===false))))v=V="oggi";document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));document.querySelectorAll(".hb2").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
  try{el.innerHTML={oggi:vOggi5,filiera:vFiliera,timeline:vTimeline,chi:vProt,temi:vTemi,archivio:vArchivio2,miei:vMiei}[v]()}catch(e){console.error(e);el.innerHTML=`<div class="empty">Questa vista non si è caricata: ${esc(e.message)}. Le altre funzionano.</div>`;return}
  bind(el);
+ if(SITO&&!NOPUSH)try{const u=SLUG[v]?BASE+"/"+SLUG[v]:(BASE||"/");if(location.pathname!==u)history[cambia?"pushState":"replaceState"]({v},"",u+location.search)}catch(e){}
  const ed=$("#ed");if(ed)ed.onchange=()=>load(ed.value);
  if(resta||!cambia)scrollTo(0,y);else scrollTo(0,0)}
 function load(data,v){return api({action:"ai_get",data:data||""}).then(j=>{D=j;$("#agg").textContent=j.edizione?dl(j.edizione.id)+(j.edizione._agg?" · ore "+new Date(j.edizione._agg.replace(" ","T")+(/Z|\+/.test(j.edizione._agg)?"":"Z")).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Rome"}):""):"";vai(v||V)}).catch(e=>{$("#v").innerHTML=`<div class="empty">Errore: ${esc(e.message)}</div>`})}
