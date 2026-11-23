@@ -457,12 +457,12 @@ function ritmo(P,M){if(!M.length)return"";const W=600,L=118,R=W-10,top=30,rh=34,
 /* Conto della chiave (23/11/2026): si calcola dai fatti della «storia» delle ultime 8 settimane, gli stessi che la scheda elenca.
    Regola (uguale alla routine): almeno 3 fatti; si rafforza se quelli a favore sono almeno il doppio di quelli contro, si indebolisce nel caso opposto, altrimenti stabile. */
 const VER={su:["▲","si rafforza","var(--up)"],giu:["▼","si indebolisce","var(--dn)"],stabile:["●","stabile","var(--mut)"],incerta:["?","incerta","var(--mut)"]};
-function conta(t){const oggi=Date.parse((D.oggi||new Date().toISOString().slice(0,10))+"T12:00:00Z"),S=(t.storia||[]).filter(x=>{const d=Date.parse(String(x.data||"").slice(0,10)+"T12:00:00Z");return d&&oggi-d>=0&&oggi-d<56*864e5}).sort((a,b)=>String(a.data).localeCompare(String(b.data)));
+function contaChiave(t){const oggi=Date.parse((D.oggi||new Date().toISOString().slice(0,10))+"T12:00:00Z"),S=(t.storia||[]).filter(x=>{const d=Date.parse(String(x.data||"").slice(0,10)+"T12:00:00Z");return d&&oggi-d>=0&&oggi-d<56*864e5}).sort((a,b)=>String(a.data).localeCompare(String(b.data)));
  const u=S.filter(x=>x.effetto==="su").length,g=S.filter(x=>x.effetto==="giu").length,z=S.length-u-g,v=S.length<3?"incerta":(u>0&&u>=2*g)?"su":(g>0&&g>=2*u)?"giu":"stabile";
  const det=S.length<3?`${S.length} ${S.length===1?"fatto":"fatti"} · ne servono 3`:`${u} a favore · ${g} contro${z?` · ${z} neutri`:""}`;return {S,u,g,z,v,det}}
 const cDot=x=>`<span class="cas ${x.effetto==="su"?"u":x.effetto==="giu"?"d":"s"}" title="${esc(dl(x.data))}">${x.effetto==="su"?"▲":x.effetto==="giu"?"▼":"●"}</span>`;
-function contoRiga(t){const c=conta(t),V=VER[c.v];return `<span class="cnt"><span class="cdots">${c.S.length?c.S.slice(-6).map(cDot).join(""):`<span class="cas"></span>`}</span><b style="color:${V[2]}">${V[0]} ${V[1]}</b><small>${c.det}</small></span>`}
-function contoLinea(t){const c=conta(t),V=VER[c.v];
+function contoRiga(t){const c=contaChiave(t),V=VER[c.v];return `<span class="cnt"><span class="cdots">${c.S.length?c.S.slice(-6).map(cDot).join(""):`<span class="cas"></span>`}</span><b style="color:${V[2]}">${V[0]} ${V[1]}</b><small>${c.det}</small></span>`}
+function contoLinea(t){const c=contaChiave(t),V=VER[c.v];
  const seq=c.S.length?`<div class="cseq">${c.S.map(x=>`<span>${cDot(x)}<small>${esc(dl(x.data).replace(/^\w+\s/,""))}</small></span>`).join("")}</div>`:`<p class="n" style="margin-top:10px">Nessun fatto nelle ultime 8 settimane.</p>`;
  return `${seq}<div class="ccalc"><b style="color:${V[2]}">${V[0]} ${V[1]}</b> · ${c.det}<small>Il conto usa i fatti delle ultime 8 settimane, dal più vecchio al più recente: sono quelli in «Come è cambiata». Servono almeno 3 fatti; si rafforza se quelli a favore sono almeno il doppio di quelli contro, si indebolisce nel caso opposto, altrimenti è stabile. Le «prove» sono i dati di fondo della chiave e non entrano nel conto.</small></div>`}
 function caselle(d){const p=String((d||{}).perche||""),n=r=>{const m=p.match(r);return m?+m[1]:0},u=n(/(\d+)\s*su\b/),g=n(/(\d+)\s*gi[uù]/),z=n(/(\d+)\s*stabil/);const v=[...Array(u).fill("u"),...Array(z).fill("s"),...Array(g).fill("d")];
@@ -659,7 +659,7 @@ function storiaScheda(l,i,E){const lv=TM(l),F=l.filone&&filOf(l.filone),cf=l.com
  return h+scUpd(`aggiornato il ${esc(dl(E.id))}${E._agg?" · ore "+esc(String(E._agg).slice(11,16)):""} · ${(l.fonti||[]).length} fonti`)}
 
 /* ---------- CHIAVE ---------- */
-function chiaveScheda(t){const CC=conta(t),V={su:["▲","si rafforza","#4CC9A6"],giu:["▼","si indebolisce","#F0A04B"],stabile:["●","stabile","#8E9DAA"],incerta:["?","incerta","#8E9DAA"]}[CC.v],c=tcol(t.id);
+function chiaveScheda(t){const CC=contaChiave(t),V={su:["▲","si rafforza","#4CC9A6"],giu:["▼","si indebolisce","#F0A04B"],stabile:["●","stabile","#8E9DAA"],incerta:["?","incerta","#8E9DAA"]}[CC.v],c=tcol(t.id);
  const W=settimane(t.storia),P=[...(t.prove||[])].sort((a,b)=>dk(b.data).localeCompare(dk(a.data))),S=t.storia||[],last=S.at(-1);
  const E=D.edizione||{},MS=(E.letture||[]).map((l,i)=>[l,i]).filter(([l])=>l.tesi&&l.tesi.id===t.id),FL=(D.filoni||[]).filter(f=>f.tesi===t.id),L=(D.adozione||[]).filter(a=>livT(a).includes(t.id)),TL=[...new Set(L.map(a=>LIV2TEMA[a.id]).filter(x=>TEMI[x]))];
  let h=scHero({col:c,icon:"key",kick:"Chiave",sub:`${(t.prove||[]).length} ${(t.prove||[]).length===1?"prova":"prove"}${CC.S.length?" · ultimo fatto il "+esc(dl(CC.S.at(-1).data)):""}`,right:`<span style="text-align:right;font:700 12px/1.3 ui-monospace,monospace;color:${V[2]}">${V[0]}<br>${V[1]}</span>`,ans:esc(t.titolo),pc:rich(t.uno||""),extra:contoLinea(t)});
