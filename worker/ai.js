@@ -14,6 +14,7 @@
        ai_confronti/<id>      numeri confrontabili tra protagonisti (investimenti, ricavi), con data e fonte per voce
        ai_glossario/<slug>    le parole sottolineate e cliccabili (aziende, modelli, persone, istituzioni, concetti), dal 22/11/2026
        ai_filoni/<slug>       i filoni: la storia di un tema nel tempo, tappa per tappa (dal 22/11/2026)
+       ai_c360/<cliente>      la vista 360° di un cliente: sintesi, PowerMap, numeri, IA, pari, incontro (dal 23/11/2026; SOLO nel database)
      nessuna di queste collezioni va sul sito pubblico (non sono in DB_SITE)
    - pannello /ig/ia (ai.html): azioni ai_get e ai_fonti
    - routine: GET /v1/ia/voci?ore=36 (token) — titoli raggruppati per gruppo di fonti */
@@ -112,8 +113,9 @@ export async function aiPanelApi(env, b, h) {
       const { _agg, ...r } = g; return { ...r, storie: st }; });
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
+    const c360 = new Set(pub ? [] : ((await env.DB.prepare("SELECT key FROM rdocs WHERE type='ai_c360'").all()).results || []).map((r) => r.key));
     const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
-      clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8) })),
+      clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
     const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"temi_storie":${temiStorie}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -126,6 +128,8 @@ export async function aiPanelApi(env, b, h) {
     const br = await env.DB.prepare("SELECT r.key AS ed, j.value->>'$.testo' AS testo, j.value->>'$.tema_id' AS tema_id, j.value->'$.fonte' AS fonte FROM rdocs r, json_each(r.data, '$.brevi') j WHERE r.type='ai_oggi' AND j.value LIKE ?1 ORDER BY r.key DESC LIMIT 20").bind(like).all();
     return { ok: true, storie: r.results || [], brevi: (br.results || []).map((x) => ({ ...x, fonte: jp(x.fonte, null) })) };
   }
+  /* vista 360° del cliente (23/11/2026): solo in modo privato, dati solo nel database */
+  if (b.action === "ai_c360") { if (b._pubblico === true) return { ok: false, error: "privato" }; const r = await env.DB.prepare("SELECT data, updated_at FROM rdocs WHERE type='ai_c360' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, c360: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_approf") { const r = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_approf' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, approf: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_fonti") {
     const stato = (await h.kvGet(env, K_STATO)) || {}; await tabella(env);
