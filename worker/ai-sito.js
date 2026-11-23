@@ -3,7 +3,7 @@
    - /ai              la pagina (ai.html); senza accesso mostra il login
    - /ai/login        POST {password}: stessa password del pannello; cookie ai_sess con Path=/
    - /ig/ai-entra     dal pannello già aperto: crea la sessione e porta su ai.readgeopolitics.com/entra con un gettone usa-e-getta (niente password)
-   - /ai/k            finestra di accesso usa-e-getta: si apre solo scrivendo la parola chiave (AI_PAROLA, default «#login») nella ricerca; chiede la password del pannello
+   - /ai/k            finestra di accesso usa-e-getta: si apre solo scrivendo la parola chiave (AI_PAROLA, default «#login») nella ricerca; chiede AI_PASSWORD (se manca, la password del pannello)
    - /ai/entra        scambia il gettone con il cookie di accesso. Il sito pubblico non ha nessun ingresso con password: /ai/accedi e /ai/login rispondono «non trovata»
    - /ai/esci         chiude la sessione
    - /ai/api          POST: solo le azioni ai_* (aiPanelApi)
@@ -110,8 +110,8 @@ export async function aiSito(request, env, p, method, url, h) {
     const rl = (await h.kvGet(env, "rl:" + ip)) || { n: 0, t: Date.now() };
     if (Date.now() - rl.t > 900000) { rl.n = 0; rl.t = Date.now(); }
     if (rl.n >= 5) { await h.kvDel(env, "aik:" + t); return h.json({ ok: false, error: "troppi_tentativi" }, 429); }
-    /* vale la password del pannello e, se impostata, anche la frase AI_SEGRETO (usata nella prima versione dell'ingresso); spazi ai bordi ignorati */
-    const pw = String(b.password || "").trim(), ok = [env.PANEL_PASSWORD || env.WRITE_TOKEN, env.AI_SEGRETO].some((x) => x && h.safeEq(pw, String(x).trim()));
+    /* password della finestra: AI_PASSWORD (variabile propria, modificabile su Cloudflare); se manca, quella del pannello. Spazi ai bordi ignorati */
+    const pw = String(b.password || "").trim(), atteso = String(env.AI_PASSWORD || env.PANEL_PASSWORD || env.WRITE_TOKEN || "").trim(), ok = !!atteso && h.safeEq(pw, atteso);
     if (!ok) {
       rl.n++; await h.kvSet(env, "rl:" + ip, rl); k.n++;
       if (k.n >= 3) await h.kvDel(env, "aik:" + t); else await h.kvSet(env, "aik:" + t, k);
