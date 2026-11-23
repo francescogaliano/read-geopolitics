@@ -65,7 +65,7 @@ export async function aiSito(request, env, p, method, url, h) {
     const io = await aiSessione(request, env, h), pub = !io && env.AI_PUBBLICO === "1";
     if (!io && !pub) return h.fail(401, "unauthorized");
     const b = await request.json().catch(() => null);
-    if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
+    if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti", "ai_c360"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
     b._pubblico = !io;
     if (pub && b.action === "ai_get") {
       const k = new Request("https://ai.cache/get/" + encodeURIComponent(String(b.data || "oggi"))), hit = await caches.default.match(k);
