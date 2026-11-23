@@ -300,7 +300,7 @@ const gg=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(D.oggi+"T12:00:00Z"))/
 const corto=(t,n)=>{t=String(t||"").trim();if(t.length<=n)return t;
  if(n>=60){const fr=t.split(/(?<=[.!?»])\s+(?=[A-ZÀ-ÖØ-Ý«"(*0-9])/);let out="";for(const f of fr){if((out+" "+f).trim().length>n*1.15)break;out=(out+" "+f).trim()}if(!/[.!?»]$/.test(out))out="";if(out.length>=n*.45)return out;const p=fr[0]?fr[0].trim():"";if(p&&p.length<=n*1.8)return p}
  const c=t.slice(0,n);return c.slice(0,c.lastIndexOf(" ")>8?c.lastIndexOf(" "):n)+"…"};
-const SITO=location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
+const SITO=location.hostname==="ai.readgeopolitics.com"||location.pathname==="/ai"||location.pathname.startsWith("/ai/"); /* /ai = sito a sé; /ig/ia = sezione del pannello */
 const PUB=!!window.AI_PUB;
 if(SITO){const v=document.getElementById("via");if(v){v.textContent=PUB?"accedi":"esci";v.href=PUB?"/ai/accedi":"/ai/esci"}}
 if(PUB){document.querySelectorAll('.hb2.cl').forEach(b=>b.remove());const t=document.querySelector(".brand .tag");if(t)t.textContent="L'IA in 10 minuti"}
