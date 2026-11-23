@@ -564,7 +564,8 @@ function storiaScheda(l,i,E){const lv=TM(l),F=l.filone&&filOf(l.filone),cf=l.com
  const tp=F?tappaN(F,E.id,i).replace(/^ · /,""):"";
  let h=scHero({col:lv[1],icon:lv[2],kick:esc(lv[0])+(l.tema&&l.tema.includes("·")?` <span style="color:var(--mut);font-weight:400">· ${esc(l.tema.split("·").slice(1).join("·").trim())}</span>`:""),sub:`${esc(dl(E.id))} · storia ${i+1} di ${N}`,ans:rich(l.breve||String(l.titolo||"").replace(/\*/g,"")),pc:rich(l.perche_conta||l.perche_breve||PRIMA1(l.lettura)),tag:F?`Filone · ${esc(F.titolo)}${tp?" · "+esc(tp):""}`:"",tagSh:F?"fil:"+F.id:""});
  h+=graficoFig(l.grafico);
- if(q)h+=scTip("31-aziende","#86B4EA","Per chi lavora con l'IA",esc(q));
+ const EQ=l.e_quindi&&l.e_quindi.testo?l.e_quindi:null;
+ if(q&&!EQ)h+=scTip("31-aziende","#86B4EA","Per chi lavora con l'IA",esc(q));
  const fatti=l.fatti||[],pro=l.pro||{},con=l.contro||{},nuovo=pro.tesi||con.tesi,seg=l.segnali||[];
  const pos=(x,c,lab)=>x&&(x.tesi||x.argomento)?`<div class="pos ${c}"><div class="who">${lab}${arr(x.chi).length?" · "+arr(x.chi).map(esc).join(", "):""}</div>${x.tesi?`<div class="t">${rich(x.tesi)}</div>`:""}${x.argomento?`<p>${rich(x.argomento)}</p>`:""}${fonti(x.fonti)}</div>`:"";
  h+=scSecs([
@@ -574,8 +575,8 @@ function storiaScheda(l,i,E){const lv=TM(l),F=l.filone&&filOf(l.filone),cf=l.com
   {sez:"osservare",titolo:"Cosa osservare",prev:esc(corto(seg[0]||"",80)),vis:mvN(seg.length||""),body:seg.length?seg.map((x,j)=>`<div class="oss"><b>${j+1}</b><div>${rich(x)}</div></div>`).join(""):""},
   {sez:"filone",titolo:"Il filone",prev:F?esc(`${F.titolo}${tp?" · "+tp:""}`):"",vis:F?mvDots((F.tappe||[]).length,"#5C6B78"):"",body:F?filTappe(F,E.id,i,4):""},
   {sez:"fonti",titolo:"Fonti e confidenza",prev:esc(C.fatti?`${C.fatti} sui fatti${C.effetti?`, ${C.effetti} sugli effetti`:""} · ${(l.fonti||[]).length} fonti`:`${(l.fonti||[]).length} fonti`),vis:mvMeter(C.fatti),body:`${C.perche?`<p>${rich(C.perche)}</p>`:""}${fonti(l.fonti)}`}]);
- const EQ=l.e_quindi||null;{const testo=EQ&&EQ.testo?rich(EQ.testo):[q&&`Per chi lavora con l'IA la domanda pratica è: ${esc(q)}`,l.decide&&`Il quadro cambia se: ${rich(l.decide)}`].filter(Boolean).join("<br>");
-  if(testo)h+=`<div class="eq"><div class="eq-k">${ico("43-perche-conta","#E9C46A",18)}E quindi?</div><p>${testo}</p>${EQ&&EQ.per_chi?`<div class="eq-r"><b>Per chi</b>${esc(EQ.per_chi)}</div>`:""}${EQ&&(EQ.fare||[]).length?`<div class="eq-r"><b>Da fare</b><ul>${EQ.fare.map(x=>`<li>${rich(x)}</li>`).join("")}</ul></div>`:""}</div>`}
+ {const testo=EQ&&EQ.testo?rich(EQ.testo):"";
+  if(testo)h+=`<div class="eq"><div class="eq-k">${ico("43-perche-conta","#E9C46A",18)}E quindi?</div><p>${testo}</p>${EQ&&EQ.per_chi?`<div class="eq-r"><b>Per chi</b>${esc(EQ.per_chi)}</div>`:""}${EQ&&(EQ.fare||[]).length?`<div class="eq-r"><b>Da fare</b><ul>${EQ.fare.map(x=>`<li>${rich(x)}</li>`).join("")}</ul></div>`:""}${q?`<div class="eq-r"><b>La domanda da farsi</b>${esc(q)}</div>`:""}</div>`}
  const T=l.tesi&&(D.tesi||[]).find(t=>t.id===l.tesi.id),EV={su:"la rafforza ▲",giu:"la indebolisce ▼",stabile:"la conferma",incerta:"la tocca"};
  const tx=JSON.stringify([l.titolo,l.breve,l.fatti,l.pro,l.contro]),AT=(D.attori||[]).filter(a=>tx.includes(a.nome)).slice(0,4);
  h+=scColl([T&&{icon:"key",col:tcol(T.id),t:esc(T.titolo),s:EV[l.tesi.effetto]||"chiave",sh:"tesi:"+T.id},AT.length&&{icon:"user",col:"#86B4EA",t:AT.map(a=>esc(a.nome)).join(" · "),s:"protagonisti",sh:"att:"+AT[0].id},F&&{icon:"thread",col:"#F08A3C",t:esc(F.titolo),s:`filone · ${(F.tappe||[]).length} tappe`,sh:"fil:"+F.id}]);
