@@ -102,7 +102,7 @@ export async function aiPanelApi(env, b, h) {
       raw(env, "ai_attori", 40, ORD), raw(env, "ai_confronti", 20, ORD), raw(env, "ai_filoni", 300, "coalesce(data->>'$.aggiornato', updated_at) DESC"),
       raw(env, "ai_agenda", 400, "coalesce(data->>'$.data', '9999'), key"),
       coll(env, "ai_glossario", 2000),
-      env.DB.prepare("SELECT key, data->>'$.nome' nome, coalesce(data->>'$.settore', data->>'$.cluster', '') settore, coalesce(data->'$.aree','{}') aree, coalesce(json_array_length(data,'$.eventi'),0) n FROM rdocs WHERE type='ai_clienti' ORDER BY key DESC LIMIT 80").all().then((r) => r.results || []),
+      env.DB.prepare("SELECT key, data->>'$.nome' nome, coalesce(data->>'$.settore', data->>'$.cluster', '') settore, data->>'$.sottocluster' sc, coalesce(data->'$.aree','{}') aree, coalesce(json_array_length(data,'$.eventi'),0) n FROM rdocs WHERE type='ai_clienti' ORDER BY key DESC LIMIT 80").all().then((r) => r.results || []),
       raw(env, "ai_temi", 20), raw(env, "ai_prezzi", 60, "key DESC"),
       env.DB.prepare("SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT json_object('ed', r.key, 'i', CAST(j.key AS INTEGER), 'titolo', coalesce(j.value->>'$.titolo', j.value->>'$.breve', ''), 'tema_id', j.value->>'$.tema_id', 'tema', j.value->>'$.tema') AS o FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND r.key >= ?1 ORDER BY r.key DESC)").bind(cut30).first().then((r) => (r && r.j) || "[]")]);
     /* glossario: in quali letture delle ultime edizioni compare ogni voce (termine o alias, parola intera) */
@@ -115,7 +115,7 @@ export async function aiPanelApi(env, b, h) {
     const stato = (await h.kvGet(env, K_STATO)) || {};
     const c360 = new Set(pub ? [] : ((await env.DB.prepare("SELECT key FROM rdocs WHERE type='ai_c360'").all()).results || []).map((r) => r.key));
     const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
-      clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
+      clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, sc: c.sc || null, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
     const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"temi_storie":${temiStorie}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
