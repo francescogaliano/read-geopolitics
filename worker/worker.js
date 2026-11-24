@@ -1088,6 +1088,7 @@ async function draftCreate(env, origin, b) {
   await kvSet(env, "draft:" + id, d);
   if (d.template === "video-principale") await kvSet(env, "vp:last", { date, id, via: "richiesta" }).catch(() => {});
   if (format === "daily" && b.sond_post && typeof b.sond_post === "object") await sondPostSet(env, date, b.sond_post).catch(() => {});
+  if (format === "daily" && b.storia_sito && typeof b.storia_sito === "object") await storiaSitoSet(env, date, b.storia_sito).catch(() => {});
   return d;
 }
 /* v62: la domanda di previsione sulla storia del post del giorno, scritta dalla routine Instagram insieme alla bozza: diventa la quinta proposta (n = 4) */
@@ -1100,6 +1101,18 @@ async function sondPostSet(env, date, q) {
   P[date] = { tema: t(q.tema, 30), sticker, titolo: t(q.titolo, 160) || sticker, a: t(q.a, 20) || "Sì", b: t(q.b, 20) || "No", scadenza: scad, contesto: t(q.contesto, 180), perche: t(q.perche, 200), storia_id: t(q.storia_id, 40), attesa: ["probabile", "improbabile", "incerto"].includes(q.attesa) ? q.attesa : "", fonte: /^https:\/\//.test(url) ? { nome: t(q.fonte.nome, 40) || "fonte", url } : null };
   const lim = new Date(Date.parse(date + "T12:00:00Z") - 90 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(P)) if (d < lim) delete P[d];
   await kvSet(env, "sond_post", P);
+}
+/* v63: la storia «Stamattina sul sito» (panoramica del giorno con le due tesi in teaser), scritta dalla routine Instagram con la bozza: primo blocco di «Oggi» */
+async function storiaSitoSet(env, date, q) {
+  const t = (x, n) => String(x || "").replace(/\s+/g, " ").trim().slice(0, n);
+  const tesi = (x) => { x = Array.isArray(x) ? x : []; const f = Array.isArray(x[1]) ? x[1] : [x[1], x[2]]; return [t(x[0], 30), [t(f[0], 70), t(f[1], 34)]]; };
+  const voci = (Array.isArray(q.voci) ? q.voci : []).slice(0, 4).map(v => ({ dove: t(v.dove, 24), flag: t(v.flag, 12), t: t(v.t, 70), a: tesi(v.a), b: tesi(v.b) })).filter(v => v.t && v.a[0] && v.a[1][0] && v.b[0] && v.b[1][0]);
+  if (voci.length < 2) return;
+  const altre = (Array.isArray(q.altre) ? q.altre : []).slice(0, 6).map(a => ({ f: t(a.f, 12), t: t(a.t, 28) })).filter(a => a.t);
+  const S = (await kvGet(env, "storia_sito")) || {};
+  S[date] = { n: Math.max(voci.length + altre.length, Math.min(+q.n || 0, 20)), voci, altre };
+  const lim = new Date(Date.parse(date + "T12:00:00Z") - 30 * 86400000).toISOString().slice(0, 10); for (const d of Object.keys(S)) if (d < lim) delete S[d];
+  await kvSet(env, "storia_sito", S);
 }
 async function draftFinish(env, origin, id) { // reel rimasto in elaborazione: controlla e pubblica se pronto
   const d = await kvGet(env, "draft:" + id);
@@ -2042,15 +2055,46 @@ async function sndDrawQS(c,q,sc){const g=c.getContext("2d");await sndFonts();snd
  sndKick(g,"E adesso? La prossima scommessa",y);y+=60;const toks=sndToks(q.titolo||q.sticker);let fs=64,L;for(;fs>=48;fs-=4){g.font="600 "+fs+"px 'IBM Plex Serif'";L=sndWrap(g,toks,888);if(L.length<=3)break}
  for(const ln of L){sndLine(g,ln,96,y,"#EEF2F6","#E8B050");y+=Math.round(fs*1.12)}
  g.textAlign="center";g.fillStyle="#86B4EA";g.font="500 24px 'IBM Plex Mono'";podSpaced(g,("IL "+sndMesi(q.scadenza||SND.day)+" vediamo chi ci ha preso").toUpperCase(),540,1800,4);g.textAlign="left"}
+/* v63: «Stamattina sul sito», la panoramica del giorno: 4 storie con le due tesi in teaser e le altre in fondo; lo spazio sotto resta per lo sticker link */
+function sitoItem(g,y,n,it){g.fillStyle="#E8B050";g.font="600 40px 'IBM Plex Serif'";g.fillText(String(n),96,y-2);
+ let x=150;if(it.flag){g.font="34px 'Apple Color Emoji','Noto Color Emoji',sans-serif";g.fillText(it.flag,x,y-4);x+=g.measureText(it.flag).width+14}
+ g.fillStyle="#86B4EA";g.font="500 22px 'IBM Plex Mono'";for(const ch of String(it.dove||"").toUpperCase()){g.fillText(ch,x,y+4);x+=g.measureText(ch).width+5}
+ y+=40;let fs=40,tk=sndToks(it.t);for(;fs>32;fs-=2){g.font="600 "+fs+"px 'IBM Plex Sans'";if(sndWrap(g,tk,834).length<=1)break}
+ while(tk.length>1&&sndWrap(g,tk,834).length>1){tk=tk.slice(0,-1);tk[tk.length-1]={...tk[tk.length-1],w:tk[tk.length-1].w+"…"}}
+ sndLine(g,tk,150,y,"#EEF2F6","#E8B050");y+=58;
+ for(const [k,col,tz] of [["▲","#86B4EA",it.a],["▼","#E8B050",it.b]]){const chi=tz[0]||"",fr=tz[1]||[];
+  g.fillStyle=col;g.font="600 24px 'IBM Plex Sans'";g.fillText(k,150,y+5);
+  g.fillStyle="#8fa0bd";g.font="600 28px 'IBM Plex Sans'";g.fillText(chi+":",186,y);const xx=186+g.measureText(chi+": ").width,max=984-xx;
+  let full=(fr[0]||"")+" ",teas=fr[1]?fr[1]+"…":"",f=28;g.font="400 "+f+"px 'IBM Plex Sans'";while(f>23&&g.measureText(full+teas).width>max){f--;g.font="400 "+f+"px 'IBM Plex Sans'"}
+  while(teas&&g.measureText(full+teas).width>max){const w=teas.slice(0,-1).trim().split(" ");w.pop();teas=w.length?w.join(" ")+"…":""}
+  while(g.measureText(full).width>max&&full.length>4)full=full.slice(0,-2)+"… ";
+  g.fillStyle="#DCE3EA";g.fillText(full,xx,y);g.fillStyle="#8fa0bd";g.fillText(teas,xx+g.measureText(full).width,y);y+=40}
+ return y+14}
+async function sitoDraw(c,S){const g=c.getContext("2d");await sndFonts();g.textAlign="left";sndBg(g);
+ {const bg=g.createRadialGradient(540,700,0,540,700,1300);bg.addColorStop(0,"#14213f");bg.addColorStop(.6,"#0a0f1c");bg.addColorStop(1,"#0a0f1c");g.fillStyle=bg;g.fillRect(0,0,1080,360)}
+ finLogo(g,540-56,150,112);g.textAlign="center";g.fillStyle="#EEF2F6";g.font="600 54px 'IBM Plex Serif'";g.fillText("Read Geopolitics",540,280);g.textAlign="left";
+ let y=366;g.fillStyle="#E8B050";g.font="500 30px 'IBM Plex Mono'";podSpaced(g,("Stamattina sul sito · "+sndMesi(SND.day)).toUpperCase(),540,y,6);y+=58;
+ g.textAlign="center";g.font="600 60px 'IBM Plex Serif'";g.fillStyle="#EEF2F6";g.fillText(S.n+" storie, due tesi per ognuna.",540,y);y+=72;
+ g.fillStyle="#E8B050";g.font="600 64px 'IBM Plex Serif'";g.fillText("Tu leggi, tu decidi.",540,y);g.textAlign="left";y+=102;
+ const ln=yy=>{g.strokeStyle="#22324a";g.lineWidth=2;g.beginPath();g.moveTo(96,yy);g.lineTo(984,yy);g.stroke()};
+ (S.voci||[]).forEach((it,i)=>{ln(y);y+=20;y=sitoItem(g,y,i+1,it)});ln(y);
+ const A=S.altre||[],nA=Math.max(A.length,S.n-(S.voci||[]).length);if(!nA)return;
+ y+=24;g.fillStyle="#E8B050";g.font="600 64px 'IBM Plex Serif'";g.fillText("+"+nA,96,y-6);
+ let x=200,yy=y,first=true;g.fillStyle="#EEF2F6";g.font="600 30px 'IBM Plex Sans'";g.fillText("altre storie sul sito",x,yy);yy+=44;
+ const EM="26px 'Apple Color Emoji','Noto Color Emoji',sans-serif",TX="400 28px 'IBM Plex Sans'";
+ for(const a of A){g.font=EM;const fw=a.f?g.measureText(a.f).width+8:0;g.font=TX;const tw=g.measureText(a.t).width,sep=first?0:g.measureText("  ·  ").width;
+  if(x+sep+fw+tw>984){x=200;yy+=40;first=true}
+  if(!first){g.fillStyle="#5d6b7d";g.fillText("  ·  ",x,yy);x+=g.measureText("  ·  ").width}
+  if(a.f){g.font=EM;g.fillText(a.f,x,yy+1);x+=fw}g.fillStyle="#B9C4CF";g.font=TX;g.fillText(a.t,x,yy);x+=tw;first=false}}
 async function sndCanvas(id,fn,q,arg,name){const c=document.getElementById(id);if(!c)return;await fn(c,q,arg);const bl=await new Promise(r=>c.toBlob(r,"image/png"));SND_BLOB[id]=bl;const a=document.querySelector('[data-snd-dl="'+id+'"]');if(a){if(a.href&&a.href.startsWith("blob:"))URL.revokeObjectURL(a.href);a.href=URL.createObjectURL(bl);a.download=name}}
 function sndCp(lab,v,show){return '<div class="sndc"><span class="sndl">'+lab+'</span><span class="sndv">'+esc(show||v)+'</span><button type="button" class="sm" data-snd-cp="'+esc(v)+'">Copia</button></div>'}
 /* v60: «Oggi», la guida che si spunta: storie Instagram del mattino (podcast, verdetto, risultato di ieri, domanda), post di Instagram e TikTok. Le immagini si condividono direttamente su Instagram dal telefono. */
-const OG_LINK="https://www.readgeopolitics.com/?utm_source=instagram&utm_campaign=",POD_LINK="https://www.readgeopolitics.com/ascolta.html?utm_source=ig_storia";
+const OG_LINK="https://www.readgeopolitics.com/?utm_source=instagram&utm_campaign=",SITO_LINK="https://www.readgeopolitics.com/?utm_source=instagram&utm_medium=story&utm_campaign=oggi-sul-sito",POD_LINK="https://www.readgeopolitics.com/ascolta.html?utm_source=ig_storia";
 let OG_OPEN={},OG_POD=false;
 function ogShareBtn(id,lab){return '<button type="button" class="ogsh" data-og-share="'+id+'">'+(lab||"Condividi su Instagram")+'</button><a class="sub ogdl" data-snd-dl="'+id+'" href="#">o scarica</a>'}
 async function ogShare(id){const bl=id==="pod"?POD_BLOB:SND_BLOB[id];if(!bl){say("L'immagine non è ancora pronta: riprova tra un attimo.");return}
  const name=id==="pod"?document.getElementById("pd-dl").download:((document.querySelector('[data-snd-dl="'+id+'"]')||{}).download||id+".png");const file=new File([bl],name,{type:"image/png"});
- const k=id==="sndw"?"sett":/^sndc[0-9]$/.test(id)?(((SND&&SND.scenari)||[])[+id.slice(4)]?"scn-"+SND.scenari[+id.slice(4)].id:""):id==="pod"?"pod":id==="sndq"?"dom":/^sndv[0-9]$/.test(id)?(((SND&&SND.verdetti)||[])[+id.slice(4)]?"ver"+SND.verdetti[+id.slice(4)].day:""):"";
+ const k=id==="sndw"?"sett":/^sndc[0-9]$/.test(id)?(((SND&&SND.scenari)||[])[+id.slice(4)]?"scn-"+SND.scenari[+id.slice(4)].id:""):id==="pod"?"pod":id==="sndsito"?"sito":id==="sndq"?"dom":/^sndv[0-9]$/.test(id)?(((SND&&SND.verdetti)||[])[+id.slice(4)]?"ver"+SND.verdetti[+id.slice(4)].day:""):"";
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});if(k)ogDone(k)}catch(e){}}else{const a=id==="pod"?document.getElementById("pd-dl"):document.querySelector('[data-snd-dl="'+id+'"]');if(a)a.click();if(k)ogDone(k)}}
 /* condividere (o scaricare) una storia la segna come fatta, anche dalla scheda Podcast */
 async function ogDone(k){if(!SND||(SND.todo||{})[k])return;const r=await api({action:"todo_set",k:k,v:true});if(r&&r.ok){SND=r.sond;OG_OPEN[k]=false;const nx=ogSteps().find(x=>!x.done);if(nx)OG_OPEN[nx.k]=true;sndRender(SND)}}
@@ -2058,6 +2102,7 @@ function ogTodayDraft(){const t=SND&&SND.day;return (D&&D.drafts||[]).find(x=>x.
 function ogSteps(){const s=SND||{},T=s.todo||{},St=[];const q=s.oggi,qi=s.ieri,n=qi&&qi.num&&qi.num.votanti!=null?qi.num:null,tot=qi&&qi.tot;
  const oggi=s.day;const podOk=POD&&POD.date===oggi;
  (s.arretrati||[]).forEach(a=>{const dd=ogGiorno(a.d),nm=a.tipo==="num",inp=(id,l,mx)=>'<label>'+l+'<input type="number" inputmode="numeric" min="0"'+(mx?' max="100"':'')+' id="'+id+a.d+'"></label>';St.push({k:"rec-"+a.d,g:"rec",ic:"",t:(nm?"Numeri di ":"Domanda di ")+dd,w:nm?"da inserire":"da confermare",d:"«"+(a.sticker||"")+"» · "+(nm?"l'hai condivisa, mancano i numeri.":"non risulta condivisa."),done:false,auto:true,body:nm?'<div class="sub">Instagram › Archivio storie › '+esc(dd)+' › Attività.</div><div class="sndn">'+inp("rv-","Hanno visto")+inp("rt-","Hanno votato")+inp("rs-",esc(a.a||"Sì")+" (%)",1)+'<button type="button" class="g" data-rec-save="'+a.d+'">Salva</button></div><a class="sub ogdl" data-rec-skip="'+a.d+'" href="#">Non l&#39;avevo condivisa</a>':'<div class="sub">Sul sito resta aperta: senza Instagram, il verdetto conta solo i voti del sito.</div><div class="row"><button type="button" class="g" data-rec-pub="'+a.d+'">L&#39;avevo condivisa</button><button type="button" class="g" data-rec-skip="'+a.d+'">Ok, lasciala così</button></div>'})});
+ St.push({k:"sito",g:"mat",ic:"📰",t:"Stamattina sul sito",w:"per primo",d:"La panoramica del giorno che porta al sito.",done:!!T.sito,body:!s.sito_storia?'<div class="sub">Arriva con la bozza di Instagram.</div>':'<div class="ogsr"><canvas class="ogth" id="sndsito" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndsito")+sndCp("Link",SITO_LINK,"readgeopolitics.com")+sndCp("Testo","Chi ha ragione? Leggi l'analisi")+'<div class="sub">Aggiungi lo sticker link nello spazio vuoto in fondo, sotto le altre storie.</div></div></div>'});
  St.push({k:"pod",g:"mat",ic:"🎧",t:"Storia del podcast",w:"dalle 7:50",done:!!T.pod,body:(!OG_POD?'<div class="sub">Preparo l&#39;immagine…</div>':!POD?'<div class="sub">Nessuna puntata.</div>':(podOk?'':'<div class="warn">La puntata di oggi non c&#39;è ancora: di solito arriva verso le 7:50.</div>')+'<div class="ogsr"><canvas class="ogth" id="ogpod" width="1080" height="1920"></canvas><div class="sndf">'+'<button type="button" class="ogsh" data-og-share="pod">Condividi su Instagram</button>'+sndCp("Link",POD_LINK,"readgeopolitics.com/ascolta")+sndCp("Testo","Ascolta il podcast")+'<div class="sub">Sticker link con la pagina «Ascolta». Versione e temi si cambiano nella scheda Podcast.</div></div></div>')});
  (s.scenari||[]).filter(c=>!(q&&q.dopo_scenario===c.id)).slice(0,1).forEach((c)=>{const i=(s.scenari||[]).indexOf(c);const resto=(s.scenari||[]).filter(x=>!(q&&q.dopo_scenario===x.id)).length-1;St.push({k:"scn-"+c.id,g:"mat",ic:"📊",t:"Com'è andata: "+(c.tema||""),w:"da condividere",d:"Uno scenario si è chiuso.",done:!!T["scn-"+c.id],body:'<div class="ogsr"><canvas class="ogth" id="sndc'+i+'" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndc"+i)+sndCp("Link",OG_LINK+"storia-scenario#vota","readgeopolitics.com · #vota")+sndCp("Testo","Le altre stime")+'<div class="sub">'+esc(scnLine(c))+(resto>0?' Altri '+resto+' in fila: uno al giorno, gli altri finiscono anche nella storia della domenica.':'')+'</div><a class="sub ogdl" data-og-skip="scn-'+esc(c.id)+'" href="#">Non la pubblico: toglila</a></div></div>'})});
  const F=s.finita;if(F&&(F.si+F.no+F.nr)>0)St.push({k:"fin",g:"mat",ic:"📊",t:"Com'è finita",w:"da condividere",d:"La domenica, subito dopo il podcast.",done:!!T.fin,body:'<div class="ogsr"><canvas class="ogth" id="sndf" width="1080" height="1920"></canvas><div class="sndf">'+ogShareBtn("sndf")+sndCp("Link","https://www.readgeopolitics.com/seguire.html?utm_source=instagram&utm_campaign=com-e-finita","readgeopolitics.com/seguire")+sndCp("Testo","Le prossime da seguire")+'<div class="sub">'+(F.si+F.no+F.nr)+' fatti arrivati a scadenza: '+F.si+' sì, '+F.no+' no, '+F.nr+' senza risposta. Altri '+(F.open||0)+' aperti.</div></div></div>'});
@@ -2107,6 +2152,7 @@ function ogRender(){const el=document.getElementById("og");if(!el)return;const s
  el.innerHTML=h;ogDraw()}
 async function ogDraw(){const s=SND;if(!s)return;const q=s.oggi,qi=s.ieri,n=qi&&qi.tot; /* il totale: storia Instagram più sito */
  if(OG_POD&&POD_BLOB){const c=document.getElementById("ogpod");if(c){const im=new Image();im.onload=()=>{c.getContext("2d").drawImage(im,0,0,1080,1920);URL.revokeObjectURL(im.src)};im.src=URL.createObjectURL(POD_BLOB)}}
+ if(s.sito_storia)sndCanvas("sndsito",sitoDraw,s.sito_storia,null,"storia_sito_"+s.day+".png");
  const qsc=q&&q.dopo_scenario&&(s.scenari||[]).find(c=>c.id===q.dopo_scenario);
  if(qsc)sndCanvas("sndq",sndDrawQS,q,qsc,"storia_scommessa_"+s.day+".png");else if(q)sndCanvas("sndq",sndDrawQ,q,n?{t:qi.sticker||"",r:(qi.a||"Sì")+" "+n.si+"% · "+(qi.b||"No")+" "+(100-n.si)+"%"+(n.votanti>=10?" · "+n.votanti+" risposte":"")}:null,"storia_domanda_"+s.day+".png");
  if(qi&&n)sndCanvas("sndr",sndDrawR,{...qi,num:n},null,"storia_risultato_"+qi.day+".png");
@@ -5029,7 +5075,7 @@ async function sondInfo(env) {
   } catch (e) {}
   const settimana = romeDow(day) === 7 ? await sondSettimana(env, day, cands, SC).catch(() => null) : null;
   const finita = romeDow(day) === 7 ? await finitaData(env, day).catch(() => null) : null;
-  return { day, todo, arretrati, post_scelta, scenari, settimana, finita, scelte, scelta: q ? q.n : 0, mia: M[day] || null, sito: (po && PV[po]) || null,
+  return { day, todo, arretrati, post_scelta, scenari, settimana, finita, scelte, scelta: q ? q.n : 0, mia: M[day] || null, sito: (po && PV[po]) || null, sito_storia: ((await kvGet(env, "storia_sito")) || {})[day] || null,
     oggi: q ? { ...q, pub: !!(N[day] && N[day].pub) } : null,
     ieri: qi ? { ...qi, day: ieri, sh: SH[ieri], num: N[ieri], sito: PV[pi] || null, tot: sondTot(N[ieri], PV[pi]), riga: q && q.ieri ? q.ieri : null } : null,
     sett: days.map((d) => ({ d, n: N[d], sh: SH[d], q: QD[d] })) };
