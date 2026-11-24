@@ -61,7 +61,7 @@ def calcola(din, oggi):
             schede[k] = imp
             if k in prima and prima[k] != imp and not any(r.get("data") == oggi.isoformat() for r in p.get("revisioni") or []):
                 errori.append(f"{nome}: scheda cambiata ({prima[k]} -> {imp}) senza una voce in \"revisioni\" di oggi {{data, prima, motivo}}")
-            voci.append({"prova": nome, "origine": str(p["origine"]).strip().lower(), "c": c})
+            voci.append({"prova": nome, "k": k, "origine": str(p["origine"]).strip().lower(), "c": c})
     if errori:
         return None, errori
     # indipendenza: prove con la stessa fonte d'origine contano una volta, la piu' forte
@@ -77,7 +77,7 @@ def calcola(din, oggi):
     return {
         "peso_A": pa,
         "punteggio": round(s, 2),
-        "contributi": [{"prova": v["prova"], "c": round(v["c"], 2)} for v in sorted(tenute.values(), key=lambda v: -abs(v["c"]))],
+        "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(tenute.values(), key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
         "schede": schede,
         "data": oggi.isoformat(),
@@ -85,15 +85,17 @@ def calcola(din, oggi):
 
 
 def spinta(vecchio, nuovo):
-    """La prova che ha spostato di piu' il punteggio rispetto al calcolo precedente."""
-    if not vecchio or not vecchio.get("contributi"):
-        return {"stato": "primo calcolo"}
-    a = {c["prova"]: c["c"] for c in vecchio.get("contributi", [])}
-    b = {c["prova"]: c["c"] for c in nuovo.get("contributi", [])}
-    diff = {k: b.get(k, 0) - a.get(k, 0) for k in set(a) | set(b)}
+    """La prova che ha spostato di piu' il punteggio rispetto al calcolo precedente.
+    Le prove si riconoscono dalla chiave stabile (url|testo), non dal nome mostrato."""
+    V = (vecchio or {}).get("contributi") or []
+    if not V or any("k" not in c for c in V):
+        return {"stato": "ricalcolo"}  # primo calcolo o calcolo di una versione precedente: nessun confronto affidabile
+    a = {c["k"]: c for c in V}
+    b = {c["k"]: c for c in nuovo.get("contributi", [])}
+    diff = {k: (b[k]["c"] if k in b else 0) - (a[k]["c"] if k in a else 0) for k in set(a) | set(b)}
     k = max(diff, key=lambda x: abs(diff[x]))
-    stato = "nuova" if k not in a else "uscita" if k not in b else "invecchiata" if abs(b[k]) < abs(a[k]) else "rivista"
-    ip, _, t = k.partition(" ")
+    stato = "nuova" if k not in a else "uscita" if k not in b else "invecchiata" if abs(b[k]["c"]) < abs(a[k]["c"]) else "rivista"
+    ip, _, t = (b.get(k) or a.get(k))["prova"].partition(" ")
     return {"prova": t.strip("«»"), "ipotesi": ip, "stato": stato, "dc": round(diff[k], 2)}
 
 
