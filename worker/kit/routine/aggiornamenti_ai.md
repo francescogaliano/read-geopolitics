@@ -39,6 +39,8 @@ METODO DEI PESI: /tmp/routine/pesi.md (se manca: worker/kit/routine/pesi.md). Le
 
 6. SCRIVI IL GIRO in `ai_agg/<oggi>` (get, aggiungi in fondo, set): {"data":"<oggi>","giri":[…, {"ora":"HH:MM","fatti":[{"testo": il fatto in una frase completa (max 25 parole), "fonte":{"nome","url"}, "chiave":"<id>", "dinamica":"<meccanismo>", "effetto":"prova A" | "prova B" | "non decide", "peso":"da→a" se è cambiato}], "allarme": la risposta del server o null}]}.
 
+6-bis. «IN 60 SECONDI». Se in questo giro un peso si è spostato, o un fatto cambia il filo della giornata, riscrivi la sintesi: in ai_agg/<oggi> il campo "sessanta": {"ora":"HH:MM","frase": 2-3 frasi complete, max 45 parole in tutto, con le stesse regole della "frase" dell'edizione del mattino (REGOLA DELLE FRASI, *asterischi* = evidenza)}. Parti dalla frase del mattino (o dall'ultima "sessanta") e integra il fatto nuovo: deve leggersi come la giornata vista adesso, non come un elenco. Se niente cambia il quadro, lascia "sessanta" com'è. Non toccare mai ai_oggi.
+
 7. NESSUNA NOVITÀ: scrivi comunque il giro con "fatti":[] e "nota":"nessuna novità", così il giro successivo sa da che ora ripartire.
 
 8. CONTROLLO: ogni prova nuova ha url aperto da te e scheda completa; pesi.py senza errori su ogni chiave cambiata; A+B=100.
