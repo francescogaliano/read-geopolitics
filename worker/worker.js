@@ -2059,8 +2059,9 @@ async function sndDrawQS(c,q,sc){const g=c.getContext("2d");await sndFonts();snd
 function sitoItem(g,y,n,it){g.fillStyle="#E8B050";g.font="600 40px 'IBM Plex Serif'";g.fillText(String(n),96,y-2);
  let x=150;if(it.flag){g.font="34px 'Apple Color Emoji','Noto Color Emoji',sans-serif";g.fillText(it.flag,x,y-4);x+=g.measureText(it.flag).width+14}
  g.fillStyle="#86B4EA";g.font="500 22px 'IBM Plex Mono'";for(const ch of String(it.dove||"").toUpperCase()){g.fillText(ch,x,y+4);x+=g.measureText(ch).width+5}
- y+=40;let fs=40;for(;fs>32;fs-=2){g.font="600 "+fs+"px 'IBM Plex Sans'";if(sndWrap(g,sndToks(it.t),834).length<=2)break}
- for(const ln of sndWrap(g,sndToks(it.t),834).slice(0,2)){sndLine(g,ln,150,y,"#EEF2F6","#E8B050");y+=50}y+=8;
+ y+=40;let fs=40,tk=sndToks(it.t);for(;fs>32;fs-=2){g.font="600 "+fs+"px 'IBM Plex Sans'";if(sndWrap(g,tk,834).length<=1)break}
+ while(tk.length>1&&sndWrap(g,tk,834).length>1){tk=tk.slice(0,-1);tk[tk.length-1]={...tk[tk.length-1],w:tk[tk.length-1].w+"…"}}
+ sndLine(g,tk,150,y,"#EEF2F6","#E8B050");y+=58;
  for(const [k,col,tz] of [["▲","#86B4EA",it.a],["▼","#E8B050",it.b]]){const chi=tz[0]||"",fr=tz[1]||[];
   g.fillStyle=col;g.font="600 24px 'IBM Plex Sans'";g.fillText(k,150,y+5);
   g.fillStyle="#8fa0bd";g.font="600 28px 'IBM Plex Sans'";g.fillText(chi+":",186,y);const xx=186+g.measureText(chi+": ").width,max=984-xx;
