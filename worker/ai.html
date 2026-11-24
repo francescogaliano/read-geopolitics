@@ -333,6 +333,14 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 .dn-vo{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dn-vo div{border-top:3px solid var(--c);padding-top:6px;font-size:13px;color:#9FB0BE}.dn-vo b{display:block;color:var(--c);font-size:14px;margin-bottom:2px}
 .dn-lv{border-top:1px solid var(--line);padding:12px 0}.dn-lv:last-of-type{border-bottom:1px solid var(--line)}.dn-lvh{display:flex;gap:12px;align-items:center}.dn-lvh b{display:block;font-size:15px}.dn-lvh small{color:var(--mut);font-size:12.5px}.dn-lvh>span{width:30px;height:30px;border-radius:50%;background:#16212B;display:grid;place-items:center;color:var(--acc);font-weight:700;flex:none}
 .dn-lvk{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0 42px}.dn-lvk button{all:unset;cursor:pointer;font-weight:600;font-size:14px;border-left:3px solid var(--c);padding:4px 0 4px 8px;min-height:28px}
+.dn-pq{font-size:13.5px;color:#9FB0BE;margin:0 0 10px}.dn-mt small{color:var(--mut);letter-spacing:0;text-transform:none;font:11.5px Inter,system-ui,sans-serif}
+.dn-alt{border-top:1px solid var(--line)}.dn-alt:last-of-type{border-bottom:1px solid var(--line)}
+.dn-alt>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:30px 1fr 74px 14px;gap:10px;align-items:center;min-height:56px;padding:6px 0}.dn-alt>summary::-webkit-details-marker{display:none}
+.dn-ai{width:28px;height:28px;border-radius:50%;background:#1A1630;color:#A796F5;display:grid;place-items:center;font-weight:700}
+.dn-an b{display:block;font-size:15px}.dn-an small{display:flex;align-items:center;gap:3px;font-size:11.5px;color:var(--mut);margin-top:2px}.dn-an small i{width:7px;height:7px;border-radius:50%;background:#2A3A48}.dn-an small i.on{background:#A796F5}
+.dn-am{display:flex;gap:2px;height:8px}.dn-am i:first-child{border-radius:4px 0 0 4px}.dn-am i:last-child{border-radius:0 4px 4px 0}
+.dn-ar{color:var(--mut);transition:transform .2s}.dn-alt[open] .dn-ar{transform:rotate(90deg)}.dn-ab{padding:4px 0 14px}
+.dn-mk{font:700 11px ui-monospace,monospace;color:#A796F5;margin-left:4px;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.dn-spin{animation:none}.dn-orb{display:none}}
 </style></head><body><div class="wrap">
 <div class="brand"><img class="lg" src="/ai/icon-180.png?v=3" alt="" width="44" height="44"><div style="flex:1;min-width:0"><h1>Intelligenza artificiale</h1><div class="tag mono">L'IA in 10 minuti · privato</div></div><button class="hb2" data-v="archivio" aria-label="Cerca e archivio"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.2" cy="10.1" r="6.25" fill="#1B3B62" stroke="#A6D4FA" stroke-width="2" /><path d="M14.8 14.8L20.7 20.6" fill="none" stroke="#F5B94D" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6.7 8.5C7.4 6.8 8.3 6.4 10.2 6.2" fill="none" stroke="#DFEFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" /></svg></button><button class="hb2 cl" data-v="miei" aria-label="I miei clienti"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.6" y="8.6" width="11.6" height="8.5" rx="1.5" fill="#6CAAE2"/><path d="M7.4 7.4C7.4 6.3 8.3 5.4 9.4 5.4H9.5C10.6 5.4 11.5 6.3 11.5 7.4V8.6H7.4Z" fill="#1B3B62"/><path d="M3.6 11.6H15.2" stroke="#1B3B62" stroke-width="1.05" fill="none"/><circle cx="18.2" cy="10" r="2.1" fill="#F5B94D"/><path d="M15.9 17.9C15.9 15.9 16.9 14.1 18.2 14.1C19.5 14.1 20.5 15.9 20.5 17.9Z" fill="#F6F1E8"/></svg></button></div>
@@ -713,13 +721,12 @@ function storiaScheda(l,i,E){const lv=TM(l),F=l.filone&&filOf(l.filone),cf=l.com
 
 /* ---------- CHIAVE ---------- */
 /* ---------- chiavi che ragionano: meccanismo, ipotesi in gara, segnali, mappa delle chiavi (24/11/2026, pilota sulla chiave 1) ---------- */
-const DNC={A:"#4CC9A6",B:"#F0A04B"},dnCol=x=>DNC[x]||"#8E9DAA";
+const DNC={A:"#4CC9A6",B:"#F0A04B",C:"#86B4EA"},dnCol=x=>DNC[x]||"#8E9DAA";
 const dnMec=id=>(D.meccanismi||[]).find(m=>m.id===id);
 const dnFonti=F=>(F||[]).map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome)}</a>`:esc(f.nome||"")).join(" · ");
 const dnTag=t=>t==="misurato"?`<em class="dn-tg m">misurato</em>`:`<em class="dn-tg i">${esc(t||"inferito")}</em>`;
-function dnBlocco(t){const d=t.dinamica,M=dnMec(d.meccanismo)||{},H=d.ipotesi||[],a=H[0]||{},b=H[1]||{},pa=Math.max(0,Math.min(100,+a.peso||50));
- let h=`<div class="dn"><div class="dn-l"><span>Perché potrebbe succedere</span>${d.soglie_provvisorie?`<em>pesi e soglie provvisori</em>`:""}</div>
- <div class="dn-mech"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#2A3A48" stroke-width="3"/><path class="dn-spin" d="M32 10 A22 22 0 0 1 54 32" fill="none" stroke="#A796F5" stroke-width="3.5" stroke-linecap="round"/><text x="32" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="#A796F5">↻</text></svg><div><span class="dn-mt">Meccanismo · ${esc(M.breve||d.meccanismo||"")}</span><b>${esc(d.frase||"")}</b></div></div>
+function dnUna(d){const M=dnMec(d.meccanismo)||{},H=d.ipotesi||[],a=H[0]||{},b=H[1]||{},pa=Math.max(0,Math.min(100,+a.peso||50));
+ let h=`${d.perche_qui?`<p class="dn-pq">${esc(d.perche_qui)}</p>`:""}<div class="dn-mech"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#2A3A48" stroke-width="3"/><path class="dn-spin" d="M32 10 A22 22 0 0 1 54 32" fill="none" stroke="#A796F5" stroke-width="3.5" stroke-linecap="round"/><text x="32" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="#A796F5">↻</text></svg><div><span class="dn-mt">Meccanismo · ${esc(M.breve||d.meccanismo||"")}${M.stato==="in_prova"?` <em class="dn-tg i">in prova</em>`:""}${M.famiglia?` <small>· ${esc(M.famiglia)}</small>`:""}</span><b>${esc(d.frase||"")}</b></div></div>
  <div class="dn-bil"><div class="dn-bh"><span style="color:${dnCol(a.id)}">${esc(a.id)} · ${esc(a.nome||"")}</span><span style="color:${dnCol(b.id)}">${esc(b.id)} · ${esc(b.nome||"")}</span></div>
  <div class="dn-bb"><i style="width:${pa}%;background:${dnCol(a.id)}"></i><i style="width:${100-pa}%;background:${dnCol(b.id)}"></i><b style="left:${pa}%"></b></div>
  <div class="dn-bp"><span style="color:${dnCol(a.id)}">${pa}%</span><small>pende verso ${pa>=50?esc(a.id):esc(b.id)}</small><span style="color:${dnCol(b.id)}">${100-pa}%</span></div>
@@ -731,6 +738,14 @@ function dnBlocco(t){const d=t.dinamica,M=dnMec(d.meccanismo)||{},H=d.ipotesi||[
  if(d.manca)h+=`<div class="dn-fl"><span>?</span><div><b>Il dato che manca</b>${esc(d.manca)}</div></div>`;
  if((d.cliente||[]).length)h+=`<div class="dn-l"><span>Per il cliente</span></div>${d.cliente.map(c=>`<div class="dn-cli"><span style="color:${dnCol(c.ipotesi)}">${esc(c.ipotesi)}</span>«${esc(c.testo)}»</div>`).join("")}`;
  if(M.nome)h+=dnScheda(M);
+ return h}
+function dnLista(t){return Array.isArray(t.dinamiche)&&t.dinamiche.length?t.dinamiche:t.dinamica?[t.dinamica]:[]}
+const DNF={forte:3,media:2,debole:1};
+function dnBlocco(t){const L=dnLista(t);if(!L.length)return"";const prov=L.some(d=>d.soglie_provvisorie);
+ let h=`<div class="dn"><div class="dn-l"><span>Perché potrebbe succedere${L.length>1?` · ${L.length} meccanismi`:""}</span>${prov?`<em>pesi e soglie provvisori</em>`:""}</div>`;
+ if(L.length===1)h+=dnUna(L[0]);
+ else h+=L.map((d,i)=>{const M=dnMec(d.meccanismo)||{},H=d.ipotesi||[],a=H[0]||{},pa=Math.max(0,Math.min(100,+a.peso||50)),f=DNF[d.forza]||2;
+  return `<details class="dn-alt"${i===0?" open":""}><summary><span class="dn-ai">↻</span><span class="dn-an"><b>${esc(M.breve||M.nome||d.meccanismo)}</b><small>${[1,2,3].map(k=>`<i class="${k<=f?"on":""}"></i>`).join("")} ${esc(d.forza||"media")}${M.stato==="in_prova"?" · in prova":""}</small></span><span class="dn-am"><i style="width:${pa}%;background:${dnCol("A")}"></i><i style="width:${100-pa}%;background:${dnCol("B")}"></i></span><span class="dn-ar">›</span></summary><div class="dn-ab">${dnUna(d)}</div></details>`}).join("");
  h+=`<div class="dn-lk" data-sh="mappa:">${ico("11-chiavi","",22)}<span>Dove sta nella mappa delle chiavi</span><b>›</b></div>`;
  return h+`</div>`}
 function dnScheda(M){const C=M.ciclo||[],S=M.scala||{};
@@ -750,13 +765,17 @@ let DNS="";
 const DNW=100,DNH=32;
 function dnNome(id){return `${tN(id)} · ${tBreve(id)}`}
 function dnLab(id){const t=(D.tesi||[]).find(x=>x.id===id),nd=(((D.mappa||[])[0]||{}).nodi||[]).find(n=>n.id===id)||{},B=nd.corta||corto(tBreve(id),12);return t&&t.stato==="contesto"?B:`${tN(id)} · ${B}`}
-function dnSvg(){const Mp=(D.mappa||[])[0];if(!Mp)return"";const N={};(Mp.nodi||[]).forEach(n=>N[n.id]=n);const E=Mp.archi||[];
+function dnNodi(Mp){const N={};(Mp.nodi||[]).forEach(n=>N[n.id]={...n});(Mp.archi||[]).forEach(e=>[e.da,e.a].forEach(k=>{if(k&&!N[k])N[k]={id:k}}));
+ const ok=n=>isFinite(n.x)&&isFinite(n.y),miss=Object.values(N).filter(n=>!ok(n));
+ miss.forEach(n=>{let best=null,bd=-1;for(let y=22;y<=378;y+=22)for(let x=56;x<=304;x+=22){const P=Object.values(N).filter(ok);const dd=P.length?Math.min(...P.map(q=>Math.hypot((q.x-x)/1.6,q.y-y))):999;if(dd>bd){bd=dd;best=[x,y]}}n.x=best[0];n.y=best[1]});
+ Object.values(N).forEach(n=>{n.x=Math.max(52,Math.min(308,n.x));n.y=Math.max(20,Math.min(380,n.y))});return N}
+function dnSvg(){const Mp=(D.mappa||[])[0];if(!Mp)return"";const N=dnNodi(Mp);const E=Mp.archi||[];
  const w=k=>Math.min(96,Math.max(60,dnLab(k).length*6.6+14));
  const clip=(x1,y1,x2,y2,k)=>{const W2=w(k)/2+4,H2=DNH/2+4,dx=x2-x1,dy=y2-y1,t=Math.min(Math.abs(W2/(dx||1e-9)),Math.abs(H2/(dy||1e-9)));return[x2-dx*t,y2-dy*t]};
  const act=e=>!DNS||DNS===e.circuito||DNS===e.da||DNS===e.a;
  const CL=c=>c?dnCol(c):"#4A5B69";
  let h=`<defs>${["A","B","x"].map(c=>`<marker id="dnm${c}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${CL(c==="x"?"":c)}"/></marker>`).join("")}</defs>`;
- (Mp.circuiti||[]).forEach(c=>{const P=(c.nodi||[]).filter(k=>N[k]);if(P.length<3)return;const cx=P.reduce((s,k)=>s+N[k].x,0)/P.length,cy=P.reduce((s,k)=>s+N[k].y,0)/P.length;h+=`<g opacity="${!DNS||DNS===c.id?1:.15}"><polygon points="${P.map(k=>N[k].x+","+N[k].y).join(" ")}" fill="${dnCol(c.id)}" fill-opacity=".10"/><text x="${cx+(c.id==="A"?14:-14)}" y="${cy+12}" text-anchor="middle" font-size="30" font-weight="700" fill="${dnCol(c.id)}" fill-opacity=".55" font-family="Georgia,serif">${esc(c.id)}</text></g>`});
+ (Mp.circuiti||[]).forEach(c=>{const P=(c.nodi||[]).filter(k=>N[k]);if(P.length<3)return;const cx=P.reduce((s,k)=>s+N[k].x,0)/P.length,cy=P.reduce((s,k)=>s+N[k].y,0)/P.length;h+=`<g opacity="${!DNS||DNS===c.id?1:.15}"><polygon points="${P.map(k=>N[k].x+","+N[k].y).join(" ")}" fill="${dnCol(c.id)}" fill-opacity=".10"/><text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="30" font-weight="700" fill="${dnCol(c.id)}" fill-opacity=".55" font-family="Georgia,serif">${esc(c.id)}</text></g>`});
  E.forEach((e,i)=>{const a=N[e.da],b=N[e.a];if(!a||!b)return;const[sx,sy]=clip(b.x,b.y,a.x,a.y,e.da),[ex,ey]=clip(a.x,a.y,b.x,b.y,e.a),col=CL(e.circuito),mx=(sx+ex)/2,my=(sy+ey)/2;
   h+=`<g opacity="${act(e)?1:.12}"><path d="M${sx} ${sy}L${ex} ${ey}" stroke="${col}" stroke-width="${e.circuito?2.4:1.4}" fill="none"${e.segno==="-"?' stroke-dasharray="5 4"':""} marker-end="url(#dnm${e.circuito||"x"})"/><circle cx="${mx}" cy="${my}" r="9" fill="#0B1118" stroke="${col}" stroke-width="1.4"/><text x="${mx}" y="${my+3.8}" text-anchor="middle" font-size="10" font-weight="700" fill="${e.circuito?col:"#AFC0CE"}" font-family="ui-monospace,monospace">${i+1}</text></g>`});
  const inv=new Set();E.forEach(e=>{if(DNS&&act(e)){inv.add(e.da);inv.add(e.a)}});
@@ -769,7 +788,7 @@ function dnDet(){const Mp=(D.mappa||[])[0]||{},E=Mp.archi||[],C=(Mp.circuiti||[]
   return `<div class="dn-dh" style="border-color:${tcol(DNS)}" data-sh="tesi:${esc(DNS)}">${esc(dnNome(DNS))} ›<small>${esc(((D.tesi||[]).find(t=>t.id===DNS)||{}).titolo||"")}</small></div><div class="dn-grp">È spinta da (${I.length})</div>${I.map(([e,i])=>dnRiga(e,i)).join("")||'<p class="dn-ch">Da nessuna chiave: si muove per cause esterne.</p>'}<div class="dn-grp">Spinge (${O.length})</div>${O.map(([e,i])=>dnRiga(e,i)).join("")||'<p class="dn-ch">Nessuna chiave: è una conseguenza, serve a verificare.</p>'}`}
  return ""}
 function dnMappaBody(){const Mp=(D.mappa||[])[0];if(!Mp)return `<p class="n">La mappa arriva con la routine delle chiavi.</p>`;const E=Mp.archi||[],V=Mp.variabile;
- const ids=(Mp.nodi||[]).map(n=>n.id),st=ids.map(k=>{const o=E.filter(e=>e.da===k).length,i=E.filter(e=>e.a===k).length,c=E.some(e=>e.circuito&&(e.da===k||e.a===k));return{k,o,i,c}});
+ const ids=Object.keys(dnNodi(Mp)),st=ids.map(k=>{const o=E.filter(e=>e.da===k).length,i=E.filter(e=>e.a===k).length,c=E.some(e=>e.circuito&&(e.da===k||e.a===k));return{k,o,i,c}});
  const G=[["◎","Snodi","dentro i circuiti: muovono e sono mossi",x=>x.c&&x.o&&x.i],["→","Leve esterne","nessuna chiave le spinge: da guardare per prime",x=>!x.c&&x.o&&!x.i],["◦","Conseguenze","servono a verificare, non a prevedere",x=>!x.o]];
  return `<div class="dn-map">
  <details class="dn-cap" style="margin-top:0"><summary><span>❔</span>Come si legge questa pagina<i>›</i></summary><div class="dn-in">
@@ -794,7 +813,7 @@ function chiaveScheda(t){const CC=contaChiave(t),V={su:["▲","si rafforza","#4C
  let h=scHero({col:c,icon:"key",kick:"Chiave",sub:`${(t.prove||[]).length} ${(t.prove||[]).length===1?"prova":"prove"}${CC.S.length?" · ultimo fatto il "+esc(dl(CC.S.at(-1).data)):""}`,right:`<span style="text-align:right;font:700 12px/1.3 ui-monospace,monospace;color:${V[2]}">${V[0]}<br>${V[1]}</span>`,ans:esc(t.titolo),pc:rich(t.uno||""),extra:contoLinea(t)});
  const p0=P.find(p=>p.val&&/\d/.test(p.val));if(p0)h+=`<span class="k" style="margin:14px 0 6px">Una delle prove · la più recente con un numero</span>`+scFig(p0.val,rich(p0.testo||""),null,null,`${esc(p0.fonte&&p0.fonte.nome||"")}${p0.data?" · "+esc(dl(p0.data)):""}`);
  if(t.smentirebbe)h+=scTip("eye","#F0A04B","Cosa smentirebbe questa chiave",rich(t.smentirebbe));
- if(t.dinamica)h+=dnBlocco(t);
+ if(dnLista(t).length)h+=dnBlocco(t);
  h+=scSecs([
   {sez:"prove",titolo:"Le prove",prev:esc(P.slice(0,4).map(p=>p.fonte&&p.fonte.nome).filter(Boolean).join(", ")),vis:mvN(P.length),body:P.length?P.map(p=>`<div class="pv"><div class="v">${esc(p.val||"·")}<small>${esc(p.data?dl(p.data):"")}</small></div><div><p>${rich(p.testo||"")}</p><div class="s">${p.fonte?(p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.fonte.nome)}</a>`:esc(p.fonte.nome)):""} · ${p.tier==="T1"?"documento ufficiale":p.tier==="T2"?"stampa":"altra fonte"}</div></div></div>`).join(""):""},
   {sez:"storia",titolo:"Come è cambiata",prev:last?esc(`${dl(last.data)}: ${corto(last.testo,70)}`):"",vis:mvDots(S.length),body:S.length?`<div class="dots">${S.slice(-8).reverse().map(x=>`<div><b>${esc(dl(x.data))}</b> · ${dir(x.effetto)} ${rich(x.testo)}</div>`).join("")}</div>`:""},
@@ -1226,7 +1245,7 @@ function vTemi(){const T=D.tesi||[];
  let h=`<div class="o-h2">Temi e chiavi</div><div class="o-meta">${TMV==="temi"?"Gli 8 fronti dell'IA: dove siamo, cosa si muove, le storie.":"Una chiave è un'idea che spiega tanti fatti insieme. Se regge, ti dice prima degli altri dove va l'IA; ogni settimana i fatti la rafforzano o la indeboliscono."}</div>
  <div class="tmsw"><button data-tmv="temi" class="${TMV==="temi"?"on":""}">${ico("02-temi","",30)}<span>Temi</span></button><button data-tmv="chiavi" class="${TMV==="chiavi"?"on":""}">${ico("11-chiavi","",30)}<span>Chiavi · ${T.length}</span></button></div>`;
  if(TMV==="chiavi"){if(!T.length)return h+`<div class="empty">Le chiavi arrivano con la routine.</div>`;
-  return h+`${(D.mappa||[]).length?`<div class="dn-lk" data-sh="mappa:" style="border-top:1px solid var(--line);margin:4px 0 8px">${ico("11-chiavi","",22)}<span>Mappa: come le chiavi si spingono tra loro</span><b>›</b></div>`:""}<div class="cap" style="margin:4px 0 6px">Per ogni chiave, i fatti delle ultime 8 settimane dal più vecchio al più recente: ▲ a favore, ▼ contro, ● neutro.</div><div class="rows">${T.map(t=>`<div class="ch" data-sh="tesi:${esc(t.id)}"><span style="align-self:stretch;background:${tcol(t.id)}"></span><b style="font:600 13px ui-monospace,monospace;color:${tcol(t.id)};align-self:start;padding-top:4px">${tN(t.id)}</b><span class="chd"><b>${esc(tBreve(t.id))}</b>${t.sotto?`<small>${esc(t.sotto)}</small>`:""}${t.serve?`<em><i>Ti serve a capire</i> ${esc(t.serve.replace(/^./,c=>c.toLowerCase()))}</em>`:""}</span>${contoRiga(t)}</div>`).join("")}</div>`}
+  return h+`${(D.mappa||[]).length?`<div class="dn-lk" data-sh="mappa:" style="border-top:1px solid var(--line);margin:4px 0 8px">${ico("11-chiavi","",22)}<span>Mappa: come le chiavi si spingono tra loro</span><b>›</b></div>`:""}<div class="cap" style="margin:4px 0 6px">Per ogni chiave, i fatti delle ultime 8 settimane dal più vecchio al più recente: ▲ a favore, ▼ contro, ● neutro.</div><div class="rows">${T.map(t=>`<div class="ch" data-sh="tesi:${esc(t.id)}"><span style="align-self:stretch;background:${tcol(t.id)}"></span><b style="font:600 13px ui-monospace,monospace;color:${tcol(t.id)};align-self:start;padding-top:4px">${tN(t.id)}</b><span class="chd"><b>${esc(tBreve(t.id))}${dnLista(t).length?` <span class="dn-mk" title="meccanismi in gioco">↻ ${dnLista(t).length}</span>`:""}</b>${t.sotto?`<small>${esc(t.sotto)}</small>`:""}${t.serve?`<em><i>Ti serve a capire</i> ${esc(t.serve.replace(/^./,c=>c.toLowerCase()))}</em>`:""}</span>${contoRiga(t)}</div>`).join("")}</div>`}
  h+=`<div style="margin-top:6px">`;
  TORD.forEach(id=>{const[n,c,ic]=TEMI[id],T2=temaDoc(id),d=TDIR[T2.direzione],ns=temaStorie(id).length;
   h+=`<div class="tmr" data-sh="tema:${id}" style="border-left-color:${c}">${icoBox(ic,c,40)}<div style="min-width:0"><b>${esc(n)}</b>${d?` <span style="color:${d[1]};font:600 11px/1 ui-monospace,monospace;letter-spacing:.04em;margin-left:6px;white-space:nowrap">${d[2]}</span>`:""}<p>${T2.frase?rich(T2.frase):`<span style="color:var(--mut)">Si scrive domenica con la routine.</span>`}</p></div><div class="tmn"><b style="color:${c}">${ns}</b>storie <br>in 30 gg</div></div>`});
