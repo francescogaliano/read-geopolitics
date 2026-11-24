@@ -293,6 +293,7 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 .dn-spin{transform-origin:32px 32px;animation:dnsp 4s linear infinite}@keyframes dnsp{to{transform:rotate(360deg)}}
 .dn-bil{margin-top:18px}.dn-bh{display:flex;justify-content:space-between;gap:8px;font:700 15px/1.2 Inter,system-ui,sans-serif}
 .dn-bb{position:relative;display:flex;gap:2px;height:14px;margin:8px 0 4px}.dn-bb i:first-child{border-radius:7px 0 0 7px}.dn-bb i:nth-child(2){border-radius:0 7px 7px 0}.dn-bb b{position:absolute;top:-5px;width:3px;height:24px;background:var(--fg);border-radius:2px;transform:translateX(-1px)}
+.ag-r{display:grid;grid-template-columns:46px 1fr;gap:10px;padding:11px 0 11px 10px;border-top:1px solid var(--line);border-left:3px solid transparent;font-size:14.5px;line-height:1.5}.ag-r a{color:var(--acc);text-decoration:none}.ag-h{font-size:12px;color:var(--mut);padding-top:2px}.ag-0{color:var(--mut);font-size:13.5px}.ag-m{margin-top:4px;font-size:12.5px;color:var(--mut)}.ag-m b{color:var(--fg)}.ag-e{margin-left:6px;white-space:nowrap}
 .dn-ul{margin:0 0 2px;font-size:12.5px;color:var(--mut);text-align:center}.dn-mt2{display:block;text-align:center;font-size:12.5px;color:var(--mut);text-decoration:none;padding:6px 0 10px}.mp-in{font-size:15px;line-height:1.55;color:#C5D0DA;margin:4px 0 6px}.mp-r{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);padding:11px 0}.mp-r:last-of-type{border-bottom:1px solid var(--line)}.mp-i{flex:none;width:30px;text-align:center;font-size:18px;line-height:1.3;color:var(--amb)}.mp-r b{font-size:15px}.mp-r p{margin:3px 0 0;font-size:14px;line-height:1.5;color:#C5D0DA}
 .dn-pp{margin:4px 0 8px;font-size:13px;color:var(--mut,#8FA0B3);text-align:center}
 .dn-bp{display:flex;justify-content:space-between;align-items:center;font:700 22px/1 "Source Serif 4",Georgia,serif}.dn-bp small{font:12.5px Inter,system-ui,sans-serif;color:var(--mut)}
@@ -1027,12 +1028,20 @@ function livOf(l){if(l.livello&&LIVC[l.livello])return l.livello;const t=String(
 const LETTE=(()=>{try{return new Set(JSON.parse(localStorage.getItem("ai_lette")||"[]"))}catch(e){return new Set()}})();
 function segnaLetta(id){LETTE.add(id);try{localStorage.setItem("ai_lette",JSON.stringify([...LETTE].slice(-200)))}catch(e){}}
 const ARR={su:"↑",giu:"↓",stabile:"→",incerta:"?"};
+/* 24/11/2026: «Durante la giornata» — i giri di aggiornamenti_ai: quali fatti sono arrivati e cosa hanno spostato nelle dinamiche */
+function aggOggi(day){const A=D.agg;if(!A||A.data!==day||!(A.giri||[]).length)return "";
+ const G=[...A.giri].reverse(),nf=G.reduce((n,g)=>n+(g.fatti||[]).length,0);
+ const ef=e=>{const m=String(e||"").match(/prova\s*([AB])/i);return m?`<span class="ag-e" style="color:${dnCol(m[1].toUpperCase())}">● sostiene ${m[1].toUpperCase()}</span>`:`<span class="ag-e" style="color:var(--mut)">○ non decide</span>`};
+ return `<div class="osec"><b>Durante la giornata</b><span>${nf}</span></div>`+G.map(g=>{const F=g.fatti||[];
+  if(!F.length)return `<div class="ag-r ag-0"><span class="ag-h mono">${esc(g.ora||"")}</span><span>Nessuna novità che sposti le dinamiche.</span></div>`;
+  return F.map((f,i)=>`<div class="ag-r" style="border-left-color:${tcol(f.chiave)}"><span class="ag-h mono">${i?"":esc(g.ora||"")}</span><div style="min-width:0"><div>${rich(f.testo||"")}${f.fonte&&f.fonte.url?` <a href="${esc(f.fonte.url)}" target="_blank" rel="noopener">${esc(f.fonte.nome||"fonte")} ↗</a>`:""}</div><div class="ag-m">${f.chiave?`<a href="#" data-sh="tesi:${esc(f.chiave)}">${esc(tBreve(f.chiave))}</a>`:""}${f.dinamica?` · ${esc((dnMec(f.dinamica)||{}).breve||f.dinamica)}`:""} ${ef(f.effetto)}${f.peso?` <b>${esc(String(f.peso).replace("->","→"))}</b>`:""}</div></div></div>`).join("")}).join("")}
 function vOggi5(){const E=D.edizione;if(!E)return `<div class="empty">Nessuna edizione ancora: arriva con la routine del mattino.</div>`;
  const LT=E.letture||[],par=JSON.stringify(LT).split(/\s+/).length,min=Math.max(3,Math.round(par/200)),lid=i=>E.id+":"+i;
  let h=`<div class="o-h2">Il briefing di oggi</div><div class="o-meta">${esc(dl(E.id))} · ${LT.length} ${LT.length===1?"storia":"storie"} · ${min} min${D.edizioni.length>1?` · <a href="#" class="lk" data-sh="archivio:">altre edizioni</a>`:""}</div>`;
  h+=`<div class="prog">${LT.map((l,i)=>`<i class="${LETTE.has(lid(i))?"on":""}"></i>`).join("")}</div>`;
  const N=E.numero;
  if(E.frase||N)h+=`<div class="sixty"><span class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase;display:inline-flex;align-items:center;gap:8px">${ico("08-briefing","",20)}In 60 secondi</span>${E.frase?`<p>${rich(E.frase)}</p>`:""}${N&&N.val?`<div class="nm" data-sh="numero:"><b>${esc(N.val)}</b><span>${rich(corto(N.testo||"",110))}</span></div>`:""}</div>`;
+ h+=aggOggi(E.id);
  const LV=[...new Set(LT.map(temaOf))];
  if(LV.length)h+=`<div class="lgd">${LV.map(k=>`<span><i style="background:${TEMI[k][1]}"></i>${TEMI[k][0]}</span>`).join("")}</div>`;
  h+=`<div class="osec"><b>Le storie</b><span>${LT.length}</span></div>`+LT.map((l,i)=>{const lv=TM(l),F=l.filone&&filOf(l.filone),e=l.tesi&&l.tesi.effetto;
