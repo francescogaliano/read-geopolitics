@@ -2074,8 +2074,8 @@ async function sitoDraw(c,S){const g=c.getContext("2d");await sndFonts();g.textA
  {const bg=g.createRadialGradient(540,700,0,540,700,1300);bg.addColorStop(0,"#14213f");bg.addColorStop(.6,"#0a0f1c");bg.addColorStop(1,"#0a0f1c");g.fillStyle=bg;g.fillRect(0,0,1080,360)}
  finLogo(g,540-56,150,112);g.textAlign="center";g.fillStyle="#EEF2F6";g.font="600 54px 'IBM Plex Serif'";g.fillText("Read Geopolitics",540,280);g.textAlign="left";
  let y=388;sndKick(g,"Stamattina sul sito · "+sndMesi(SND.day),y);y+=58;
- g.font="600 60px 'IBM Plex Serif'";g.fillStyle="#EEF2F6";g.fillText(S.n+" storie, due tesi per ognuna.",96,y);y+=72;
- g.textAlign="center";g.fillStyle="#E8B050";g.font="600 64px 'IBM Plex Serif'";g.fillText("Tu leggi, tu decidi.",540,y);g.textAlign="left";y+=102;
+ g.textAlign="center";g.font="600 60px 'IBM Plex Serif'";g.fillStyle="#EEF2F6";g.fillText(S.n+" storie, due tesi per ognuna.",540,y);y+=72;
+ g.fillStyle="#E8B050";g.font="600 64px 'IBM Plex Serif'";g.fillText("Tu leggi, tu decidi.",540,y);g.textAlign="left";y+=102;
  const ln=yy=>{g.strokeStyle="#22324a";g.lineWidth=2;g.beginPath();g.moveTo(96,yy);g.lineTo(984,yy);g.stroke()};
  (S.voci||[]).forEach((it,i)=>{ln(y);y+=20;y=sitoItem(g,y,i+1,it)});ln(y);
  const A=S.altre||[],nA=Math.max(A.length,S.n-(S.voci||[]).length);if(!nA)return;
