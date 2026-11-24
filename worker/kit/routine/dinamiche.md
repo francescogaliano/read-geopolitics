@@ -12,6 +12,8 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
 
 0. GIRO STRAORDINARIO. Se il messaggio di avvio contiene «GIRO STRAORDINARIO», ti ha avviato la routine del mattino perché un fatto lo merita (il motivo è nel messaggio). Allora: lavora solo sulla chiave indicata e su quelle collegate a lei nella mappa; budget 20 ricerche e 20 pagine; fai i punti 3-7 e 9-10 solo per loro (niente punto 8 tranne gli "esiti"); il peso può spostarsi di 10 punti come nel giro normale, e il giro del lunedì successivo potrà spostarlo al massimo di altri 5. Nel resoconto e nell'avviso di fine scrivi «straordinario» e il motivo.
 
+0-bis. RICALIBRAZIONE PESI. Se il messaggio di avvio contiene «RICALIBRAZIONE PESI»: per TUTTE le dinamiche esistenti rifai solo il peso con la regola PESI del punto 5, senza limite di spostamento (fra 25 e 75). Riapri le prove già presenti; puoi aggiungere al massimo 1 prova nuova per ipotesi (budget 30 ricerche e 30 pagine). Non toccare meccanismi, scenari, mappa e biblioteca. Poi punto 9 e punto 10 (nel resoconto: per ogni dinamica peso vecchio → nuovo e "peso_perche").
+
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
 2. BIBLIOTECA. `python3 /tmp/rgdb.py list ai_meccanismi --all`. Il nucleo è in /tmp/routine/meccanismi.json (se manca: worker/kit/routine/meccanismi.json nel repository). Ogni meccanismo del nucleo che non esiste ancora in ai_meccanismi va creato con il suo id e tutti i suoi campi, più "stato":"nucleo". Non sovrascrivere mai un meccanismo già presente (può contenere storia e punteggi).
@@ -29,12 +31,13 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
     "neutro":"i fatti compatibili con entrambe (non spostano il peso)",
     "segnali":[{"ipotesi":"A","testo":"la soglia osservabile, breve","cond":"la condizione","serve":N,"fatti":M,"nota":"es. 1 trimestre su 2"},{"ipotesi":"B",…}],
     "scenari":[{"ipotesi":"A","icona":"un simbolo semplice (⚡ € ⚖ ⏳ 🔒 📉 📈)","titolo":"cosa succede, max 8 parole","chiave":"<id della chiave che si accende>","effetto":"max 6 parole"},{"ipotesi":"B",…}],
-    "revisore":"(dal punto 6)","manca":"il dato che deciderebbe","cliente":[{"ipotesi":"A","testo":"una frase da dire a un cliente"},{"ipotesi":"B","testo":"…"}],"soglie_provvisorie":true,"aggiornato":"<oggi>"}
+    "peso_perche":"una riga sul perché del peso","revisore":"(dal punto 6)","manca":"il dato che deciderebbe","cliente":[{"ipotesi":"A","testo":"una frase da dire a un cliente"},{"ipotesi":"B","testo":"…"}],"soglie_provvisorie":true,"aggiornato":"<oggi>"}
    - Scenari: "chiave" deve essere una chiave DIVERSA da quella su cui stai lavorando, e i due scenari (A e B) devono accendere chiavi diverse tra loro; se non trovi un effetto su un'altra chiave, togli il campo "chiave" invece di ripetere.
-   - Pesi: 50/50 solo se le prove sono davvero in pareggio, e in quel caso scrivilo nel resoconto con il dato che manca. Se una delle due ipotesi ha più prove misurate, il peso lo deve mostrare.
+   - PESI (regola che vale a ogni giro, per OGNI dinamica, anche quelle che non tocchi): il peso è il bilancio delle prove, non un valore di partenza. Ricalcolalo ogni settimana guardando tutte le prove delle due ipotesi: conta di più una prova «misurato» di una «inferito», una fonte primaria (bilanci, statistiche ufficiali, documenti) di un articolo, una prova recente di una vecchia. Scrivi sempre "peso_perche": una riga (max 20 parole) che dice perché A ha quel peso (es. «A: 2 dati misurati di bilancio; B: una sola stima di stampa»).
+   - 50/50 è ammesso SOLO se le due ipotesi hanno lo stesso numero di prove misurate di qualità simile; in quel caso "peso_perche" comincia con «Pareggio:» e dice il dato che lo romperebbe. Con prove misurate in numero diverso il pareggio è un ERRORE (vedi punto 9). Un pareggio non è una scelta prudente: è un'informazione, e va giustificata.
    - A è «il meccanismo opera»; B è la SPIEGAZIONE CONCORRENTE PIÙ FORTE (non per forza il contrario: spesso è un altro meccanismo o la spiegazione più banale).
    - Prove: al massimo 3 per ipotesi, ognuna aperta e letta da te; prima le prove già presenti nella chiave, poi ricerche nuove. Niente a memoria.
-   - Peso (A + B = 100): al primo giro fra 30 e 70 secondo il bilancio delle prove; poi si sposta al massimo di 10 punti a settimana e SOLO con una prova nuova che una sola ipotesi spiega. Scrivi nel resoconto quale prova lo ha spostato.
+   - Peso (A + B = 100), fra 25 e 75: al primo giro secondo il bilancio delle prove; poi si sposta al massimo di 10 punti a settimana per una prova nuova, ma deve SEMPRE restare coerente con il bilancio delle prove presenti (se non lo è, correggilo anche senza prove nuove e scrivilo). Scrivi nel resoconto quale prova lo ha spostato.
    - Segnali: un dato pubblicato e ricorrente (trimestrali, statistiche ufficiali, listini, indici). Le soglie le proponi tu e restano provvisorie; aggiorna "fatti" solo con dati pubblicati.
    - Scrivi con `python3 /tmp/rgdb.py get ai_tesi <id>` poi update con --if-version: {"dinamiche":[…]} (la lista va riscritta intera).
 
@@ -54,6 +57,6 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
    - MECCANISMI NUOVI: se in "anomalie" ci sono 2 o più fatti simili di settimane diverse, crea un meccanismo nuovo (stessi campi del nucleo, "stato":"in_prova", "nato":"<oggi>", "da_anomalie":[…]). Non serve il permesso di Francesco: lo vede nella pagina come «in prova» e può togliere il meccanismo.
    - Un meccanismo «in prova» che dopo 8 settimane non è usato da nessuna chiave va tolto (delete) e detto nel resoconto.
 
-9. CONTROLLO. Ogni prova ha un url aperto da te; nessun testo supera le misure; ogni "chiave" citata in scenari e archi esiste; A+B=100; nessuna chiave ha più di 3 dinamiche.
+9. CONTROLLO. Ogni prova ha un url aperto da te; nessun testo supera le misure; ogni "chiave" citata in scenari e archi esiste; A+B=100; nessuna chiave ha più di 3 dinamiche; ogni dinamica ha "peso_perche"; nessuna dinamica è a 50/50 se le due ipotesi hanno un numero diverso di prove «misurato» (se succede, ripesala prima di chiudere). Conta con uno script: quante dinamiche sono a 50/50 e scrivilo nel resoconto.
 
 10. RESOCONTO e AVVISO DI FINE: nel resoconto, per ogni chiave: meccanismi tenuti e scartati (con punteggio), pesi spostati e perché, obiezioni del revisore accolte, meccanismi nuovi, anomalie. Poi `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"fine","esito":"ok oppure errore","nota":"una riga"}'`
