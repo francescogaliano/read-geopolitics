@@ -117,7 +117,10 @@ export async function aiPanelApi(env, b, h) {
     const tocchi = {}; for (const e of edz) for (const c of e.clienti || []) for (const n of c.clienti || []) (tocchi[n] = tocchi[n] || []).push({ data: e.id, testo: c.testo, perche: c.perche, tesi: c.tesi || null });
     const stato = (await h.kvGet(env, K_STATO)) || {};
     const c360 = new Set(pub ? [] : ((await env.DB.prepare("SELECT key FROM rdocs WHERE type='ai_c360'").all()).results || []).map((r) => r.key));
-    const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
+    /* 24/11/2026: i giri della routine «aggiornamenti_ai» di oggi (solo modo privato) */
+    const aggR = pub ? null : await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_agg' AND key=?").bind(h.romeToday()).first().catch(() => null);
+    let agg = null; try { agg = aggR && aggR.data ? JSON.parse(aggR.data) : null; } catch (e) { agg = null; }
+    const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, agg, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
       clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, sc: c.sc || null, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
     const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie}}`;
