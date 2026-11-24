@@ -7,6 +7,9 @@ Uso:
 
 tesi.json puo' essere un documento ai_tesi (con "dinamiche") oppure una singola dinamica.
 Ogni prova deve avere: tipo, diag, livello, data, origine, forza, debolezza, ragionamento.
+Contano le prove in "prove" (le 3 mostrate) e in "archivio" (le altre): nessuna si butta, l'eta' ne riduce il peso.
+Le schede sono congelate: se una cambia rispetto al calcolo precedente serve una voce in "revisioni" di oggi.
+Con --scrivi aggiunge una riga a "storico_pesi" quando il peso cambia, con la prova che l'ha spostato.
 Se manca qualcosa lo script si ferma e dice cosa: il peso non si inventa.
 """
 import json, math, sys, datetime
@@ -18,21 +21,31 @@ CAMPI = ("tipo", "diag", "livello", "data", "origine", "forza", "debolezza", "ra
 
 
 def eta(data, oggi):
+    """Calo graduale: il peso di una prova si dimezza ogni 6 mesi (minimo 0,1)."""
     try:
         p = [int(x) for x in str(data)[:10].split("-")]
         d = datetime.date(p[0], p[1] if len(p) > 1 else 6, p[2] if len(p) > 2 else 15)
     except Exception:
         raise ValueError(f"data non leggibile: {data!r} (serve AAAA-MM o AAAA-MM-GG)")
-    mesi = (oggi - d).days / 30.4
-    return 1.0 if mesi < 3 else 0.7 if mesi <= 12 else 0.4
+    mesi = max(0.0, (oggi - d).days / 30.4)
+    return max(0.1, 0.5 ** (mesi / 6))
+
+
+def chiave(p):
+    return ((p.get("fonte") or {}).get("url") or "") + "|" + str(p.get("testo", ""))[:60]
+
+
+def impronta(p):
+    return "|".join(str(p.get(c, "")) for c in ("tipo", "diag", "livello", "data", "origine"))
 
 
 def calcola(din, oggi):
-    errori, voci = [], []
+    errori, voci, schede = [], [], {}
+    prima = ((din.get("calcolo") or {}).get("schede")) or {}
     for ip in din.get("ipotesi", []):
         verso = 1 if ip.get("id") == "A" else -1
-        for i, p in enumerate(ip.get("prove", [])):
-            nome = f"{ip.get('id')}{i + 1} «{str(p.get('testo', ''))[:40]}»"
+        for i, p in enumerate(list(ip.get("prove", [])) + list(ip.get("archivio", []))):
+            nome = f"{ip.get('id')} «{str(p.get('testo', ''))[:50]}»"
             manca = [c for c in CAMPI if p.get(c) in (None, "")]
             if manca:
                 errori.append(f"{nome}: mancano {', '.join(manca)}"); continue
@@ -44,6 +57,10 @@ def calcola(din, oggi):
                 c = verso * math.log(DIAG[dg]) * TIPO[p["tipo"]] * LIVELLO[p["livello"]] * eta(p["data"], oggi)
             except ValueError as e:
                 errori.append(f"{nome}: {e}"); continue
+            k, imp = chiave(p), impronta(p)
+            schede[k] = imp
+            if k in prima and prima[k] != imp and not any(r.get("data") == oggi.isoformat() for r in p.get("revisioni") or []):
+                errori.append(f"{nome}: scheda cambiata ({prima[k]} -> {imp}) senza una voce in \"revisioni\" di oggi {{data, prima, motivo}}")
             voci.append({"prova": nome, "origine": str(p["origine"]).strip().lower(), "c": c})
     if errori:
         return None, errori
@@ -62,8 +79,22 @@ def calcola(din, oggi):
         "punteggio": round(s, 2),
         "contributi": [{"prova": v["prova"], "c": round(v["c"], 2)} for v in sorted(tenute.values(), key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
+        "schede": schede,
         "data": oggi.isoformat(),
     }, []
+
+
+def spinta(vecchio, nuovo):
+    """La prova che ha spostato di piu' il punteggio rispetto al calcolo precedente."""
+    if not vecchio or not vecchio.get("contributi"):
+        return {"stato": "primo calcolo"}
+    a = {c["prova"]: c["c"] for c in vecchio.get("contributi", [])}
+    b = {c["prova"]: c["c"] for c in nuovo.get("contributi", [])}
+    diff = {k: b.get(k, 0) - a.get(k, 0) for k in set(a) | set(b)}
+    k = max(diff, key=lambda x: abs(diff[x]))
+    stato = "nuova" if k not in a else "uscita" if k not in b else "invecchiata" if abs(b[k]) < abs(a[k]) else "rivista"
+    ip, _, t = k.partition(" ")
+    return {"prova": t.strip("«»"), "ipotesi": ip, "stato": stato, "dc": round(diff[k], 2)}
 
 
 def main():
@@ -87,6 +118,10 @@ def main():
         for n in r["non_contate"]: print(f"    non contata (stessa origine): {n}")
         if r["peso_A"] == 50: print("  PAREGGIO: peso_perche deve cominciare con «Pareggio:»")
         if scrivi:
+            if vecchio != r["peso_A"]:
+                st = d.setdefault("storico_pesi", [])
+                st.append({"quando": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "da": vecchio, "a": r["peso_A"], **spinta(d.get("calcolo"), r)})
+                d["storico_pesi"] = st[-30:]
             d["ipotesi"][0]["peso"] = r["peso_A"]
             if len(d["ipotesi"]) > 1: d["ipotesi"][1]["peso"] = 100 - r["peso_A"]
             d["calcolo"] = r
