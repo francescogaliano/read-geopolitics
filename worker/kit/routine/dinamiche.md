@@ -14,8 +14,6 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
 
 0-bis. RICALIBRAZIONE PESI. Se il messaggio di avvio contiene «RICALIBRAZIONE PESI»: per TUTTE le dinamiche esistenti completa le schede delle prove e ricalcola il peso con il METODO DEI PESI (punto 5). Riapri le prove già presenti; puoi aggiungere al massimo 1 prova nuova per ipotesi (budget 30 ricerche e 30 pagine). Non toccare meccanismi, scenari, mappa e biblioteca. Poi punto 9 e punto 10 (nel resoconto: per ogni dinamica peso vecchio → nuovo e "peso_perche").
 
-0-ter. LETTURE (pilota dal 25/11/2026): per le chiavi che hanno il campo "lettura" (oggi t1, t2, t7) segui anche /tmp/routine/lettura.md (se manca: worker/kit/routine/lettura.md): dopo i pesi aggiorna anelli, frase e previsioni brevi (almeno 2 aperte, scadenza 2-4 settimane), poi `python3 /tmp/routine/lettura.py` e `--scrivi`. Le altre chiavi restano come sono.
-
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
 2. BIBLIOTECA. `python3 /tmp/rgdb.py list ai_meccanismi --all`. Il nucleo è in /tmp/routine/meccanismi.json (se manca: worker/kit/routine/meccanismi.json nel repository). Ogni meccanismo del nucleo che non esiste ancora in ai_meccanismi va creato con il suo id e tutti i suoi campi, più "stato":"nucleo". Non sovrascrivere mai un meccanismo già presente (può contenere storia e punteggi).
