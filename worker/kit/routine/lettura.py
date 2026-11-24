@@ -32,8 +32,8 @@ def raccogli(doc, L, oggi, errori):
     """Prove di tutte le dinamiche collegate, girate sul lato della lettura."""
     voci = []
     mappa = {m.get("meccanismo"): m.get("A_sostiene", "A") for m in L.get("dinamiche", [])}
-    if not mappa:
-        errori.append('lettura.dinamiche vuota: serve [{"meccanismo":…,"A_sostiene":"A"|"B"}]')
+    if not mappa and not L.get("prove_extra"):
+        errori.append('lettura senza prove: servono lettura.dinamiche [{"meccanismo":…,"A_sostiene":"A"|"B"}] o prove_extra')
     for d in doc.get("dinamiche", []):
         if d.get("meccanismo") not in mappa:
             continue

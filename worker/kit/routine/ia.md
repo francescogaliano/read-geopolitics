@@ -98,7 +98,7 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    - "chi_lo_dice": azienda | fornitore | stampa | analisti, dalla fonte.
    Scrivi con `update` (solo i campi cambiati, con --if-version) in batch da 50. Nel resoconto: quanti casi sistemati, quanti restano incompleti.
 6-quater. CLIENTI. Per ogni cliente toccato oggi o con un fatto nuovo: update di `ai_clienti/<id>` con "domanda": la domanda più utile da fargli adesso, max 15 parole, legata al suo stadio («Il pilota o9 sulla pelletteria è passato in produzione? Con quali numeri?»). Se un fatto nuovo riguarda un suo fronte IA, aggiorna "aree.<fronte>" {stato: si | gruppo, testo max 8 parole, data}. Fronti: cx (negozio e cliente), contenuti, prodotti, processi, pianificazione, ruolo.
-6-quinquies. LETTURE DELLE CHIAVI IN PROVA (dal 25/11/2026; solo le chiavi con il campo "lettura", oggi t1, t2, t7; metodo in /tmp/routine/lettura.md, se manca worker/kit/routine/lettura.md). Dopo l'edizione, per ogni chiave in prova:
+6-quinquies. LETTURE DELLE CHIAVI IN PROVA (dal 25/11/2026; tutte le chiavi; metodo in /tmp/routine/lettura.md, se manca worker/kit/routine/lettura.md). Dopo l'edizione, per ogni chiave:
    a) se un fatto dell'edizione conferma o smentisce un anello, aggiornane stato, dato e fonte (la stessa pagina che hai aperto per l'edizione);
    b) scrivi "oggi": una frase sul fatto del mattino che tocca la chiave, oppure «Nessun fatto nuovo oggi.»;
    c) se una previsione è scaduta, scrivi "esito" ("si" | "no"), "fonte_esito" e "nota"; le previsioni non si cambiano mai;

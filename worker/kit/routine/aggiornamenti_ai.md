@@ -37,7 +37,7 @@ METODO DEI PESI: /tmp/routine/pesi.md (se manca: worker/kit/routine/pesi.md). Le
    `curl -s -m 15 -X POST "$RG_API/v1/sala/avvia-dinamiche" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"motivo":"<il fatto in una riga, con fonte>","chiave":"<id>"}'`
    Una sola richiesta per giro; il server ne accetta al massimo una ogni 3 giorni. Scrivi la risposta nel giro.
 
-5-bis. LETTURE (chiavi con il campo "lettura", oggi t1, t2, t7; metodo in /tmp/routine/lettura.md): se un fatto del giro conferma o smentisce un anello, aggiornane stato, dato e fonte; scrivi "oggi" (una frase, o «Nessun fatto nuovo oggi.» al primo giro senza fatti per quella chiave); se una previsione è scaduta, scrivi esito e fonte; poi `python3 /tmp/routine/lettura.py <file>` e `--scrivi` (se il verdetto cambia, riscrivi la "frase"). Le previsioni non si toccano.
+5-bis. LETTURE (tutte le chiavi; metodo in /tmp/routine/lettura.md): se un fatto del giro conferma o smentisce un anello, aggiornane stato, dato e fonte; scrivi "oggi" (una frase, o «Nessun fatto nuovo oggi.» al primo giro senza fatti per quella chiave); se una previsione è scaduta, scrivi esito e fonte; poi `python3 /tmp/routine/lettura.py <file>` e `--scrivi` (se il verdetto cambia, riscrivi la "frase"). Le previsioni non si toccano.
 
 6. SCRIVI IL GIRO in `ai_agg/<oggi>` (get, aggiungi in fondo, set): {"data":"<oggi>","giri":[…, {"ora":"HH:MM","fatti":[{"testo": il fatto in una frase completa (max 25 parole), "fonte":{"nome","url"}, "chiave":"<id>", "dinamica":"<meccanismo>", "effetto":"prova A" | "prova B" | "non decide", "peso":"da→a" se è cambiato}], "allarme": la risposta del server o null}]}.
 

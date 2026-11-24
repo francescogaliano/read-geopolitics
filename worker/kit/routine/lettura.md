@@ -1,6 +1,6 @@
-<!-- Metodo della LETTURA delle chiavi (pilota dal 25/11/2026 su t1, t2, t7). Lo usano le routine «dinamiche» e «aggiornamenti_ai». -->
+<!-- Metodo della LETTURA delle chiavi (dal 25/11/2026, tutte le chiavi). Lo usano le routine «dinamiche» e «aggiornamenti_ai». -->
 
-LETTURA DI UNA CHIAVE (solo le chiavi che hanno il campo "lettura": oggi t1, t2, t7)
+LETTURA DI UNA CHIAVE (tutte le chiavi: ognuna ha il campo "lettura"; una chiave nuova nasce con la sua lettura)
 
 Scopo: chi apre la chiave capisce in pochi secondi la domanda, da che parte pendono i fatti, quale dinamica regge e dove si interrompe, cosa è successo oggi e quando lo sapremo. Il calcolo resta dietro: in pagina niente percentuali.
 

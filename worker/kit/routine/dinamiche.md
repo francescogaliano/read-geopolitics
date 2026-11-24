@@ -14,7 +14,7 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
 
 0-bis. RICALIBRAZIONE PESI. Se il messaggio di avvio contiene «RICALIBRAZIONE PESI»: per TUTTE le dinamiche esistenti completa le schede delle prove e ricalcola il peso con il METODO DEI PESI (punto 5). Riapri le prove già presenti; puoi aggiungere al massimo 1 prova nuova per ipotesi (budget 30 ricerche e 30 pagine). Non toccare meccanismi, scenari, mappa e biblioteca. Poi punto 9 e punto 10 (nel resoconto: per ogni dinamica peso vecchio → nuovo e "peso_perche").
 
-0-ter. LETTURE (pilota dal 25/11/2026): per le chiavi che hanno il campo "lettura" (oggi t1, t2, t7) segui anche /tmp/routine/lettura.md (se manca: worker/kit/routine/lettura.md): dopo i pesi aggiorna anelli, frase e previsioni brevi (almeno 2 aperte, scadenza 2-4 settimane), poi `python3 /tmp/routine/lettura.py` e `--scrivi`. Le altre chiavi restano come sono.
+0-ter. LETTURE (dal 25/11/2026): per ogni chiave segui anche /tmp/routine/lettura.md (se manca: worker/kit/routine/lettura.md): dopo i pesi aggiorna anelli, frase e previsioni brevi (almeno 2 aperte, scadenza 2-4 settimane), poi `python3 /tmp/routine/lettura.py` e `--scrivi`. Se una lettura non ha una dinamica che risponda davvero alla sua domanda (oggi t6: Collingridge spiega i rinvii, non l'applicazione delle regole), proponi la dinamica che manca dalla biblioteca o creane una, e collegala in "lettura.dinamiche".
 
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
