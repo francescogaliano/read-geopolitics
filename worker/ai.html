@@ -293,6 +293,7 @@ details.grp{border-top:1px solid var(--line)}details.grp>summary{list-style:none
 .dn-spin{transform-origin:32px 32px;animation:dnsp 4s linear infinite}@keyframes dnsp{to{transform:rotate(360deg)}}
 .dn-bil{margin-top:18px}.dn-bh{display:flex;justify-content:space-between;gap:8px;font:700 15px/1.2 Inter,system-ui,sans-serif}
 .dn-bb{position:relative;display:flex;gap:2px;height:14px;margin:8px 0 4px}.dn-bb i:first-child{border-radius:7px 0 0 7px}.dn-bb i:nth-child(2){border-radius:0 7px 7px 0}.dn-bb b{position:absolute;top:-5px;width:3px;height:24px;background:var(--fg);border-radius:2px;transform:translateX(-1px)}
+.dn-mt2{display:block;text-align:center;font-size:12.5px;color:var(--mut);text-decoration:none;padding:6px 0 10px}.mp-in{font-size:15px;line-height:1.55;color:#C5D0DA;margin:4px 0 6px}.mp-r{display:flex;gap:12px;align-items:flex-start;border-top:1px solid var(--line);padding:11px 0}.mp-r:last-of-type{border-bottom:1px solid var(--line)}.mp-i{flex:none;width:30px;text-align:center;font-size:18px;line-height:1.3;color:var(--amb)}.mp-r b{font-size:15px}.mp-r p{margin:3px 0 0;font-size:14px;line-height:1.5;color:#C5D0DA}
 .dn-pp{margin:4px 0 8px;font-size:13px;color:var(--mut,#8FA0B3);text-align:center}
 .dn-bp{display:flex;justify-content:space-between;align-items:center;font:700 22px/1 "Source Serif 4",Georgia,serif}.dn-bp small{font:12.5px Inter,system-ui,sans-serif;color:var(--mut)}
 .dn-bc{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}.dn-bc>div{border-top:2px solid;padding-top:8px;min-width:0}.dn-bc p{margin:0 0 8px;font-size:13.5px;color:#C5D0DA;line-height:1.35}
@@ -730,7 +731,7 @@ function dnUna(d){const M=dnMec(d.meccanismo)||{},H=d.ipotesi||[],a=H[0]||{},b=H
  let h=`${d.perche_qui?`<p class="dn-pq">${esc(d.perche_qui)}</p>`:""}<div class="dn-mech"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true"><circle cx="32" cy="32" r="22" fill="none" stroke="#2A3A48" stroke-width="3"/><path class="dn-spin" d="M32 10 A22 22 0 0 1 54 32" fill="none" stroke="#A796F5" stroke-width="3.5" stroke-linecap="round"/><text x="32" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="#A796F5">↻</text></svg><div><span class="dn-mt">Meccanismo · ${esc(M.breve||d.meccanismo||"")}${M.stato==="in_prova"?` <em class="dn-tg i">in prova</em>`:""}${M.famiglia?` <small>· ${esc(M.famiglia)}</small>`:""}</span><b>${esc(d.frase||"")}</b></div></div>
  <div class="dn-bil"><div class="dn-bh"><span style="color:${dnCol(a.id)}">${esc(a.id)} · ${esc(a.nome||"")}</span><span style="color:${dnCol(b.id)}">${esc(b.id)} · ${esc(b.nome||"")}</span></div>
  <div class="dn-bb"><i style="width:${pa}%;background:${dnCol(a.id)}"></i><i style="width:${100-pa}%;background:${dnCol(b.id)}"></i><b style="left:${pa}%"></b></div>
- <div class="dn-bp"><span style="color:${dnCol(a.id)}">${pa}%</span><small>pende verso ${pa>=50?esc(a.id):esc(b.id)}</small><span style="color:${dnCol(b.id)}">${100-pa}%</span></div>${d.peso_perche?`<p class="dn-pp">${esc(d.peso_perche)}</p>`:""}
+ <div class="dn-bp"><span style="color:${dnCol(a.id)}">${pa}%</span><small>pende verso ${pa>=50?esc(a.id):esc(b.id)}</small><span style="color:${dnCol(b.id)}">${100-pa}%</span></div>${d.peso_perche?`<p class="dn-pp">${esc(d.peso_perche)}</p>`:""}<a class="dn-mt2" href="#" data-sh="metodo:">Come pesiamo le prove ›</a>
  <div class="dn-bc">${[a,b].map(x=>`<div style="border-top-color:${dnCol(x.id)}"><p>${esc(x.tesi||"")}</p>${(x.prove||[]).map(p=>`<div class="dn-pv"><span style="color:${dnCol(x.id)}">▲</span>${p.fonte&&p.fonte.url?`<a href="${esc(p.fonte.url)}" target="_blank" rel="noopener">${esc(p.testo)}</a>`:esc(p.testo)}${p.val?` <b>${esc(p.val)}</b>`:""}${dnTag(p.tipo)}</div>`).join("")}</div>`).join("")}</div>
  ${d.neutro?`<div class="dn-neu">⚖ <b>Non decide:</b> ${esc(d.neutro)}</div>`:""}</div>`;
  if((d.segnali||[]).length)h+=`<div class="dn-l"><span>Il segnale che deciderà</span></div><div class="dn-sg">${d.segnali.map(s=>`<div class="dn-sr"><span class="dn-sl" style="color:${dnCol(s.ipotesi)}">${esc(s.ipotesi)}</span><div><b>${esc(s.testo)}</b> ${esc(s.cond||"")}<div class="dn-dots">${Array.from({length:s.serve||2},(_,i)=>`<i style="${i<(s.fatti||0)?`background:${dnCol(s.ipotesi)}`:""}"></i>`).join("")}<span>${esc(s.nota||"")}</span></div></div></div>`).join("")}</div>`;
@@ -937,6 +938,24 @@ document.addEventListener("input",e=>{if(e.target.id!=="cq")return;CQ=e.target.v
  if(CQ.length>=3)CT=setTimeout(()=>api({action:"ai_cerca",q:CQ}).then(j=>{if(j&&j.vai)return location.assign(j.vai);CR={q:CQ,storie:j.storie||[],brevi:j.brevi||[]};const b=$("#cr");if(b){b.innerHTML=risultati();bind(b)}}).catch(()=>{}),350);
  });
 /* ---------- contenuti dei pannelli ---------- */
+/* Metodo dei pesi spiegato in parole: la griglia numerica resta nelle istruzioni della routine e non si mostra */
+function metodoPesi(){const R=(ic,t,x)=>`<div class="mp-r"><span class="mp-i">${ic}</span><div><b>${t}</b><p>${x}</p></div></div>`;
+ return `<p class="mp-in">Ogni dinamica mette in gara due spiegazioni, <b style="color:${dnCol("A")}">A</b> e <b style="color:${dnCol("B")}">B</b>. La barra dice da che parte pendono oggi le prove. Non è un'opinione: è un conto fatto sempre allo stesso modo.</p>
+ <div class="dn-l"><span>1 · Ogni prova ha la sua scheda</span></div>
+ ${R("⚖","Quanto distingue","La domanda chiave: questa prova è più facile da spiegare con A o con B? Se va bene a tutte e due, non sposta niente.")}
+ ${R("＋","Punto di forza","Cosa la rende solida: un bilancio, un dato ufficiale, un dato recente.")}
+ ${R("－","Punto debole","Ogni prova ne ha uno, scritto: misura anche altro, è una stima, è un caso solo.")}
+ ${R("→","Ragionamento","Perché, tenendo conto dell'una e dell'altro, la prova pesa quanto pesa.")}
+ <div class="dn-l"><span>2 · Cosa conta di più</span></div>
+ ${R("▲","Un dato misurato","più di un nostro ragionamento.")}
+ ${R("§","La fonte originale","(un bilancio, una statistica) più di un articolo che la riprende.")}
+ ${R("◷","Un dato recente","più di uno vecchio.")}
+ ${R("①","Una fonte conta una volta","Dieci articoli che citano lo stesso dato valgono come quel dato.")}
+ <div class="dn-l"><span>3 · Il conto</span></div>
+ ${R("∑","Si sommano le prove","Ognuna spinge verso A o verso B; la somma diventa la percentuale della barra. Ogni settimana il conto si rifà da capo.")}
+ ${R("±","Mai certezze","La barra sta sempre tra 20 e 80: nessuna prova da sola chiude la partita. 50 vuol dire pareggio vero, e accanto c'è il dato che lo romperebbe.")}
+ ${R("⚔","Un revisore separato","Un secondo controllo cerca l'obiezione più forte; se poggia su un dato, entra nel conto come prova.")}
+ <p class="mp-in" style="margin-top:16px">Sotto la barra trovi in una riga quali prove pesano di più.</p>`}
 function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizione||{};
  /* se la scheda è già nel percorso, si torna lì invece di aprirla di nuovo (niente giri in tondo) */
  if(SH.open){const ix=SH.st.findIndex(y=>y.key===key);if(ix>=0){SH.st.length=ix+1;return shShow()}}SH.pk=key;
@@ -975,6 +994,7 @@ function apri(key){const[k,...r]=key.split(":"),id=r.join(":");const E=D.edizion
  if(0)return sheet("Casi d'uso",`${AB[a]||a} · ${TB[t]||t}`,C.map(c=>casoEv(c)).join("")||`<p class="n">Nessun caso.</p>`)}
  if(k==="tuttiicasi"){const C=D.casi||[],IT=C.filter(c=>/ital/i.test(c.paese||""));return sheet("Casi d'uso",`Tutti i ${C.length} casi`,`<span class="k">Chi alimenta cosa · modello → area</span>${flusso(C)}<span class="k">Area × tecnologia · tocca una casella</span>${calore(C)}<span class="k">Per area</span><div class="rows">${D.aree.filter(([a])=>C.some(c=>c.area===a)).map(([a])=>`<div class="row" data-sh="area:${a}" style="cursor:pointer"><span><b>${esc(AB[a]||a)}</b></span><span class="mono" style="color:var(--acc)">${C.filter(c=>c.area===a).length} ›</span></div>`).join("")}${IT.length?`<div class="row" data-sh="italia:" style="cursor:pointer"><span><b>Solo Italia</b></span><span class="mono" style="color:var(--acc)">${IT.length} ›</span></div>`:""}</div>`)}
  if(k==="italia"){const C=(D.casi||[]).filter(c=>/ital/i.test(c.paese||"")).sort(ordC);return sheet("Casi d'uso","In Italia",C.map(c=>casoEv(c)).join(""))}
+ if(k==="metodo")return sheet("Dinamiche","Come pesiamo le prove",metodoPesi());
  if(k==="soldi"){const CF=D.confronti||[];return sheet("Protagonisti","Chi spende, chi incassa",CF.map(confronto).join("")||`<p class="n">Nessun dato.</p>`)}
  if(k==="legami"){return sheet("Protagonisti","Chi è legato a chi",legami(D.attori||[]))}
  if(k==="ritmo"){const P=D.attori||[],M=P.flatMap(a=>(a.mosse||[]).map(m=>({...m,chi:a.nome,k:dk(m.iso||m.data)}))).sort((a,b)=>b.k.localeCompare(a.k));return sheet("Protagonisti","Le mosse",ritmo(P,M)+`<div class="dots">${M.slice(0,40).map(m=>`<div><b>${esc(m.data||"")}</b> · <b>${esc(m.chi)}</b> · ${rich(m.testo)}</div>`).join("")}</div>`)}

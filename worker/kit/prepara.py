@@ -36,7 +36,7 @@ def routine():
     os.makedirs("/tmp/routine", exist_ok=True)
     n = 0
     for f in os.listdir(src):
-        if f.endswith((".md", ".json")):
+        if f.endswith((".md", ".json", ".py")):
             shutil.copy(os.path.join(src, f), os.path.join("/tmp/routine", f)); n += 1
     return f"{n} file"
 
