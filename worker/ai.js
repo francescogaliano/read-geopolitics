@@ -4,6 +4,9 @@
    - contenuti: li scrivono le routine «ia» (mattino) e «ia-settimana» (domenica) con rgdb.py nelle collezioni private
        ai_oggi/<AAAA-MM-GG>   l'edizione del giorno (numero, letture con grafico, domande, clienti, da osservare, log)
        ai_tesi/<t1…>          le tesi (tendenze) con prove, direzione, storia, cosa le smentirebbe
+                              + dinamica (dal 24/11/2026, pilota t1): meccanismo, ipotesi in gara con peso, segnali con soglia, scenari, revisore, dato che manca
+       ai_meccanismi/<id>     la biblioteca dei meccanismi (scheda: ciclo, scala, caso storico, quando scatta, per l'IA, fonti)
+       ai_mappa/attuale       la mappa delle chiavi: nodi, archi con segno e circuito, circuiti, variabile al centro
        ai_adozione/<livello>  la mappa dell'adozione: livello × orizzonte (breve, medio, lungo), intrecci, protagonisti
        ai_approf/<slug>       approfondimenti
        ai_clienti/<slug>      i clienti seguiti (SOLO nel database, mai nel repository: è pubblico)
@@ -96,14 +99,14 @@ export async function aiPanelApi(env, b, h) {
     const oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
     const ORD = "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key";
     const cut30 = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
-    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, temiStorie] = await Promise.all([
+    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, meccanismi, mappa, temiStorie] = await Promise.all([
       raw(env, "ai_tesi", 60, ORD), raw(env, "ai_adozione", 40), raw(env, "ai_approf", 80, "key DESC", "json_set(json_remove(data,'$.sezioni'),'$.id',key,'$._agg',updated_at,'$.n_sezioni',coalesce(json_array_length(data,'$.sezioni'),0))"),
       raw(env, "ai_casi", 600, "key DESC", "json_object('id',key,'chi',data->>'$.chi','settore',data->>'$.settore','settore_norm',data->>'$.settore_norm','paese',data->>'$.paese','area',data->>'$.area','tecnologia',data->>'$.tecnologia','modello',data->>'$.modello','cloud',data->>'$.cloud','deploy',data->>'$.deploy','partner',data->>'$.partner','stadio',data->>'$.stadio','cosa',data->>'$.cosa','dato',data->>'$.dato','misura',data->>'$.misura','data',data->>'$.data','iso',data->>'$.iso','chi_lo_dice',data->'$.chi_lo_dice','fonte',data->'$.fonte')"),
       raw(env, "ai_attori", 40, ORD), raw(env, "ai_confronti", 20, ORD), raw(env, "ai_filoni", 300, "coalesce(data->>'$.aggiornato', updated_at) DESC"),
       raw(env, "ai_agenda", 400, "coalesce(data->>'$.data', '9999'), key"),
       coll(env, "ai_glossario", 2000),
       env.DB.prepare("SELECT key, data->>'$.nome' nome, coalesce(data->>'$.settore', data->>'$.cluster', '') settore, data->>'$.sottocluster' sc, coalesce(data->'$.aree','{}') aree, coalesce(json_array_length(data,'$.eventi'),0) n FROM rdocs WHERE type='ai_clienti' ORDER BY key DESC LIMIT 80").all().then((r) => r.results || []),
-      raw(env, "ai_temi", 20), raw(env, "ai_prezzi", 60, "key DESC"),
+      raw(env, "ai_temi", 20), raw(env, "ai_prezzi", 60, "key DESC"), raw(env, "ai_meccanismi", 40), raw(env, "ai_mappa", 2),
       env.DB.prepare("SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT json_object('ed', r.key, 'i', CAST(j.key AS INTEGER), 'titolo', coalesce(j.value->>'$.titolo', j.value->>'$.breve', ''), 'tema_id', j.value->>'$.tema_id', 'tema', j.value->>'$.tema') AS o FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND r.key >= ?1 ORDER BY r.key DESC)").bind(cut30).first().then((r) => (r && r.j) || "[]")]);
     /* glossario: in quali letture delle ultime edizioni compare ogni voce (termine o alias, parola intera) */
     const testi = []; for (const e of edz) (e.letture || []).forEach((l, i) => testi.push({ data: e.id, i, breve: l.breve || l.titolo || "", t: JSON.stringify([l.titolo, l.breve, l.perche_breve, l.due_righe, l.perche_conta, l.fatti, l.lettura, l.diversa, l.come_funziona, l.pro, l.contro, l.sintesi]) }));
@@ -117,7 +120,7 @@ export async function aiPanelApi(env, b, h) {
     const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
       clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, sc: c.sc || null, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
-    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"temi_storie":${temiStorie}}`;
+    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
   }
   /* ricerca nell'archivio delle edizioni (titolo, frase, letture, brevi): dal 22/11/2026 */

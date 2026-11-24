@@ -75,6 +75,7 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    - "storia": aggiungi {"data":"<oggi>","effetto":"su|giu|stabile|incerta","testo":"una riga"};
    - "direzione": {"verso": calcolato sulle ultime 8 settimane di «storia» — su se gli effetti su sono almeno il doppio dei giu, giu nel caso opposto, stabile altrimenti, incerta con meno di 3 voci — "perche": una riga con i fatti, "dal":"<oggi>"};
    - "smentirebbe" non si riscrive per comodità: se cambia, scrivi perché nel log.
+   - "dinamica" (se c'è, oggi solo t1) non si tocca qui: la aggiorna la routine della domenica (punto 6-bis).
    Una tesi NUOVA solo se 3 fatti indipendenti di almeno 2 settimane diverse la sostengono: id t10, t11…, con "ordine", "titolo", "uno", "cosa", "interpretazione", "domanda", "smentirebbe", "stato":"attiva".
 
 6-bis. CASI D'USO. Ogni caso concreto di adozione letto oggi (un'azienda o un ente che USA l'IA, con un fatto verificato) va in `ai_casi/<slug-chi-AAAAMM>`; se esiste già (`python3 /tmp/rgdb.py get ai_casi <id>`) aggiornalo, non duplicarlo. Campi:

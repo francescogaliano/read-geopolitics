@@ -82,6 +82,15 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
 
 6. TESI: rivedi la direzione di ogni tesi (regola delle 8 settimane come nella routine «ia») e segnala nel resoconto quelle senza fatti da 4 settimane.
 
+6-bis. CHIAVI CHE RAGIONANO (dal 24/11/2026, pilota solo sulla chiave t1; mantra di Francesco: tutto visivo, leggibile a colpo d'occhio, chiaro e immediato). Dati: il campo "dinamica" di `ai_tesi/t1`, la biblioteca `ai_meccanismi/<id>` (oggi solo «jevons»), la mappa `ai_mappa/attuale`. Leggili con get prima di toccarli; scrivi con update e --if-version (l'unione profonda conserva il resto; le liste vanno riscritte intere).
+   - Nella dinamica: ogni fatto della settimana che sostiene una delle due ipotesi entra nelle sue "prove" ({"testo" breve, "val" se c'è una cifra, "tipo":"misurato" se è un numero pubblicato da una fonte, "inferito" se è un nostro ragionamento, "fonte":{nome,url}}; al massimo 3 prove per ipotesi, togli la più vecchia). Un fatto compatibile con entrambe va in "neutro", non sposta nulla.
+   - "peso" (somma 100) si sposta di al massimo 10 punti a settimana e SOLO se c'è una prova nuova che una sola ipotesi spiega; scrivi nel resoconto quale prova lo ha spostato. Senza prove nuove il peso non cambia.
+   - "segnali": aggiorna "fatti" (quante volte la soglia è stata superata, su "serve") e "nota" (es. «1 trimestre su 2») solo con un dato pubblicato. Le soglie sono provvisorie: non cambiarle, se ti sembrano sbagliate scrivilo nel resoconto per Francesco.
+   - "revisore": rileggi le prove della ipotesi in vantaggio e scrivi l'obiezione più forte (la spiegazione più banale, il dato che potrebbe ingannare). "manca": il dato che deciderebbe.
+   - Mappa: non aggiungere chiavi, archi o circuiti da solo; se un fatto della settimana contraddice un legame («perche»), scrivilo nel resoconto. I legami sono tutti inferiti.
+   - Biblioteca: non creare meccanismi nuovi. Se un fatto non è spiegato da nessun meccanismo e si ripete, annotalo nel resoconto come ANOMALIA (proposta per Francesco).
+   - Ogni fatto e ogni aneddoto ha fonte linkata e letta: niente a memoria. Testi brevi: le etichette 3-6 parole, le frasi max 15 parole.
+
 7. CONTROLLO: ogni numero ha fonte e data; le due letture hanno la stessa misura; gli intrecci puntano a id esistenti; nessun fatto inventato per riempire una casella (una casella può restare con "dove_siamo" e "confidenza":"bassa"). Rileggi con get dopo ogni set.
 
 8. RESOCONTO e AVVISO DI FINE: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"ia-settimana","fase":"fine","esito":"ok oppure errore","nota":"una riga"}'`
