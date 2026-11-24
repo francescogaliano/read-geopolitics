@@ -10,6 +10,8 @@ STRUMENTI: `python3 /tmp/rgdb.py …` per il database; WebSearch e WebFetch per 
 BUDGET: al massimo 50 ricerche e 50 pagine lette; al PRIMO giro (quando nessuna chiave ha ancora «dinamiche») fino a 90 e 90.
 DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
 
+0. GIRO STRAORDINARIO. Se il messaggio di avvio contiene «GIRO STRAORDINARIO», ti ha avviato la routine del mattino perché un fatto lo merita (il motivo è nel messaggio). Allora: lavora solo sulla chiave indicata e su quelle collegate a lei nella mappa; budget 20 ricerche e 20 pagine; fai i punti 3-7 e 9-10 solo per loro (niente punto 8 tranne gli "esiti"); il peso può spostarsi di 10 punti come nel giro normale, e il giro del lunedì successivo potrà spostarlo al massimo di altri 5. Nel resoconto e nell'avviso di fine scrivi «straordinario» e il motivo.
+
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
 2. BIBLIOTECA. `python3 /tmp/rgdb.py list ai_meccanismi --all`. Il nucleo è in /tmp/routine/meccanismi.json (se manca: worker/kit/routine/meccanismi.json nel repository). Ogni meccanismo del nucleo che non esiste ancora in ai_meccanismi va creato con il suo id e tutti i suoi campi, più "stato":"nucleo". Non sovrascrivere mai un meccanismo già presente (può contenere storia e punteggi).

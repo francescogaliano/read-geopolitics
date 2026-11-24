@@ -7190,6 +7190,26 @@ async function salaRoute(request, env, p, method, url) {
     if (esito === "errore") { try { await tgPriv(env, "🔴 <b>Sala di controllo</b>\n" + esc(nome) + ": " + esc(ev.nota || "errore") + '\n<a href="' + SALA_URL + '">Apri la sala</a>'); } catch (e) {} }
     return json({ ok: true });
   }
+  if (p === "/v1/sala/avvia-dinamiche" && method === "POST") { // 24/11/2026: la routine «ia» chiede un giro straordinario delle dinamiche quando un fatto lo merita
+    const b = (await request.json().catch(() => null)) || {};
+    const motivo = String(b.motivo || "").trim().slice(0, 300), chiave = String(b.chiave || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 20);
+    if (!motivo) return fail(400, "motivo", "atteso { motivo, chiave? }");
+    if (!(env.DINAMICHE_ROUTINE_ID && env.DINAMICHE_ROUTINE_TOKEN)) return json({ ok: false, avviata: false, perche: "manca DINAMICHE_ROUTINE_ID o DINAMICHE_ROUTINE_TOKEN" });
+    const last = await kvGet(env, "dinamiche:straordinario"), now = Date.now();
+    if (last && now - Date.parse(last.at) < 72 * 3600e3) return json({ ok: true, avviata: false, perche: "già avviata il " + last.at.slice(0, 10) + ": al massimo una volta ogni 3 giorni" });
+    const dow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" })).getDay();
+    if (dow === 1) return json({ ok: true, avviata: false, perche: "è lunedì: il giro settimanale è già passato oggi" });
+    let esito = "errore";
+    try {
+      const fr = await fetch("https://api.anthropic.com/v1/claude_code/routines/" + encodeURIComponent(env.DINAMICHE_ROUTINE_ID) + "/fire", {
+        method: "POST", headers: { authorization: "Bearer " + env.DINAMICHE_ROUTINE_TOKEN, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ text: "GIRO STRAORDINARIO (punto 0 delle istruzioni). Motivo: " + motivo + (chiave ? " · chiave: " + chiave : "") }), signal: AbortSignal.timeout(8000),
+      });
+      esito = fr.ok ? "avviata" : "errore " + fr.status;
+    } catch (e) { esito = "errore di rete"; }
+    if (esito === "avviata") { await kvSet(env, "dinamiche:straordinario", { at: new Date().toISOString(), motivo, chiave }); try { await tgPriv(env, "↻ <b>Dinamiche</b>: giro straordinario avviato\n" + esc(motivo)); } catch (e) {} }
+    return json({ ok: true, avviata: esito === "avviata", esito });
+  }
   if (p === "/v1/sala/coda" && method === "GET") return json({ ok: true, coda: (await kvGet(env, "sala:coda")) || [] });
   if (p === "/v1/sala/coda" && method === "POST") {
     const b = (await request.json().catch(() => null)) || {}; const done = new Set((b.fatti || []).map(String));
