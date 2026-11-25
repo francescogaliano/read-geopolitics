@@ -14,6 +14,13 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
 
 0-bis. RICALIBRAZIONE PESI. Se il messaggio di avvio contiene «RICALIBRAZIONE PESI»: per TUTTE le dinamiche esistenti completa le schede delle prove e ricalcola il peso con il METODO DEI PESI (punto 5). Riapri le prove già presenti; puoi aggiungere al massimo 1 prova nuova per ipotesi (budget 30 ricerche e 30 pagine). Non toccare meccanismi, scenari, mappa e biblioteca. Poi punto 9 e punto 10 (nel resoconto: per ogni dinamica peso vecchio → nuovo e "peso_perche").
 
+0-ter. PREVISIONI PRIVATE (dal 25/11/2026; solo per Francesco, non vanno in nessuna pagina pubblica). Ogni lunedì, dopo i pesi: `python3 /tmp/rgdb.py list ai_previsioni --all` in un file e `python3 /tmp/routine/previsioni.py <file>`. Per ogni chiave con meno di 2 previsioni aperte, scrivine di nuove fino ad averne 2:
+   - un fatto preciso, verificabile leggendo un titolo o un comunicato (chi, cosa, quanto, entro quando), con scadenza fra 2 e 4 settimane; meglio se legato a una data in ai_agenda (trimestrali, lanci, decisioni);
+   - legato a una dinamica della chiave: "dinamica" (meccanismo) e "ipotesi" ("A"|"B") a cui da ragione se si avvera; "se_vera" in parole semplici (es. «da ragione al rimbalzo dell'uso»);
+   - "p": la probabilità che si avveri secondo il peso di oggi di quella ipotesi, aggiustata per quanto il fatto è facile (5-95); vietate le previsioni ovvie (p sopra 90) e quelle su morti o tragedie;
+   - id `<chiave>-<AAAAMMGG>-<n>`, "creata": oggi; scrivi il documento in un file, `python3 /tmp/routine/previsioni.py --impronta <file>` e salva il valore in "impronta"; poi `python3 /tmp/rgdb.py set ai_previsioni <id> --file <file>`.
+   Le previsioni non si modificano mai dopo la creazione. Nel resoconto: quante ne hai create e il punteggio stampato dallo script.
+
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
 2. BIBLIOTECA. `python3 /tmp/rgdb.py list ai_meccanismi --all`. Il nucleo è in /tmp/routine/meccanismi.json (se manca: worker/kit/routine/meccanismi.json nel repository). Ogni meccanismo del nucleo che non esiste ancora in ai_meccanismi va creato con il suo id e tutti i suoi campi, più "stato":"nucleo". Non sovrascrivere mai un meccanismo già presente (può contenere storia e punteggi).
