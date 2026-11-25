@@ -667,9 +667,19 @@ async function eventiQuota(env) { // «Com'è finita»: probabili avvenuti + imp
   } catch (e) { return null; }
 }
 
-/* azioni del pannello (sessione): inv_get, inv_nota, inv_aggiungi */
-export async function invPanelApi(env, b, h) {
-  if (b.action === "inv_get") {
+/* parti della vista del pannello (vedi inv_get): dip = chiavi del kv da cui dipende la parte, eta = minuti dopo cui si ricalcola comunque */
+const VC = "inv:vc:";
+const VC_PARTI = {
+  base: { dip: ["inv:oss", "inv:ipotesi", "inv:diario", "inv:opp", "inv:rq", "inv:px:%"], eta: 30 },
+  chiavi: { dip: ["inv:chiavi", "inv:fatti", "inv:rqf", "inv:ver:%", "pub:chiavi:cfg"], eta: 60 },
+  verticali: { dip: ["inv:ver:%"], eta: 60 },
+  pf: { dip: ["inv:pf", "inv:px:%"], eta: 30 },
+  bloccate: { dip: ["inv:bloccate", "inv:px:%"], eta: 60 },
+  retro: { dip: ["inv:px:%"], eta: 360 },
+};
+async function vcCalcola(parte, env, h) {
+  const oggi = h.romeToday();
+  if (parte === "base") {
     const O = (await h.kvGet(env, K_OSS)) || [];
     const serie = await serieTutte(h, env, O.map((o) => o.sim));
     const L = ((await h.kvGet(env, K_IP)) || []).map((x) => ({ ...x, v: invValuta(x, serie[x.strumento]) }));
@@ -679,9 +689,49 @@ export async function invPanelApi(env, b, h) {
       const r = await pxGet(h, env, o.sim), s = serie["az:" + o.sim] || [], mie = L.filter((x) => x.strumento === "az:" + o.sim);
       osservati.push({ ...o, p: s.slice(-260), px: r ? { at: r.at, errore: r.errore || null } : null, tecnica: invTecnica(s), forza: forzaDi(o.sim, serie) || undefined, chiamate: mie, ci_ha_preso: quota(mie.filter((x) => x.v.stato === "chiusa").map((x) => x.v.esito)) });
     }
-    return { ok: true, oggi: h.romeToday(), strumenti, ipotesi: L.slice(-600), mercati: mercatiVista(serie, L, true), bilancio: invBilancio(L), eventi: await eventiQuota(env), retro: await invRetro(env, serie, h.romeToday()), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN), ...(await (async () => { const v = await chiaviVista(h, env, L), sr = await serieSoglie(h, env), oggi = h.romeToday(); for (const k of v.chiavi) { const m = verdettoMeccanico(k, oggi, sr), pr = k.verdetto_proposto || m, at = (k.verdetto || {}).stato || "aperta"; if (pr && pr.stato !== at) k.proposta = pr; } const r = copiaPubblica(v.chiavi, oggi, {}); let tk = await h.kvGet(env, PUB_TOKEN_KV); if (!tk) tk = (await pubAggiorna(h, env, oggi)).token; return { ...v, pub: { token: tk, pubblicate: r.copia.chiavi.length, trattenuti: r.trattenuti, cfg: (await h.kvGet(env, PUB_CFG_KV)) || {} } }; })()), verticali: await verVista(h, env, h.romeToday(), false), bloccate: await (async () => { const B = (await h.kvGet(env, K_BL)) || []; const out = []; for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); } return out; })(), pf: await (async () => { const P = await pfDati(h, env, h.romeToday(), false); const oggi = h.romeToday(), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
-      for (const c of Object.values(P.conti || {})) for (const q of (c && c.posizioni) || []) if (!px[q.sim]) { const pp = (P.prezzi[q.sim] || []).filter((x) => x[0] <= oggi); const t = invTecnica(pp); if (t) delete t.hist; px[q.sim] = { p: pp.slice(-520), tecnica: t }; }
-      return { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15, per_regola: pfPerRegola(P.ops, P.prezzi, oggi), px }; })() };
+    return { strumenti, ipotesi: L.slice(-600), mercati: mercatiVista(serie, L, true), bilancio: invBilancio(L), eventi: await eventiQuota(env), diario: ((await h.kvGet(env, K_DI)) || []).slice(-60).reverse(), opp: (await h.kvGet(env, K_OPP)) || { lista: [] }, osservati, richieste: ((await h.kvGet(env, K_RQ)) || []).filter((r) => !r.fatta), stooq: !!env.STOOQ_KEY, prezzi_fonte: env.STOOQ_KEY ? "Stooq, poi Yahoo" : "Yahoo Finance", radar_avvio: !!(env.RADAR_ROUTINE_ID && env.RADAR_ROUTINE_TOKEN) };
+  }
+  if (parte === "retro") {
+    const O = (await h.kvGet(env, K_OSS)) || [];
+    return { retro: await invRetro(env, await serieTutte(h, env, O.map((o) => o.sim)), oggi) };
+  }
+  if (parte === "chiavi") {
+    const v = await chiaviVista(h, env, []), sr = await serieSoglie(h, env);
+    for (const k of v.chiavi) { const m = verdettoMeccanico(k, oggi, sr), pr = k.verdetto_proposto || m, at = (k.verdetto || {}).stato || "aperta"; if (pr && pr.stato !== at) k.proposta = pr; }
+    const r = copiaPubblica(v.chiavi, oggi, {}); let tk = await h.kvGet(env, PUB_TOKEN_KV); if (!tk) tk = (await pubAggiorna(h, env, oggi)).token;
+    return { ...v, pub: { token: tk, pubblicate: r.copia.chiavi.length, trattenuti: r.trattenuti, cfg: (await h.kvGet(env, PUB_CFG_KV)) || {} } };
+  }
+  if (parte === "verticali") return { verticali: await verVista(h, env, oggi, false) };
+  if (parte === "bloccate") {
+    const B = (await h.kvGet(env, K_BL)) || [], out = [];
+    for (const b of B.slice(-60)) { const r = await pxGet(h, env, b.strumento.slice(3)), p = r ? r.p : []; const at = (g) => { const t = new Date(Date.parse(b.data0 + "T12:00:00Z") + g * 864e5).toISOString().slice(0, 10); if (!p.length || p.at(-1)[0] < t) return null; const z = lastOnOrBefore(p, t); return z ? +((z[1] / b.prezzo0 - 1) * 100).toFixed(2) : null; }; out.push({ ...b, dopo7: at(7), dopo30: at(30) }); }
+    return { bloccate: out };
+  }
+  if (parte === "pf") {
+    const P = await pfDati(h, env, oggi, false), px = {}; // prezzi e indicatori dei titoli in portafoglio, per la scheda della posizione (17/11/2026)
+    for (const c of Object.values(P.conti || {})) for (const q of (c && c.posizioni) || []) if (!px[q.sim]) { const pp = (P.prezzi[q.sim] || []).filter((x) => x[0] <= oggi); const t = invTecnica(pp); if (t) delete t.hist; px[q.sim] = { p: pp.slice(-520), tecnica: t }; }
+    return { pf: { conti: P.conti, rif: P.rif, ops: P.ops.slice(-200).reverse(), costo: 0.15, per_regola: pfPerRegola(P.ops, P.prezzi, oggi), px } };
+  }
+  throw new Error("parte sconosciuta");
+}
+
+/* azioni del pannello (sessione): inv_get, inv_nota, inv_aggiungi */
+export async function invPanelApi(env, b, h) {
+  /* inv_get (26/11/2026): il calcolo intero in una sola richiesta superava il limite di CPU del Worker e Cloudflare rispondeva con una pagina HTML
+     («Unexpected token '<'»). Ora la vista è divisa in parti, ognuna calcolata da una richiesta sua (inv_parte) e salvata come testo in inv:vc:<parte>.
+     inv_get non calcola nulla: il database mette insieme le parti salvate e dice quali sono vecchie; il pannello mostra subito quelle e aggiorna le altre. */
+  if (b.action === "inv_get") {
+    const dip = Object.entries(VC_PARTI).map(([k, c]) => `'${k}', (SELECT max(updated_at) FROM kv WHERE ${c.dip.map((d) => (d.endsWith("%") ? `k LIKE '${d}'` : `k = '${d}'`)).join(" OR ")})`).join(", ");
+    const eta = Object.entries(VC_PARTI).map(([k, c]) => `'${k}', ${c.eta}`).join(", ");
+    const r = await env.DB.prepare(`SELECT json_object('ok', json('true'), 'oggi', ?1, 'adesso', ?2, 'parti', (SELECT json_group_object(substr(k, ${VC.length + 1}), json(v)) FROM kv WHERE k LIKE '${VC}%'), 'dip', json_object(${dip}), 'eta', json_object(${eta})) AS j`).bind(h.romeToday(), new Date().toISOString()).first();
+    return new Response(r.j, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+  }
+  if (b.action === "inv_parte") {
+    const parte = String(b.parte || ""); if (!VC_PARTI[parte]) return { ok: false, error: "parte sconosciuta: " + parte };
+    let dati; try { dati = await vcCalcola(parte, env, h); } catch (e) { return { ok: false, error: String((e && e.message) || e).slice(0, 160) }; }
+    const v = { ...dati, _fatta: new Date().toISOString() };
+    await h.kvSet(env, VC + parte, v);
+    return { ok: true, parte, dati: v };
   }
   if (b.action === "inv_pf_versa") { // soldi virtuali: avvio o ricarica, nel conto del modello o nel mio
     const conto = b.conto === "mio" ? "mio" : "modello", eur = Math.round(+b.eur * 100) / 100;
