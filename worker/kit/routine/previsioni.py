@@ -9,7 +9,9 @@ Uso:
 Ogni documento ai_previsioni/<id>:
  {"id","chiave","dinamica" (meccanismo, o null se riguarda la chiave intera),"ipotesi" ("A"|"B"|null),
   "se_vera": a cosa da ragione se si avvera (max 60 caratteri), "testo": il fatto (chi, cosa, quanto, entro quando),
-  "p": probabilita' che si avveri secondo il sistema il giorno della creazione (5-95),
+  "p": STIMA DI PARTENZA, probabilita' il giorno della creazione (5-95), congelata: il punteggio si fa su questa,
+  "perche": una riga, da dove viene la stima di partenza (peso dell'ipotesi, correzione per la difficolta' del fatto),
+  "storia": [{"data","p","perche"}] come si muove la stima dopo la creazione (fuori dall'impronta, si aggiunge e non si cancella),
   "creata","scadenza" (AAAA-MM-GG), "impronta": scritta da questo script alla creazione,
   "esito": null | "si" | "no", "fonte_esito": {"nome","url"}, "nota", "chiusa"}
 Lo script stampa errori, previsioni scadute da chiudere, e il punteggio (Brier: 0 perfetto, 0,25 = tirare a indovinare).
@@ -54,6 +56,14 @@ def main():
             err.append(f"{d.get('id')}: cambiata dopo la creazione (le previsioni sono congelate)")
         if not d.get("impronta"):
             err.append(f"{d.get('id')}: manca l'impronta (python3 previsioni.py --impronta <file>)")
+        ultima = None
+        for v in d.get("storia") or []:
+            if not (v.get("data") and v.get("perche")) or not 5 <= float(v.get("p") or 0) <= 95:
+                err.append(f"{d.get('id')}: voce di storia incompleta o p fuori da 5-95 ({v})")
+            elif ultima and str(v["data"]) < ultima:
+                err.append(f"{d.get('id')}: storia non in ordine di data")
+            else:
+                ultima = str(v.get("data"))
         if d.get("esito") in ("si", "no"):
             if not (d.get("fonte_esito") or {}).get("url"):
                 err.append(f"{d.get('id')}: esito senza fonte")
@@ -73,6 +83,13 @@ def main():
         b = sum((float(d['p']) / 100 - (1 if d['esito'] == 'si' else 0)) ** 2 for d in chiuse) / len(chiuse)
         giuste = sum(1 for d in chiuse if (d['esito'] == 'si') == (float(d['p']) >= 50))
         print(f"punteggio Brier {b:.3f} su {len(chiuse)} (0 perfetto, 0,25 = a caso); giuste {giuste}/{len(chiuse)}")
+        fin = lambda d: float((d.get("storia") or [{"p": d["p"]}])[-1]["p"])
+        bf = sum((fin(d) / 100 - (1 if d['esito'] == 'si' else 0)) ** 2 for d in chiuse) / len(chiuse)
+        print(f"punteggio con l'ultima stima {bf:.3f}: {'gli aggiornamenti aiutano' if bf < b - 0.005 else 'gli aggiornamenti peggiorano' if bf > b + 0.005 else 'gli aggiornamenti non cambiano molto'}")
+    mosse = [d for d in aperte if d.get("storia")]
+    for d in mosse:
+        u = d["storia"][-1]
+        print(f"STIMA {d['id']}: {d['p']} -> {u['p']} ({u.get('data')}: {u.get('perche', '')})")
     sys.exit(2 if err else 0)
 
 
