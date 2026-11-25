@@ -19,7 +19,8 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
    - legato a una dinamica della chiave: "dinamica" (meccanismo) e "ipotesi" ("A"|"B") a cui da ragione se si avvera; "se_vera" in parole semplici (es. «da ragione al rimbalzo dell'uso»);
    - "p": la probabilità che si avveri secondo il peso di oggi di quella ipotesi, aggiustata per quanto il fatto è facile (5-95); vietate le previsioni ovvie (p sopra 90) e quelle su morti o tragedie;
    - id `<chiave>-<AAAAMMGG>-<n>`, "creata": oggi; scrivi il documento in un file, `python3 /tmp/routine/previsioni.py --impronta <file>` e salva il valore in "impronta"; poi `python3 /tmp/rgdb.py set ai_previsioni <id> --file <file>`.
-   Le previsioni non si modificano mai dopo la creazione. Nel resoconto: quante ne hai create e il punteggio stampato dallo script.
+   - "perche": una riga su da dove viene la stima (es. «ipotesi A al 60%, fatto un po' più facile → 65%»); "storia": [].
+   Testo, scadenza e "p" (stima di partenza) non si modificano mai dopo la creazione. Dopo i pesi, per le previsioni già aperte la cui ipotesi ha cambiato peso, aggiorna la stima con le stesse regole del passo 5-ter di aggiornamenti_ai.md (voce in "storia", mai toccare "p"). Nel resoconto: quante ne hai create, le righe «STIMA» e il punteggio stampato dallo script.
 
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 
