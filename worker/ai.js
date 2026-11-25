@@ -17,6 +17,9 @@
        ai_confronti/<id>      numeri confrontabili tra protagonisti (investimenti, ricavi), con data e fonte per voce
        ai_glossario/<slug>    le parole sottolineate e cliccabili (aziende, modelli, persone, istituzioni, concetti), dal 22/11/2026
        ai_filoni/<slug>       i filoni: la storia di un tema nel tempo, tappa per tappa (dal 22/11/2026)
+       ai_persone/<id>        le persone chiave dell'IA (26/11/2026, pubbliche): ruolo, perché è famosa, cosa fa ora, percorso, cosa ha sviluppato,
+                              posizioni dichiarate con data e fonte, stima nel tempo, legami, notizie (le scrive la routine «persone»)
+       ai_persone_foto/<id>   la foto scelta da Francesco su Wikimedia Commons, con licenza e crediti (la scrive solo il Worker, azione ai_persona_foto)
        ai_c360/<cliente>      la vista 360° di un cliente: sintesi, PowerMap, numeri, IA, pari, incontro (dal 23/11/2026; SOLO nel database)
      nessuna di queste collezioni va sul sito pubblico (non sono in DB_SITE)
    - pannello /ig/ia (ai.html): azioni ai_get e ai_fonti
@@ -62,7 +65,7 @@ export async function aiGiro(env, h, n) {
   await h.kvSet(env, K_GIRO, { i: (g.i + quanti) % AI_FONTI.length, at: ora });
   return { fatti: lista.map((f) => f.id), nuove: ins.length };
 }
-export async function aiCron(env, h) { try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
+export async function aiCron(env, h) { try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
 
 async function voci(env, ore) {
   await tabella(env);
@@ -70,6 +73,44 @@ async function voci(env, ore) {
   return (await env.DB.prepare("SELECT link, fonte, titolo, sito, data FROM ai_voci WHERE data >= ?1 ORDER BY data DESC LIMIT 3000").bind(da).all()).results || [];
 }
 const jp = (s, d) => { try { return JSON.parse(s); } catch (e) { return d; } };
+/* foto delle persone: solo licenze libere, come in Read Geopolitics */
+const LIC_OK = /^(cc0|cc[ -]?by(-sa)?([ -][\d.]+)?|public domain|pd\b|pd-|attribution|ogl|licence ouverte|kogl|godl)/i;
+const UA = { "user-agent": "ReadGeopolitics/1.0 (https://www.readgeopolitics.com)" };
+async function fotoCommons(f, origine, oggi) { // un file di Commons → foto con autore e licenza, solo se la licenza è libera
+  let j; try { const r = await fetch("https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=480&titles=" + encodeURIComponent("File:" + f), { headers: UA, signal: AbortSignal.timeout(8000) }); j = await r.json(); } catch (e) { return { ok: false, error: "Wikimedia Commons non risponde, riprova" }; }
+  const pg = Object.values((j && j.query && j.query.pages) || {})[0] || {}, ii = (pg.imageinfo || [])[0];
+  if (!ii) return { ok: false, error: "file non trovato su Wikimedia Commons" };
+  const m = ii.extmetadata || {}, val = (k) => String((m[k] && m[k].value) || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  const lic = val("LicenseShortName");
+  if (!LIC_OK.test(lic) || /\b(nc|nd)\b|non-?commercial|no-?deriv/i.test(lic)) return { ok: false, error: "licenza non libera: " + (lic || "sconosciuta") + ". Servono pubblico dominio, CC0, CC BY o CC BY-SA." };
+  const foto = { src: ii.thumburl || ii.url, c: (val("Artist") || "autore non indicato").slice(0, 140) + ", via Wikimedia Commons", lic, l: val("LicenseUrl") || "", u: ii.descriptionurl || "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(f), f, origine, il: oggi };
+  if (!/^https:\/\/upload\.wikimedia\.org\//.test(foto.src)) return { ok: false, error: "indirizzo dell'immagine inatteso" };
+  return { ok: true, foto };
+}
+/* foto automatica (26/11/2026): l'immagine che Wikidata associa alla persona (proprietà P18), se la licenza è libera.
+   La routine scrive solo l'identificativo Wikidata («wikidata»: "Q…"); la foto la cerca il Worker, al massimo 3 per giro del cron,
+   e non tocca mai una foto scelta a mano. Se non c'è una foto libera riprova dopo 7 giorni. */
+async function fotoGiro(env, oggi) {
+  const R = (await env.DB.prepare("SELECT p.key k, p.data->>'$.wikidata' q, f.data fd FROM rdocs p LEFT JOIN rdocs f ON f.type='ai_persone_foto' AND f.key=p.key WHERE p.type='ai_persone' AND p.data->>'$.wikidata' LIKE 'Q%' AND (f.key IS NULL OR (f.data->>'$.origine'='wikidata' AND f.data->>'$.q' IS NOT p.data->>'$.wikidata') OR (f.data->>'$.nessuna'=1 AND f.data->>'$.il' < ?1)) LIMIT 3").bind(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)).all()).results || [];
+  for (const x of R) {
+    let foto = null, nota = "";
+    try {
+      const j = await (await fetch("https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&property=P18&entity=" + encodeURIComponent(x.q), { headers: UA, signal: AbortSignal.timeout(8000) })).json();
+      const c = ((j.claims || {}).P18 || []).find((v) => v.rank === "preferred") || ((j.claims || {}).P18 || [])[0], f = c && c.mainsnak && c.mainsnak.datavalue && c.mainsnak.datavalue.value;
+      if (f) { const r = await fotoCommons(String(f), "wikidata", oggi); if (r.ok) foto = { ...r.foto, q: x.q }; else nota = r.error; } else nota = "nessuna immagine su Wikidata";
+    } catch (e) { nota = "Wikidata non risponde"; }
+    await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_persone_foto',?1,1,'',?2,?3)").bind(x.k, JSON.stringify(foto || { nessuna: 1, q: x.q, origine: "wikidata", nota, il: oggi }), new Date().toISOString()).run();
+  }
+}
+function fileCommons(u) {
+  let x = String(u || "").trim(); try { x = decodeURIComponent(x); } catch (e) {}
+  let m = x.match(/^https?:\/\/commons\.(?:m\.)?wikimedia\.org\/wiki\/(?:File|Immagine|Image|Fichier|Datei):([^?#]+)/i);
+  if (m) return m[1].replace(/_/g, " ").trim().slice(0, 240);
+  m = x.match(/^https?:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i);
+  if (m) return m[1].replace(/_/g, " ").trim().slice(0, 240);
+  m = x.match(/^(?:File|Immagine):(.+\.(?:jpe?g|png|webp|tiff?))$/i);
+  return m ? m[1].replace(/_/g, " ").trim().slice(0, 240) : null;
+}
 /* una raccolta come stringa JSON pronta ("[...]"), costruita dal database: il Worker non la legge */
 async function raw(env, type, lim = 400, order = "key DESC", expr = "json_set(data,'$.id',key,'$._agg',updated_at)") {
   const r = await env.DB.prepare(`SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT ${expr} AS o FROM rdocs WHERE type=?1 ORDER BY ${order} LIMIT ?2)`).bind(type, lim).first();
@@ -99,7 +140,7 @@ export async function aiPanelApi(env, b, h) {
     const oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
     const ORD = "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key";
     const cut30 = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
-    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, meccanismi, mappa, temiStorie] = await Promise.all([
+    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, meccanismi, mappa, temiStorie, persone] = await Promise.all([
       raw(env, "ai_tesi", 60, ORD), raw(env, "ai_adozione", 40), raw(env, "ai_approf", 80, "key DESC", "json_set(json_remove(data,'$.sezioni'),'$.id',key,'$._agg',updated_at,'$.n_sezioni',coalesce(json_array_length(data,'$.sezioni'),0))"),
       raw(env, "ai_casi", 600, "key DESC", "json_object('id',key,'chi',data->>'$.chi','settore',data->>'$.settore','settore_norm',data->>'$.settore_norm','paese',data->>'$.paese','area',data->>'$.area','tecnologia',data->>'$.tecnologia','modello',data->>'$.modello','cloud',data->>'$.cloud','deploy',data->>'$.deploy','partner',data->>'$.partner','stadio',data->>'$.stadio','cosa',data->>'$.cosa','dato',data->>'$.dato','misura',data->>'$.misura','data',data->>'$.data','iso',data->>'$.iso','chi_lo_dice',data->'$.chi_lo_dice','fonte',data->'$.fonte')"),
       raw(env, "ai_attori", 40, ORD), raw(env, "ai_confronti", 20, ORD), raw(env, "ai_filoni", 300, "coalesce(data->>'$.aggiornato', updated_at) DESC"),
@@ -107,7 +148,9 @@ export async function aiPanelApi(env, b, h) {
       coll(env, "ai_glossario", 2000),
       env.DB.prepare("SELECT key, data->>'$.nome' nome, coalesce(data->>'$.settore', data->>'$.cluster', '') settore, data->>'$.sottocluster' sc, coalesce(data->'$.aree','{}') aree, coalesce(json_array_length(data,'$.eventi'),0) n FROM rdocs WHERE type='ai_clienti' ORDER BY key DESC LIMIT 80").all().then((r) => r.results || []),
       raw(env, "ai_temi", 20), raw(env, "ai_prezzi", 60, "key DESC"), raw(env, "ai_meccanismi", 40), raw(env, "ai_mappa", 2),
-      env.DB.prepare("SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT json_object('ed', r.key, 'i', CAST(j.key AS INTEGER), 'titolo', coalesce(j.value->>'$.titolo', j.value->>'$.breve', ''), 'tema_id', j.value->>'$.tema_id', 'tema', j.value->>'$.tema') AS o FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND r.key >= ?1 ORDER BY r.key DESC)").bind(cut30).first().then((r) => (r && r.j) || "[]")]);
+      env.DB.prepare("SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT json_object('ed', r.key, 'i', CAST(j.key AS INTEGER), 'titolo', coalesce(j.value->>'$.titolo', j.value->>'$.breve', ''), 'tema_id', j.value->>'$.tema_id', 'tema', j.value->>'$.tema') AS o FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND r.key >= ?1 ORDER BY r.key DESC)").bind(cut30).first().then((r) => (r && r.j) || "[]"),
+      raw(env, "ai_persone", 80, "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key", "json_object('id',key,'nome',data->>'$.nome','gruppo',data->>'$.gruppo','ruolo',data->>'$.ruolo','perche',data->>'$.perche','aziende',json(coalesce(data->'$.aziende','[]')),'ultima',json(coalesce(data->'$.notizie[0]','null')),'foto',json(coalesce((SELECT f.data FROM rdocs f WHERE f.type='ai_persone_foto' AND f.key=rdocs.key AND f.data->>'$.src' IS NOT NULL),'null')),'aggiornato',data->>'$.aggiornato')"),
+    ]);
     /* glossario: in quali letture delle ultime edizioni compare ogni voce (termine o alias, parola intera) */
     const testi = []; for (const e of edz) (e.letture || []).forEach((l, i) => testi.push({ data: e.id, i, breve: l.breve || l.titolo || "", t: JSON.stringify([l.titolo, l.breve, l.perche_breve, l.due_righe, l.perche_conta, l.fatti, l.lettura, l.diversa, l.come_funziona, l.pro, l.contro, l.sintesi]) }));
     const reEsc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -125,7 +168,7 @@ export async function aiPanelApi(env, b, h) {
     const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, agg, previsioni, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
       clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, sc: c.sc || null, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
-    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie}}`;
+    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie},"persone":${persone}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
   }
   /* ricerca nell'archivio delle edizioni (titolo, frase, letture, brevi): dal 22/11/2026 */
@@ -138,6 +181,26 @@ export async function aiPanelApi(env, b, h) {
   }
   /* vista 360° del cliente (23/11/2026): solo in modo privato, dati solo nel database */
   if (b.action === "ai_c360") { if (b._pubblico === true) return { ok: false, error: "privato" }; const r = await env.DB.prepare("SELECT data, updated_at FROM rdocs WHERE type='ai_c360' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, c360: r ? jp(r.data, null) : null }; }
+  /* persone chiave (26/11/2026): il profilo intero si legge quando lo si apre */
+  if (b.action === "ai_persona") {
+    const id = String(b.id || "").slice(0, 60), r = await env.DB.prepare("SELECT data, updated_at FROM rdocs WHERE type='ai_persone' AND key=?1").bind(id).first();
+    if (!r) return { ok: false, error: "persona non trovata" };
+    const f = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_persone_foto' AND key=?1").bind(id).first();
+    const fo = f ? jp(f.data, null) : null;
+    return { ok: true, persona: { ...jp(r.data, {}), id, foto: fo && fo.src ? fo : null, _agg: r.updated_at } };
+  }
+  /* la foto: la sceglie Francesco su Wikimedia Commons; il Worker accetta solo licenze libere e salva autore e licenza (solo modo privato) */
+  if (b.action === "ai_persona_foto") {
+    if (b._pubblico === true) return { ok: false, error: "privato" };
+    const id = String(b.id || "").slice(0, 60);
+    if (!(await env.DB.prepare("SELECT 1 FROM rdocs WHERE type='ai_persone' AND key=?1").bind(id).first())) return { ok: false, error: "persona non trovata" };
+    const u = String(b.url || "").trim();
+    if (!u) { await env.DB.prepare("DELETE FROM rdocs WHERE type='ai_persone_foto' AND key=?1").bind(id).run(); return { ok: true, foto: null }; }
+    const f = fileCommons(u); if (!f) return { ok: false, error: "incolla il link di un file di Wikimedia Commons (commons.wikimedia.org/wiki/File:…)" };
+    const r = await fotoCommons(f, "manuale", h.romeToday()); if (!r.ok) return r; const foto = r.foto;
+    await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_persone_foto',?1,1,'',?2,?3)").bind(id, JSON.stringify(foto), new Date().toISOString()).run();
+    return { ok: true, foto };
+  }
   if (b.action === "ai_approf") { const r = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_approf' AND key=?1").bind(String(b.id || "")).first(); return { ok: !!r, approf: r ? jp(r.data, null) : null }; }
   if (b.action === "ai_fonti") {
     const stato = (await h.kvGet(env, K_STATO)) || {}; await tabella(env);

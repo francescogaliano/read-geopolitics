@@ -84,7 +84,7 @@ export async function aiSito(request, env, p, method, url, h) {
       }
     }
     if (!io && !pub) return h.fail(401, "unauthorized");
-    if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti", "ai_c360"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
+    if (!b || !["ai_get", "ai_cerca", "ai_approf", "ai_fonti", "ai_c360", "ai_persona", "ai_persona_foto"].includes(String(b.action || ""))) return h.fail(400, "azione_non_ammessa");
     b._pubblico = !io;
     if (pub && b.action === "ai_get") {
       const k = new Request("https://ai.cache/get/" + encodeURIComponent(String(b.data || "oggi"))), hit = await caches.default.match(k);
