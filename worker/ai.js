@@ -91,15 +91,25 @@ async function fotoCommons(f, origine, oggi) { // un file di Commons → foto co
    La routine scrive solo l'identificativo Wikidata («wikidata»: "Q…"); la foto la cerca il Worker, al massimo 3 per giro del cron,
    e non tocca mai una foto scelta a mano. Se non c'è una foto libera riprova dopo 7 giorni. */
 async function fotoGiro(env, oggi) {
-  const R = (await env.DB.prepare("SELECT p.key k, p.data->>'$.wikidata' q, f.data fd FROM rdocs p LEFT JOIN rdocs f ON f.type='ai_persone_foto' AND f.key=p.key WHERE p.type='ai_persone' AND p.data->>'$.wikidata' LIKE 'Q%' AND (f.key IS NULL OR (f.data->>'$.origine'='wikidata' AND f.data->>'$.q' IS NOT p.data->>'$.wikidata') OR (f.data->>'$.nessuna'=1 AND (f.data->>'$.il' < ?1 OR f.data->>'$.v' IS NULL))) LIMIT 3").bind(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)).all()).results || [];
+  const R = (await env.DB.prepare("SELECT p.key k, p.data->>'$.wikidata' q, f.data fd FROM rdocs p LEFT JOIN rdocs f ON f.type='ai_persone_foto' AND f.key=p.key WHERE p.type='ai_persone' AND p.data->>'$.wikidata' LIKE 'Q%' AND (f.key IS NULL OR (f.data->>'$.origine'='wikidata' AND f.data->>'$.q' IS NOT p.data->>'$.wikidata') OR (f.data->>'$.nessuna'=1 AND (f.data->>'$.il' < ?1 OR coalesce(f.data->>'$.v', 0) < 3))) LIMIT 3").bind(new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)).all()).results || [];
   for (const x of R) {
     let foto = null, nota = "";
     try {
       const j = await (await fetch("https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&property=P18&entity=" + encodeURIComponent(x.q), { headers: UA, signal: AbortSignal.timeout(8000) })).json();
       const c = ((j.claims || {}).P18 || []).find((v) => v.rank === "preferred") || ((j.claims || {}).P18 || [])[0], f = c && c.mainsnak && c.mainsnak.datavalue && c.mainsnak.datavalue.value;
       if (f) { const r = await fotoCommons(String(f), "wikidata", oggi); if (r.ok) foto = { ...r.foto, q: x.q }; else nota = r.error; } else nota = "nessuna immagine su Wikidata";
+      if (!foto) { // ripiego: l'immagine principale della voce di Wikipedia (inglese, poi italiana), solo se è un file di Commons con licenza libera
+        const e = await (await fetch("https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=sitelinks&sitefilter=enwiki|itwiki&ids=" + encodeURIComponent(x.q), { headers: UA, signal: AbortSignal.timeout(8000) })).json();
+        const sl = ((e.entities || {})[x.q] || {}).sitelinks || {};
+        for (const [w, dom] of [["enwiki", "en"], ["itwiki", "it"]]) {
+          if (!sl[w] || foto) continue;
+          const pj = await (await fetch(`https://${dom}.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&piprop=name&titles=` + encodeURIComponent(sl[w].title), { headers: UA, signal: AbortSignal.timeout(8000) })).json();
+          const nm = (Object.values((pj.query || {}).pages || {})[0] || {}).pageimage;
+          if (nm) { const r = await fotoCommons(String(nm).replace(/_/g, " "), "wikidata", oggi); if (r.ok) foto = { ...r.foto, q: x.q, da: dom + ".wikipedia" }; else nota += " · Wikipedia: " + r.error; }
+        }
+      }
     } catch (e) { nota = "Wikidata non risponde"; }
-    await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_persone_foto',?1,1,'',?2,?3)").bind(x.k, JSON.stringify(foto || { nessuna: 1, v: 2, q: x.q, origine: "wikidata", nota, il: oggi }), new Date().toISOString()).run();
+    await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_persone_foto',?1,1,'',?2,?3)").bind(x.k, JSON.stringify(foto || { nessuna: 1, v: 3, q: x.q, origine: "wikidata", nota, il: oggi }), new Date().toISOString()).run();
   }
 }
 function fileCommons(u) {
