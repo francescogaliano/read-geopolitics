@@ -46,6 +46,7 @@ Esempio completo già nel database: ai_persone/demis-hassabis (leggilo con `pyth
 IL GIRO
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"persone","fase":"inizio"}'`
 2. `python3 /tmp/rgdb.py list ai_persone --all > /tmp/persone.json` e `python3 /tmp/rgdb.py ia-voci 36 > /tmp/voci.txt`.
+2-bis. FOTO MANCANTI: ai profili senza "wikidata" aggiungilo subito (update con il solo campo "wikidata"), così il server trova la foto.
 3. NUOVI PROFILI. Finché qualcuno dell'elenco non ha ancora il profilo, crea fino a 6 profili per giro (nell'ordine dell'elenco), con 4-6 ricerche ciascuno. Così l'elenco si completa in 4-5 giorni.
 4. NOTIZIE DEL GIORNO. Cerca i nomi di tutte le persone con profilo nei titoli di /tmp/voci.txt (anche solo il cognome, se non è ambiguo). Per ogni persona citata: leggi la notizia alla fonte, e se è un fatto nuovo che la riguarda (un ruolo, un annuncio, una dichiarazione, una causa, un investimento) aggiungi una voce in testa a "notizie" e aggiorna "ora", "ruolo" (con "ruolo_dal") e "posizioni" se cambiano. Se cambia il ruolo, controlla anche i profili dei suoi "legami".
 5. RILETTURA A ROTAZIONE. Rileggi da capo i 3 profili con "aggiornato" più vecchio (dopo i nuovi del punto 3): ruolo di oggi, cose nuove da aggiungere, posizioni nuove dichiarate, link che non funzionano più. Così ogni profilo è ricontrollato circa ogni dieci giorni.
