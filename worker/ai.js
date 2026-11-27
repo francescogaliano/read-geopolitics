@@ -65,7 +65,36 @@ export async function aiGiro(env, h, n) {
   await h.kvSet(env, K_GIRO, { i: (g.i + quanti) % AI_FONTI.length, at: ora });
   return { fatti: lista.map((f) => f.id), nuove: ins.length };
 }
-export async function aiCron(env, h) { try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
+/* 27/11/2026 — memoria delle menzioni dei trend. Una volta all'ora (al massimo) il Worker cerca nei titoli delle ultime 36 ore
+   le parole di ogni scheda ai_trend («parole»: ["saas apocalypse", …]) e aggiunge i titoli trovati al documento della settimana
+   ai_menzioni/<lunedì>: {"trend": {<id>: {"n", "voci": [{titolo, link, fonte, data}]}}, "aggiornato"}. Non si cancella mai:
+   i titoli dei feed durano 7 giorni, questo documento resta e permette di rileggere cosa si diceva, non solo quanto. */
+const lunedi = (d) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7)); return x.toISOString().slice(0, 10); };
+async function menzioniGiro(env, h, oggi) {
+  const ora = new Date().toISOString(), ult = await h.kvGet(env, "ai:menz");
+  if (ult && ult.at && Date.now() - Date.parse(ult.at) < 3600e3) return;
+  await h.kvSet(env, "ai:menz", { at: ora });
+  const T = ((await env.DB.prepare("SELECT key, data->'$.parole' p FROM rdocs WHERE type='ai_trend'").all()).results || [])
+    .map((r) => ({ id: r.key, p: jp(r.p, []).map((w) => String(w).toLowerCase().trim()).filter((w) => w.length >= 3) })).filter((t) => t.p.length);
+  if (!T.length) return;
+  const V = await voci(env, 36), wk = lunedi(oggi);
+  const row = await env.DB.prepare("SELECT data FROM rdocs WHERE type='ai_menzioni' AND key=?1").bind(wk).first();
+  const doc = (row && jp(row.data, null)) || { settimana: wk, trend: {} };
+  doc.trend = doc.trend || {};
+  for (const t of T) {
+    const cur = doc.trend[t.id] || { n: 0, voci: [] }, visti = new Set(cur.voci.map((v) => v.link));
+    for (const v of V) {
+      const tt = " " + String(v.titolo).toLowerCase() + " ";
+      if (visti.has(v.link) || !t.p.some((w) => tt.includes(w))) continue;
+      visti.add(v.link); cur.n++;
+      if (cur.voci.length < 120) cur.voci.push({ titolo: String(v.titolo).slice(0, 220), link: v.link, fonte: v.fonte, data: String(v.data).slice(0, 10) });
+    }
+    doc.trend[t.id] = cur;
+  }
+  doc.aggiornato = ora;
+  await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_menzioni',?1,1,'',?2,?3)").bind(wk, JSON.stringify(doc), ora).run();
+}
+export async function aiCron(env, h) { try { await menzioniGiro(env, h, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
 
 async function voci(env, ore) {
   await tabella(env);
@@ -150,7 +179,8 @@ export async function aiPanelApi(env, b, h) {
     const oggi = (data && edz.find((e) => e.id === data)) || edz[0] || null;
     const ORD = "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key";
     const cut30 = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
-    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, meccanismi, mappa, temiStorie, persone] = await Promise.all([
+    const NIENTE = Promise.resolve("[]");
+    const [tesi, adozione, approf, casi, attori, confronti, filoni, agenda, glossario, clienti, temi, prezzi, meccanismi, mappa, temiStorie, persone, trend, registro, copertura, controllo, menzioni] = await Promise.all([
       raw(env, "ai_tesi", 60, ORD), raw(env, "ai_adozione", 40), raw(env, "ai_approf", 80, "key DESC", "json_set(json_remove(data,'$.sezioni'),'$.id',key,'$._agg',updated_at,'$.n_sezioni',coalesce(json_array_length(data,'$.sezioni'),0))"),
       raw(env, "ai_casi", 600, "key DESC", "json_object('id',key,'chi',data->>'$.chi','settore',data->>'$.settore','settore_norm',data->>'$.settore_norm','paese',data->>'$.paese','area',data->>'$.area','tecnologia',data->>'$.tecnologia','modello',data->>'$.modello','cloud',data->>'$.cloud','deploy',data->>'$.deploy','partner',data->>'$.partner','stadio',data->>'$.stadio','cosa',data->>'$.cosa','dato',data->>'$.dato','misura',data->>'$.misura','data',data->>'$.data','iso',data->>'$.iso','chi_lo_dice',data->'$.chi_lo_dice','fonte',data->'$.fonte')"),
       raw(env, "ai_attori", 40, ORD), raw(env, "ai_confronti", 20, ORD), raw(env, "ai_filoni", 300, "coalesce(data->>'$.aggiornato', updated_at) DESC"),
@@ -160,6 +190,12 @@ export async function aiPanelApi(env, b, h) {
       raw(env, "ai_temi", 20), raw(env, "ai_prezzi", 60, "key DESC"), raw(env, "ai_meccanismi", 40), raw(env, "ai_mappa", 2),
       env.DB.prepare("SELECT '[' || coalesce(group_concat(o, ','), '') || ']' AS j FROM (SELECT json_object('ed', r.key, 'i', CAST(j.key AS INTEGER), 'titolo', coalesce(j.value->>'$.titolo', j.value->>'$.breve', ''), 'tema_id', j.value->>'$.tema_id', 'tema', j.value->>'$.tema') AS o FROM rdocs r, json_each(r.data, '$.letture') j WHERE r.type='ai_oggi' AND r.key >= ?1 ORDER BY r.key DESC)").bind(cut30).first().then((r) => (r && r.j) || "[]"),
       raw(env, "ai_persone", 80, "coalesce(CAST(data->>'$.ordine' AS REAL), 99), key", "json_object('id',key,'nome',data->>'$.nome','gruppo',data->>'$.gruppo','ruolo',data->>'$.ruolo','perche',data->>'$.perche','aziende',json(coalesce(data->'$.aziende','[]')),'ultima',json(coalesce(data->'$.notizie[0]','null')),'foto',json(coalesce((SELECT f.data FROM rdocs f WHERE f.type='ai_persone_foto' AND f.key=rdocs.key AND f.data->>'$.src' IS NOT NULL),'null')),'aggiornato',data->>'$.aggiornato')"),
+      /* 27/11/2026: i trend (la parte «privato» non esce mai nel modo pubblico) e la memoria del metodo (solo privato) */
+      raw(env, "ai_trend", 40, "coalesce(data->>'$.ordine','9'), key", pub ? "json_remove(json_set(data,'$.id',key,'$._agg',updated_at),'$.privato')" : undefined),
+      pub ? NIENTE : raw(env, "ai_registro", 400, "coalesce(data->>'$.data','') DESC, key"),
+      pub ? NIENTE : raw(env, "ai_copertura", 6, "key DESC"),
+      pub ? NIENTE : raw(env, "ai_controllo", 6, "key DESC"),
+      pub ? NIENTE : raw(env, "ai_menzioni", 26, "key DESC"),
     ]);
     /* glossario: in quali letture delle ultime edizioni compare ogni voce (termine o alias, parola intera) */
     const testi = []; for (const e of edz) (e.letture || []).forEach((l, i) => testi.push({ data: e.id, i, breve: l.breve || l.titolo || "", t: JSON.stringify([l.titolo, l.breve, l.perche_breve, l.due_righe, l.perche_conta, l.fatti, l.lettura, l.diversa, l.come_funziona, l.pro, l.contro, l.sintesi]) }));
@@ -178,7 +214,7 @@ export async function aiPanelApi(env, b, h) {
     const base = { ok: true, privato: !pub, oggi: h.romeToday(), edizione: oggi, agg, previsioni, edizioni: edz.map((e) => ({ id: e.id, frase: e.frase || "", titolo: e.titolo || "" })), livelli: AI_LIVELLI, glossario: gl, aree: AI_AREE, tecnologie: AI_TECNOLOGIE, capacita: AI_CAPACITA,
       clienti: pub ? [] : clienti.map((c) => ({ id: c.key, nome: c.nome, settore: c.settore, sc: c.sc || null, aree: jp(c.aree, {}), n_eventi: c.n, tocchi: (tocchi[c.nome] || []).slice(0, 8), v360: c360.has(c.key) })),
       fonti: { totale: AI_FONTI.length, ok: AI_FONTI.filter((f) => stato[f.id] && stato[f.id].ok).length, provate: Object.keys(stato).length } };
-    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie},"persone":${persone}}`;
+    const s = JSON.stringify(base).slice(0, -1) + `,"tesi":${tesi},"adozione":${adozione},"approf":${approf},"casi":${casi},"attori":${attori},"confronti":${confronti},"filoni":${filoni},"agenda":${agenda},"temi":${temi},"prezzi":${prezzi},"meccanismi":${meccanismi},"mappa":${mappa},"temi_storie":${temiStorie},"persone":${persone},"trend":${trend},"registro":${registro},"copertura":${copertura},"controllo":${controllo},"menzioni":${menzioni}}`;
     return new Response(s, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
   }
   /* ricerca nell'archivio delle edizioni (titolo, frase, letture, brevi): dal 22/11/2026 */
