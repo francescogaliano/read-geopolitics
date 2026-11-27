@@ -127,6 +127,14 @@ Regole:
 - Ogni domenica chiudi le voci con rivedere_entro passato. Se il dato non c'è ancora, sposta la data una volta sola e scrivi perché.
 - Valida con `python3 /tmp/routine/ai-trend.py registro <file con la lista>` e scrivi con `python3 /tmp/rgdb.py set ai_registro <id> <file>`.
 
+## 6-bis. Ogni domenica: i BUCHI DELLA SETTIMANA
+Serve a sapere cosa ci è sfuggito, prima che lo scopra Francesco (nato dall'incidente SAP del 27/11/2026: nei feed alle 10:15, mai registrato).
+1. `python3 /tmp/rgdb.py ia-voci 168`: raggruppa i titoli per fatto e tieni i fatti ripresi da almeno 3 fonti diverse, più quelli che riguardano un protagonista, un cliente (ai_clienti) o un'azienda della filiera. Al massimo 25.
+2. Per ognuno cerca dove è entrato: edizioni della settimana (`list ai_oggi --order data --desc --limit 7`: letture e brevi), giri (`ai_agg/<giorno>`: fatti e scartati), tappe dei filoni, prove delle chiavi.
+3. Classifica: «entrato» (dove), «scartato con motivo» (dove), «PERSO» (in nessun posto).
+4. Per ogni PERSO: una voce nel registro, tipo «lezione», oggetto «copertura»: il fatto, le fonti, perché è sfuggito (nessuna chiave, nessun filone, orario, fonte assente dai feed, regola che l'ha escluso) e cosa cambiare. Se conta ancora, entra adesso: prova per una chiave, tappa di un filone, o candidato.
+5. Nel resoconto: quanti fatti grossi, quanti entrati, scartati, persi. Se i persi sono 3 o più, scrivilo in apertura del resoconto.
+
 ## 7. Giro mensile (la prima domenica del mese): COPERTURA
 Serve a capire se ci sfugge qualcosa. Lo fai guardando fuori, non dentro le nostre schede.
 1. Raccogli i temi citati nell'ultimo mese da almeno 8 fonti esterne e indipendenti tra loro, di almeno 4 tipi:
