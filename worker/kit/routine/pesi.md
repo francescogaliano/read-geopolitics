@@ -24,7 +24,8 @@ Idea: tu valuti ogni singola prova con una griglia fissa; il peso finale lo calc
 
 3. CALCOLO (lo fa lo script): contributo = ln(diag) × tipo (1 · 0,7 · 0,4) × livello (1 · 0,8 · 0,6) × età (calo graduale: il peso si dimezza ogni 6 mesi); + per A, − per B; somma → percentuale con la funzione logistica, arrotondata a 5, fra 5 e 95.
    FORCHETTA: lo script rifà il conto 4.000 volte spostando ogni diag di un gradino in su o in giù (probabilità 1/4 ciascuno); "forchetta" = [10°, 90° percentile] di A. Dice quanto la stima dipende dai nostri giudizi.
-   LETTURA (dalla forchetta): «molto probabile» se tutta oltre 80; «probabile» se tutta oltre 55; «pende verso» se tutta da una parte ma tocca la zona 50-55; altrimenti «in bilico». Si dice «probabile» solo se lo dice tutta la forchetta.
+   AVANTI: su 100 di quei ricalcoli, quante volte A resta sopra il 50% ("lettura"."avanti_A").
+   LETTURA: «probabile» se chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale è almeno 60; «molto probabile» se 99 su 100 e almeno 80; «pende verso» se avanti in almeno 80 su 100; altrimenti «in bilico».
    SOLIDITÀ (separata dalla probabilità): alta = almeno 8 origini indipendenti, almeno metà primarie, forchetta entro 20 punti; media = almeno 5 origini e forchetta entro 30; altrimenti bassa. Per alzarla servono prove nuove, primarie, da origini diverse: è il lavoro da fare per primo sulle dinamiche «in bilico». Ogni giro ricalcola da capo su tutte le prove (mostrate e in archivio) con le schede congelate: il peso cambia solo per una prova nuova, una prova che invecchia o una revisione scritta.
 
 4. USO:

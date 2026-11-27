@@ -80,14 +80,14 @@ def calcola(din, oggi):
     s = sum(v["c"] for v in T)
     grezzo = 100 / (1 + math.exp(-s))
     pa = int(min(95, max(5, 5 * round(grezzo / 5))))
-    lo, hi = forchetta(T, din.get("meccanismo", ""))
+    (lo, hi), avanti = forchetta(T, din.get("meccanismo", ""))
     n = len({v["origine"] for v in T})
     prim = sum(v["lv"] == "primaria" for v in T) / len(T) if T else 0
     return {
         "peso_A": pa,
         "punteggio": round(s, 2),
         "forchetta": [lo, hi],
-        "lettura": lettura(lo, hi),
+        "lettura": {**lettura(grezzo, avanti), "avanti_A": avanti},
         "solidita": {"livello": solidita(n, prim, hi - lo), "origini": n, "primarie": round(100 * prim)},
         "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(T, key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
@@ -100,7 +100,7 @@ def forchetta(T, seme):
     """Quanto cambia la stima se ogni diag fosse un gradino piu' su o piu' giu' (probabilita' 1/4 ciascuno).
     I diag sono giudizi: la forchetta dice quanto la percentuale dipende da quei giudizi. 10o-90o percentile, A in %."""
     if not T:
-        return [50, 50]
+        return [50, 50], 50
     rnd = random.Random(hashlib.sha256((seme + "|" + "|".join(sorted(v["k"] for v in T))).encode()).hexdigest())
     out = []
     for _ in range(GIRI):
@@ -111,17 +111,18 @@ def forchetta(T, seme):
             tot += math.log(SCALA[i]) * v["fisso"]
         out.append(100 / (1 + math.exp(-tot)))
     out.sort()
-    return [int(round(out[int(.1 * GIRI)])), int(round(out[int(.9 * GIRI)]))]
+    avanti = round(100 * sum(x > 50 for x in out) / GIRI)  # su 100 ricalcoli, quante volte A resta sopra il 50%
+    return [int(round(out[int(.1 * GIRI)])), int(round(out[int(.9 * GIRI)]))], avanti
 
 
-def lettura(lo, hi):
-    """La stima a parole, dalla forchetta: si dice 'probabile' solo se tutta la forchetta sta da una parte."""
-    if lo >= 80: return {"testo": "molto probabile", "verso": "A"}
-    if lo >= 55: return {"testo": "probabile", "verso": "A"}
-    if lo > 50: return {"testo": "pende verso", "verso": "A"}
-    if hi <= 20: return {"testo": "molto probabile", "verso": "B"}
-    if hi <= 45: return {"testo": "probabile", "verso": "B"}
-    if hi < 50: return {"testo": "pende verso", "verso": "B"}
+def lettura(centro, avanti):
+    """La stima a parole. 'avanti' = su 100 ricalcoli con giudizi diversi, quante volte A resta sopra il 50%.
+    Probabile: chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale e' almeno 60.
+    Pende verso: resta avanti in almeno 80 su 100. Altrimenti in bilico: dipende da come si giudicano le prove."""
+    v, av, c = ("A", avanti, centro) if avanti >= 50 else ("B", 100 - avanti, 100 - centro)
+    if av >= 99 and c >= 80: return {"testo": "molto probabile", "verso": v}
+    if av >= 90 and c >= 60: return {"testo": "probabile", "verso": v}
+    if av >= 80: return {"testo": "pende verso", "verso": v}
     return {"testo": "in bilico", "verso": None}
 
 
@@ -164,7 +165,7 @@ def main():
             continue
         vecchio = (d.get("ipotesi") or [{}])[0].get("peso")
         L = r["lettura"]
-        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''}  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
+        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''} (A avanti {L['avanti_A']}/100)  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
         for c in r["contributi"]: print(f"    {c['c']:+.2f}  {c['prova']}")
         for n in r["non_contate"]: print(f"    non contata (stessa origine): {n}")
         if r["peso_A"] == 50: print("  PAREGGIO: peso_perche deve cominciare con «Pareggio:»")
