@@ -54,7 +54,7 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
    - "domande": 2-3 [{"q": la domanda da fare in riunione, "perche": il dato che la rende forte}];
    - "clienti": solo agganci veri e pubblici [{"testo","perche","tesi":"t1","clienti":["Nome esatto da ai_clienti"]}] — se non c'è un aggancio vero, lista vuota: meglio niente che una forzatura;
    - "osservare": 2-4 [{"testo","perche","data":"AAAA-MM-GG" o null}] solo con date certe lette in una fonte;
-   - "brevi": 5-8 [{"testo": un fatto in una riga, max 20 parole, con soggetto e cifra se c'è, "tema_id": dalla lista del punto letture, "filone": id se la breve fa avanzare un filone aperto (altrimenti null), "fonte": {"nome","url"}}] — fatti veri ma minori presi dai titoli dei feed (`ia-voci`) e verificati aprendo la pagina; niente doppioni delle letture; senza ricerche in più;
+   - "brevi": 5-8 [{"testo": un fatto in una riga, max 20 parole, con soggetto e cifra se c'è, "tema_id": dalla lista del punto letture, "filone": id se la breve fa avanzare un filone aperto (altrimenti null), "tesi": "t1"…"t9" se il fatto tocca davvero una chiave (altrimenti null), "contesto": {"cosa": DI COSA SI TRATTA, il fatto spiegato da zero a chi non ne sa nulla, max 30 parole, "dove": IN CHE CONTESTO, cosa c'era prima o in che partita si muove, max 35 parole}, "fonte": {"nome","url"}}] — fatti veri ma minori presi dai titoli dei feed (`ia-voci`) e verificati aprendo la pagina; niente doppioni delle letture; senza ricerche in più; CONTESTO DELLE BREVI (dal 27/11/2026): si legge toccando la breve. Scrivilo solo con ciò che hai letto nella pagina aperta per verificarla e con ciò che è già nel sito (glossario, filoni, chiavi, protagonisti): niente ricerche in più, niente spiegazioni generiche o inventate, niente giudizi. Frasi complete (REGOLA DELLE FRASI), nomi propri scritti come nel glossario così si sottolineano da soli. Se non hai niente di vero da aggiungere, ometti "contesto" o il campo che manca: meglio una breve nuda che un contesto riempitivo;
    - "titolo": il titolo dell'edizione per l'archivio, max 10 parole (la notizia del giorno, non uno slogan);
    - "log": {"consultate":[…], "non_raggiungibili":[…], "dubbi":[…], "scartate": "una riga sul criterio"}.
    GRAFICI (il pannello li disegna): {"tipo":"barre"|"orizzontali"|"punti"|"linea", "titolo": unità comprese, "serie":[{"et":"ott 2026","v":115.8,"evid":true,"prev":false}], "nota": una riga, "log": true solo per «orizzontali» con valori molto diversi, "forbice":[min,max] e "forbice_et" solo per «punti», "unita":" $" per «punti»}.
@@ -115,6 +115,11 @@ DATA DI OGGI: è sempre la data di Roma, non quella UTC. Calcolala con `TZ=Europ
        if l.get(k) and not l[k].get("fonti"): E.append(f"lettura {i}: {k} senza fonte")
      for k in ("breve","perche_conta","due_righe","perche_breve"):
        if k in l and not str(l[k]).strip(): E.append(f"lettura {i}: {k} vuoto")
+   for i,b in enumerate(e.get("brevi",[])):
+     c=b.get("contesto") or {}
+     if len(str(c.get("cosa","")).split())>32: E.append(f"breve {i}: contesto.cosa oltre 30 parole")
+     if len(str(c.get("dove","")).split())>37: E.append(f"breve {i}: contesto.dove oltre 35 parole")
+     if b.get("tesi") and not re.fullmatch(r"t[1-9]",str(b["tesi"])): E.append(f"breve {i}: tesi non valida")
    n=e.get("numero") or {}
    if n.get("val") and not (n.get("fonti") and n.get("data")): E.append("numero del giorno senza fonte o data")
    print("ok" if not E else "\n".join(E))
