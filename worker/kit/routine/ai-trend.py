@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Validatore della routine «trend» (dal 27/11/2026).
+"""Validatore della routine «ai-trend» (dal 27/11/2026).
 
 Uso:
-  python3 /tmp/routine/trend.py scheda <file>        una scheda ai_trend
-  python3 /tmp/routine/trend.py registro <file>      una voce o una lista di voci ai_registro
-  python3 /tmp/routine/trend.py copertura <file>     il documento mensile ai_copertura
-  python3 /tmp/routine/trend.py controllo <file>     il documento mensile ai_controllo
+  python3 /tmp/routine/ai-trend.py scheda <file>        una scheda ai_trend
+  python3 /tmp/routine/ai-trend.py registro <file>      una voce o una lista di voci ai_registro
+  python3 /tmp/routine/ai-trend.py copertura <file>     il documento mensile ai_copertura
+  python3 /tmp/routine/ai-trend.py controllo <file>     il documento mensile ai_controllo
 Stampa OK oppure gli errori (uscita 2). I limiti di parole sono quelli di trend.md.
 """
 import json, re, sys
