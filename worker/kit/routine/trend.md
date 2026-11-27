@@ -146,13 +146,18 @@ Serve a capire se ci sfugge qualcosa. Lo fai guardando fuori, non dentro le nost
    - "dove": la scheda o la chiave;
    - "nota".
 4. Per ogni «mancato» decidi: diventa candidato (registro), oppure lo scarti con il motivo (registro, tipo «scarto»).
-5. LE DOMANDE DEI CLIENTI: leggi `python3 /tmp/rgdb.py get ai_domande attuale` (la lista di Francesco). Per ogni domanda indica la scheda o la chiave che risponde, oppure «scoperta».
+5. LE DOMANDE DEL MERCATO. Lo strumento è autosufficiente: le domande non vengono da Francesco, le ricavi tu dalle fonti. Raccogli 10-15 domande che il mercato si sta facendo davvero, da:
+   - la parte domande e risposte delle conference call del mese (le domande degli analisti ai dirigenti);
+   - i panel delle conferenze;
+   - le domande aperte dei rapporti degli analisti.
+   Tieni una domanda solo se compare in almeno 2 fonti. Per ognuna indica la scheda o la chiave che risponde con numeri, oppure «scoperta». Una domanda scoperta diventa un candidato nel registro.
+   Se esiste `ai_domande/attuale` (domande che Francesco ha sentito, facoltative), aggiungile alla lista con "fonte": "Francesco". Non è un requisito.
 6. RITARDO (solo per i trend nuovi del mese, e per i 4 della prima volta). Confronta due date:
    - la prima volta che il sito ne ha parlato (cerca nelle edizioni con `python3 /tmp/rgdb.py list ai_oggi --all` e nelle menzioni);
    - la prima volta che ne ha parlato la stampa generalista.
    Se il sito ha parlato dopo, i giorni sono positivi.
 7. Scrivi tutto in `ai_copertura/<AAAA-MM>`:
-   {"data","fonti_esterne":[{nome,url,tipo}],"temi":[{tema,fonti_n,fonti:[{nome,url}],stato,dove,nota}],"quota_coperti": percentuale di coperti sui temi,"domande":[{domanda,dove,stato}],"ritardo":[{trend,prima_noi,prima_stampa,giorni,nota}],"sintesi": 2 frasi su cosa ci sfugge e perché}
+   {"data","fonti_esterne":[{nome,url,tipo}],"temi":[{tema,fonti_n,fonti:[{nome,url}],stato,dove,nota}],"quota_coperti": percentuale di coperti sui temi,"domande":[{domanda,fonti:[{nome,url}],dove,stato}],"ritardo":[{trend,prima_noi,prima_stampa,giorni,nota}],"sintesi": 2 frasi su cosa ci sfugge e perché}
 8. Valida con `python3 /tmp/routine/trend.py copertura <file>`.
 
 ## 8. Il primo giro
