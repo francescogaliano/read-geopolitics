@@ -71,28 +71,23 @@ Usa lo slug in minuscolo con i trattini, per esempio `saas-apocalypse`. Tutti i 
  "storia_stato": [{"data","stato","perche"}] SOLO IN AGGIUNTA, mai riscritta (è la memoria di come l'abbiamo visto cambiare),
  "dal": "AAAA-MM" (quando è comparso nelle fonti), "aggiornato": "<oggi>",
  "lead": 2 frasi di soli fatti misurati, con i numeri principali; nessuna interpretazione,
- "meccanismo": {"passi": [3-5 frasi brevi in catena causale: «gli agenti fanno il lavoro» → «servono meno utenti» → «il prezzo a utente non regge»], "rottura": il passo dove il vecchio modello si rompe (indice in passi), "frase": il meccanismo in una riga},
  "cosa_succede": 1 paragrafo di contesto (max 90 parole): i fatti, senza interpretazione,
- "perche_adesso": max 50 parole: cosa è cambiato da rendere il fenomeno visibile ora,
  "numeri": [{"val": «−21%», "testo": cosa misura, "periodo": «T1 2026», "fonte": {nome,url}, "misura": "misurato"|"dichiarato"}] da 3 a 6,
  "serie": facoltativa, una serie per il grafico animato: {"titolo","unita","punti":[{"x": etichetta,"y": numero}],"fonte":{nome,url}} (solo dati letti),
  "cronologia": [{"data": "AAAA-MM-GG" (o "AAAA-MM" se la fonte dà solo il mese),"testo": max 25 parole,"fonte":{nome,url}}] da 4 a 10, dalla più vecchia,
- "chi_vince": [{"ruolo": "rischia"|"regge"|"guadagna","chi": attori o categorie,"testo": perché, max 30 parole}] almeno uno per ruolo,
- "letture": [{"tesi": la tesi in una frase,"chi": chi la sostiene,"argomento": l'argomento più forte con un fatto (max 60 parole),"fonti":[{nome,url}]}] ESATTAMENTE 2, opposte, della stessa misura e senza caricature,
- "sintesi": dove reggono e dove cedono le due letture, e quale dato deciderebbe (max 80 parole),
- "confidenza": {"livello": "alta"|"media"|"bassa","perche": in poche parole},
  "rumore": {"giudizio": "piu_rumore"|"allineato"|"piu_fatti","perche": confronta menzioni (passo 4) e numeri misurati in una frase},
  "mercati": {"usa","europa","italia"}: per ciascuno 1-2 frasi con un numero e una fonte, o null se non c'è un dato,
- "significa": {"azienda": cosa cambia per un'azienda cliente (max 50 parole),"italia": per il mercato italiano (max 50 parole)},
  "non_sappiamo": 1-3 domande aperte, ciascuna con il dato che risponderebbe,
  "osservare": [{"testo","data": "AAAA-MM-GG" o «entro marzo 2027»}] 2-4 segnali concreti con scadenza letta in una fonte,
- "collegamenti": {"chiavi": ["t3"…] le chiavi del sito che il trend tocca, "trend": [slug], "aziende": [nomi], "filoni": [slug di ai_filoni]},
+ "collegamenti": {"chiavi": ["t3"…] OBBLIGATORIO: le chiavi che spiegano questo fatto (il fatto sta nella scheda della chiave, al punto 1), "trend": [slug], "aziende": [nomi], "filoni": [slug di ai_filoni]},
  "parole": 3-8 parole o frasi in minuscolo che compaiono nei TITOLI quando se ne parla (inglese e italiano). Il Worker le usa per salvare ogni giorno i titoli che lo citano,
  "fonti": [{nome,url}] tutte quelle usate,
  "privato": {"frasi": 2-3 frasi pronte da dire a un cliente,"domande": 2-3 domande da fare al cliente} (non esce MAI nel modo pubblico)
 }
 Prima di scrivere metti il documento in un file e lancia `python3 /tmp/routine/ai-trend.py scheda <file>`. Correggi finché non stampa OK. Poi `python3 /tmp/rgdb.py set ai_trend <slug> <file>`.
 Ogni scrittura è conservata con la sua versione, quindi la storia della scheda resta. Non cancellare mai una voce di cronologia o di storia_stato: si aggiunge.
+
+IL TREND È UN FATTO, NON UN'IPOTESI (Francesco, 27/11/2026). La scheda contiene solo ciò che è misurato: numeri, serie, stato del ciclo, mercati, cronologia, quanto se ne parla. Il PERCHÉ succede e DOVE porta (meccanismo, ipotesi A e B, conseguenze, previsioni) sta nella chiave a cui il trend è collegato, nelle sue dinamiche. Se un trend non entra in nessuna chiave, scrivi nel registro un «candidato» per una chiave nuova, con il meccanismo proposto: non mettere le ipotesi nella scheda del trend.
 
 ## 4. Analizzare: rumore contro fatti
 Per ogni trend, confronta due cose:
@@ -109,16 +104,7 @@ Lo stato cambia SOLO con un dato nuovo, mai per il rumore:
 - → calo: il numero misurato scende in due rilevazioni.
 
 ## 5. Mettere alla prova: le previsioni
-Ogni scheda deve avere almeno 1 e al massimo 3 previsioni aperte in `ai_previsioni`, nel formato e con le regole di dinamiche.md:
-- "chiave": "trend:<slug>";
-- "dinamica": null;
-- "ipotesi": null.
-
-Ogni previsione è un fatto misurabile con soglia e scadenza da 1 a 9 mesi. Un esempio: «la quota di spesa sui modelli aperti nel rapporto Menlo 2027 supera il 10%».
-- Le previsioni ovvie sono vietate (p sopra 90 o sotto 10).
-- p è la tua stima di partenza e "perche" dice da dove viene.
-- Usa l'impronta: `python3 /tmp/routine/previsioni.py --impronta <file>`. Una volta creata, la previsione non si tocca più.
-- Quelle scadute si chiudono con esito e fonte, come per le chiavi.
+Le previsioni stanno nella CHIAVE, non nel trend: "chiave": "t1"…, con "dinamica" e "ipotesi" della dinamica che mettono alla prova, nel formato e con le regole di dinamiche.md. Una previsione serve solo se DISTINGUE tra le ipotesi: se si avvera in entrambi i casi (per esempio «il prezzo per token continua a scendere», vero sia per A sia per B) non va scritta. Per ogni trend nuovo controlla che la sua chiave abbia almeno una previsione che separa A da B; se manca, scrivila.
 
 ## 6. Ricordare: il registro (`ai_registro/<oggi>-<n>`)
 È la memoria del metodo: ogni stima, inferenza o scelta di questo giro che non è già una previsione. Il conteggio non basta: serve il ragionamento, così tra mesi si può vedere se funzionava.
@@ -180,7 +166,7 @@ Le prime 4 schede le ha scritte Claude il 27/11/2026, in chat con Francesco. Se 
 Lancia un sotto-agente con lo strumento Agent:
 - passagli SOLO 3 schede scelte a rotazione e l'elenco delle loro fonti, non queste istruzioni e non il tuo ragionamento;
 - il suo compito: aprire le fonti e verificare ogni numero (c'è? è quello? del periodo giusto?);
-- poi giudica se le due letture sono della stessa forza, e se manca una lettura contraria più forte.
+- poi, nella chiave collegata, giudica se le ipotesi A e B sono della stessa forza e se manca una spiegazione alternativa più forte.
 
 Salva in `ai_controllo/<AAAA-MM>`:
 {"data","schede":[slug],"verifiche":[{"scheda","campo","problema","gravita":"alta|media|bassa","fonte"}],"numeri_controllati","numeri_errati","esito": una frase}

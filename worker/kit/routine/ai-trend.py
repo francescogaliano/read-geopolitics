@@ -36,23 +36,17 @@ def carica(path):
 
 def scheda(d):
     E = []
-    for c in ("titolo", "stato", "stato_perche", "lead", "meccanismo", "cosa_succede", "perche_adesso", "numeri", "cronologia",
-              "chi_vince", "letture", "sintesi", "confidenza", "rumore", "mercati", "significa", "osservare", "collegamenti", "parole", "fonti", "aggiornato"):
+    for c in ("titolo", "stato", "stato_perche", "lead", "cosa_succede", "numeri", "cronologia",
+              "rumore", "mercati", "osservare", "collegamenti", "parole", "fonti", "aggiornato"):
         if d.get(c) in (None, "", [], {}):
             E.append(f"manca {c}")
     if d.get("stato") and d["stato"] not in STATI:
         E.append("stato non valido")
     if d.get("aggiornato") and not DATA.match(str(d["aggiornato"])):
         E.append("aggiornato non è AAAA-MM-GG")
-    for c, lim in (("cosa_succede", 90), ("perche_adesso", 50), ("sintesi", 80)):
+    for c, lim in (("cosa_succede", 90),):
         if parole(d.get(c)) > lim:
             E.append(f"{c}: {parole(d.get(c))} parole (max {lim})")
-    m = d.get("meccanismo") or {}
-    P = m.get("passi") or []
-    if not 3 <= len(P) <= 5:
-        E.append("meccanismo: servono 3-5 passi")
-    if not isinstance(m.get("rottura"), int) or not 0 <= m.get("rottura", -1) < max(1, len(P)):
-        E.append("meccanismo.rottura: indice del passo dove si rompe il vecchio modello")
     N = d.get("numeri") or []
     if not 3 <= len(N) <= 6:
         E.append("numeri: da 3 a 6")
@@ -84,30 +78,15 @@ def scheda(d):
             ult = str(c["data"])
         if parole(c.get("testo")) > 25:
             E.append(f"cronologia[{i}]: max 25 parole")
-    R = {x.get("ruolo") for x in d.get("chi_vince") or []}
-    if not {"rischia", "regge", "guadagna"} <= R:
-        E.append("chi_vince: almeno un rischia, un regge, un guadagna")
-    L = d.get("letture") or []
-    if len(L) != 2:
-        E.append("letture: esattamente 2")
-    for i, l in enumerate(L):
-        if not (l.get("tesi") and l.get("chi") and l.get("argomento") and l.get("fonti") and all(fonte_ok(f) for f in l["fonti"])):
-            E.append(f"letture[{i}]: tesi, chi, argomento, fonti con url")
-        if parole(l.get("argomento")) > 60:
-            E.append(f"letture[{i}].argomento: max 60 parole")
-    if len(L) == 2:
-        a, b = parole(L[0].get("argomento")), parole(L[1].get("argomento"))
-        if min(a, b) and max(a, b) > 2 * min(a, b):
-            E.append("letture: una è più del doppio dell'altra (stessa misura, nessuna caricatura)")
-    if (d.get("confidenza") or {}).get("livello") not in ("alta", "media", "bassa"):
-        E.append("confidenza.livello alta|media|bassa")
+    if not (d.get("collegamenti") or {}).get("chiavi"):
+        E.append("collegamenti.chiavi: obbligatorio, le chiavi che spiegano il fatto (se nessuna: candidato nel registro)")
+    for c in ("meccanismo", "letture", "sintesi", "chi_vince", "perche_adesso"):
+        if d.get(c):
+            E.append(f"{c}: le ipotesi non stanno nel trend ma nella chiave")
     if (d.get("rumore") or {}).get("giudizio") not in ("piu_rumore", "allineato", "piu_fatti"):
         E.append("rumore.giudizio piu_rumore|allineato|piu_fatti")
     if set((d.get("mercati") or {}).keys()) - {"usa", "europa", "italia"}:
         E.append("mercati: solo usa, europa, italia")
-    for k in ("azienda", "italia"):
-        if parole((d.get("significa") or {}).get(k)) > 50:
-            E.append(f"significa.{k}: max 50 parole")
     if not 2 <= len(d.get("osservare") or []) <= 4:
         E.append("osservare: da 2 a 4 segnali")
     W = d.get("parole") or []
