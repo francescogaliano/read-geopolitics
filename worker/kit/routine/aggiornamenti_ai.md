@@ -33,6 +33,7 @@ METODO DEI PESI: /tmp/routine/pesi.md (se manca: worker/kit/routine/pesi.md). Le
 4. SMISTAMENTO. Per ogni fatto tenuto e per ogni dinamica della chiave che tocca, chiediti: questo fatto è più probabile se è vera A o se è vera B?
    - Uguale con tutte e due (diagnosticità 1): NON è una prova. Annotalo nel giro (punto 6) come «non decide» e, se è utile, aggiungilo al campo "neutro" della dinamica (una riga).
    - Più probabile con una delle due: diventa una PROVA di quella ipotesi, con la scheda completa del metodo (tipo, livello, data, origine, diag, forza, debolezza, ragionamento; testo, val, fonte). La scheda si compila ora, una volta sola.
+     · GIUDICE ALLA CIECA: prima del ricalcolo, ogni prova nuova passa dal secondo giudice che non conosce le ipotesi (/tmp/routine/pesi.md, punto 1-ter; se manca: worker/kit/routine/pesi.md). Un solo agente per giro, con tutte le prove nuove. Se i giudici sono in disaccordo, la prova non entra.
      · Se l'origine è la stessa di una prova già presente (lo stesso dato ripreso da un'altra testata), NON aggiungere niente: non è una prova nuova.
      · Se l'ipotesi ha già 3 prove in "prove", sposta in "archivio" la più debole o la più vecchia: non cancellare niente.
      · Un fatto può toccare più dinamiche, anche di chiavi diverse: una scheda per ogni dinamica.

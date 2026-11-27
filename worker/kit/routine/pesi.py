@@ -9,14 +9,18 @@ tesi.json puo' essere un documento ai_tesi (con "dinamiche") oppure una singola 
 Ogni prova deve avere: tipo, diag, livello, data, origine, forza, debolezza, ragionamento.
 Contano le prove in "prove" (le 3 mostrate) e in "archivio" (le altre): nessuna si butta, l'eta' ne riduce il peso.
 Le schede sono congelate: se una cambia rispetto al calcolo precedente serve una voce in "revisioni" di oggi.
+Calcola anche la forchetta (quanto la stima dipende dai diag), la lettura a parole e la solidita' della base.
 Con --scrivi aggiunge una riga a "storico_pesi" quando il peso cambia, con la prova che l'ha spostato.
 Se manca qualcosa lo script si ferma e dice cosa: il peso non si inventa.
 """
-import json, math, sys, datetime
+import json, math, sys, datetime, random, hashlib
 
 DIAG = {1: 1.0, 1.5: 1.5, 2: 2.0, 3: 3.0, 5: 5.0}
 TIPO = {"misurato": 1.0, "calcolo": 0.7, "inferito": 0.4}
 LIVELLO = {"primaria": 1.0, "testata": 0.8, "secondaria": 0.6}
+SCALA = [1.0, 1.5, 2.0, 3.0, 5.0]
+GIRI = 4000
+PREGIUDIZIO = 1.5  # test del giudice di parte: spinte di chi e' in testa divise per 1,5, quelle dell'altra moltiplicate per 1,5  # ricalcoli con i diag spostati di un gradino, per la forchetta
 CAMPI = ("tipo", "diag", "livello", "data", "origine", "forza", "debolezza", "ragionamento")
 
 
@@ -40,7 +44,7 @@ def impronta(p):
 
 
 def calcola(din, oggi):
-    errori, voci, schede = [], [], {}
+    errori, voci, schede, cieche = [], [], {}, []
     prima = ((din.get("calcolo") or {}).get("schede")) or {}
     for ip in din.get("ipotesi", []):
         verso = 1 if ip.get("id") == "A" else -1
@@ -59,29 +63,98 @@ def calcola(din, oggi):
                 errori.append(f"{nome}: {e}"); continue
             k, imp = chiave(p), impronta(p)
             schede[k] = imp
+            if prima and k not in prima:  # prova nuova: serve il giudice alla cieca (pesi.md, 1-ter)
+                cc = p.get("cieco") or {}
+                if not cc or "diag_primo" not in p:
+                    errori.append(f"{nome}: prova nuova senza \"cieco\" o \"diag_primo\" (giudice alla cieca, pesi.md 1-ter)"); continue
+                if cc.get("verso") != ip.get("id"):
+                    errori.append(f"{nome}: il giudice alla cieca dice {cc.get('verso')!r}: la prova non entra, va in \"neutro\""); continue
+                if dg > float(cc.get("diag", 0)) or dg > float(p["diag_primo"]):
+                    errori.append(f"{nome}: diag {dg} piu' alto del piu' basso tra i due giudici ({p['diag_primo']}, {cc.get('diag')})"); continue
+            if p.get("cieco") and "diag_primo" in p:
+                cieche.append(float(p["cieco"].get("diag", 0)) == float(p["diag_primo"]))
             if k in prima and prima[k] != imp and not any(r.get("data") == oggi.isoformat() for r in p.get("revisioni") or []):
                 errori.append(f"{nome}: scheda cambiata ({prima[k]} -> {imp}) senza una voce in \"revisioni\" di oggi {{data, prima, motivo}}")
-            voci.append({"prova": nome, "k": k, "origine": str(p["origine"]).strip().lower(), "c": c})
+            voci.append({"prova": nome, "k": k, "ip": ip.get("id"), "origine": str(p["origine"]).strip().lower(), "c": c,
+                         "dg": dg, "fisso": verso * TIPO[p["tipo"]] * LIVELLO[p["livello"]] * eta(p["data"], oggi), "lv": p["livello"]})
     if errori:
         return None, errori
-    # indipendenza: prove con la stessa fonte d'origine contano una volta, la piu' forte
+    # indipendenza: prove con la stessa fonte d'origine, sulla stessa ipotesi, contano una volta (la piu' forte).
+    # Due prove della stessa origine su ipotesi opposte contano entrambe: dicono cose diverse.
     tenute = {}
     for v in voci:
-        k = v["origine"]
+        k = (v["ip"], v["origine"])
         if k not in tenute or abs(v["c"]) > abs(tenute[k]["c"]):
             tenute[k] = v
-    scartate = [v["prova"] for v in voci if tenute.get(v["origine"]) is not v]
-    s = sum(v["c"] for v in tenute.values())
-    pa = 100 / (1 + math.exp(-s))
-    pa = int(min(80, max(20, 5 * round(pa / 5))))
+    T = list(tenute.values())
+    scartate = [v["prova"] for v in voci if tenute.get((v["ip"], v["origine"])) is not v]
+    s = sum(v["c"] for v in T)
+    grezzo = 100 / (1 + math.exp(-s))
+    pa = int(min(95, max(5, 5 * round(grezzo / 5))))
+    (lo, hi), avanti = forchetta(T, din.get("meccanismo", ""))
+    pg = pregiudizio(T, s)
+    n = len({v["origine"] for v in T})
+    prim = sum(v["lv"] == "primaria" for v in T) / len(T) if T else 0
     return {
         "peso_A": pa,
         "punteggio": round(s, 2),
-        "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(tenute.values(), key=lambda v: -abs(v["c"]))],
+        "forchetta": [lo, hi],
+        "lettura": {**lettura(grezzo, avanti, pg), "avanti_A": avanti, "pregiudizio_A": pg},
+        "solidita": {"livello": solidita(n, prim, hi - lo), "origini": n, "primarie": round(100 * prim)},
+        "giudici": {"prove_doppie": len(cieche), "accordo": sum(cieche)},
+        "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(T, key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
         "schede": schede,
         "data": oggi.isoformat(),
     }, []
+
+
+def forchetta(T, seme):
+    """Quanto cambia la stima se ogni diag fosse un gradino piu' su o piu' giu' (probabilita' 1/4 ciascuno).
+    I diag sono giudizi: la forchetta dice quanto la percentuale dipende da quei giudizi. 10o-90o percentile, A in %."""
+    if not T:
+        return [50, 50], 50
+    rnd = random.Random(hashlib.sha256((seme + "|" + "|".join(sorted(v["k"] for v in T))).encode()).hexdigest())
+    out = []
+    for _ in range(GIRI):
+        tot = 0.0
+        for v in T:
+            i = SCALA.index(v["dg"]); r = rnd.random()
+            i = max(0, i - 1) if r < .25 else min(len(SCALA) - 1, i + 1) if r > .75 else i
+            tot += math.log(SCALA[i]) * v["fisso"]
+        out.append(100 / (1 + math.exp(-tot)))
+    out.sort()
+    avanti = round(100 * sum(x > 50 for x in out) / GIRI)  # su 100 ricalcoli, quante volte A resta sopra il 50%
+    return [int(round(out[int(.1 * GIRI)])), int(round(out[int(.9 * GIRI)]))], avanti
+
+
+def pregiudizio(T, s):
+    """Se chi giudica avesse favorito sistematicamente chi e' in testa: le sue spinte valgono 1,5 volte meno, quelle dell'altra 1,5 volte di piu'.
+    Gli errori casuali si compensano, uno sistematico no: questo test lo misura. Ritorna la percentuale di A in quel caso."""
+    if not T: return 50
+    testa = 1 if s >= 0 else -1
+    tot = sum(v["c"] / PREGIUDIZIO if (v["c"] > 0) == (testa > 0) else v["c"] * PREGIUDIZIO for v in T)
+    return int(round(100 / (1 + math.exp(-tot))))
+
+
+def lettura(centro, avanti, pg=None):
+    """La stima a parole. 'avanti' = su 100 ricalcoli con giudizi diversi, quante volte A resta sopra il 50%.
+    Probabile: chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale e' almeno 60.
+    Pende verso: resta avanti in almeno 80 su 100. Altrimenti in bilico: dipende da come si giudicano le prove."""
+    v, av, c = ("A", avanti, centro) if avanti >= 50 else ("B", 100 - avanti, 100 - centro)
+    regge = pg is None or (pg > 50 if v == "A" else pg < 50)  # resta avanti anche col giudice di parte?
+    if not regge: return {"testo": "pende verso", "verso": v} if av >= 80 else {"testo": "in bilico", "verso": None}
+    if av >= 99 and c >= 80: return {"testo": "molto probabile", "verso": v}
+    if av >= 90 and c >= 60: return {"testo": "probabile", "verso": v}
+    if av >= 80: return {"testo": "pende verso", "verso": v}
+    return {"testo": "in bilico", "verso": None}
+
+
+def solidita(n, prim, largh):
+    """Quanto e' solida la base, separata da quanto e' probabile: origini indipendenti, quota di fonti primarie, larghezza della forchetta."""
+    if n >= 8 and prim >= .5 and largh <= 20: return "alta"
+    if n >= 5 and largh <= 30: return "media"
+    return "bassa"
 
 
 def spinta(vecchio, nuovo):
@@ -115,7 +188,8 @@ def main():
             for e in err: print("  ERRORE", e)
             continue
         vecchio = (d.get("ipotesi") or [{}])[0].get("peso")
-        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})")
+        L = r["lettura"]
+        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''} (A avanti {L['avanti_A']}/100; col giudice di parte A {L['pregiudizio_A']}%)  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
         for c in r["contributi"]: print(f"    {c['c']:+.2f}  {c['prova']}")
         for n in r["non_contate"]: print(f"    non contata (stessa origine): {n}")
         if r["peso_A"] == 50: print("  PAREGGIO: peso_perche deve cominciare con «Pareggio:»")
@@ -127,6 +201,7 @@ def main():
             d["ipotesi"][0]["peso"] = r["peso_A"]
             if len(d["ipotesi"]) > 1: d["ipotesi"][1]["peso"] = 100 - r["peso_A"]
             d["calcolo"] = r
+            d["forchetta"], d["lettura"], d["solidita"] = r["forchetta"], r["lettura"], r["solidita"]
     if scrivi and not ko:
         json.dump(doc, open(path, "w"), ensure_ascii=False, indent=1)
         print("scritto", path)
