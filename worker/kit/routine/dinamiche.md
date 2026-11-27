@@ -28,6 +28,7 @@ DATA DI OGGI: `TZ=Europe/Rome date +%F`, usala ovunque leggi <oggi>.
    - id `<chiave>-<AAAAMMGG>-<n>`, "creata": oggi; scrivi il documento in un file, `python3 /tmp/routine/previsioni.py --impronta <file>` e salva il valore in "impronta"; poi `python3 /tmp/rgdb.py set ai_previsioni <id> --file <file>`.
    - "perche": una riga su da dove viene la stima (es. «ipotesi A al 60%, fatto un po' più facile → 65%»); "storia": [].
    Testo, scadenza e "p" (stima di partenza) non si modificano mai dopo la creazione. Dopo i pesi, per le previsioni già aperte la cui ipotesi ha cambiato peso, aggiorna la stima con le stesse regole del passo 5-ter di aggiornamenti_ai.md (voce in "storia", mai toccare "p"). Nel resoconto: quante ne hai create, le righe «STIMA» e il punteggio stampato dallo script.
+ETICHETTA DI OGNI PREVISIONE (dal 27/11/2026). Alla nascita aggiungi "etichetta": {"distingue": "si" se l'esito separa le ipotesi in gara, "in_parte" se le separa solo in un verso o con molto rumore, "no" se si avvera allo stesso modo con entrambe; "perche": una riga; "data": oggi}. Calcola l'impronta con `python3 /tmp/routine/previsioni.py --etichetta <file>` e salvala in "etichetta.impronta". L'etichetta non si cambia più, e non si scrive mai dopo l'esito. Le previsioni con "no" si scrivono solo se servono a un altro scopo dichiarato; non si cancellano mai.
 
 1. AVVISO DI INIZIO: `curl -s -m 10 -X POST "$RG_API/v1/sala/evento" -H "authorization: Bearer $RG_TOKEN" -H "content-type: application/json" -d '{"routine":"dinamiche","fase":"inizio"}'`
 

@@ -106,6 +106,8 @@ Lo stato cambia SOLO con un dato nuovo, mai per il rumore:
 ## 5. Mettere alla prova: le previsioni
 Le previsioni stanno nella CHIAVE, non nel trend: "chiave": "t1"…, con "dinamica" e "ipotesi" della dinamica che mettono alla prova, nel formato e con le regole di dinamiche.md. Una previsione serve solo se DISTINGUE tra le ipotesi: se si avvera in entrambi i casi (per esempio «il prezzo per token continua a scendere», vero sia per A sia per B) non va scritta. Per ogni trend nuovo controlla che la sua chiave abbia almeno una previsione che separa A da B; se manca, scrivila.
 
+ETICHETTA DI OGNI PREVISIONE (dal 27/11/2026). Alla nascita aggiungi "etichetta": {"distingue": "si" se l'esito separa le ipotesi in gara, "in_parte" se le separa solo in un verso o con molto rumore, "no" se si avvera allo stesso modo con entrambe; "perche": una riga; "data": oggi}. Calcola l'impronta con `python3 /tmp/routine/previsioni.py --etichetta <file>` e salvala in "etichetta.impronta". L'etichetta non si cambia più, e non si scrive mai dopo l'esito. Le previsioni con "no" si scrivono solo se servono a un altro scopo dichiarato; non si cancellano mai.
+
 ## 6. Ricordare: il registro (`ai_registro/<oggi>-<n>`)
 È la memoria del metodo: ogni stima, inferenza o scelta di questo giro che non è già una previsione. Il conteggio non basta: serve il ragionamento, così tra mesi si può vedere se funzionava.
 {
