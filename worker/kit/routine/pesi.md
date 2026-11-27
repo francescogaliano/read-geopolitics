@@ -18,6 +18,14 @@ Idea: tu valuti ogni singola prova con una griglia fissa; il peso finale lo calc
    La debolezza deve abbassare il diag quando tocca il punto che la prova dovrebbe dimostrare (es. un ricavo che misura anche altro: 2, non 3).
    - SCHEDA CONGELATA: la scheda si compila UNA volta, quando la prova entra. Ai giri successivi non si ritocca. Si cambia solo per un errore vero (data sbagliata, origine sbagliata, fonte che ha corretto il dato) e allora aggiungi alla prova "revisioni": [{"data":"<oggi>","prima":{i campi cambiati con il valore vecchio},"motivo":"max 20 parole"}]. Senza questa voce lo script si ferma con ERRORE. Mai rivedere una scheda per far tornare un peso.
 
+1-ter. GIUDICE ALLA CIECA (dal 28/11/2026, obbligatorio per ogni prova NUOVA). Il tuo giudizio sul diag può pendere sempre dalla stessa parte: per questo ogni prova nuova ha un secondo giudice che non sa niente della partita.
+   - Compila la scheda come al punto 1 e scrivi il tuo diag anche in "diag_primo".
+   - Lancia UN agente separato (strumento Agent) per giro, con tutte le prove nuove. Per ogni prova gli passi SOLO: testo, val, fonte, data, e le due tesi come «Spiegazione 1» e «Spiegazione 2» in ordine tirato a sorte (`python3 -c "import random;print(random.choice(['AB','BA']))"`, annota l'ordine). Niente lettere A/B, nomi delle ipotesi, pesi, chiave, altre prove, né il tuo giudizio.
+   - Istruzioni all'agente: «Per ogni prova: quale delle due spiegazioni la rende più probabile (1, 2 oppure nessuna) e di quanto, solo 1, 1.5, 2, 3, 5 (1 = uguale con tutte e due; 1.5 un po'; 2 chiaramente; 3 difficile da spiegare con l'altra; 5 quasi impossibile con l'altra). Una riga di motivo. Rispondi in JSON.»
+   - Riporta nella prova "cieco":{"verso":"A|B|nessuna","diag":N,"motivo":"…"} (verso tradotto con l'ordine annotato).
+   - REGOLA: stesso verso → "diag" = il più basso tra il tuo e il suo. Verso opposto o «nessuna» → la prova NON entra nel conto: va in "neutro" («giudici in disaccordo: …») e in una voce del registro (tipo «scarto»). Il giudizio cieco non si rifà per farlo tornare.
+   - Lo script controlla: una prova nuova senza "cieco", con verso diverso dall'ipotesi o con diag più alto del giudizio cieco dà ERRORE. Nel "calcolo" scrive quante volte i due giudici sono d'accordo.
+
 1-bis. ARCHIVIO. Ogni ipotesi mostra al massimo 3 prove in "prove" (le più forti e recenti). Le altre NON si cancellano: si spostano in "archivio" (stessa forma, scheda compresa) e continuano a contare nel conto, con il peso che cala col tempo. Si toglie una prova solo se è sbagliata o smentita, e lo dici nel resoconto.
 
 2. DOVE VA OGNI PROVA. Una prova sta nell'ipotesi che rende più probabile. Le obiezioni del revisore che poggiano su un dato diventano prove (di solito "calcolo") nell'ipotesi che favoriscono; in "neutro" restano solo i fatti con diag 1.
@@ -25,7 +33,8 @@ Idea: tu valuti ogni singola prova con una griglia fissa; il peso finale lo calc
 3. CALCOLO (lo fa lo script): contributo = ln(diag) × tipo (1 · 0,7 · 0,4) × livello (1 · 0,8 · 0,6) × età (calo graduale: il peso si dimezza ogni 6 mesi); + per A, − per B; somma → percentuale con la funzione logistica, arrotondata a 5, fra 5 e 95.
    FORCHETTA: lo script rifà il conto 4.000 volte spostando ogni diag di un gradino in su o in giù (probabilità 1/4 ciascuno); "forchetta" = [10°, 90° percentile] di A. Dice quanto la stima dipende dai nostri giudizi.
    AVANTI: su 100 di quei ricalcoli, quante volte A resta sopra il 50% ("lettura"."avanti_A").
-   LETTURA: «probabile» se chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale è almeno 60; «molto probabile» se 99 su 100 e almeno 80; «pende verso» se avanti in almeno 80 su 100; altrimenti «in bilico».
+   GIUDICE DI PARTE ("lettura"."pregiudizio_A"): lo script rifà il conto con le spinte di chi è in testa divise per 1,5 e quelle dell'altra moltiplicate per 1,5. Gli errori casuali si compensano, uno sistematico no: questo test dice se il vantaggio regge a un giudice che favorisce chi è in testa.
+   LETTURA: «probabile» solo se regge anche al giudice di parte e se chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale è almeno 60; «molto probabile» se 99 su 100 e almeno 80; «pende verso» se avanti in almeno 80 su 100; altrimenti «in bilico».
    SOLIDITÀ (separata dalla probabilità): alta = almeno 8 origini indipendenti, almeno metà primarie, forchetta entro 20 punti; media = almeno 5 origini e forchetta entro 30; altrimenti bassa. Per alzarla servono prove nuove, primarie, da origini diverse: è il lavoro da fare per primo sulle dinamiche «in bilico». Ogni giro ricalcola da capo su tutte le prove (mostrate e in archivio) con le schede congelate: il peso cambia solo per una prova nuova, una prova che invecchia o una revisione scritta.
 
 4. USO:

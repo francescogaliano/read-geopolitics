@@ -19,7 +19,8 @@ DIAG = {1: 1.0, 1.5: 1.5, 2: 2.0, 3: 3.0, 5: 5.0}
 TIPO = {"misurato": 1.0, "calcolo": 0.7, "inferito": 0.4}
 LIVELLO = {"primaria": 1.0, "testata": 0.8, "secondaria": 0.6}
 SCALA = [1.0, 1.5, 2.0, 3.0, 5.0]
-GIRI = 4000  # ricalcoli con i diag spostati di un gradino, per la forchetta
+GIRI = 4000
+PREGIUDIZIO = 1.5  # test del giudice di parte: spinte di chi e' in testa divise per 1,5, quelle dell'altra moltiplicate per 1,5  # ricalcoli con i diag spostati di un gradino, per la forchetta
 CAMPI = ("tipo", "diag", "livello", "data", "origine", "forza", "debolezza", "ragionamento")
 
 
@@ -43,7 +44,7 @@ def impronta(p):
 
 
 def calcola(din, oggi):
-    errori, voci, schede = [], [], {}
+    errori, voci, schede, cieche = [], [], {}, []
     prima = ((din.get("calcolo") or {}).get("schede")) or {}
     for ip in din.get("ipotesi", []):
         verso = 1 if ip.get("id") == "A" else -1
@@ -62,6 +63,16 @@ def calcola(din, oggi):
                 errori.append(f"{nome}: {e}"); continue
             k, imp = chiave(p), impronta(p)
             schede[k] = imp
+            if prima and k not in prima:  # prova nuova: serve il giudice alla cieca (pesi.md, 1-ter)
+                cc = p.get("cieco") or {}
+                if not cc or "diag_primo" not in p:
+                    errori.append(f"{nome}: prova nuova senza \"cieco\" o \"diag_primo\" (giudice alla cieca, pesi.md 1-ter)"); continue
+                if cc.get("verso") != ip.get("id"):
+                    errori.append(f"{nome}: il giudice alla cieca dice {cc.get('verso')!r}: la prova non entra, va in \"neutro\""); continue
+                if dg > float(cc.get("diag", 0)) or dg > float(p["diag_primo"]):
+                    errori.append(f"{nome}: diag {dg} piu' alto del piu' basso tra i due giudici ({p['diag_primo']}, {cc.get('diag')})"); continue
+            if p.get("cieco") and "diag_primo" in p:
+                cieche.append(float(p["cieco"].get("diag", 0)) == float(p["diag_primo"]))
             if k in prima and prima[k] != imp and not any(r.get("data") == oggi.isoformat() for r in p.get("revisioni") or []):
                 errori.append(f"{nome}: scheda cambiata ({prima[k]} -> {imp}) senza una voce in \"revisioni\" di oggi {{data, prima, motivo}}")
             voci.append({"prova": nome, "k": k, "ip": ip.get("id"), "origine": str(p["origine"]).strip().lower(), "c": c,
@@ -81,14 +92,16 @@ def calcola(din, oggi):
     grezzo = 100 / (1 + math.exp(-s))
     pa = int(min(95, max(5, 5 * round(grezzo / 5))))
     (lo, hi), avanti = forchetta(T, din.get("meccanismo", ""))
+    pg = pregiudizio(T, s)
     n = len({v["origine"] for v in T})
     prim = sum(v["lv"] == "primaria" for v in T) / len(T) if T else 0
     return {
         "peso_A": pa,
         "punteggio": round(s, 2),
         "forchetta": [lo, hi],
-        "lettura": {**lettura(grezzo, avanti), "avanti_A": avanti},
+        "lettura": {**lettura(grezzo, avanti, pg), "avanti_A": avanti, "pregiudizio_A": pg},
         "solidita": {"livello": solidita(n, prim, hi - lo), "origini": n, "primarie": round(100 * prim)},
+        "giudici": {"prove_doppie": len(cieche), "accordo": sum(cieche)},
         "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(T, key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
         "schede": schede,
@@ -115,11 +128,22 @@ def forchetta(T, seme):
     return [int(round(out[int(.1 * GIRI)])), int(round(out[int(.9 * GIRI)]))], avanti
 
 
-def lettura(centro, avanti):
+def pregiudizio(T, s):
+    """Se chi giudica avesse favorito sistematicamente chi e' in testa: le sue spinte valgono 1,5 volte meno, quelle dell'altra 1,5 volte di piu'.
+    Gli errori casuali si compensano, uno sistematico no: questo test lo misura. Ritorna la percentuale di A in quel caso."""
+    if not T: return 50
+    testa = 1 if s >= 0 else -1
+    tot = sum(v["c"] / PREGIUDIZIO if (v["c"] > 0) == (testa > 0) else v["c"] * PREGIUDIZIO for v in T)
+    return int(round(100 / (1 + math.exp(-tot))))
+
+
+def lettura(centro, avanti, pg=None):
     """La stima a parole. 'avanti' = su 100 ricalcoli con giudizi diversi, quante volte A resta sopra il 50%.
     Probabile: chi guida resta avanti in almeno 90 ricalcoli su 100 e la stima centrale e' almeno 60.
     Pende verso: resta avanti in almeno 80 su 100. Altrimenti in bilico: dipende da come si giudicano le prove."""
     v, av, c = ("A", avanti, centro) if avanti >= 50 else ("B", 100 - avanti, 100 - centro)
+    regge = pg is None or (pg > 50 if v == "A" else pg < 50)  # resta avanti anche col giudice di parte?
+    if not regge: return {"testo": "pende verso", "verso": v} if av >= 80 else {"testo": "in bilico", "verso": None}
     if av >= 99 and c >= 80: return {"testo": "molto probabile", "verso": v}
     if av >= 90 and c >= 60: return {"testo": "probabile", "verso": v}
     if av >= 80: return {"testo": "pende verso", "verso": v}
@@ -165,7 +189,7 @@ def main():
             continue
         vecchio = (d.get("ipotesi") or [{}])[0].get("peso")
         L = r["lettura"]
-        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''} (A avanti {L['avanti_A']}/100)  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
+        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''} (A avanti {L['avanti_A']}/100; col giudice di parte A {L['pregiudizio_A']}%)  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
         for c in r["contributi"]: print(f"    {c['c']:+.2f}  {c['prova']}")
         for n in r["non_contate"]: print(f"    non contata (stessa origine): {n}")
         if r["peso_A"] == 50: print("  PAREGGIO: peso_perche deve cominciare con «Pareggio:»")
