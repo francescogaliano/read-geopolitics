@@ -59,7 +59,7 @@ ETICHETTA DI OGNI PREVISIONE (dal 27/11/2026). Alla nascita aggiungi "etichetta"
    - PESI: si calcolano col METODO DEI PESI in /tmp/routine/pesi.md (se manca: worker/kit/routine/pesi.md). Leggilo per intero. Ogni prova ha la sua scheda (tipo, livello, data, origine, diag, forza, debolezza, ragionamento) e il peso lo calcola `python3 /tmp/routine/pesi.py`; non si sceglie a occhio. Ogni giro ricalcola tutte le dinamiche, anche quelle che non tocchi. "peso_perche" racconta in parole semplici i contributi più grandi; un 50 comincia con «Pareggio:».
    - A è «il meccanismo opera»; B è la SPIEGAZIONE CONCORRENTE PIÙ FORTE (non per forza il contrario: spesso è un altro meccanismo o la spiegazione più banale).
    - Prove: al massimo 3 MOSTRATE per ipotesi in "prove", ognuna aperta e letta da te; le altre vanno in "archivio" e restano nel conto (vedi pesi.md, ARCHIVIO). Le schede già compilate non si ritoccano (SCHEDA CONGELATA). Niente a memoria.
-   - Peso (A + B = 100): quello calcolato dallo script, fra 20 e 80. Nel resoconto scrivi quali prove lo hanno spostato rispetto alla settimana prima.
+   - Peso (A + B = 100): quello calcolato dallo script, fra 5 e 95, con "forchetta", "lettura" e "solidita" che lo script scrive accanto (non si toccano a mano). Nel resoconto scrivi quali prove lo hanno spostato rispetto alla settimana prima.
    - Segnali: un dato pubblicato e ricorrente (trimestrali, statistiche ufficiali, listini, indici). Le soglie le proponi tu e restano provvisorie; aggiorna "fatti" solo con dati pubblicati.
    - Scrivi con `python3 /tmp/rgdb.py get ai_tesi <id>` poi update con --if-version: {"dinamiche":[…]} (la lista va riscritta intera, con "archivio", "calcolo" e "storico_pesi" così come li lascia pesi.py).
 

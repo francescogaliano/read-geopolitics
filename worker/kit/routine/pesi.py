@@ -9,14 +9,17 @@ tesi.json puo' essere un documento ai_tesi (con "dinamiche") oppure una singola 
 Ogni prova deve avere: tipo, diag, livello, data, origine, forza, debolezza, ragionamento.
 Contano le prove in "prove" (le 3 mostrate) e in "archivio" (le altre): nessuna si butta, l'eta' ne riduce il peso.
 Le schede sono congelate: se una cambia rispetto al calcolo precedente serve una voce in "revisioni" di oggi.
+Calcola anche la forchetta (quanto la stima dipende dai diag), la lettura a parole e la solidita' della base.
 Con --scrivi aggiunge una riga a "storico_pesi" quando il peso cambia, con la prova che l'ha spostato.
 Se manca qualcosa lo script si ferma e dice cosa: il peso non si inventa.
 """
-import json, math, sys, datetime
+import json, math, sys, datetime, random, hashlib
 
 DIAG = {1: 1.0, 1.5: 1.5, 2: 2.0, 3: 3.0, 5: 5.0}
 TIPO = {"misurato": 1.0, "calcolo": 0.7, "inferito": 0.4}
 LIVELLO = {"primaria": 1.0, "testata": 0.8, "secondaria": 0.6}
+SCALA = [1.0, 1.5, 2.0, 3.0, 5.0]
+GIRI = 4000  # ricalcoli con i diag spostati di un gradino, per la forchetta
 CAMPI = ("tipo", "diag", "livello", "data", "origine", "forza", "debolezza", "ragionamento")
 
 
@@ -61,27 +64,72 @@ def calcola(din, oggi):
             schede[k] = imp
             if k in prima and prima[k] != imp and not any(r.get("data") == oggi.isoformat() for r in p.get("revisioni") or []):
                 errori.append(f"{nome}: scheda cambiata ({prima[k]} -> {imp}) senza una voce in \"revisioni\" di oggi {{data, prima, motivo}}")
-            voci.append({"prova": nome, "k": k, "origine": str(p["origine"]).strip().lower(), "c": c})
+            voci.append({"prova": nome, "k": k, "ip": ip.get("id"), "origine": str(p["origine"]).strip().lower(), "c": c,
+                         "dg": dg, "fisso": verso * TIPO[p["tipo"]] * LIVELLO[p["livello"]] * eta(p["data"], oggi), "lv": p["livello"]})
     if errori:
         return None, errori
-    # indipendenza: prove con la stessa fonte d'origine contano una volta, la piu' forte
+    # indipendenza: prove con la stessa fonte d'origine, sulla stessa ipotesi, contano una volta (la piu' forte).
+    # Due prove della stessa origine su ipotesi opposte contano entrambe: dicono cose diverse.
     tenute = {}
     for v in voci:
-        k = v["origine"]
+        k = (v["ip"], v["origine"])
         if k not in tenute or abs(v["c"]) > abs(tenute[k]["c"]):
             tenute[k] = v
-    scartate = [v["prova"] for v in voci if tenute.get(v["origine"]) is not v]
-    s = sum(v["c"] for v in tenute.values())
-    pa = 100 / (1 + math.exp(-s))
-    pa = int(min(80, max(20, 5 * round(pa / 5))))
+    T = list(tenute.values())
+    scartate = [v["prova"] for v in voci if tenute.get((v["ip"], v["origine"])) is not v]
+    s = sum(v["c"] for v in T)
+    grezzo = 100 / (1 + math.exp(-s))
+    pa = int(min(95, max(5, 5 * round(grezzo / 5))))
+    lo, hi = forchetta(T, din.get("meccanismo", ""))
+    n = len({v["origine"] for v in T})
+    prim = sum(v["lv"] == "primaria" for v in T) / len(T) if T else 0
     return {
         "peso_A": pa,
         "punteggio": round(s, 2),
-        "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(tenute.values(), key=lambda v: -abs(v["c"]))],
+        "forchetta": [lo, hi],
+        "lettura": lettura(lo, hi),
+        "solidita": {"livello": solidita(n, prim, hi - lo), "origini": n, "primarie": round(100 * prim)},
+        "contributi": [{"prova": v["prova"], "k": v["k"], "c": round(v["c"], 2)} for v in sorted(T, key=lambda v: -abs(v["c"]))],
         "non_contate": scartate,
         "schede": schede,
         "data": oggi.isoformat(),
     }, []
+
+
+def forchetta(T, seme):
+    """Quanto cambia la stima se ogni diag fosse un gradino piu' su o piu' giu' (probabilita' 1/4 ciascuno).
+    I diag sono giudizi: la forchetta dice quanto la percentuale dipende da quei giudizi. 10o-90o percentile, A in %."""
+    if not T:
+        return [50, 50]
+    rnd = random.Random(hashlib.sha256((seme + "|" + "|".join(sorted(v["k"] for v in T))).encode()).hexdigest())
+    out = []
+    for _ in range(GIRI):
+        tot = 0.0
+        for v in T:
+            i = SCALA.index(v["dg"]); r = rnd.random()
+            i = max(0, i - 1) if r < .25 else min(len(SCALA) - 1, i + 1) if r > .75 else i
+            tot += math.log(SCALA[i]) * v["fisso"]
+        out.append(100 / (1 + math.exp(-tot)))
+    out.sort()
+    return [int(round(out[int(.1 * GIRI)])), int(round(out[int(.9 * GIRI)]))]
+
+
+def lettura(lo, hi):
+    """La stima a parole, dalla forchetta: si dice 'probabile' solo se tutta la forchetta sta da una parte."""
+    if lo >= 80: return {"testo": "molto probabile", "verso": "A"}
+    if lo >= 55: return {"testo": "probabile", "verso": "A"}
+    if lo > 50: return {"testo": "pende verso", "verso": "A"}
+    if hi <= 20: return {"testo": "molto probabile", "verso": "B"}
+    if hi <= 45: return {"testo": "probabile", "verso": "B"}
+    if hi < 50: return {"testo": "pende verso", "verso": "B"}
+    return {"testo": "in bilico", "verso": None}
+
+
+def solidita(n, prim, largh):
+    """Quanto e' solida la base, separata da quanto e' probabile: origini indipendenti, quota di fonti primarie, larghezza della forchetta."""
+    if n >= 8 and prim >= .5 and largh <= 20: return "alta"
+    if n >= 5 and largh <= 30: return "media"
+    return "bassa"
 
 
 def spinta(vecchio, nuovo):
@@ -115,7 +163,8 @@ def main():
             for e in err: print("  ERRORE", e)
             continue
         vecchio = (d.get("ipotesi") or [{}])[0].get("peso")
-        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})")
+        L = r["lettura"]
+        print(f"  peso A {vecchio} -> {r['peso_A']}  (punteggio {r['punteggio']:+})  forchetta {r['forchetta'][0]}-{r['forchetta'][1]}  {L['testo']}{' '+L['verso'] if L['verso'] else ''}  solidita {r['solidita']['livello']} ({r['solidita']['origini']} origini, {r['solidita']['primarie']}% primarie)")
         for c in r["contributi"]: print(f"    {c['c']:+.2f}  {c['prova']}")
         for n in r["non_contate"]: print(f"    non contata (stessa origine): {n}")
         if r["peso_A"] == 50: print("  PAREGGIO: peso_perche deve cominciare con «Pareggio:»")
@@ -127,6 +176,7 @@ def main():
             d["ipotesi"][0]["peso"] = r["peso_A"]
             if len(d["ipotesi"]) > 1: d["ipotesi"][1]["peso"] = 100 - r["peso_A"]
             d["calcolo"] = r
+            d["forchetta"], d["lettura"], d["solidita"] = r["forchetta"], r["lettura"], r["solidita"]
     if scrivi and not ko:
         json.dump(doc, open(path, "w"), ensure_ascii=False, indent=1)
         print("scritto", path)
