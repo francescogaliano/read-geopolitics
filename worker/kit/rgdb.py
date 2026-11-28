@@ -20,6 +20,7 @@
 #   python3 rgdb.py push DIR [--solo-nuovi]                 scrive (set) ogni DIR/<coll>/<id>.json, a gruppi di 50;
 #                                                           con --solo-nuovi crea solo i documenti che mancano (op create)
 #   python3 rgdb.py rassegna [ORE] [MIN]                    rassegna dei feed: titoli delle ultime ORE (24) raggruppati per storia, solo storie con almeno MIN fonti (1)
+#   python3 rgdb.py ia-giudice FILE                         sezione IA: giudice alla cieca esterno (OpenAI) sulle prove nuove
 #   python3 rgdb.py ia-voci [ORE]                           sezione IA (privata): titoli dei feed IA delle ultime ORE (36), per gruppo di fonti
 #   python3 rgdb.py inv-contesto                            sezione Investimenti (privata): strumenti, ultimi prezzi, ipotesi aperte
 #   python3 rgdb.py inv-radar FILE                          giro del radar: {opportunita, osservati, rimossi, richieste_fatte, ipotesi}
@@ -242,6 +243,10 @@ def main():
         ore = a[0] if len(a) > 0 else "24"
         mn = a[1] if len(a) > 1 else "1"
         out(call("GET", "/v1/rassegna", q={"ore": ore, "min": mn}))
+    elif cmd == "ia-giudice":
+        if len(a) != 1:
+            die("uso: ia-giudice FILE   (FILE = {prove:[{id,testo,val,fonte,data,s1,s2}]}; s1/s2 = le due tesi nell'ordine tirato a sorte)")
+        out(call("POST", "/v1/ia/giudice", loadjson(open(a[0], encoding="utf-8").read(), a[0])))
     elif cmd == "ia-voci":
         out(call("GET", "/v1/ia/voci", q={"ore": a[0] if a else "36"}))
     elif cmd == "inv-contesto":
