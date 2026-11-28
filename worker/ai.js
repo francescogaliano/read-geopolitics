@@ -94,7 +94,42 @@ async function menzioniGiro(env, h, oggi) {
   doc.aggiornato = ora;
   await env.DB.prepare("INSERT OR REPLACE INTO rdocs (type,key,version,hash,data,updated_at) VALUES ('ai_menzioni',?1,1,'',?2,?3)").bind(wk, JSON.stringify(doc), ora).run();
 }
-export async function aiCron(env, h) { try { await menzioniGiro(env, h, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
+
+/* 28/11/2026 — GIUDICE ALLA CIECA con un modello di un'altra azienda (OpenAI).
+   Riceve prove e due spiegazioni senza nomi («1» e «2», in ordine già tirato a sorte dalla routine) e restituisce, per ogni prova,
+   quale spiegazione la rende più probabile e di quanto, sulla scala fissa 1 / 1.5 / 2 / 3 / 5. Non sa quale ipotesi è in testa. */
+const GIUDICE_ISTR = "Sei un giudice indipendente. Per ogni prova ricevi un fatto e due spiegazioni concorrenti, chiamate 1 e 2. Non sai da dove vengono né quale sia considerata più probabile. Per ogni prova rispondi: quale spiegazione rende il fatto più probabile (\"1\", \"2\" oppure \"nessuna\" se è ugualmente probabile con entrambe) e di quanto, solo con uno di questi valori: 1 (uguale), 1.5 (un po' più probabile), 2 (chiaramente più probabile), 3 (difficile da spiegare con l'altra), 5 (quasi impossibile con l'altra). Giudica solo il fatto riportato, non la fonte né le tue opinioni sull'argomento. Una riga di motivo in italiano.";
+const GIUDICE_SCHEMA = { type: "object", additionalProperties: false, required: ["giudizi"], properties: { giudizi: { type: "array", items: { type: "object", additionalProperties: false, required: ["id", "scelta", "diag", "motivo"], properties: { id: { type: "string" }, scelta: { type: "string", enum: ["1", "2", "nessuna"] }, diag: { type: "number", enum: [1, 1.5, 2, 3, 5] }, motivo: { type: "string" } } } } } };
+async function giudice(env, prove) {
+  if (!env.OPENAI_API_KEY) return { ok: false, errore: "manca OPENAI_API_KEY" };
+  const P = (prove || []).slice(0, 25).map((x, i) => ({ id: String(x.id || i), fatto: String(x.testo || "").slice(0, 600), valore: x.val ? String(x.val).slice(0, 60) : undefined, fonte: x.fonte ? String(x.fonte).slice(0, 120) : undefined, data: x.data ? String(x.data).slice(0, 20) : undefined, spiegazione_1: String(x.s1 || "").slice(0, 400), spiegazione_2: String(x.s2 || "").slice(0, 400) }));
+  if (!P.length) return { ok: false, errore: "nessuna prova" };
+  const modello = env.OPENAI_MODEL || "gpt-6.1-sol";
+  const r = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { authorization: "Bearer " + env.OPENAI_API_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ model: modello, instructions: GIUDICE_ISTR, input: JSON.stringify({ prove: P }), max_output_tokens: 6000, text: { format: { type: "json_schema", name: "giudizi", strict: true, schema: GIUDICE_SCHEMA } } }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, stato: r.status, errore: (j.error && j.error.message) || "errore OpenAI", modello };
+  let testo = j.output_text || "";
+  if (!testo) for (const o of j.output || []) for (const c of o.content || []) if (c.type === "output_text") testo += c.text;
+  const out = jp(testo, null);
+  if (!out || !Array.isArray(out.giudizi)) return { ok: false, errore: "risposta non leggibile", modello, grezzo: String(testo).slice(0, 500) };
+  return { ok: true, modello: j.model || modello, uso: j.usage || null, giudizi: out.giudizi };
+}
+async function modelliOpenAI(env) {
+  const r = await fetch("https://api.openai.com/v1/models", { headers: { authorization: "Bearer " + env.OPENAI_API_KEY } });
+  const j = await r.json().catch(() => ({}));
+  return r.ok ? (j.data || []).map((m) => m.id).filter((x) => /^gpt|^o\d/.test(x)).sort() : { stato: r.status, errore: (j.error && j.error.message) || "" };
+}
+/* prova a richiesta: si scrive in kv «ai:giudice:prova» {"prove":[…]}; il cron la esegue una volta e scrive l'esito in «ai:giudice:esito» */
+async function giudiceProva(env, h) {
+  const q = await h.kvGet(env, "ai:giudice:prova");
+  if (!q || !q.prove || q.fatta) return;
+  await h.kvSet(env, "ai:giudice:prova", { ...q, fatta: new Date().toISOString() });
+  let esito; try { esito = await giudice(env, q.prove); } catch (e) { esito = { ok: false, errore: String((e && e.message) || e).slice(0, 300) }; }
+  if (!esito.ok) { try { esito.modelli = await modelliOpenAI(env); } catch (e) {} }
+  await h.kvSet(env, "ai:giudice:esito", { at: new Date().toISOString(), ...esito });
+}
+export async function aiCron(env, h) { try { await giudiceProva(env, h); } catch (e) {} try { await menzioniGiro(env, h, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
 
 async function voci(env, ore) {
   await tabella(env);
@@ -160,6 +195,10 @@ async function coll(env, type, lim = 400) { return ((await env.DB.prepare("SELEC
 /* per le routine (token): GET /v1/ia/voci?ore=36 */
 export async function aiRoute(request, env, p, method, url, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
+  if (p === "/v1/ia/giudice" && method === "POST") {
+    const b = await request.json().catch(() => ({}));
+    return h.json(await giudice(env, b.prove));
+  }
   if (p === "/v1/ia/voci" && method === "GET") {
     const V = await voci(env, Number(url.searchParams.get("ore")) || 36), F = Object.fromEntries(AI_FONTI.map((f) => [f.id, f]));
     const per = {}; for (const v of V) { const f = F[v.fonte]; if (!f) continue; (per[f.gruppo] = per[f.gruppo] || []).push({ fonte: f.nome, titolo: v.titolo, link: v.link, data: v.data }); }
