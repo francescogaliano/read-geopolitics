@@ -115,6 +115,31 @@ async function giudice(env, prove) {
   if (!out || !Array.isArray(out.giudizi)) return { ok: false, errore: "risposta non leggibile", modello, grezzo: String(testo).slice(0, 500) };
   return { ok: true, modello: j.model || modello, uso: j.usage || null, giudizi: out.giudizi };
 }
+/* secondo giudice esterno: Gemini (28/11/2026). Stesse istruzioni e stessa scala; il modello si legge da GEMINI_MODEL, poi da kv «ai:giudice:gemini_modello». */
+const GEMINI_SCHEMA = { type: "OBJECT", required: ["giudizi"], properties: { giudizi: { type: "ARRAY", items: { type: "OBJECT", required: ["id", "scelta", "diag", "motivo"], properties: { id: { type: "STRING" }, scelta: { type: "STRING", enum: ["1", "2", "nessuna"] }, diag: { type: "STRING", enum: ["1", "1.5", "2", "3", "5"] }, motivo: { type: "STRING" } } } } } };
+function proveGiudice(prove) { return (prove || []).slice(0, 25).map((x, i) => ({ id: String(x.id || i), fatto: String(x.testo || "").slice(0, 600), valore: x.val ? String(x.val).slice(0, 60) : undefined, fonte: x.fonte ? String(x.fonte).slice(0, 120) : undefined, data: x.data ? String(x.data).slice(0, 20) : undefined, spiegazione_1: String(x.s1 || "").slice(0, 400), spiegazione_2: String(x.s2 || "").slice(0, 400) })); }
+async function giudiceGemini(env, prove, modelloChiesto) {
+  if (!env.GEMINI_API_KEY) return { ok: false, errore: "manca GEMINI_API_KEY" };
+  const P = proveGiudice(prove); if (!P.length) return { ok: false, errore: "nessuna prova" };
+  const modello = modelloChiesto || env.GEMINI_MODEL || "gemini-4-argon";
+  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modello) + ":generateContent", { method: "POST", headers: { "x-goog-api-key": env.GEMINI_API_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: GIUDICE_ISTR }] }, contents: [{ role: "user", parts: [{ text: JSON.stringify({ prove: P }) }] }], generationConfig: { responseMimeType: "application/json", responseSchema: GEMINI_SCHEMA, maxOutputTokens: 8000 } }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { ok: false, stato: r.status, errore: (j.error && j.error.message) || "errore Gemini", modello };
+  let testo = ""; for (const c of ((j.candidates || [])[0] || {}).content?.parts || []) if (c.text && !c.thought) testo += c.text;
+  const out = jp(testo, null);
+  if (!out || !Array.isArray(out.giudizi)) return { ok: false, errore: "risposta non leggibile", modello, grezzo: String(testo).slice(0, 500) };
+  return { ok: true, modello: j.modelVersion || modello, uso: j.usageMetadata || null, giudizi: out.giudizi.map((g) => ({ ...g, diag: Number(g.diag) })) };
+}
+async function modelliGemini(env) {
+  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": env.GEMINI_API_KEY } });
+  const j = await r.json().catch(() => ({}));
+  return r.ok ? (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => String(m.name).replace("models/", "")).filter((x) => /^gemini/.test(x)).sort() : { stato: r.status, errore: (j.error && j.error.message) || "" };
+}
+async function giudicePer(env, h, fornitore, prove, modello) {
+  if (fornitore === "gemini") return giudiceGemini(env, prove, modello || (h && h.kvGet ? ((await h.kvGet(env, "ai:giudice:gemini_modello")) || {}).modello : null));
+  return giudice(env, prove);
+}
 async function modelliOpenAI(env) {
   const r = await fetch("https://api.openai.com/v1/models", { headers: { authorization: "Bearer " + env.OPENAI_API_KEY } });
   const j = await r.json().catch(() => ({}));
@@ -125,9 +150,11 @@ async function giudiceProva(env, h) {
   const q = await h.kvGet(env, "ai:giudice:prova");
   if (!q || !q.prove || q.fatta) return;
   await h.kvSet(env, "ai:giudice:prova", { ...q, fatta: new Date().toISOString() });
-  let esito; try { esito = await giudice(env, q.prove); } catch (e) { esito = { ok: false, errore: String((e && e.message) || e).slice(0, 300) }; }
-  if (!esito.ok) { try { esito.modelli = await modelliOpenAI(env); } catch (e) {} }
-  await h.kvSet(env, "ai:giudice:esito", { at: new Date().toISOString(), ...esito });
+  const forn = q.fornitore === "gemini" ? "gemini" : "openai";
+  let esito; try { esito = await giudicePer(env, h, forn, q.prove, q.modello); } catch (e) { esito = { ok: false, errore: String((e && e.message) || e).slice(0, 300) }; }
+  if (!esito.ok || q.elenco) { try { esito.modelli = forn === "gemini" ? await modelliGemini(env) : await modelliOpenAI(env); } catch (e) {} }
+  if (esito.ok && forn === "gemini" && q.modello) await h.kvSet(env, "ai:giudice:gemini_modello", { modello: q.modello });
+  await h.kvSet(env, "ai:giudice:esito", { at: new Date().toISOString(), fornitore: forn, ...esito });
 }
 export async function aiCron(env, h) { try { await giudiceProva(env, h); } catch (e) {} try { await menzioniGiro(env, h, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await fotoGiro(env, h.romeToday ? h.romeToday() : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Rome" })); } catch (e) {} try { await aiGiro(env, h, PER_GIRO); } catch (e) { try { await h.kvSet(env, "ai:err", { at: new Date().toISOString(), msg: String((e && e.message) || e).slice(0, 300) }); } catch (_) {} } }
 
@@ -197,7 +224,8 @@ export async function aiRoute(request, env, p, method, url, h) {
   if (!h.authorized(request, env)) return h.fail(401, "unauthorized");
   if (p === "/v1/ia/giudice" && method === "POST") {
     const b = await request.json().catch(() => ({}));
-    return h.json(await giudice(env, b.prove));
+    if (b.fornitore === "entrambi") { const [o, g] = await Promise.all([giudicePer(env, h, "openai", b.prove), giudicePer(env, h, "gemini", b.prove)]); return h.json({ ok: !!(o.ok && g.ok), openai: o, gemini: g }); }
+    return h.json(await giudicePer(env, h, b.fornitore === "gemini" ? "gemini" : "openai", b.prove));
   }
   if (p === "/v1/ia/voci" && method === "GET") {
     const V = await voci(env, Number(url.searchParams.get("ore")) || 36), F = Object.fromEntries(AI_FONTI.map((f) => [f.id, f]));
